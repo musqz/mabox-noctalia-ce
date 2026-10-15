@@ -1,0 +1,58 @@
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+
+conky.config = {
+	out_to_x = true,
+	out_to_wayland = false,
+
+	own_window = true,
+	own_window_type = 'desktop',
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	own_window_colour = c.bg,
+	own_window_class = 'Conky',
+	own_window_title = 'Mabox Info Conky',
+    
+    alignment = 'top_left',
+	gap_x = -2530,
+	gap_y = -98,
+	minimum_width = 270,
+    minimum_height = 256,
+
+	use_xft = true,
+	font = 'Ubuntu:size=8',
+	xftalpha = 1,
+	override_utf8_locale = true,
+    
+    
+	draw_shades = true,
+	default_shade_color = '#222222',
+	draw_outline = false,
+	default_outline_color = '#222222',
+    
+    default_color = c.primary,
+	color0 = c.second,
+    color1 = c.third,
+	cpu_avg_samples = 2,
+
+	draw_borders = true,
+	stippled_borders = 0,
+	border_inner_margin = 9,
+	border_outer_margin = 1,
+	border_width = 2,
+    draw_graph_borders = true,
+
+	background = true,
+	no_buffers = true,
+	imlib_cache_size = 0,
+    short_units = true,
+	double_buffer = true,
+	update_interval = 2,
+};
+
+conky.text = [[
+${image ~/.icons/mabox-logo-square.svg -s 96x96 -p 174,0}${image ~/.config/mabox/wpthumb.png -s 270x150 -p 0,106}
+${goto 16}${color0}${execi 10000 source /etc/lsb-release; echo $DISTRIB_DESCRIPTION} ${color1}${execi 10000 . /etc/lsb-release;echo $DISTRIB_RELEASE $DISTRIB_CODENAME}
+${goto 16}${color0}${execi 10000 whoami}@${nodename}
+${goto 16}${color1}kernel: ${goto 90}${color0}${execi 10000 uname -r|cut -d"-" -f 1}
+${goto 16}${color1}pkgs: ${goto 90}${color0}${execi 10000 pacman -Q | wc -l}
+${goto 16}${color1}branch:${goto 90}${color0}${execi 10000 pacman-mirrors -G}
+]];

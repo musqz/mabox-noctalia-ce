@@ -1,0 +1,220 @@
+<!--
+  This is a very simple config file with many options missing. For a complete
+  set of options with comments, see docs/rc.xml.all
+-->
+
+<labwc_config>
+
+  <theme>
+    <name>noctalia</name>
+    <cornerRadius>8</cornerRadius>
+    <font name="sans" size="10" />
+  </theme>
+    <core>
+    <gap>10</gap>
+  </core>
+  <desktops number="2" />
+  <!-- Thumbnail-based window switcher -->
+  <windowSwitcher preview="no" outlines="yes">
+    <osd style="thumbnail"/>
+  </windowSwitcher>
+
+  <keyboard>
+    <default />
+    <!-- Use a different terminal emulator -->
+    <keybind key="W-Return">
+    <action name="Execute" command="foot" />
+    </keybind>
+    <!--
+      Remove a previously defined keybind
+      A shorter alternative is <keybind key="W-F4" />
+    -->
+    <keybind key="W-F4">
+    <action name="None" />
+    </keybind>
+    <!-- Core keys -->
+    <keybind key="W-space"><action name="Execute"><command>noctalia msg panel-toggle launcher</command></action></keybind>
+    <keybind key="W-s"><action name="Execute"><command>noctalia msg panel-toggle control-center</command></action></keybind>
+    <keybind key="W-,"><action name="Execute"><command>noctalia msg settings-toggle</command></action></keybind>
+    
+
+    <!-- Media keys -->
+    <keybind key="XF86AudioRaiseVolume"><action name="Execute"><command>noctalia msg volume-up</command></action></keybind>
+    <keybind key="XF86AudioLowerVolume"><action name="Execute"><command>noctalia msg volume-down</command></action></keybind>
+    <keybind key="XF86AudioMute"><action name="Execute"><command>noctalia msg volume-mute</command></action></keybind>
+    <keybind key="XF86MonBrightnessUp"><action name="Execute"><command>brightness-primary up</command></action></keybind>
+    <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightness-primary down</command></action></keybind>
+    
+    
+
+    <!-- Wallpaper -->
+    <keybind key="W-2"><action name="Execute" command="noctalia msg workspace-switch next"/></keybind>
+    <keybind key="W-1"><action name="Execute" command="noctalia msg workspace-switch prev"/></keybind>
+    <keybind key="C-A-a"><action name="Execute" command="noctalia msg wallpaper-random"/></keybind>
+    <keybind key="W-="><action name="Execute"><command>noctalia msg panel-toggle wallpaper</command></action></keybind>
+    <keybind key="C-S-a"><action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'"/></keybind>
+
+    <!-- NUMLOCK -->
+    <numlock>on</numlock>
+
+    <!-- Lock screen -->
+    <keybind key="W-l"><action name="Execute" command="swaylock -f"/></keybind>
+
+    <!-- Caffeine -->
+    <keybind key="W-c"><action name="Execute" command="noctalia msg caffeine-toggle"/></keybind>
+
+    <!-- Mabox keys -->
+    <keybind key="W-t"><action name="Execute"><command>exo-open --launch TerminalEmulator</command></action></keybind>
+    <keybind key="W-x"><action name="Execute"><command>noctalia msg panel-toggle session</command></action></keybind>
+    <keybind key="F1" name.action="Execute" command.action="jumpapp -m firefox"/>
+    <keybind key="F2" name.action="Execute" command.action="jumpapp -m doublecmd"/>
+    <keybind key="F3" name.action="Execute" command.action="jumpapp -m geany"/>
+    <keybind key="W-e" name.action="Execute" command.action="geany"/>
+    <keybind key="W-f" name.action="Execute" command.action="pcmanfm"/>
+    <keybind key="W-i" name.action="Execute" command.action="~/bin/ml-info"/>
+    <keybind key="W-r" name.action="Execute" command.action="jumpapp -m -c pyradio kitty --class pyradio -e pyradio"/>
+    <keybind key="W-w" name.action="Execute" command.action="firefox"/>
+    <keybind key="W-v" name.action="Execute" command.action="pavucontrol"/>
+    <keybind key="W-m" name.action="Execute" command.action="mb-music -s"/>
+    <keybind key="W-slash" name.action="Execute" command.action="runraisehide fsearch"/>
+    <keybind key="W-o" name.action="Execute" command.action="TODOlist"/>
+    <keybind key="W-Tab"><action name="Execute"><command>skippy-wl --show --next</command></action></keybind>
+    <keybind key="W-S-Tab"><action name="Execute"><command>skippy-wl --show --prev</command></action></keybind>
+    <keybind key="A-F2"><action name="Execute" command="gmrun"/></keybind>
+    <keybind key="A-grave"><action name="Iconify"/></keybind>
+    <keybind key="W-q"><action name="Close" /></keybind>
+    <keybind key="C-W-A-Return"><action name="Execute"><command>tabdock --find</command></action></keybind>  
+    <keybind key="W-h"><action name="Execute"><command>exo-open --launch TerminalEmulator btop</command></action></keybind>
+
+     <!-- TABDOCK -->
+    <keybind key="C-W-A-Right">
+      <action name="Execute">
+        <command>tabdock --ws-next</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-A-Left">
+      <action name="Execute">
+        <command>tabdock --ws-prev</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-A-Down">
+      <action name="Execute">
+        <command>tabdock --next</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-A-Up">
+      <action name="Execute">
+        <command>tabdock --prev</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-A-z">
+      <action name="Execute">
+        <command>tabdock --all</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-A-n">
+      <action name="Execute">
+        <command>tabdock --new-workspace</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-F1">
+      <action name="Execute">
+        <command>tabdock --wider</command>
+      </action>
+    </keybind>
+    <keybind key="C-W-F2">
+      <action name="Execute">
+        <command>tabdock --narrower</command>
+      </action>
+    </keybind>
+    <keybind key="W-grave">
+      <action name="Execute"><command>tabdock --find</command></action>
+    </keybind>
+    <keybind key="S-C-p">
+        <action name="Execute"><command>tabdock --pin</command></action>
+      </keybind>
+    <keybind key="S-C-r">
+          <action name="Execute">
+            <command>labwc --reconfigure</command>
+          </action>
+        </keybind>
+     <keybind key="S-W-r">
+          <action name="Execute">
+            <command>screenrec-toggle</command>
+          </action>
+        </keybind>
+
+
+
+    <!-- Show the Screenshot -->
+    <keybind key="C-Insert"><action name="Execute"><command>bash -c 'viewnior "$(ls -t $HOME/Pictures/screenshots/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1)"'</command></action></keybind>
+
+    <!-- Quake term -->
+    <keybind key="F12">
+     <action name="Execute" command="q-term-toggle"/>
+    </keybind>
+
+    <!-- jumpapp -->
+    <keybind key="C-KP_1"><action name="Execute" command="jumpapp -m /usr/bin/waterfox" /></keybind>
+    <keybind key="C-KP_2"><action name="Execute" command="jumpapp -m /usr/bin/geany" /></keybind>
+    <keybind key="C-KP_3"><action name="Execute" command="jumpapp -m /usr/bin/pcmanfm" /></keybind>
+    <keybind key="C-KP_4"><action name="Execute" command="jumpapp -m /usr/bin/terminator" /></keybind>
+    <keybind key="C-KP_5"><action name="Execute" command="jumpapp -m /usr/bin/flatpak run com.stremio.Stremio" /></keybind>
+    <keybind key="C-KP_6"><action name="Execute" command="jumpapp -m /usr/bin/firefox" /></keybind>
+    <keybind key="C-KP_8"><action name="Execute" command="jumpapp -m /usr/bin/firedragon" /></keybind>
+    <keybind key="C-KP_9"><action name="Execute" command="jumpapp -m /usr/bin/floorp" /></keybind>
+    
+    <!-- send focused window to monitor -->
+    <keybind key="S-C-KP_7"><action name="Execute" command="skippy-wl-send-to-philips"/></keybind>
+    <keybind key="S-C-KP_Home"><action name="Execute" command="skippy-wl-send-to-philips"/></keybind>
+    <keybind key="S-C-KP_9"><action name="Execute" command="skippy-wl-send-to-dell"/></keybind>
+    <keybind key="S-C-KP_Prior"><action name="Execute" command="skippy-wl-send-to-dell"/></keybind>
+    <keybind key="S-C-KP_8"><action name="Execute" command="skippy-wl-send-to-desk"/></keybind>
+    <keybind key="A-Space"><action name="Execute" command="skippy-wl-tiling"/></keybind>
+
+    <!-- helper binds the scripts use -->
+    <keybind key="W-A-C-7"><action name="MoveToOutput" output="HDMI-A-1"/></keybind>
+    <keybind key="W-A-C-9"><action name="MoveToOutput" output="DP-1"/></keybind>
+    <keybind key="W-A-C-0"><action name="SendToDesktop" to="right" wrap="yes"/></keybind>
+    <keybind key="W-A-C-1"><action name="SendToDesktop" to="Workspace 1" follow="no"/></keybind>
+    <keybind key="W-A-C-2"><action name="SendToDesktop" to="Workspace 2" follow="no"/></keybind>
+
+
+    <keybind key="W-A-1"><action name="SnapToEdge" direction="left"/></keybind>
+    <keybind key="W-A-2"><action name="SnapToEdge" direction="right"/></keybind>
+    <keybind key="W-A-3"><action name="SnapToEdge" direction="up-left"/></keybind>
+    <keybind key="W-A-4"><action name="SnapToEdge" direction="up-right"/></keybind>
+    <keybind key="W-A-5"><action name="SnapToEdge" direction="down-left"/></keybind>
+    <keybind key="W-A-6"><action name="SnapToEdge" direction="down-right"/></keybind>
+    <keybind key="W-A-7"><action name="Maximize"/></keybind>
+    <keybind key="W-A-8"><action name="MoveToOutput" direction="right" wrap="yes"/></keybind>
+
+    <keybind key="W-S-1"><action name="SendToDesktop" to="left" follow="yes" wrap="yes"/></keybind>
+    <keybind key="W-S-2"><action name="SendToDesktop" to="right" follow="yes" wrap="yes"/></keybind>
+    </keyboard>
+
+      
+
+    <mouse>
+      <default />
+      <!-- Show a custom menu on desktop right click -->
+      <context name="Root">
+        <mousebind button="Right" action="Press">
+          <action name="ShowMenu" menu="some-custom-menu" />
+        </mousebind>
+      </context>
+    </mouse>
+      
+  <windowRules>
+    <windowRule title="q-term">
+      <action name="SetDecorations" decorations="none"/>
+      <action name="ResizeTo" width="2545" height="700"/>
+      <action name="MoveTo" x="10" y="45"/>
+    </windowRule>
+    <windowRule identifier="pyradio">
+      <action name="ResizeTo" width="900" height="500"/>
+      <action name="MoveTo" x="150" y="50"/>
+    </windowRule>
+  </windowRules>
+
+  </labwc_config>

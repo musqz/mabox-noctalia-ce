@@ -1,0 +1,96 @@
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+
+conky.config = {
+	out_to_x = true,
+	out_to_wayland = false,
+
+	own_window = true,
+	own_window_type = 'desktop',
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	own_window_colour = c.bg,
+	own_window_class = 'Conky',
+	own_window_title = 'Mabox Sysinfo Bar Conky',
+    
+        alignment = 'top_right',
+	gap_x = 30,
+	gap_y = 192,
+	minimum_width = 180,
+
+	use_xft = true,
+	font = 'IosevkaTerm Nerd Font:size=8',
+	xftalpha = 1,
+	override_utf8_locale = true,
+    
+    
+	draw_shades = false,
+	default_shade_color = '#222222',
+	draw_outline = false,
+	default_outline_color = '#222222',
+    
+        default_color = c.primary,
+	color0 = c.second,
+	color1 = c.third,
+        color2 = c.dim,
+        color3 = c.primary,
+	cpu_avg_samples = 2,
+	
+
+	draw_borders = true,
+	stippled_borders = 0,
+	border_inner_margin = 9,
+	border_outer_margin = 1,
+	border_width = 2,
+        draw_graph_borders = true,
+
+	background = true,
+	no_buffers = true,
+	imlib_cache_size = 0,
+        short_units = true,
+	double_buffer = true,
+	update_interval = 1,
+
+	template0 = [[~/.icons/mabox-logo.svg]],
+        template1 = [[%H:%M]],
+        template2 = [[]],
+        template3 = [[]],
+};
+
+conky.text = [[
+${image ${template0} -p 2,2 -s 64x64}${voffset 0}
+${voffset +15}${goto 238}$color0${font Ubuntu:size=19}${time %e}$font
+$color${voffset -45}${goto 200}$color0${font Ubuntu:size=18}${time %b}$font${voffset -1}
+${voffset +15}${goto 155}$color${font Ubuntu:size=13} ${time %Y}$font${voffset +15}
+${font}${voffset -20}${color}$alignr$cpu%
+${voffset -2}$color${alignr}${cpubar 4,200 -l -t}${voffset -2}
+$font$color0${top name 1}${alignr}$color${top cpu 1}%
+$color0${top name 2}$alignr$color${top cpu 2}%
+$color0${top name 3}$alignr$color${top cpu 3}%
+$color0${top name 4}$alignr$color${top cpu 4}%
+$color0${top name 5}$alignr$color${top cpu 5}%
+
+${voffset -2}$color$alignr${membar 4,200 -l -t}${voffset -2}
+${goto 18}$color0${top_mem name 1}$alignr$color${top_mem mem_res 1}
+${goto 18}$color0${top_mem name 2}$alignr$color${top_mem mem_res 2}
+${goto 18}$color0${top_mem name 3}$alignr$color${top_mem mem_res 3}
+${goto 18}$color0${top_mem name 4}$alignr$color${top_mem mem_res 4}
+${goto 18}$color0${top_mem name 5}$alignr$color${top_mem mem_res 5}
+${voffset -5}${color}${goto 75}${color0}$hr
+${alignr}${color0}${color}Ram ${legacymem} - ${memmax}
+${voffset -2}$alignr$color${membar 5,85 -l -t}${voffset -2}
+${voffset -5}${color}${goto 75}${color0}$hr
+${color}${execpi 3 conkymountpoints.sh}${color}${voffset -5}
+${voffset -2}${color}${goto 75}${color0}$hr
+${voffset -55}
+#
+${voffset 45}${alignr}${color0}Uptime ${color1}${uptime_short}
+${alignr}${color0}Mabox ${color1}${execi 10000 awk -F'=' '/DISTRIB_RELEASE=/ {printf $2" "} /CODENAME/ {print $2}' /etc/lsb-release}${color0}
+${alignr}${color0}${alignr}Kernel ${color1}${kernel}
+${alignr}${color0}Wallpaper ${color1}${execi 60 basename "$(cat ~/.config/mbwallpaper/.lastdir)"}${font}${color1}
+${alignr}${color0}VPN Region ${color}${execi 60 piactl get region}${font}${color}
+${alignr}${color0}Orphan ${color0}${color1}${execpi 1800 conky-check-orphans -s}${font}${color1}
+#${alignr}${color0}Samsung Battery: ${color1}${execpi 900 ~/bin/bt_battery_conky}${font}${color1}
+#${alignr}${color0}VM: ${color1}${execpi 10 ~/bin/conky-quickemu}${color}
+${alignr}${color1}${execpi 1800 checkupdates.sh -s}${font}${color1}
+${voffset -45}
+]];
+

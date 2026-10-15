@@ -1,0 +1,100 @@
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+
+conky.config = {
+	out_to_x = true,
+	out_to_wayland = false,
+
+	own_window = true,
+	own_window_type = 'desktop',
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	own_window_colour = c.bg,
+	own_window_class = 'Conky',
+	own_window_title = 'Mabox Sysinfo Bar Conky',
+    
+        alignment = 'middle_right',
+	gap_x = 1950,
+	gap_y = 0,
+	minimum_width = 215,
+
+	use_xft = true,
+	font = 'Ubuntu:size=8',
+	xftalpha = 1,
+	override_utf8_locale = true,
+    
+    
+	draw_shades = false,
+	default_shade_color = '#222222',
+	draw_outline = false,
+	default_outline_color = '#222222',
+    
+        default_color = c.primary,
+	color0 = c.second,
+	color1 = c.third,
+        color2 = c.dim,
+        color3 = c.primary,
+	cpu_avg_samples = 2,
+	
+
+	draw_borders = true,
+	stippled_borders = 0,
+	border_inner_margin = 9,
+	border_outer_margin = 1,
+	border_width = 2,
+        draw_graph_borders = true,
+
+	background = true,
+	no_buffers = true,
+	imlib_cache_size = 0,
+        short_units = true,
+	double_buffer = true,
+	update_interval = 1,
+
+	template0 = [[~/.icons/mabox-logo-square.svg]],
+        template1 = [[%H:%M]],
+        template2 = [[]],
+        template3 = [[]],
+};
+
+conky.text = [[
+${image ${template0} -p 151,50 -s 64x64}${voffset 0}${font Ubuntu:size=10}${color1}${time %A}${alignr}${color3}${font Ubuntu:size=20}${time ${template1}}
+${voffset -30}${font Ubuntu:size=10}${color0}${time %e %B}
+${voffset -6}${color0}${hr}
+${voffset -4}${font}${color0}${color1}${execi 10000 source /etc/lsb-release; echo $DISTRIB_DESCRIPTION} ${font Ubuntu:size=8}${color0}${execi 10000 . /etc/lsb-release;echo $DISTRIB_RELEASE $DISTRIB_CODENAME}
+${font}${color0}${execi 10000 uname -r|cut -d"-" -f1} ${color1}${font Ubuntu:size=8}kernel
+${font Ubuntu:size=8}${color1}pkgs: ${color0}${execi 10000 pacman -Q | wc -l}
+#${color1}branch: ${color0}${execi 10000 pacman-mirrors -G}
+${font Ubuntu:size=8}${color0}${execi 10000 whoami}@${nodename}
+${color1}${uptime_short}
+${font}
+${color1}CPU${alignr}${color0}$cpu%  
+${color2}${cpugraph}
+${color0}${top name 1}${alignr}${color1}${top cpu 1}%  
+${color0}${top name 2}${alignr}${color1}${top cpu 2}%  
+${color0}${top name 3}${alignr}${color1}${top cpu 3}%  
+${color0}${top name 4}${alignr}${color1}${top cpu 4}%  
+#${color0}${top name 5}${alignr}${color1}${top cpu 5}%  
+#${voffset 0}${color0}${hr}
+
+${color1}RAM${alignr}$legacymem / $memmax  ${color0}$memperc%  
+${voffset 0}${color2}${memgraph}
+${color0}${top_mem name 1}${alignr}${color1}${top_mem mem_res 1}  
+${color0}${top_mem name 2}${alignr}${color1}${top_mem mem_res 2}  
+${color0}${top_mem name 3}${alignr}${color1}${top_mem mem_res 3}  
+${color0}${top_mem name 4}${alignr}${color1}${top_mem mem_res 4}  
+#${color0}${top_mem name 5}${alignr}${color1}${top_mem mem_res 5}  
+${color0}${hr}
+${color1}discs
+${color0}/ ${color1}${alignr}${fs_used /} / ${fs_size /}  ${color0}${fs_used_perc /}%
+${color2}${fs_bar /} #${alignr}${color0}${font Cantarell:size=9}swap $swapmax - $swap
+
+${if_existing /sys/class/power_supply/BAT0/model_name}${color0}${hr}
+${alignr}${color1}baterry: ${color0}${battery_percent BAT0}% 
+${alignr}${color2}${battery_bar 4,80 BAT0}
+${alignr}${color0}${battery_time BAT0}${endif}\
+${if_existing /sys/class/power_supply/BAT1/model_name}
+${alignr}${color1}baterry: ${color0}${battery_percent BAT1}% 
+${alignr}${color2}${battery_bar 4,80 BAT1}
+${alignr}${color0}${battery_time BAT1}${endif}\
+${voffset -36}
+]];
+

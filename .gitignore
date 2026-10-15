@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.o
+*.a
+*.so
+src/
+pkg/
+*.pkg.tar.zst
+*.pkg.tar.xz
+*.tar.gz
+CLAUDE.md
+claude.md
+*.bak*
