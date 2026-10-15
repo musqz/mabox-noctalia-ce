@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Toggle a region recording with wl-screenrec; file is named by date and time.
+# While recording, a tray icon is shown; clicking it stops the recording.
+set -euo pipefail
+
+if pkill -INT -x wl-screenrec; then
+    exit 0
+fi
+
+region=$(slurp) || exit 0
+out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).mp4"
+
+yad --notification --image=media-record --text="Recording - click to stop" \
+    --command="pkill -INT -x wl-screenrec" --no-middle &
+tray=$!
+trap 'kill "$tray" 2>/dev/null || true' EXIT
+
+mkdir -p "$(dirname "$out")"
+if wl-screenrec -g "$region" -f "$out"; then
+    notify-send "Screen recording" "Saved $out"
+else
+    notify-send "Screen recording" "Failed"
+fi

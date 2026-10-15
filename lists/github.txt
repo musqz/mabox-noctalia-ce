@@ -1,0 +1,5 @@
+# check-command  repo-url  (built with makepkg from packaging/PKGBUILD)
+fittsmon-wl      https://github.com/musqz/fittsmon
+fittsmon-wl-gui  https://github.com/musqz/fittsmon-wl-gui
+skippy-wl        https://github.com/musqz/skippy-wl
+tabdock          https://github.com/musqz/tabdock

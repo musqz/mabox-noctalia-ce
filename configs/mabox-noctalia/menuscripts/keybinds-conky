@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+# Print the live labwc keybinds from rc.xml as conky text. Usage: keybinds-conky apps|windows
+import os, re, sys
+import xml.etree.ElementTree as ET
+
+RC = os.path.expanduser("~/.config/mabox-noctalia/rc.xml")
+KEYS = {"W": "super", "C": "ctrl", "A": "alt", "S": "shift", "slash": "/", "grave": "~",
+        "comma": ",", "space": "space", "Return": "enter", "Prior": "pgup", "Next": "pgdn"}
+
+CMD_LABELS = [
+    (r"panel-toggle launcher", "launcher"),
+    (r"panel-toggle control-center", "control center"),
+    (r"settings-toggle", "noctalia settings"),
+    (r"panel-toggle session", "session menu"),
+    (r"panel-toggle wallpaper", "wallpaper panel"),
+    (r"wallpaper-random", "random wallpaper"),
+    (r"caffeine-toggle", "caffeine toggle"),
+    (r"workspace-switch next", "workspace next"),
+    (r"workspace-switch prev", "workspace prev"),
+    (r"volume-up", "volume up"), (r"volume-down", "volume down"), (r"volume-mute", "mute"),
+    (r"brightness-primary up", "brightness up"), (r"brightness-primary down", "brightness down"),
+    (r"grim ", "screenshot"), (r"viewnior", "last screenshot"),
+    (r"screenrec", "screen record"),
+    (r"swaylock", "lock screen"),
+    (r"TerminalEmulator btop", "btop"), (r"TerminalEmulator", "terminal"),
+    (r"^foot", "foot"), (r"q-term-toggle", "quake terminal"),
+    (r"pyradio", "pyradio"), (r"fsearch", "file search"), (r"TODOlist", "todo list"),
+    (r"pavucontrol", "volume control"), (r"mb-music", "music"), (r"ml-info", "system info"),
+    (r"skippy-wl --show --next", "window switcher"), (r"skippy-wl --show --prev", "switcher back"),
+    (r"send-to-philips", "window to philips"), (r"send-to-dell", "window to dell"),
+    (r"send-to-desk", "window to desk"), (r"skippy-wl-tiling", "tiling"),
+    (r"tabdock --find", "tabdock find"), (r"tabdock --ws-next", "tabdock ws next"),
+    (r"tabdock --ws-prev", "tabdock ws prev"), (r"tabdock --next", "tabdock next"),
+    (r"tabdock --prev", "tabdock prev"), (r"tabdock --all", "tabdock all"),
+    (r"tabdock --new-workspace", "tabdock new ws"), (r"tabdock --wider", "tabdock wider"),
+    (r"tabdock --narrower", "tabdock narrower"), (r"tabdock --pin", "tabdock pin"),
+    (r"labwc --reconfigure", "reload labwc"),
+    (r"gmrun|fuzzel", "run dialog"),
+]
+WINDOW_ACTIONS = {"Close": "close", "Iconify": "iconify", "Maximize": "maximize"}
+APP_LABELS = {"firefox": "firefox", "waterfox": "waterfox", "geany": "geany", "pcmanfm": "file manager",
+              "terminator": "terminator", "firedragon": "firedragon", "floorp": "floorp",
+              "doublecmd": "double commander", "Stremio": "stremio"}
+
+
+def pretty(key):
+    parts = key.split("-") if key != "-" else [key]
+    return "+".join(KEYS.get(p, p.lower()) for p in parts)
+
+
+def label_for(kb):
+    acts = list(kb.iter("action"))
+    if kb.get("name.action"):
+        acts.append(ET.Element("action", {"name": kb.get("name.action"), "command": kb.get("command.action", "")}))
+    for a in acts:
+        name, cmd = a.get("name"), a.get("command")
+        if cmd is None:
+            e = a.find("command")
+            cmd = e.text if e is not None else ""
+        if name == "Execute":
+            for pat, lab in CMD_LABELS:
+                if re.search(pat, cmd):
+                    return lab, "windows" if re.search(r"tabdock|skippy|send-to|tiling", cmd) else "apps"
+            m = re.search(r"jumpapp -m (?:-c \S+ )?(\S+)", cmd)
+            tail = cmd if "flatpak" in cmd else (m.group(1) if m else cmd.split()[0])
+            for k, v in APP_LABELS.items():
+                if k in tail:
+                    return v, "apps"
+            return os.path.basename(cmd.split()[0]), "apps"
+        if name in WINDOW_ACTIONS:
+            return WINDOW_ACTIONS[name], "windows"
+        if name == "SnapToEdge":
+            return "snap " + a.get("direction"), "windows"
+        if name == "MoveToOutput":
+            return "to monitor " + (a.get("output") or a.get("direction")), "windows"
+        if name == "SendToDesktop":
+            return "to desktop " + a.get("to", "").replace("Workspace ", ""), "windows"
+        if name == "ToggleMaximize":
+            return "maximize", "windows"
+    return None, None
+
+
+want = sys.argv[1] if len(sys.argv) > 1 else "apps"
+seen = {}
+for kb in ET.parse(RC).getroot().iter("keybind"):
+    if kb.get("key").startswith("XF86"):
+        continue
+    lab, grp = label_for(kb)
+    if lab and grp == want:
+        k = pretty(kb.get("key"))
+        seen[lab] = seen[lab] + ", " + k if lab in seen and k not in seen[lab] else seen.get(lab, k)
+
+print("${color1}%s${alignr}${color0}super = windows key${voffset -8}" % want.upper())
+print("${color0}${hr 1}${voffset -4}")
+for lab, key in seen.items():
+    print("${color0}%s ${alignr}${color1}%s" % (lab, key))

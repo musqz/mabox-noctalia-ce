@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Pick which labwc conkies run; saves the choice to conky/enabled.list.
+dir="$HOME/.config/mabox-noctalia/conky"
+list="$dir/enabled.list"
+[[ -f $list ]] || printf "%s\n" ce-sysinfo_mbcolor POLSLIDE_mbcolor_slideshow > "$list"
+
+rows=()
+for f in "$dir"/*.conkyrc; do
+    n=$(basename "$f" .conkyrc)
+    if grep -qx "$n" "$list"; then on=TRUE; else on=FALSE; fi
+    rows+=("$on" "$n")
+done
+
+sel=$(yad --list --checklist --title="Conky manager" --width=380 --height=560 \
+    --column="Run" --column="Conky" --print-column=2 --separator=$'\n' \
+    --button="Cancel:1" --button="Apply:0" "${rows[@]}") || exit 0
+
+printf '%s\n' "$sel" | sed '/^$/d' > "$list"
+exec "$HOME/.config/mabox-noctalia/menuscripts/conky-start"
