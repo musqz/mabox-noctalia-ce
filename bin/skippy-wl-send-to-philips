@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Pick windows with skippy-wl, then send each to the philips monitor.
+# Focuses a window, then fires the helper keybind W-A-C-7 (MoveToOutput in rc.xml) with wtype.
+set -euo pipefail
+
+ids=$(skippy-wl --show --multi-select) || exit 0
+
+while IFS= read -r id; do
+    skippy-wl --activate "$id" || continue
+    sleep 0.15
+    wtype -M logo -M alt -M ctrl -k 7 -m ctrl -m alt -m logo
+    sleep 0.15
+done <<< "$ids"

@@ -1,0 +1,26 @@
+[hooks]
+colors_changed = "labwc -r"
+
+[theme.templates.user.pyradio]
+input_path = "~/.config/noctalia/PyRadio/mbcolors.pyradio-theme"
+output_path = "~/.config/pyradio/themes/mbcolors.pyradio-theme"
+
+[theme.templates.user.pywalfox]
+input_path = "~/.config/noctalia/Pywalfox/colors.json"
+output_path = "~/.cache/wal/colors.json"
+post_hook = "pywalfox update"
+
+[theme.templates.user.conky]
+input_path = "~/.config/noctalia/Conky/colors.lua"
+output_path = "~/.config/mabox-noctalia/conky/colors.lua"
+post_hook = "sh -c '~/.config/mabox-noctalia/menuscripts/conky-start'"
+
+[theme.templates.user.geany]
+input_path = "~/.config/noctalia/Geany/noctalia.conf"
+output_path = "~/.config/geany/colorschemes/noctalia.conf"
+
+[idle.behavior.screen_off]
+  action = "custom"
+  timeout = 450
+  command = "wlopm --off '*'"
+  resume_command = "wlopm --on '*'"

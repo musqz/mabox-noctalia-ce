@@ -1,0 +1,25 @@
+# general
+border.width: 0
+
+#
+# The global padding.{width,height} of openbox are not supported because
+# the default labwc button geometry deviates from that of openbox
+#
+window.titlebar.padding.width: 8
+window.titlebar.padding.height: 8
+
+
+# window titlebar background (elevated surface, not the accent hue)
+window.active.title.bg: Gradient Vertical
+window.inactive.title.bg: Gradient Vertical
+
+window.label.text.justify: right
+
+# window buttons
+
+window.button.hover.bg.color: #80808020
+window.button.hover.bg.corner-radius: 12
+
+# window button width and spacing
+window.button.width: 24
+window.button.height: 24
