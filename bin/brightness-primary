@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# usage: brightness-primary up|down [step]; output via BRIGHTNESS_OUTPUT (default HDMI-A-1)
+output=${BRIGHTNESS_OUTPUT:-HDMI-A-1}
+step=${2:-10}
+ddc=$(compgen -G "/sys/class/drm/card*-$output/ddc" | head -1 || true)
+[ -n "$ddc" ] || { echo "no ddc link for $output" >&2; exit 1; }
+bus=$(readlink -f "$ddc" | sed 's/.*i2c-//')
+case "$1" in
+    up)   op=+ ;;
+    down) op=- ;;
+    *)    echo "usage: ${0##*/} up|down [step]" >&2; exit 1 ;;
+esac
+exec ddcutil --bus "$bus" --noverify --skip-ddc-checks --sleep-multiplier 0.2 setvcp 10 "$op" "$step"

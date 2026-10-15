@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+T=q-term
+
+if ! wlrctl toplevel find title:"$T"; then
+    terminator -T "$T" &
+elif wlrctl toplevel find title:"$T" state:focused; then
+    wlrctl toplevel minimize title:"$T"
+else
+    wlrctl toplevel focus title:"$T"
+fi

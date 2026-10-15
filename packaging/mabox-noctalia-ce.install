@@ -1,0 +1,4 @@
+post_install() {
+  echo "Existing users: cp -rn /etc/skel/.config/{mabox-noctalia,noctalia} ~/.config/"
+}
+

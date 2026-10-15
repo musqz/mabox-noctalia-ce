@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+CONFIG_DIR="$HOME/.config/mbwallpaper"
+CONF_FILE="$CONFIG_DIR/mbwallpaper.conf"
+
+wallpaper_dir=$(sed -n 's/^wallpaper_dir=//p' "$CONF_FILE")
+
+# Set the wallpaper directory : for testing
+# wallpaper_dir="/path/to/images"
+
+temp_dir="/tmp/polaroid_conky"
+
+# Create a temporary directory to store the processed polaroid images
+mkdir -p "${temp_dir}"
+rm -f "${temp_dir}"/*
+
+# Number of images to display
+num_images=12
+
+# Get a random list of images from the wallpaper directory and shuffle to get random images
+mapfile -t WALLDIR < <(find "$wallpaper_dir" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.avif" \) | shuf -n "$num_images")
+
+# Initialize an array to hold the paths of the processed images
+pol=()
+
+# Process each selected image with ImageMagick to add the polaroid effect
+for image in "${WALLDIR[@]}"; do
+    NAME=$(basename "${image}")
+    output_file="${temp_dir}/${NAME}"
+
+    # Create a resized image for polaroid processing
+    resized_image="${temp_dir}/resized_${NAME}"
+
+    # Resize the image while maintaining aspect ratio
+    if magick "${image}" -resize 333x245^ -gravity center -extent 333x245 "$resized_image"; then
+        # Create the polaroid with white border
+        if magick "$resized_image" -bordercolor Lavender -background none +polaroid PNG32:"$output_file"; then
+            # Add the processed polaroid image to the array
+            pol+=("$output_file")
+        else
+            echo "Error processing polaroid for $image" >&2
+        fi
+    else
+        echo "Error resizing image $image" >&2
+    fi
+
+    # Clean up the resized image
+    rm -f "$resized_image"
+done
+
+# Function to shuffle an array
+shuffle_array() {
+    local i tmp size max rand
+    size=${#positions[@]}
+    max=$(( 32768 / size * size ))  # ensures fair shuffling
+
+    for ((i = size - 1; i > 0; i--)); do
+        while (( (rand = RANDOM) >= max )); do :; done
+        rand=$(( rand % (i + 1) ))
+        tmp=${positions[i]}
+        positions[i]=${positions[rand]}
+        positions[rand]=$tmp
+    done
+}
+
+# Declare the positions
+positions=(
+    "340,140"
+    "500,180"
+    "340,290"
+    "400,360"
+    "0,140"
+    "83,160"
+    "166,120"
+    "250,0"
+    "30,230"
+    "83,160"
+    "0,0"
+    "150,350"
+)
+
+# Shuffle the positions
+shuffle_array
+
+sizes=(
+    "300x160" 
+    "166x120" 
+    "166x120" 
+    "166x120" 
+    "300x160" 
+    "170x120" 
+    "166x120" 
+    "170x120" 
+    "300x160" 
+    "166x120" 
+    "170x120" 
+    "166x120" 
+)
+
+
+for index in "${!pol[@]}"; do
+    # Only output valid polaroid images
+    if [[ -f "${pol[index]}" ]]; then
+        # Generate a random angle for rotation
+        angle=$(( RANDOM % 10 - 5 ))  # Random angle between -5 and 5 degrees
+        # Print the image with the angle and size
+        printf '${image %s -p %s -s %s -a %s}\n' "${pol[index]}" "${positions[index]}" "${sizes[index]}" "$angle"
+    fi
+done

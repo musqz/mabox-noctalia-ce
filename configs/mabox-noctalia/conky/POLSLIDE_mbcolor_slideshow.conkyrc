@@ -1,0 +1,67 @@
+conky.config = {
+	out_to_x = true,
+	out_to_wayland = false,
+-- WINDOW
+	own_window = true,
+	own_window_type = 'desktop',
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	own_window_colour = '#00000000',
+	own_window_class = 'Conky-nobg-polaroid',
+	own_window_title = 'Mus Polaroid Slideshow',
+    
+    alignment = 'top_left',
+	gap_x = -2530,
+	gap_y = 200,
+	minimum_width = 790,
+    minimum_height = 600,
+
+-- FONTS
+	use_xft = true,
+	xftalpha = 1,
+	override_utf8_locale = true,
+
+-- COLORS
+	draw_shades = false,
+	default_shade_color = '#000000',
+	draw_outline = false,
+	default_outline_color = '#222222',
+
+	default_color = '#ecedef',
+	
+
+-- BORDERS
+	draw_borders = false,
+-- Stippled borders?
+	stippled_borders = 1,
+-- border margins
+	border_inner_margin = 0,
+	border_outer_margin = 0,
+-- border width
+	border_width = 0,
+
+-- MISC
+-- Boolean value, if true, Conky will be forked to background when started.
+	background = true,
+
+-- Adds spaces around certain objects to stop them from moving other things
+-- around, this only helps if you are using a mono font
+-- Options: right, left or none
+	use_spacer = 'none',
+
+-- Subtract (file system) buffers from used memory?
+	no_buffers = true,
+
+-- Imlib2 image cache size, in bytes. Default 4MiB Increase this value if you use
+-- $image lots. Set to 0 to disable the image cache.
+	imlib_cache_size = 0,
+
+-- Use the Xdbe extension? (eliminates flicker)
+-- It is highly recommended to use own window with this one
+-- so double buffer won't be so big.
+	double_buffer = true,
+	update_interval = 1,
+};
+
+conky.text = [[
+${execpi 60 ~/.config/mabox-noctalia/menuscripts/polaroid_slideshow_12pix}
+]];
