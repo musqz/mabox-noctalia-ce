@@ -38,64 +38,86 @@
 
 <menu id="root-menu">
   <separator label="Favorites" />
-  <item label="Terminal">
+  <item label="Terminal" icon="utilities-terminal">
     <action name="Execute" command="exo-open --launch TerminalEmulator" />
   </item>
-  <item label="WWW Browser">
+  <item label="WWW Browser" icon="web-browser">
     <action name="Execute" command="exo-open --launch WebBrowser" />
   </item>
-  <item label="File Manager">
+  <item label="File Manager" icon="system-file-manager">
     <action name="Execute" command="exo-open --launch FileManager" />
   </item>
-  <item label="Add/Remove software">
+  <item label="Add/Remove software" icon="system-software-install">
     <action name="Execute" command="pamac-manager" />
   </item>
-  <item label="Launcher">
+  <item label="Launcher" icon="applications-all">
     <action name="Execute" command="noctalia msg panel-toggle launcher" />
   </item>
-  <menu id="settings-menu" label="Mabox Config">
-    <item label="Mabox Control Center">
+  <menu id="settings-menu" label="Mabox Config" icon="preferences-system">
+    <item label="Mabox Control Center" icon="applications-system">
       <action name="Execute" command="mcc" />
     </item>
-    <item label="Noctalia settings">
+    <item label="Noctalia settings" icon="preferences-system">
       <action name="Execute" command="noctalia msg settings-toggle" />
     </item>
-    <item label="Control center">
+    <item label="Control center" icon="preferences-desktop-display">
       <action name="Execute" command="noctalia msg panel-toggle control-center" />
     </item>
-    <item label="Wallpaper">
+    <item label="Wallpaper" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle wallpaper" />
     </item>
-    <item label="Conky manager">
+    <item label="Conky manager" icon="conky">
       <action name="Execute" command="~/.config/mabox-noctalia-ce/menuscripts/conky-manager" />
     </item>
-    <item label="Preferred applications">
+    <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>
     <separator />
-    <item label="Edit rc.xml">
+    <item label="Edit rc.xml" icon="text-editor">
       <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/rc.xml" />
     </item>
-    <item label="Edit menu.xml">
+    <item label="Edit menu.xml" icon="text-editor">
       <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/menu.xml" />
     </item>
-    <item label="Reconfigure">
+    <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />
     </item>
   </menu>
-  <menu id="apps-menu" label="Applications" execute="labwc-menu-generator -p" />
-  <menu id="client-list-combined-menu" label="Running..." />
+  <menu id="apps-menu" label="Applications" icon="applications-other" execute="labwc-menu-generator -p -I" />
+  <menu id="client-list-combined-menu" label="Running..." icon="window-duplicate" />
   <separator />
-  <item label="Screenshot">
-    <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
-  </item>
-  <item label="Lock screen">
+  <menu id="screenshot-menu" label="Screenshot" icon="accessories-screenshot">
+    <item label="All screens">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+    <item label="Primary screen">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+    <separator />
+    <item label="Primary in 3s">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; sleep 3 &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+    <item label="Primary in 5s">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; sleep 5 &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+    <item label="Primary in 10s">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; sleep 10 &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+    <separator />
+    <item label="Select area">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim -g &quot;$(slurp)&quot; ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+    <item label="Select area in 5s">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; slurp &gt; $XDG_RUNTIME_DIR/area &amp;&amp; sleep 5 &amp;&amp; grim -g &quot;$(cat $XDG_RUNTIME_DIR/area)&quot; ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    </item>
+  </menu>
+  <item label="Lock screen" icon="system-lock-screen">
     <action name="Execute" command="swaylock -f" />
   </item>
-  <item label="Session menu">
+  <item label="Session menu" icon="system-shutdown">
     <action name="Execute" command="noctalia msg panel-toggle session" />
   </item>
-  <item label="Exit">
+  <item label="Exit" icon="application-exit">
     <action name="Exit" />
   </item>
 </menu>

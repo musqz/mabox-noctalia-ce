@@ -34,6 +34,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = wl-screenrec: screen recording keybind (AUR)
 	optdepends = swaylock-effects: lock screen (AUR)
 	optdepends = labwc-menu-generator-git: Applications menu (AUR)
+	optdepends = beautysolar-icon-theme: default icon theme
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = pywalfox: Firefox theme template
