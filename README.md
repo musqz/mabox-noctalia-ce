@@ -10,7 +10,7 @@ Work in progress. This repo is for inspiration and development: take what you li
 
 Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
-<img width="2560" height="1440" alt="Image" src="https://github.com/user-attachments/assets/8f4e52f4-16f8-47b7-a161-cad705316ce2" />
+<img alt="Noctalia CE desktop" src="docs/desktop.png" />
 
 <table>
   <tr>
