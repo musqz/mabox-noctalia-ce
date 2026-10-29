@@ -19,6 +19,10 @@ post_hook = "sh -c '~/.config/mabox-noctalia-ce/menuscripts/conky-start'"
 input_path = "~/.config/noctalia/Geany/noctalia.conf"
 output_path = "~/.config/geany/colorschemes/noctalia.conf"
 
+[theme.templates.user.labwc]
+input_path = "~/.config/noctalia/templates/labwc.conf"
+output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
+
 [idle.behavior.screen_off]
   action = "custom"
   timeout = 450
