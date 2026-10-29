@@ -1,3 +1,4 @@
 jumpapp-ng
 wl-screenrec
 swaylock-effects
+lswt
