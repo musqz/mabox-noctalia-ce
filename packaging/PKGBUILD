@@ -20,23 +20,24 @@ optdepends=('kitty: terminal keybind'
             'tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)'
             'pyradio: PyRadio theme template'
             'pywalfox: Firefox theme template')
-provides=('mabox-noctalia-files')
-conflicts=('mabox-noctalia-files')
 install=mabox-noctalia-ce.install
 source=()
 
 package() {
   local root="$startdir/.."
 
-  install -Dm755 "$root/lib/mabox-noctalia" "$pkgdir/usr/bin/mabox-noctalia"
+  install -Dm755 "$root/lib/mabox-noctalia-ce" "$pkgdir/usr/bin/mabox-noctalia-ce"
   install -Dm755 "$root"/bin/* -t "$pkgdir/usr/bin"
-  install -Dm644 "$root/configs/noctalia.desktop" \
-    "$pkgdir/usr/share/wayland-sessions/noctalia.desktop"
+  install -Dm644 "$root/configs/noctalia-ce.desktop" \
+    "$pkgdir/usr/share/wayland-sessions/noctalia-ce.desktop"
 
   local skel="$pkgdir/etc/skel/.config"
   install -dm755 "$skel"
-  cp -r "$root/configs/mabox-noctalia" "$root/configs/noctalia" "$skel/"
-  chmod 755 "$skel"/mabox-noctalia/menuscripts/*
-  chmod 755 "$skel"/mabox-noctalia/autostart
+  cp -r "$root/configs/mabox-noctalia-ce" "$skel/"
+  chmod 755 "$skel"/mabox-noctalia-ce/menuscripts/*
+  chmod 755 "$skel"/mabox-noctalia-ce/autostart
+
+  install -dm755 "$pkgdir/usr/share/mabox-noctalia-ce"
+  cp -r "$root/configs/noctalia" "$pkgdir/usr/share/mabox-noctalia-ce/"
   find "$skel" -name "*.png" -exec chmod 644 {} +
 }

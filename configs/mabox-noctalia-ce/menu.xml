@@ -73,7 +73,7 @@
   -->
   <separator label="custom menu" />
   <item label="Conky manager">
-    <action name="Execute" command="~/.config/mabox-noctalia/menuscripts/conky-manager" />
+    <action name="Execute" command="~/.config/mabox-noctalia-ce/menuscripts/conky-manager" />
   </item>
   <item label="Reconfigure">
     <action name="Reconfigure" />

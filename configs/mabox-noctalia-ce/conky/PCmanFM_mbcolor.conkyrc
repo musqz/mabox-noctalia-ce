@@ -1,4 +1,4 @@
-local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
 
 conky.config = {
 	out_to_x = false,
@@ -8,11 +8,11 @@ conky.config = {
 	own_window_type = 'desktop',
 	own_window_colour = c.bg,
 	own_window_class = 'Conky',
-	own_window_title = 'Mabox Tools Conky',
+	own_window_title = 'PCManFM Help Conky',
     
-    alignment = 'top_middle',
-	gap_x = 0,
-	gap_y = 70,
+    alignment = 'top_left',
+	gap_x = 30,
+	gap_y = 60,
 	minimum_width = 200,
 
 -- FONTS
@@ -30,6 +30,7 @@ conky.config = {
 	default_color = c.primary,
 	color0 = c.second,
     color1 = c.third,
+
 
 -- BORDERS
 	draw_borders = true,
@@ -61,11 +62,33 @@ conky.config = {
 -- It is highly recommended to use own window with this one
 -- so double buffer won't be so big.
 	double_buffer = true,
-	update_interval = 2,
+	update_interval = 1,
 };
 
 conky.text = [[
-${execpi 1800 quote.sh}
+${color1}PCmanFM - file manager ${alignr}${color0}super+f
+${color1}VIEW ${color0}${hr 1}${voffset -2}
+${color0}Icon View  ${alignr}${color1}ctrl+1
+${color0}Compact View  ${alignr}${color1}ctrl+2
+${color0}Thumbnail View  ${alignr}${color1}ctrl+3
+${color0}Detailed List View  ${alignr}${color1}ctrl+4
+${color0}Show Hidden ${alignr}${color1}ctrl+H
+${color1}GO  ${color0}${hr 1}
+${voffset -2}${color0}Home Dir${alignr}${color1}alt+Home
+${color0}Parent Dir  ${alignr}${color1}alt+Up
+${color0}Previous Dir  ${alignr}${color1}alt+Left
+${color0}Next Dir  ${alignr}${color1}alt+Right
+${color0}Go to Location  ${alignr}${color1}ctrl+L
+${color0}SSH/FTP connect...  ${alignr}${color1}alt+G  C
+${color1}WINDOW  ${color0}${hr 1}
+${voffset -2}${color0}Refresh ${alignr}${color1}F5
+${color0}Dual Pane Mode ${alignr}${color1}F3
+${color0}Status Bar${alignr}${color1}ctrl+B
+${color0}Side Pane ${alignr}${color1}F9
+${color0}---> Places${alignr}${color1}ctrl+6
+${color0}---> Directory Tree ${alignr}${color1}ctrl+7
+${color1}SIZE ${color0}${hr 1}${voffset -2}
+${color0}Zoom In${alignr}${alignr}${color1}ctrl++
+${color0}Zoon Out ${alignr}${color1}ctrl+-
+${color0}Normal Size ${alignr}${color1}ctrl+0
 ]];
-
-

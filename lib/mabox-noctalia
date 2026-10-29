@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-cfg="$HOME/.config/mabox-noctalia"
-if [[ ! -d $cfg ]]; then
-    mkdir -p "$HOME/.config"
-    cp -rn /etc/skel/.config/mabox-noctalia /etc/skel/.config/noctalia "$HOME/.config/"
-fi
-exec labwc -C "$cfg"

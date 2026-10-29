@@ -1,23 +1,22 @@
-local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
-
 conky.config = {
-	out_to_x = false,
-	out_to_wayland = true,
+	out_to_x = true,
+	out_to_wayland = false,
 -- WINDOW
 	own_window = true,
 	own_window_type = 'desktop',
-	own_window_colour = c.bg,
-	own_window_class = 'Conky',
-	own_window_title = 'Mabox Tools Conky',
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	own_window_colour = '#00000000',
+	own_window_class = 'Conky-nobg-polaroid',
+	own_window_title = 'Mus Polaroid Slideshow',
     
-    alignment = 'bottom_left',
-	gap_x = 385,
-	gap_y = 60,
-	minimum_width = 300,
+    alignment = 'top_left',
+	gap_x = -2530,
+	gap_y = 200,
+	minimum_width = 790,
+    minimum_height = 600,
 
 -- FONTS
 	use_xft = true,
-	font = 'Ubuntu:size=8',
 	xftalpha = 1,
 	override_utf8_locale = true,
 
@@ -27,19 +26,18 @@ conky.config = {
 	draw_outline = false,
 	default_outline_color = '#222222',
 
-	default_color = c.primary,
-	color0 = c.second,
-    color1 = c.third,
+	default_color = '#ecedef',
+	
 
 -- BORDERS
-	draw_borders = true,
+	draw_borders = false,
 -- Stippled borders?
-	stippled_borders = 0,
+	stippled_borders = 1,
 -- border margins
-	border_inner_margin = 15,
-	border_outer_margin = 1,
+	border_inner_margin = 0,
+	border_outer_margin = 0,
 -- border width
-	border_width = 2,
+	border_width = 0,
 
 -- MISC
 -- Boolean value, if true, Conky will be forked to background when started.
@@ -61,11 +59,9 @@ conky.config = {
 -- It is highly recommended to use own window with this one
 -- so double buffer won't be so big.
 	double_buffer = true,
-	update_interval = 2,
+	update_interval = 1,
 };
 
 conky.text = [[
-${execpi 60 ~/.config/mabox-noctalia/menuscripts/keybinds-conky windows}
+${execpi 60 ~/.config/mabox-noctalia-ce/menuscripts/polaroid_slideshow_12pix}
 ]];
-
-

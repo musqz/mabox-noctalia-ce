@@ -1,4 +1,4 @@
-local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
 
 conky.config = {
 	out_to_x = false,
@@ -8,14 +8,13 @@ conky.config = {
 	own_window_type = 'desktop',
 	own_window_colour = c.bg,
 	own_window_class = 'Conky',
-	own_window_title = 'Mabox Network Conky',
+	own_window_title = 'Mabox Terminator Conky',
     
     alignment = 'bottom_right',
-	gap_x = 30,
+	gap_x = 300,
 	gap_y = 60,
-    minimum_height = 64,
-    minimum_width = 64,
-    	
+	minimum_width = 200,
+
 -- FONTS
 	use_xft = true,
 	font = 'Ubuntu:size=8',
@@ -31,7 +30,6 @@ conky.config = {
 	default_color = c.primary,
 	color0 = c.second,
     color1 = c.third,
-    color2 = c.dim,
 
 -- BORDERS
 	draw_borders = true,
@@ -42,14 +40,10 @@ conky.config = {
 	border_outer_margin = 1,
 -- border width
 	border_width = 2,
--- graph borders
-    draw_graph_borders = true,
 
 -- MISC
 -- Boolean value, if true, Conky will be forked to background when started.
 	background = true,
-    short_units = true,
-    
 
 -- Adds spaces around certain objects to stop them from moving other things
 -- around, this only helps if you are using a mono font
@@ -61,7 +55,7 @@ conky.config = {
 
 -- Imlib2 image cache size, in bytes. Default 4MiB Increase this value if you use
 -- $image lots. Set to 0 to disable the image cache.
---imlib_cache_size = 0,
+	imlib_cache_size = 0,
 
 -- Use the Xdbe extension? (eliminates flicker)
 -- It is highly recommended to use own window with this one
@@ -71,12 +65,23 @@ conky.config = {
 };
 
 conky.text = [[
-${color0}NETWORK
-${color0}Device ${alignr}${color1}enp0s3
-${color0}IP ${alignr}${color1}${addr enp0s3}
-${color0}Download ${color1}${downspeed enp0s3} ${alignr}${color1}${upspeed enp0s3}${color0} Upload
-${color2}${downspeedgraph enp0s3 30,100 -t} ${alignr} ${upspeedgraph enp0s3 30,100 -t}
-${color0}Total Down ${color1}${totaldown enp0s3} ${alignr}${color1}${totalup enp0s3}${color0} Total Up
-${color0}${hr}${color1}
-${execi 30 netstat -ept | grep ESTAB | awk '{print $9}' | cut -d/ -f2 | sort | uniq | sort -nr}
+${color1}TILING TERMINAL WORKFLOW
+${color1}RUN  ${color0}${hr 1}
+${voffset -2}${color0}Terminal  ${alignr}${color1}super+t
+${color0}Quick terminal (show/hide) ${alignr}${color1}ctrl+~,F12
+${color1}SPLIT  ${color0}${hr 1}
+${voffset -2}${color0}horizontally  ${alignr}${color1}ctrl+shift+o
+${color0}vertically  ${alignr}${color1}ctrl+shift+e
+${color1}USEFULL ACTIONS  ${color0}${hr 1}
+${voffset -2}${color0}change focus${alignr}${color1}alt+arrows
+${color0}resize active ${alignr}${color1}ctrl+shift+arrows
+${color0}zoom active terminal  ${alignr}${color1}ctrl+shift+x
+${color0}fullscreen ${alignr}${color1}super+enter,F11
+${color0}close terminal ${alignr}${color1}ctrl+shift+w
+${color1}FONT SIZE  ${color0}${hr 1}${voffset -2}
+${color0}increase ${alignr}${alignr}${color1}ctrl++
+${color0}decrease ${alignr}${color1}ctrl+-
+${color0}reset ${alignr}${color1}ctrl+0
 ]];
+
+

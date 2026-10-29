@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install the packages mabox-noctalia-ce needs; already installed ones are skipped.
+# Install the packages mabox-noctalia-ce needs, then build and install mabox-noctalia-ce itself.
+# Already installed packages are skipped.
 # --uninstall removes only the packages this script installed.
 set -euo pipefail
 
@@ -20,6 +21,11 @@ esac
 
 mkdir -p "$(dirname "$state")"
 record() { printf '%s\n' "$@" >> "$state"; }
+
+ver=$(pacman -Q noctalia 2>/dev/null | cut -d' ' -f2 || true)
+if [[ -z $ver ]] || (( $(vercmp "$ver" 5.4) < 0 )); then
+    pacman -Sl maboxlinux >/dev/null 2>&1 || { echo "noctalia 5.4+ is required: enable repo [maboxlinux] in /etc/pacman.conf." >&2; exit 1; }
+fi
 
 mapfile -t repo < <(read_list "$dir/lists/pacman.txt")
 mapfile -t aur < <(read_list "$dir/lists/aur.txt")
@@ -61,4 +67,9 @@ done 3< <(read_list "$dir/lists/github.txt")
 for c in labwc noctalia; do
     command -v "$c" >/dev/null 2>&1 || { echo "$c is not in PATH" >&2; exit 1; }
 done
-echo "Dependencies OK."
+if ! pacman -Qq mabox-noctalia-ce >/dev/null 2>&1; then
+    echo "Building mabox-noctalia-ce"
+    (cd "$dir/packaging" && makepkg -si)
+    record mabox-noctalia-ce
+fi
+echo "Done. Pick \"Noctalia CE\" at the login screen."

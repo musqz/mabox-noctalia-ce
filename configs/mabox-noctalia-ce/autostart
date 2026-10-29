@@ -8,13 +8,14 @@
 #
 systemctl --user import-environment WAYLAND_DISPLAY
 systemctl --user --no-block start labwc-session.target
-systemctl --user --no-block start skippy-wl.service
+command -v skippy-wl >/dev/null && systemctl --user --no-block start skippy-wl.service
 
-kanshi  &
+command -v kanshi >/dev/null && kanshi &
 
-(sleep 3 && [ "$(cat /sys/class/leds/*numlock/brightness | head -1)" = "0" ] && wtype -k Num_Lock) &
+(sleep 3 && [ "$(cat /sys/class/leds/*numlock/brightness 2>/dev/null | head -1)" = "0" ] && wtype -k Num_Lock) &
 
-(sleep 7 && fittsmon-wl --monitor HDMI-A-1 DP-1) &
+# fittsmon-wl: set your monitors, e.g. fittsmon-wl --monitor HDMI-A-1 DP-1
+#(sleep 7 && fittsmon-wl --monitor HDMI-A-1 DP-1) &
 
 #(sleep 3 && /opt/enpass/Enpass showassistant) &
 
@@ -24,9 +25,9 @@ kanshi  &
 
 #(sleep 8 && /opt/piavpn/bin/pia-client) &
 
-noctalia & 
+noctalia &
 
-(sleep 15 && ~/.config/mabox-noctalia/menuscripts/conky-start) &
+(sleep 15 && ~/.config/mabox-noctalia-ce/menuscripts/conky-start) &
 
 # Set background color.
 #swaybg -c '#113344' >/dev/null 2>&1 &

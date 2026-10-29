@@ -1,4 +1,4 @@
-local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
 
 conky.config = {
 	out_to_x = true,
