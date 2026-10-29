@@ -2,7 +2,7 @@
 
 musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noctalia-dev/noctalia-shell) session on labwc, selectable as **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and package choices.
 
-Work in progress. This repo is for inspiration and development: take what you like, or install it as is.
+**Work in progress.** This repo is for inspiration and development: take what you like, or install it as is.
 
 - **Separate:** own session entry and own config in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
 - **Install:** `./install.sh` installs the needed packages and builds the `mabox-noctalia-ce` package. Packages you already have are skipped.
