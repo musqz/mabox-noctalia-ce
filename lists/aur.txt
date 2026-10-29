@@ -2,3 +2,4 @@ jumpapp-ng
 wl-screenrec
 swaylock-effects
 lswt
+labwc-menu-generator-git

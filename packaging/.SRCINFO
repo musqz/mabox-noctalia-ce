@@ -33,6 +33,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = jumpapp-ng: app launch/focus keybinds (AUR)
 	optdepends = wl-screenrec: screen recording keybind (AUR)
 	optdepends = swaylock-effects: lock screen (AUR)
+	optdepends = labwc-menu-generator-git: Applications menu (AUR)
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = pywalfox: Firefox theme template
