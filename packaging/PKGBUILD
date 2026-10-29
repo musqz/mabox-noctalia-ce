@@ -17,6 +17,7 @@ optdepends=('kitty: terminal keybind'
             'jumpapp-ng: app launch/focus keybinds (AUR)'
             'wl-screenrec: screen recording keybind (AUR)'
             'swaylock-effects: lock screen (AUR)'
+            'labwc-menu-generator-git: Applications menu (AUR)'
             'tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)'
             'pyradio: PyRadio theme template'
             'pywalfox: Firefox theme template')
