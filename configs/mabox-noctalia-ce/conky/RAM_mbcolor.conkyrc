@@ -1,4 +1,4 @@
-local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
 
 conky.config = {
 	out_to_x = false,
@@ -8,41 +8,48 @@ conky.config = {
 	own_window_type = 'desktop',
 	own_window_colour = c.bg,
 	own_window_class = 'Conky',
-	own_window_title = 'Conky',
+	own_window_title = 'Mabox RAM Conky',
     
-    alignment = 'middle_middle',
-	gap_x = 0,
-	gap_y = 0,
-	minimum_width = 200,
-
+    alignment = 'bottom_left',
+	gap_x = 745,
+	gap_y = 60,
+    minimum_height = 64,
+    minimum_width = 164,
+    	
 -- FONTS
 	use_xft = true,
-	font = 'Droid Sans:size=11',
+	font = 'Ubuntu:size=8',
 	xftalpha = 1,
 	override_utf8_locale = true,
 
 -- COLORS
-	draw_shades = false,
+	draw_shades = true,
 	default_shade_color = '#000000',
 	draw_outline = false,
 	default_outline_color = '#222222',
 
 	default_color = c.primary,
 	color0 = c.second,
-	
+    color1 = c.third,
+    color2 = c.dim,
+
 -- BORDERS
 	draw_borders = true,
 -- Stippled borders?
 	stippled_borders = 0,
 -- border margins
-	border_inner_margin = 15,
+	border_inner_margin = 9,
 	border_outer_margin = 1,
 -- border width
 	border_width = 2,
+-- graph borders
+    draw_graph_borders = true,
+
 
 -- MISC
 -- Boolean value, if true, Conky will be forked to background when started.
 	background = true,
+    short_units = true,
 
 -- Adds spaces around certain objects to stop them from moving other things
 -- around, this only helps if you are using a mono font
@@ -54,20 +61,23 @@ conky.config = {
 
 -- Imlib2 image cache size, in bytes. Default 4MiB Increase this value if you use
 -- $image lots. Set to 0 to disable the image cache.
-	imlib_cache_size = 0,
+--imlib_cache_size = 0,
 
 -- Use the Xdbe extension? (eliminates flicker)
 -- It is highly recommended to use own window with this one
 -- so double buffer won't be so big.
 	double_buffer = true,
-	update_interval = 1,
+	update_interval = 2,
 };
 
 conky.text = [[
-#${execpi 30 todo.sh -d ~/.config/todo/config-conky ls}
-${execpi 5 mabox-todo.sh -c}
-#${image ~/.config/mabox-noctalia/conky/images/test.png -p 0,0}
-#${image ~/.config/mabox-noctalia/conky/images/test.png -p 400,0}
+${color0}RAM${alignr 4}$legacymem / $memmax ${color2}$memperc% 
+${color2}${memgraph}${voffset -4}
+${color0}${top_mem name 1}${alignr}${color1}${top_mem mem_res 1}
+${color0}${top_mem name 2}${alignr}${color1}${top_mem mem_res 2}
+${color0}${top_mem name 3}${alignr}${color1}${top_mem mem_res 3}
+${color0}${top_mem name 4}${alignr}${color1}${top_mem mem_res 4}
+${color0}${top_mem name 5}${alignr}${color1}${top_mem mem_res 5}
 ]];
 
 

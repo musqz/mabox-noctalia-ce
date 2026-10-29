@@ -1,4 +1,4 @@
-local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia/conky/colors.lua')
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
 
 conky.config = {
 	out_to_x = true,
@@ -71,7 +71,7 @@ ${goto 18}${color0}${top_mem name 3}${alignr}${color1}${top_mem mem_res 3}
 ${goto 18}${color0}${top_mem name 4}${alignr}${color1}${top_mem mem_res 4}
 ${goto 18}${color0}${top_mem name 5}${alignr}${color1}${top_mem mem_res 5}
 #
-${image ~/.config/mabox-noctalia/conky/images/mabox_3d.png -p 0,310 -s 64x64}
+${image ~/.config/mabox-noctalia-ce/conky/images/mabox_3d.png -p 0,310 -s 64x64}
 ${alignr}disk ${color0}${fs_used /} - ${fs_size /}
 ${alignr}${color1} memory ${color0}$legacymem - $memmax
 #${alignr}${color0}${font Cantarell:size=9}swap $swapmax - $swap

@@ -21,6 +21,8 @@ esac
 mkdir -p "$(dirname "$state")"
 record() { printf '%s\n' "$@" >> "$state"; }
 
+pacman -Sl maboxlinux >/dev/null 2>&1 || { echo "Repo [maboxlinux] is not enabled in /etc/pacman.conf (needed for noctalia 5.4+)." >&2; exit 1; }
+
 mapfile -t repo < <(read_list "$dir/lists/pacman.txt")
 mapfile -t aur < <(read_list "$dir/lists/aur.txt")
 
@@ -61,4 +63,7 @@ done 3< <(read_list "$dir/lists/github.txt")
 for c in labwc noctalia; do
     command -v "$c" >/dev/null 2>&1 || { echo "$c is not in PATH" >&2; exit 1; }
 done
-echo "Dependencies OK."
+echo "Building mabox-noctalia-ce"
+(cd "$dir/packaging" && makepkg -si)
+record mabox-noctalia-ce
+echo "Done. Pick \"Noctalia CE\" at the login screen."

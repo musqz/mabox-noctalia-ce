@@ -36,7 +36,5 @@ pkgbase = mabox-noctalia-ce
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = pywalfox: Firefox theme template
-	provides = mabox-noctalia-files
-	conflicts = mabox-noctalia-files
 
 pkgname = mabox-noctalia-ce

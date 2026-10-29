@@ -29,8 +29,8 @@ conky.config = {
 };
 
 conky.text = [[
-${execpi 30 ~/.config/mabox-noctalia/menuscripts/polaroid}
-${image ~/.config/mabox-noctalia/conky/images/punaise.png -p 103,0 -s 96x96}
+${execpi 30 ~/.config/mabox-noctalia-ce/menuscripts/polaroid}
+${image ~/.config/mabox-noctalia-ce/conky/images/punaise.png -p 103,0 -s 96x96}
 ]];
 
 

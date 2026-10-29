@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Noctalia (labwc)
+Name=Noctalia CE
 Comment=A wayland stacking compositor
-Exec=mabox-noctalia
+Exec=mabox-noctalia-ce
 Icon=labwc
 Type=Application
 DesktopNames=labwc;wlroots

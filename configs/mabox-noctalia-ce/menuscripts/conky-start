@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Restart the labwc conky set listed in conky/enabled.list (one name per line, without .conkyrc).
-dir="$HOME/.config/mabox-noctalia/conky"
+dir="$HOME/.config/mabox-noctalia-ce/conky"
 list="$dir/enabled.list"
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/conky-start.lock"
 flock 9

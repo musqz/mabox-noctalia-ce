@@ -1,22 +1,23 @@
+local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
+
 conky.config = {
-	out_to_x = true,
-	out_to_wayland = false,
+	out_to_x = false,
+	out_to_wayland = true,
 -- WINDOW
 	own_window = true,
 	own_window_type = 'desktop',
-	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
-	own_window_colour = '#00000000',
-	own_window_class = 'Conky-nobg-polaroid',
-	own_window_title = 'Mus Polaroid Slideshow',
+	own_window_colour = c.bg,
+	own_window_class = 'Conky',
+	own_window_title = 'Conky',
     
-    alignment = 'top_left',
-	gap_x = -2530,
-	gap_y = 200,
-	minimum_width = 790,
-    minimum_height = 600,
+    alignment = 'middle_middle',
+	gap_x = 0,
+	gap_y = 0,
+	minimum_width = 200,
 
 -- FONTS
 	use_xft = true,
+	font = 'Droid Sans:size=11',
 	xftalpha = 1,
 	override_utf8_locale = true,
 
@@ -26,18 +27,18 @@ conky.config = {
 	draw_outline = false,
 	default_outline_color = '#222222',
 
-	default_color = '#ecedef',
+	default_color = c.primary,
+	color0 = c.second,
 	
-
 -- BORDERS
-	draw_borders = false,
+	draw_borders = true,
 -- Stippled borders?
-	stippled_borders = 1,
+	stippled_borders = 0,
 -- border margins
-	border_inner_margin = 0,
-	border_outer_margin = 0,
+	border_inner_margin = 15,
+	border_outer_margin = 1,
 -- border width
-	border_width = 0,
+	border_width = 2,
 
 -- MISC
 -- Boolean value, if true, Conky will be forked to background when started.
@@ -63,5 +64,10 @@ conky.config = {
 };
 
 conky.text = [[
-${execpi 60 ~/.config/mabox-noctalia/menuscripts/polaroid_slideshow_12pix}
+#${execpi 30 todo.sh -d ~/.config/todo/config-conky ls}
+${execpi 5 mabox-todo.sh -c}
+#${image ~/.config/mabox-noctalia-ce/conky/images/test.png -p 0,0}
+#${image ~/.config/mabox-noctalia-ce/conky/images/test.png -p 400,0}
 ]];
+
+

@@ -3,7 +3,7 @@
 import os, re, sys
 import xml.etree.ElementTree as ET
 
-RC = os.path.expanduser("~/.config/mabox-noctalia/rc.xml")
+RC = os.path.expanduser("~/.config/mabox-noctalia-ce/rc.xml")
 KEYS = {"W": "super", "C": "ctrl", "A": "alt", "S": "shift", "slash": "/", "grave": "~",
         "comma": ",", "space": "space", "Return": "enter", "Prior": "pgup", "Next": "pgdn"}
 
