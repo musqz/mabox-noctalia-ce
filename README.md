@@ -12,4 +12,8 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
 <img width="2560" height="1440" alt="Image" src="https://github.com/user-attachments/assets/8f4e52f4-16f8-47b7-a161-cad705316ce2" />
 
-<img alt="Root menu with icons" src="docs/root-menu.png" />
+<p>
+  <img alt="Root menu with icons" src="docs/root-menu.png" width="32%" />
+  <img alt="skippy-wl window switcher" src="docs/skippy-wl.png" width="32%" />
+  <img alt="skippy-wl multiselect" src="docs/skippy-wl-multiselect.png" width="32%" />
+</p>
