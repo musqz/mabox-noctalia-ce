@@ -197,10 +197,10 @@
 
     <mouse>
       <default />
-      <!-- Show a custom menu on desktop right click -->
+      <!-- Show the root menu on desktop right click -->
       <context name="Root">
         <mousebind button="Right" action="Press">
-          <action name="ShowMenu" menu="some-custom-menu" />
+          <action name="ShowMenu" menu="root-menu" />
         </mousebind>
       </context>
     </mouse>
