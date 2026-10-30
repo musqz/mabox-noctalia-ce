@@ -36,3 +36,11 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
     <td align="center">Conky follows the wallpaper colors: red</td>
   </tr>
 </table>
+
+## Custom tools
+
+| Tool | Key | Setup |
+|---|---|---|
+| `/music` launcher player | `W-S-m` | [docs/music.md](docs/music.md) |
+| `mb-music` jgmenu player | `W-m` | [docs/music.md](docs/music.md) |
+| Media keys | `XF86Audio*` | [docs/music.md](docs/music.md) |

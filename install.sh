@@ -5,12 +5,17 @@
 set -euo pipefail
 
 dir=$(dirname "$(readlink -f "$0")")
-state="${XDG_DATA_HOME:-$HOME/.local/share}/mabox-noctalia-ce/installed"
+data="${XDG_DATA_HOME:-$HOME/.local/share}/mabox-noctalia-ce"
+state="$data/installed"
 read_list() { grep -v '^\s*\(#\|$\)' "$1"; }
 
 case ${1:-} in
     "") ;;
     --uninstall)
+        noctalia msg plugins disable musqz/music >/dev/null 2>&1 \
+            && noctalia msg plugins source remove musqz-local >/dev/null 2>&1 \
+            || echo "Noctalia not running: run 'noctalia msg plugins source remove musqz-local' in the session." >&2
+        rm -rf "$data/plugins"
         [[ -s $state ]] || { echo "Nothing recorded in $state"; exit 0; }
         mapfile -t pkgs < <(while read -r p; do pacman -Qq "$p" 2>/dev/null; done < "$state")
         (( ${#pkgs[@]} )) && sudo pacman -Rns "${pkgs[@]}"
@@ -71,5 +76,15 @@ if ! pacman -Qq mabox-noctalia-ce >/dev/null 2>&1; then
     echo "Building mabox-noctalia-ce"
     (cd "$dir/packaging" && makepkg -si)
     record mabox-noctalia-ce
+fi
+rm -rf "$data/plugins"
+cp -r "$dir/configs/mabox-noctalia-ce/plugins" "$data/plugins"
+if noctalia msg plugins source add musqz-local path "$data/plugins" >/dev/null 2>&1 \
+    && noctalia msg plugins enable musqz/music >/dev/null 2>&1; then
+    echo "Enabled plugin musqz/music (/music in the launcher)."
+else
+    echo "Noctalia is not running. In the session run:"
+    echo "  noctalia msg plugins source add musqz-local path $data/plugins"
+    echo "  noctalia msg plugins enable musqz/music"
 fi
 echo "Done. Pick \"Noctalia CE\" at the login screen."

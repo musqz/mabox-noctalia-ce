@@ -43,6 +43,10 @@
     <keybind key="XF86AudioRaiseVolume"><action name="Execute"><command>noctalia msg volume-up</command></action></keybind>
     <keybind key="XF86AudioLowerVolume"><action name="Execute"><command>noctalia msg volume-down</command></action></keybind>
     <keybind key="XF86AudioMute"><action name="Execute"><command>noctalia msg volume-mute</command></action></keybind>
+    <keybind key="XF86AudioPlay"><action name="Execute"><command>noctalia msg media toggle</command></action></keybind>
+    <keybind key="XF86AudioStop"><action name="Execute"><command>noctalia msg media stop</command></action></keybind>
+    <keybind key="XF86AudioNext"><action name="Execute"><command>noctalia msg media next</command></action></keybind>
+    <keybind key="XF86AudioPrev"><action name="Execute"><command>noctalia msg media previous</command></action></keybind>
     <keybind key="XF86MonBrightnessUp"><action name="Execute"><command>brightness-primary up</command></action></keybind>
     <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightness-primary down</command></action></keybind>
     
@@ -77,6 +81,7 @@
     <keybind key="W-w" name.action="Execute" command.action="firefox"/>
     <keybind key="W-v" name.action="Execute" command.action="pavucontrol"/>
     <keybind key="W-m" name.action="Execute" command.action="mb-music -s"/>
+    <keybind key="W-S-m"><action name="Execute"><command>noctalia msg panel-open launcher /music</command></action></keybind>
     <keybind key="W-slash" name.action="Execute" command.action="runraisehide fsearch"/>
     <keybind key="W-o" name.action="Execute" command.action="TODOlist"/>
     <keybind key="W-Tab"><action name="Execute"><command>skippy-wl --show --app-id !conky --next</command></action></keybind>

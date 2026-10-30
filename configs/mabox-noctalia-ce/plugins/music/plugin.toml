@@ -1,0 +1,17 @@
+id = "musqz/music"
+name = "Music"
+version = "0.1.0"
+plugin_api = 43
+author = "musqz"
+license = "MIT"
+icon = "music"
+description = "Play and shuffle the mb-music CSV list through mpv; controls via the MPRIS media widget."
+dependencies = ["mpv", "socat", "yt-dlp", "mpv-mpris"]
+tags = ["launcher", "audio", "music"]
+
+[[launcher_provider]]
+id = "finder"
+entry = "finder.luau"
+prefix = "music"
+glyph = "music"
+include_in_global_search = false
