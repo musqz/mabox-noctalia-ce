@@ -6,6 +6,8 @@ musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noc
 
 - **Separate:** own session entry and own config in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
 - **Install:** `./install.sh` installs the needed packages and builds the `mabox-noctalia-ce` package. Packages you already have are skipped.
+- **Reset config:** `./install.sh --reset-config` backs up `~/.config/mabox-noctalia-ce` and `~/.config/noctalia` as `*.bak-<date>`, then overwrites them with the repo config.
+- **Recover config:** `./install.sh --recover-profile` restores the newest backup. Pass a timestamp to pick another. Each run backs up the current config first. Old `*.bak-*` folders are not pruned.
 - **Remove:** `./install.sh --uninstall` removes the package and the packages the script installed. Then `rm -rf ~/.config/mabox-noctalia-ce`.
 
 Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
