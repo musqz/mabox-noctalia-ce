@@ -10,7 +10,6 @@ musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noc
 
 Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
-<img alt="Noctalia CE desktop" src="docs/desktop.png" />
 
 <table>
   <tr>
