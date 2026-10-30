@@ -79,8 +79,8 @@
     <keybind key="W-m" name.action="Execute" command.action="mb-music -s"/>
     <keybind key="W-slash" name.action="Execute" command.action="runraisehide fsearch"/>
     <keybind key="W-o" name.action="Execute" command.action="TODOlist"/>
-    <keybind key="W-Tab"><action name="Execute"><command>skippy-wl --show --next</command></action></keybind>
-    <keybind key="W-S-Tab"><action name="Execute"><command>skippy-wl --show --prev</command></action></keybind>
+    <keybind key="W-Tab"><action name="Execute"><command>skippy-wl --show --app-id !conky --next</command></action></keybind>
+    <keybind key="W-S-Tab"><action name="Execute"><command>skippy-wl --show --app-id !conky --prev</command></action></keybind>
     <keybind key="A-F2"><action name="Execute" command="gmrun"/></keybind>
     <keybind key="A-grave"><action name="Iconify"/></keybind>
     <keybind key="W-q"><action name="Close" /></keybind>
