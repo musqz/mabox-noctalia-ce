@@ -83,6 +83,7 @@
       <action name="Reconfigure" />
     </item>
   </menu>
+  <menu id="apps-menu" label="Applications" icon="applications-other" execute="labwc-menu-generator -p -I" />
   <menu id="client-list-combined-menu" label="Running..." icon="window-duplicate" />
   <separator />
   <menu id="screenshot-menu" label="Screenshot" icon="accessories-screenshot">
