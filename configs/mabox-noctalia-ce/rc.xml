@@ -207,6 +207,7 @@
     </mouse>
       
   <windowRules>
+    <windowRule identifier="conky*" serverDecoration="no"/>
     <windowRule title="q-term">
       <action name="SetDecorations" decorations="none"/>
       <action name="ResizeTo" width="2545" height="700"/>
