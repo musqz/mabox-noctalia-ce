@@ -3,7 +3,10 @@
 # Already installed packages are skipped.
 # --uninstall removes only the packages this script installed.
 # --reset-config backs up and overwrites the user config with the one in this repo.
-# --recover-profile [timestamp] restores the newest (or given) --reset-config backup.
+# --save-config backs up the user config without changing it.
+# --sync-configs copies edited live config files back into this repo.
+# --recover-profile [timestamp] restores the newest --reset-config backup, or the one with the given timestamp
+# (also --save-config copies).
 set -euo pipefail
 
 dir=$(dirname "$(readlink -f "$0")")
@@ -13,32 +16,52 @@ read_list() { grep -v '^\s*\(#\|$\)' "$1"; }
 
 conf="$HOME/.config"
 backup_config() {
-    local ts d
+    local tag=${1:-bak} ts d
     ts=$(date +%Y%m%d-%H%M%S)
     for d in mabox-noctalia-ce noctalia; do
         [[ -d $conf/$d ]] || continue
-        cp -a "$conf/$d" "$conf/$d.bak-$ts" || { rm -rf "$conf/$d.bak-$ts"; echo "Backup of $conf/$d failed; nothing changed." >&2; exit 1; }
-        echo "Backup: $conf/$d.bak-$ts"
+        cp -a "$conf/$d" "$conf/$d.$tag-$ts" || { rm -rf "$conf/$d.$tag-$ts"; echo "Backup of $conf/$d failed; nothing changed." >&2; exit 1; }
+        echo "Backup: $conf/$d.$tag-$ts"
     done
 }
 
 case ${1:-} in
     "") ;;
+    --save-config)
+        [[ -d $conf/mabox-noctalia-ce || -d $conf/noctalia ]] || { echo "Nothing to save." >&2; exit 1; }
+        backup_config save
+        exit 0 ;;
+    --sync-configs)
+        git -C "$dir" rev-parse --git-dir >/dev/null 2>&1 || { echo "$dir is not a git checkout." >&2; exit 1; }
+        n=0
+        while IFS= read -r -d '' f; do
+            live="$conf/${f#configs/}"
+            [[ -f $live ]] && ! cmp -s "$live" "$dir/$f" || continue
+            cp "$live" "$dir/$f"
+            echo "synced ${f#configs/}"
+            n=$((n + 1))
+        done < <(git -C "$dir" ls-files -z configs/mabox-noctalia-ce configs/noctalia)
+        (( n )) && echo "Review with: git -C $dir diff" || echo "No changes."
+        exit 0 ;;
     --recover-profile)
         pick=${2:-$(ls -1d "$conf"/mabox-noctalia-ce.bak-* 2>/dev/null | sed 's/.*\.bak-//' | sort | tail -n1 || true)}
-        if [[ ! $pick =~ ^[0-9]{8}-[0-9]{6}$ || ! -d $conf/mabox-noctalia-ce.bak-$pick ]]; then
+        tag=
+        for t in bak save; do
+            [[ $pick =~ ^[0-9]{8}-[0-9]{6}$ && -d $conf/mabox-noctalia-ce.$t-$pick ]] && { tag=$t; break; }
+        done
+        if [[ -z $tag ]]; then
             echo "No backup${2:+ $2}. Available:" >&2
-            ls -1d "$conf"/mabox-noctalia-ce.bak-* 2>/dev/null | sed 's/.*\.bak-/  /' >&2 || true
+            ls -1d "$conf"/mabox-noctalia-ce.{bak,save}-* 2>/dev/null | sed 's|.*/mabox-noctalia-ce\.|  |' >&2 || true
             exit 1
         fi
         backup_config
         for d in mabox-noctalia-ce noctalia; do
-            [[ -d $conf/$d.bak-$pick ]] || continue
+            [[ -d $conf/$d.$tag-$pick ]] || continue
             rm -rf "$conf/$d"
-            cp -a "$conf/$d.bak-$pick" "$conf/$d"
+            cp -a "$conf/$d.$tag-$pick" "$conf/$d"
         done
         labwc --reconfigure >/dev/null 2>&1 || true
-        echo "Config restored from backup $pick. Log out and back in to apply it all."
+        echo "Config restored from $tag-$pick. Log out and back in to apply it all."
         exit 0 ;;
     --uninstall)
         noctalia msg plugins disable musqz/music >/dev/null 2>&1 \
@@ -61,7 +84,7 @@ case ${1:-} in
         labwc --reconfigure >/dev/null 2>&1 || true
         echo "Config reset from $dir/configs. Log out and back in to apply it all."
         exit 0 ;;
-    *) echo "usage: ${0##*/} [--uninstall|--reset-config|--recover-profile [timestamp]]" >&2; exit 2 ;;
+    *) echo "usage: ${0##*/} [--uninstall|--reset-config|--save-config|--sync-configs|--recover-profile [timestamp]]" >&2; exit 2 ;;
 esac
 
 mkdir -p "$(dirname "$state")"
