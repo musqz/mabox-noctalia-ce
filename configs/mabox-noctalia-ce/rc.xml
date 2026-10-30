@@ -177,6 +177,7 @@
     <!-- helper binds the scripts use -->
     <keybind key="W-A-C-7"><action name="MoveToOutput" output="HDMI-A-1"/></keybind>
     <keybind key="W-A-C-9"><action name="MoveToOutput" output="DP-1"/></keybind>
+    <keybind key="W-A-C-8"><action name="UnSnap"/></keybind>
     <keybind key="W-A-C-0"><action name="SendToDesktop" to="right" wrap="yes"/></keybind>
     <keybind key="W-A-C-1"><action name="SendToDesktop" to="Workspace 1" follow="no"/></keybind>
     <keybind key="W-A-C-2"><action name="SendToDesktop" to="Workspace 2" follow="no"/></keybind>

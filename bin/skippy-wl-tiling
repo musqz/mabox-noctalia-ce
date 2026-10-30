@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Pick up to 4 windows in skippy-wl and tile them on the screen.
+# Needs the labwc bind: <keybind key="W-A-C-8"><action name="UnSnap"/></keybind>
 set -euo pipefail
 
 mapfile -t ids < <(skippy-wl --show --multi-select || true)
@@ -21,6 +22,9 @@ esac
 for i in "${!ids[@]}"; do
 	skippy-wl --activate "${ids[i]}"
 	sleep 0.15
+	# a window already snapped to that edge jumps to the neighbouring monitor
+	wtype -M logo -M alt -M ctrl -k 8 -m ctrl -m alt -m logo
+	sleep 0.1
 	wtype -M logo -M alt -k "${keys[i]}" -m alt -m logo
 	sleep 0.1
 done
