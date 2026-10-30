@@ -28,8 +28,8 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
 <table>
   <tr>
-    <td><img alt="Blue theme with matching conky" src="docs/theme-blue.png" /></td>
-    <td><img alt="Red theme with matching conky" src="docs/theme-red.png" /></td>
+    <td><img alt="Blue theme with matching conky" src="docs/theme-blue-2.png" /></td>
+    <td><img alt="Red theme with matching conky" src="docs/theme-red-2.png" /></td>
   </tr>
   <tr>
     <td align="center">Conky follows the wallpaper colors: blue</td>
