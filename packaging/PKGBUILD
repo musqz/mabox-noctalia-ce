@@ -39,6 +39,7 @@ package() {
   cp -r "$root/configs/mabox-noctalia-ce" "$skel/"
   chmod 755 "$skel"/mabox-noctalia-ce/menuscripts/*
   chmod 755 "$skel"/mabox-noctalia-ce/autostart
+  rm -rf "$skel"/mabox-noctalia-ce/plugins
 
   install -dm755 "$pkgdir/usr/share/mabox-noctalia-ce"
   cp -r "$root/configs/noctalia" "$pkgdir/usr/share/mabox-noctalia-ce/"
