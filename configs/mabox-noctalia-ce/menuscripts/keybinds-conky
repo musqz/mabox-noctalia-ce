@@ -26,7 +26,7 @@ CMD_LABELS = [
     (r"^foot", "foot"), (r"q-term-toggle", "quake terminal"),
     (r"pyradio", "pyradio"), (r"fsearch", "file search"), (r"TODOlist", "todo list"),
     (r"pavucontrol", "volume control"), (r"mb-music", "music"), (r"ml-info", "system info"),
-    (r"skippy-wl --show --next", "window switcher"), (r"skippy-wl --show --prev", "switcher back"),
+    (r"skippy-wl --show .*--next", "window switcher"), (r"skippy-wl --show .*--prev", "switcher back"),
     (r"send-to-philips", "window to philips"), (r"send-to-dell", "window to dell"),
     (r"send-to-desk", "window to desk"), (r"skippy-wl-tiling", "tiling"),
     (r"tabdock --find", "tabdock find"), (r"tabdock --ws-next", "tabdock ws next"),
