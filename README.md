@@ -25,7 +25,15 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
     <td align="center">skippy-wl: expose view of all windows</td>
     <td align="center">skippy-wl: multiselect</td>
   </tr>
+</table>
+
+<table>
   <tr>
-    
+    <td><img alt="Blue theme with matching conky" src="docs/theme-blue.png" /></td>
+    <td><img alt="Red theme with matching conky" src="docs/theme-red.png" /></td>
+  </tr>
+  <tr>
+    <td align="center">Conky follows the wallpaper colors: blue</td>
+    <td align="center">Conky follows the wallpaper colors: red</td>
   </tr>
 </table>
