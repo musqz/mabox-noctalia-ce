@@ -15,18 +15,17 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 <table>
   <tr>
     <td><img alt="Root menu with icons" src="docs/root-menu.gif" /></td>
+    <td><img alt="skippy-wl search" src="docs/skippy-wl-search.png" /></td>
     <td><img alt="skippy-wl expose" src="docs/skippy-wl.png" /></td>
     <td><img alt="skippy-wl multiselect" src="docs/skippy-wl-multiselect.png" /></td>
   </tr>
   <tr>
+    <td align="center">skippy-wl: <code>/</code> search</td>
     <td align="center">Root menu with icons</td>
     <td align="center">skippy-wl: expose view of all windows</td>
     <td align="center">skippy-wl: multiselect</td>
   </tr>
   <tr>
-    <td><img alt="skippy-wl search" src="docs/skippy-wl-search.png" /></td>
-  </tr>
-  <tr>
-    <td align="center">skippy-wl: <code>/</code> search</td>
+    
   </tr>
 </table>
