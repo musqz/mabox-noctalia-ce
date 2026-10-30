@@ -23,4 +23,10 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
     <td align="center">skippy-wl: expose view of all windows</td>
     <td align="center">skippy-wl: multiselect</td>
   </tr>
+  <tr>
+    <td><img alt="skippy-wl search" src="docs/skippy-wl-search.png" /></td>
+  </tr>
+  <tr>
+    <td align="center">skippy-wl: <code>/</code> search</td>
+  </tr>
 </table>
