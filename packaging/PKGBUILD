@@ -6,7 +6,7 @@ pkgdesc='Mabox labwc + Noctalia session and default configs (CE)'
 arch=('any')
 url='https://github.com/musqz/mabox-noctalia-ce'
 license=('GPL')
-depends=('python' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlopm' 'wtype' 'wlrctl' 'grim' 'slurp' 'yad'
+depends=('python' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlr-randr' 'wlopm' 'wtype' 'wlrctl' 'grim' 'slurp' 'yad'
          'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'conky' 'gmrun')
 optdepends=('kitty: terminal keybind'
             'pavucontrol: volume control keybind'

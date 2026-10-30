@@ -1,6 +1,7 @@
 labwc
 noctalia
 kanshi
+wlr-randr
 wlopm
 wtype
 wlrctl

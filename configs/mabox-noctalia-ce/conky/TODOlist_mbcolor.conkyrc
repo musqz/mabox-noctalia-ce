@@ -1,8 +1,9 @@
 local c = dofile(os.getenv('HOME') .. '/.config/mabox-noctalia-ce/conky/colors.lua')
 
 conky.config = {
-	out_to_x = false,
-	out_to_wayland = true,
+	out_to_x = true,
+	out_to_wayland = false,
+	xinerama_head = 0,
 -- WINDOW
 	own_window = true,
 	own_window_type = 'desktop',

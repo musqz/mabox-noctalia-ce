@@ -5,6 +5,14 @@ list="$dir/enabled.list"
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/conky-start.lock"
 flock 9
 [[ -f $list ]] || printf '%s\n' ce-sysinfo_mbcolor POLSLIDE_mbcolor_slideshow > "$list"
+# at login only: wait until kanshi has enabled every output
+if [[ ${1-} == --wait ]] && pgrep -x kanshi >/dev/null && command -v wlr-randr >/dev/null; then
+    for _ in {1..30}; do
+        out=$(wlr-randr 2>/dev/null)
+        [[ $(grep -c '^[^ ]' <<<"$out") -gt 0 && $(grep -c 'Enabled: yes' <<<"$out") -ge $(grep -c '^[^ ]' <<<"$out") ]] && break
+        sleep 1
+    done
+fi
 pkill -x conky
 sleep 1
 while read -r c; do
