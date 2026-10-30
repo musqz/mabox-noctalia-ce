@@ -1,0 +1,265 @@
+#!/bin/bash
+# mb-music-add-url
+# Add a YouTube/stream URL to the mb-music YT playlist CSV.
+# User can pick an existing category or type a new one.
+
+CSV_FILE="$HOME/.config/mabox/mb-music/yt_music_list.csv"
+LAST_CAT_FILE="$HOME/.config/mabox/mb-music/last_category"
+LOGO="$HOME/.config/mabox/mb-music/mabox-ce.svg"
+
+# Ensure config dir, CSV and logo exist
+mkdir -p "$(dirname "$CSV_FILE")"
+touch "$CSV_FILE"
+
+[ -f "$LOGO" ] || cat > "$LOGO" << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">
+  <rect width="256" height="256" fill="#1a1a1a"/>
+  <path fill="#F5C400" fill-opacity="0.9" d="M80 240H16V16h224v224h-64V80h-16v160H96V80H80z"/>
+  <path fill="#1a1a1a" fill-opacity="0.9" d="M0 0v256h256V0Zm16 16h224v224h-64V80h-16v160H96V80H80v160H16Z"/>
+  <rect x="28" y="150" width="200" height="68" rx="6" ry="6" fill="#1a1a1a" fill-opacity="0.72"/>
+  <text x="128" y="208"
+        font-family="'DejaVu Sans','Liberation Sans',Arial,sans-serif"
+        font-size="62" font-weight="700" letter-spacing="6"
+        text-anchor="middle" fill="#F5C400">CE</text>
+</svg>
+SVGEOF
+
+# Use CE logo if available, fall back to theme icon
+[ -f "$LOGO" ] && YAD_ICON="$LOGO" || YAD_ICON="media-tape"
+
+# ── i18n ──────────────────────────────────────────────────────────────────────
+case "$LANG" in
+    pl*)
+        NEW_CAT_LABEL="[+ Nowa kategoria]"
+        _TITLE="Dodaj utwór do listy mb-music"
+        _MSG="Uzupełnij pola i wybierz kategorię.\nWpisz nową nazwę lub wybierz z listy."
+        _F_URL="URL :"
+        _F_ARTIST="Artysta :"
+        _F_TITLE="Tytuł :"
+        _F_CAT="Kategoria :"
+        _F_NEWCAT="Nowa kategoria :"
+        _ERR_CLIP="Schowek nie zawiera prawidłowego adresu URL."
+        _ERR_FIELDS="Pola URL, Artysta i Tytuł są wymagane."
+        _ERR_NEWCAT="Podaj nazwę nowej kategorii."
+        _ERR_DUP="Ten utwór już istnieje w tej kategorii."
+        _NOTIFY_ADDED="Dodano do kategorii"
+        _TITLE_NEWCAT="Nowa kategoria"
+        ;;
+    es*)
+        NEW_CAT_LABEL="[+ Nueva categoría]"
+        _TITLE="Añadir pista a la lista mb-music"
+        _MSG="Rellena los campos y elige una categoría.\nEscribe un nombre nuevo o elige de la lista."
+        _F_URL="URL :"
+        _F_ARTIST="Artista :"
+        _F_TITLE="Título :"
+        _F_CAT="Categoría :"
+        _F_NEWCAT="Nueva categoría :"
+        _ERR_CLIP="El portapapeles no contiene una URL válida."
+        _ERR_FIELDS="Los campos URL, Artista y Título son obligatorios."
+        _ERR_NEWCAT="Escribe un nombre para la nueva categoría."
+        _ERR_DUP="Esta pista ya existe en esa categoría."
+        _NOTIFY_ADDED="Añadido a la categoría"
+        _TITLE_NEWCAT="Nueva categoría"
+        ;;
+    *)
+        NEW_CAT_LABEL="[+ New category]"
+        _TITLE="Add track to mb-music list"
+        _MSG="Fill in the fields and pick a category.\nType a new name or choose from the list."
+        _F_URL="URL :"
+        _F_ARTIST="Artist :"
+        _F_TITLE="Title :"
+        _F_CAT="Category :"
+        _F_NEWCAT="New category name :"
+        _ERR_CLIP="Clipboard does not contain a valid URL."
+        _ERR_FIELDS="URL, Artist and Title are all required."
+        _ERR_NEWCAT="Please enter a name for the new category."
+        _ERR_DUP="This track already exists in that category."
+        _NOTIFY_ADDED="Added to category"
+        _TITLE_NEWCAT="New category"
+        ;;
+esac
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+warn() {
+    yad --warning \
+        --center \
+        --title="$_TITLE" \
+        --window-icon="$YAD_ICON" \
+        --image="dialog-error" \
+        --text="$1" \
+        --button="OK:0" 2>/dev/null
+}
+
+# Extract category names (lines ending with ,-) from CSV
+get_categories() {
+    grep -E ',-$' "$CSV_FILE" | sed 's/,-$//' | sed '/^\s*$/d'
+}
+
+# Build a !-separated list for yad combo: "New category" first,
+# then last-used category (pre-selected with ^), then the rest.
+build_combo() {
+    local cats last list
+    cats=$(get_categories)
+    last=$(cat "$LAST_CAT_FILE" 2>/dev/null | xargs)
+    list="$NEW_CAT_LABEL"
+    # Add last-used first (pre-selected), skip it in the main loop below
+    if [ -n "$last" ] && echo "$cats" | grep -qxF "$last"; then
+        list+="!^$last"
+    fi
+    while IFS= read -r cat; do
+        [ -n "$cat" ] || continue
+        [ "$cat" = "$last" ] && continue   # already added above
+        list+="!$cat"
+    done <<< "$cats"
+    echo "$list"
+}
+
+# Insert $entry right before the next category header after $category,
+# or at end of file if it is the last category.
+insert_into_category() {
+    local category="$1"
+    local entry="$2"
+    local tmp
+    tmp=$(mktemp) || { echo "mktemp failed"; return 1; }
+
+    awk -v cat="$category" -v newline="$entry" '
+    BEGIN { found=0; done=0 }
+    {
+        # When we hit the next category header while inside the target, insert first
+        if (!done && found && /,-$/) {
+            print newline
+            done=1
+        }
+        print
+        # Detect entry into our target category
+        if ($0 == cat ",-") found=1
+    }
+    END {
+        # Target was the last category in file
+        if (found && !done) print newline
+    }
+    ' "$CSV_FILE" > "$tmp"
+
+    mv "$tmp" "$CSV_FILE"
+}
+
+# Append a new category header + entry at end of file
+append_new_category() {
+    local category="$1"
+    local entry="$2"
+    # Add blank line before new category if file is not empty and last line is not blank
+    if [ -s "$CSV_FILE" ] && [ -n "$(tail -c1 "$CSV_FILE")" ]; then
+        echo "" >> "$CSV_FILE"
+    fi
+    echo "󰺢 $category,-" >> "$CSV_FILE"
+    echo "$entry"      >> "$CSV_FILE"
+}
+
+# Check for duplicate entry within a category block
+is_duplicate() {
+    local category="$1"
+    local entry="$2"
+    awk -v cat="$category" -v needle="$entry" '
+    BEGIN { found=0 }
+    { if ($0 == cat ",-") found=1; else if (/,-$/) found=0 }
+    found && $0 == needle { exit 1 }
+    ' "$CSV_FILE"
+    return $?
+}
+
+# ── clipboard ─────────────────────────────────────────────────────────────────
+
+if [[ -n "$WAYLAND_DISPLAY" ]] && command -v wl-paste >/dev/null; then
+    CLIPBOARD=$(wl-paste -n 2>/dev/null)
+else
+    CLIPBOARD=$(xclip -o -selection clipboard 2>/dev/null)
+fi
+
+# Accept: http(s) URLs or local playable files
+if [[ -z "$CLIPBOARD" ]] || \
+   [[ ! "$CLIPBOARD" =~ ^https?:// && ! -f "$CLIPBOARD" ]]; then
+    CLIPBOARD=""
+fi
+
+# Focus URL field when empty so user can paste; otherwise jump to Artist
+FOCUS_FIELD=2
+[[ -z "$CLIPBOARD" ]] && FOCUS_FIELD=1
+
+# ── main form ─────────────────────────────────────────────────────────────────
+
+COMBO=$(build_combo)
+
+ENTRY=$(yad --form \
+    --center \
+    --title="$_TITLE" \
+    --window-icon="$YAD_ICON" \
+    --image="document-save" \
+    --text="$_MSG" \
+    --width=480 \
+    --focus-field="$FOCUS_FIELD" \
+    --field="$_F_URL"    "$CLIPBOARD" \
+    --field="$_F_ARTIST" "" \
+    --field="$_F_TITLE"  "" \
+    --field="$_F_CAT:CB" "$COMBO" \
+    2>/dev/null)
+
+[ -z "$ENTRY" ] && exit 0   # user cancelled
+
+URL=$(echo    "$ENTRY" | cut -d'|' -f1 | xargs)
+ARTIST=$(echo "$ENTRY" | cut -d'|' -f2 | xargs)
+TITLE=$(echo  "$ENTRY" | cut -d'|' -f3 | xargs)
+CATEGORY=$(echo "$ENTRY" | cut -d'|' -f4 | xargs)
+
+# Strip trailing | if yad adds one
+CATEGORY="${CATEGORY%|}"
+
+# ── validate required fields ──────────────────────────────────────────────────
+
+if [[ -z "$URL" || -z "$ARTIST" || -z "$TITLE" ]]; then
+    warn "$_ERR_FIELDS"
+    exit 1
+fi
+
+TRACK_ENTRY="$ARTIST - $TITLE,$URL"
+
+# ── category logic ────────────────────────────────────────────────────────────
+
+if [[ "$CATEGORY" == "$NEW_CAT_LABEL" || -z "$CATEGORY" ]]; then
+    # Ask for new category name
+    NEW_CAT=$(yad --entry \
+        --center \
+        --title="$_TITLE_NEWCAT" \
+        --window-icon="$YAD_ICON" \
+        --image="folder-new" \
+        --text="$_F_NEWCAT" \
+        2>/dev/null)
+
+    [ -z "$NEW_CAT" ] && exit 0   # cancelled
+    NEW_CAT=$(echo "$NEW_CAT" | xargs)
+
+    if [[ -z "$NEW_CAT" ]]; then
+        warn "$_ERR_NEWCAT"
+        exit 1
+    fi
+
+    append_new_category "$NEW_CAT" "$TRACK_ENTRY"
+    CATEGORY="$NEW_CAT"
+
+else
+    # Check if category actually exists (user may have typed a new name in combo)
+    if grep -qF "${CATEGORY},-" "$CSV_FILE"; then
+        # Duplicate check
+        if ! is_duplicate "$CATEGORY" "$TRACK_ENTRY"; then
+            warn "$_ERR_DUP"
+            exit 1
+        fi
+        insert_into_category "$CATEGORY" "$TRACK_ENTRY"
+    else
+        # Typed a new name not in the list
+        append_new_category "$CATEGORY" "$TRACK_ENTRY"
+    fi
+fi
+
+echo "$CATEGORY" > "$LAST_CAT_FILE"
+notify-send -i "$YAD_ICON" -t 5000 "$ARTIST - $TITLE" "$_NOTIFY_ADDED: $CATEGORY"

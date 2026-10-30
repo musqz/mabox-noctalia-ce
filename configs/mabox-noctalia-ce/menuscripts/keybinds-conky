@@ -24,6 +24,8 @@ CMD_LABELS = [
     (r"swaylock", "lock screen"),
     (r"TerminalEmulator btop", "btop"), (r"TerminalEmulator", "terminal"),
     (r"^foot", "foot"), (r"q-term-toggle", "quake terminal"),
+    (r"mb-music-add-url", "add music url"), (r"mpv-play-stream", "play stream url"),
+    (r"panel-open launcher /music", "music launcher"),
     (r"pyradio", "pyradio"), (r"fsearch", "file search"), (r"TODOlist", "todo list"),
     (r"pavucontrol", "volume control"), (r"mb-music", "music"), (r"ml-info", "system info"),
     (r"skippy-wl --show .*--next", "window switcher"), (r"skippy-wl --show .*--prev", "switcher back"),

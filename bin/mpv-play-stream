@@ -1,0 +1,72 @@
+#!/bin/bash
+
+main() {
+    # Set up language strings
+    case $LANG in
+        pl*)
+            NO_MPV="MPV nie jest zainstalowany."
+            NO_CLIPBOARD="Brak xclip lub xsel. Instaluj jedno, aby używać skryptu."
+            INVALID_URL="Schowek nie zawiera prawidłowego URL. Skopiuj link do wideo i spróbuj ponownie."
+            FORM_TEXT="Wklej adres URL do wideo (np. mp4, webm, strumień): Kliknij OK, aby kontynuować."
+            PLAY_FAIL="Nie udało się odtworzyć. Sprawdź połączenie lub URL."
+            ;;
+        es*)
+            NO_MPV="MPV no está instalado."
+            NO_CLIPBOARD="No se encontró xclip ni xsel. Instala uno para usar este script."
+            INVALID_URL="El portapapeles no contiene una URL válida. Copia un enlace de video e inténtalo de nuevo."
+            FORM_TEXT="Pega la URL del video (mp4, webm o stream link): Pulsa OK para continuar."
+            PLAY_FAIL="No se pudo reproducir. Verifica tu conexión o el URL."
+            ;;
+        *)
+            NO_MPV="MPV is not installed."
+            NO_CLIPBOARD="Neither wl-paste, xclip nor xsel found. Install one to use this script."
+            INVALID_URL="Clipboard does not contain a valid URL. Copy a video link and try again."
+            FORM_TEXT="Paste a video URL (e.g. mp4, webm, or stream link): Press OK to proceed."
+            PLAY_FAIL="Failed to play video. Check your internet or URL."
+            ;;
+    esac
+
+    # Check dependencies
+    command -v yad >/dev/null || { echo "yad is required."; exit 1; }
+    command -v mpv >/dev/null || { yad --center --error --text="$NO_MPV"; exit 1; }
+
+    # Get URL from clipboard
+    if [[ -n "$WAYLAND_DISPLAY" ]] && command -v wl-paste >/dev/null; then
+        URL=$(wl-paste -n 2>/dev/null)
+    elif command -v xclip >/dev/null; then
+        URL=$(xclip -o -selection clipboard)
+    elif command -v xsel >/dev/null; then
+        URL=$(xsel --clipboard)
+    else
+        yad --center --error --text="$NO_CLIPBOARD"
+        exit 1 
+    fi
+
+    # Ask user for URL (pre-filled with clipboard)
+    ENTRY=$(yad --center --form --title="Play Video in MPV" \
+        --width=500 --text="$FORM_TEXT" \
+        --field="Video URL:":TEXT "$URL" \
+        2> >(grep -v "xapp-gtk3-module"))
+    
+    [ -z "$ENTRY" ] && exit 0
+    URL=$(echo "$ENTRY" | cut -d '|' -f1)
+
+    # Validate URL
+    if [[ -z "$URL" || ! "$URL" =~ ^https?:// ]]; then
+        yad --center --warning --text="$INVALID_URL"
+        exit 1
+    fi
+    
+    # Check video type and play accordingly
+    if [[ "$URL" == *youtu.be* ]] ; then
+        mpv "$URL" || yad --center --error --text="$PLAY_FAIL"
+    elif [[ "$URL" == *mp4 ]]; then
+        mpv "$URL" || yad --center --error --text="$PLAY_FAIL"
+    elif [[ "$URL" == *webm ]]; then
+        mpv "$URL" || yad --center --error --text="$PLAY_FAIL"
+    else
+        yad --center --warning --text="Unsupported video URL format. Please enter a YouTube, Vimeo or local file (mp4/webm) URL."
+    fi
+}
+
+main

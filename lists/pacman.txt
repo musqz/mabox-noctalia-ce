@@ -20,3 +20,4 @@ python-pywayland
 gifski
 pipewire
 wireplumber
+wl-clipboard
