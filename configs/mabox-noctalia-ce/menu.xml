@@ -83,7 +83,6 @@
       <action name="Reconfigure" />
     </item>
   </menu>
-  <menu id="apps-menu" label="Applications" icon="applications-other" execute="labwc-menu-generator -p -I" />
   <menu id="client-list-combined-menu" label="Running..." icon="window-duplicate" />
   <separator />
   <menu id="screenshot-menu" label="Screenshot" icon="accessories-screenshot">
@@ -110,6 +109,82 @@
     <item label="Select area in 5s">
       <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; slurp &gt; $XDG_RUNTIME_DIR/area &amp;&amp; sleep 5 &amp;&amp; grim -g &quot;$(cat $XDG_RUNTIME_DIR/area)&quot; ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
     </item>
+  </menu>
+  <menu id="record-menu" label="Screen recording" icon="media-record">
+    <item label="Record region / stop">
+      <action name="Execute" command="screenrec-toggle" />
+    </item>
+    <item label="Open recordings folder" icon="folder-videos">
+      <action name="Execute" command="sh -c 'mkdir -p ~/Videos/Recordings &amp;&amp; xdg-open ~/Videos/Recordings'" />
+    </item>
+  </menu>
+  <menu id="convert-menu" label="Converter" icon="applications-multimedia">
+    <menu id="convert-video" label="Video">
+      <item label="MP4 (H.264)">
+        <action name="Execute" command="mb-convert mp4" />
+      </item>
+      <item label="MP4 (H.265)">
+        <action name="Execute" command="mb-convert hevc" />
+      </item>
+      <item label="WebM (VP9)">
+        <action name="Execute" command="mb-convert webm" />
+      </item>
+      <item label="MKV (AV1)">
+        <action name="Execute" command="mb-convert av1" />
+      </item>
+      <separator />
+      <item label="MKV to MP4 (remux, no re-encode)">
+        <action name="Execute" command="mb-convert mp4-remux" />
+      </item>
+      <item label="MP4 to MKV (remux, no re-encode)">
+        <action name="Execute" command="mb-convert mkv-remux" />
+      </item>
+    </menu>
+    <menu id="convert-gif" label="Video to GIF">
+      <item label="Low (10 fps, 480 px)">
+        <action name="Execute" command="mb-convert gif-low" />
+      </item>
+      <item label="Medium (15 fps, 720 px)">
+        <action name="Execute" command="mb-convert gif-medium" />
+      </item>
+      <item label="High (20 fps, 1080 px)">
+        <action name="Execute" command="mb-convert gif-high" />
+      </item>
+    </menu>
+    <menu id="convert-audio" label="Audio / extract audio">
+      <item label="MP3">
+        <action name="Execute" command="mb-convert mp3" />
+      </item>
+      <item label="Opus">
+        <action name="Execute" command="mb-convert opus" />
+      </item>
+      <item label="Ogg Vorbis">
+        <action name="Execute" command="mb-convert ogg" />
+      </item>
+      <item label="AAC (m4a)">
+        <action name="Execute" command="mb-convert m4a" />
+      </item>
+      <item label="FLAC">
+        <action name="Execute" command="mb-convert flac" />
+      </item>
+      <item label="WAV">
+        <action name="Execute" command="mb-convert wav" />
+      </item>
+    </menu>
+    <menu id="convert-image" label="Image">
+      <item label="PNG">
+        <action name="Execute" command="mb-convert png" />
+      </item>
+      <item label="JPG">
+        <action name="Execute" command="mb-convert jpg" />
+      </item>
+      <item label="WebP">
+        <action name="Execute" command="mb-convert webp" />
+      </item>
+      <item label="AVIF">
+        <action name="Execute" command="mb-convert avif" />
+      </item>
+    </menu>
   </menu>
   <item label="Lock screen" icon="system-lock-screen">
     <action name="Execute" command="swaylock -f" />

@@ -28,3 +28,15 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
   timeout = 450
   command = "wlopm --off '*'"
   resume_command = "wlopm --on '*'"
+
+[bar.default]
+end = ['media', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
+
+[widget.screenrec]
+type = "custom_button"
+glyph = "player-record"
+color = "on_surface"
+tooltip = "start recording"
+
+[widget.screenrec.actions]
+left = "exec screenrec-toggle"
