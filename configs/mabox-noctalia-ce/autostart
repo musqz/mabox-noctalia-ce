@@ -30,7 +30,7 @@ command -v kanshi >/dev/null && kanshi &
 
 noctalia &
 
-(sleep 15 && ~/.config/mabox-noctalia-ce/menuscripts/conky-start) &
+~/.config/mabox-noctalia-ce/menuscripts/conky-start --wait &
 
 # Set background color.
 #swaybg -c '#113344' >/dev/null 2>&1 &

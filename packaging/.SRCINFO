@@ -11,6 +11,7 @@ pkgbase = mabox-noctalia-ce
 	depends = labwc
 	depends = noctalia
 	depends = kanshi
+	depends = wlr-randr
 	depends = wlopm
 	depends = wtype
 	depends = wlrctl

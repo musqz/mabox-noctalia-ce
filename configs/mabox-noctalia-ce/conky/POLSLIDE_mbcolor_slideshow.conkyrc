@@ -1,6 +1,7 @@
 conky.config = {
 	out_to_x = true,
 	out_to_wayland = false,
+	xinerama_head = 0,
 -- WINDOW
 	own_window = true,
 	own_window_type = 'desktop',

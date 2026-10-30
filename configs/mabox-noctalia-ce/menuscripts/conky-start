@@ -2,6 +2,17 @@
 # Restart the labwc conky set listed in conky/enabled.list (one name per line, without .conkyrc).
 dir="$HOME/.config/mabox-noctalia-ce/conky"
 list="$dir/enabled.list"
+# at login only: wait for kanshi to enable every output; fall back to a fixed delay
+if [[ ${1-} == --wait ]]; then
+    if pgrep -x kanshi >/dev/null && command -v wlr-randr >/dev/null; then
+        for _ in {1..30}; do
+            wlr-randr 2>/dev/null | awk '/^[^ ]/ {n++} /Enabled: yes/ {e++} END {exit !(n && e >= n)}' && break
+            sleep 1
+        done
+    else
+        sleep 5
+    fi
+fi
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/conky-start.lock"
 flock 9
 [[ -f $list ]] || printf '%s\n' ce-sysinfo_mbcolor POLSLIDE_mbcolor_slideshow > "$list"
