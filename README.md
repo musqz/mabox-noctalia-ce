@@ -14,8 +14,8 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
 <table>
   <tr>
-    <td><img alt="Root menu with icons" src="docs/root-menu.gif" /></td>
     <td><img alt="skippy-wl search" src="docs/skippy-wl-search.png" /></td>
+    <td><img alt="Root menu with icons" src="docs/root-menu.gif" /></td>
     <td><img alt="skippy-wl expose" src="docs/skippy-wl.png" /></td>
     <td><img alt="skippy-wl multiselect" src="docs/skippy-wl-multiselect.png" /></td>
   </tr>
