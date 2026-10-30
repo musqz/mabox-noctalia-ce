@@ -2,6 +2,8 @@
 # Install the packages mabox-noctalia-ce needs, then build and install mabox-noctalia-ce itself.
 # Already installed packages are skipped.
 # --uninstall removes only the packages this script installed.
+# --reset-config backs up and overwrites the user config with the one in this repo.
+# --recover-profile [timestamp] restores the newest (or given) --reset-config backup.
 set -euo pipefail
 
 dir=$(dirname "$(readlink -f "$0")")
@@ -9,8 +11,35 @@ data="${XDG_DATA_HOME:-$HOME/.local/share}/mabox-noctalia-ce"
 state="$data/installed"
 read_list() { grep -v '^\s*\(#\|$\)' "$1"; }
 
+conf="$HOME/.config"
+backup_config() {
+    local ts d
+    ts=$(date +%Y%m%d-%H%M%S)
+    for d in mabox-noctalia-ce noctalia; do
+        [[ -d $conf/$d ]] || continue
+        cp -a "$conf/$d" "$conf/$d.bak-$ts" || { rm -rf "$conf/$d.bak-$ts"; echo "Backup of $conf/$d failed; nothing changed." >&2; exit 1; }
+        echo "Backup: $conf/$d.bak-$ts"
+    done
+}
+
 case ${1:-} in
     "") ;;
+    --recover-profile)
+        pick=${2:-$(ls -1d "$conf"/mabox-noctalia-ce.bak-* 2>/dev/null | sed 's/.*\.bak-//' | sort | tail -n1 || true)}
+        if [[ ! $pick =~ ^[0-9]{8}-[0-9]{6}$ || ! -d $conf/mabox-noctalia-ce.bak-$pick ]]; then
+            echo "No backup${2:+ $2}. Available:" >&2
+            ls -1d "$conf"/mabox-noctalia-ce.bak-* 2>/dev/null | sed 's/.*\.bak-/  /' >&2 || true
+            exit 1
+        fi
+        backup_config
+        for d in mabox-noctalia-ce noctalia; do
+            [[ -d $conf/$d.bak-$pick ]] || continue
+            rm -rf "$conf/$d"
+            cp -a "$conf/$d.bak-$pick" "$conf/$d"
+        done
+        labwc --reconfigure >/dev/null 2>&1 || true
+        echo "Config restored from backup $pick. Log out and back in to apply it all."
+        exit 0 ;;
     --uninstall)
         noctalia msg plugins disable musqz/music >/dev/null 2>&1 \
             && noctalia msg plugins source remove musqz-local >/dev/null 2>&1 \
@@ -21,7 +50,18 @@ case ${1:-} in
         (( ${#pkgs[@]} )) && sudo pacman -Rns "${pkgs[@]}"
         rm -f "$state"
         exit 0 ;;
-    *) echo "usage: ${0##*/} [--uninstall]" >&2; exit 2 ;;
+    --reset-config)
+        backup_config
+        rm -rf "$conf/mabox-noctalia-ce"
+        mkdir -p "$conf/noctalia"
+        cp -r "$dir/configs/mabox-noctalia-ce" "$conf/"
+        rm -rf "$conf/mabox-noctalia-ce/plugins"
+        chmod 755 "$conf"/mabox-noctalia-ce/menuscripts/* "$conf/mabox-noctalia-ce/autostart"
+        cp -rf "$dir/configs/noctalia/." "$conf/noctalia/"
+        labwc --reconfigure >/dev/null 2>&1 || true
+        echo "Config reset from $dir/configs. Log out and back in to apply it all."
+        exit 0 ;;
+    *) echo "usage: ${0##*/} [--uninstall|--reset-config|--recover-profile [timestamp]]" >&2; exit 2 ;;
 esac
 
 mkdir -p "$(dirname "$state")"
