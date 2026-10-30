@@ -37,6 +37,15 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
   </tr>
 </table>
 
+<table>
+  <tr>
+    <td><img alt="/music launcher with keybind cheat sheet and conky" src="docs/music-launcher.png" /></td>
+  </tr>
+  <tr>
+    <td align="center">/music launcher</td>
+  </tr>
+</table>
+
 ## Custom tools
 
 | Tool | Key | Setup |
