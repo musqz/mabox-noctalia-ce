@@ -17,5 +17,6 @@ gmrun
 geany
 gtk-layer-shell
 python-pywayland
+gifski
 pipewire
 wireplumber
