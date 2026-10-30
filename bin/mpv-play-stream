@@ -5,14 +5,14 @@ main() {
     case $LANG in
         pl*)
             NO_MPV="MPV nie jest zainstalowany."
-            NO_CLIPBOARD="Brak xclip lub xsel. Instaluj jedno, aby używać skryptu."
+            NO_CLIPBOARD="Brak wl-paste, xclip lub xsel. Instaluj jedno, aby używać skryptu."
             INVALID_URL="Schowek nie zawiera prawidłowego URL. Skopiuj link do wideo i spróbuj ponownie."
             FORM_TEXT="Wklej adres URL do wideo (np. mp4, webm, strumień): Kliknij OK, aby kontynuować."
             PLAY_FAIL="Nie udało się odtworzyć. Sprawdź połączenie lub URL."
             ;;
         es*)
             NO_MPV="MPV no está instalado."
-            NO_CLIPBOARD="No se encontró xclip ni xsel. Instala uno para usar este script."
+            NO_CLIPBOARD="No se encontró wl-paste, xclip ni xsel. Instala uno para usar este script."
             INVALID_URL="El portapapeles no contiene una URL válida. Copia un enlace de video e inténtalo de nuevo."
             FORM_TEXT="Pega la URL del video (mp4, webm o stream link): Pulsa OK para continuar."
             PLAY_FAIL="No se pudo reproducir. Verifica tu conexión o el URL."
@@ -49,7 +49,7 @@ main() {
         2> >(grep -v "xapp-gtk3-module"))
     
     [ -z "$ENTRY" ] && exit 0
-    URL=$(echo "$ENTRY" | cut -d '|' -f1)
+    URL=$(echo "$ENTRY" | cut -d '|' -f1 | tr -d '[:space:]')
 
     # Validate URL
     if [[ -z "$URL" || ! "$URL" =~ ^https?:// ]]; then
@@ -57,16 +57,7 @@ main() {
         exit 1
     fi
     
-    # Check video type and play accordingly
-    if [[ "$URL" == *youtu.be* ]] ; then
-        mpv "$URL" || yad --center --error --text="$PLAY_FAIL"
-    elif [[ "$URL" == *mp4 ]]; then
-        mpv "$URL" || yad --center --error --text="$PLAY_FAIL"
-    elif [[ "$URL" == *webm ]]; then
-        mpv "$URL" || yad --center --error --text="$PLAY_FAIL"
-    else
-        yad --center --warning --text="Unsupported video URL format. Please enter a YouTube, Vimeo or local file (mp4/webm) URL."
-    fi
+    mpv --force-window=yes "$URL" || yad --center --error --text="$PLAY_FAIL"
 }
 
 main
