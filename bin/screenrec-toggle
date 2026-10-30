@@ -1,23 +1,31 @@
 #!/usr/bin/env bash
 # Toggle a region recording with wl-screenrec; file is named by date and time.
-# While recording, a tray icon is shown; clicking it stops the recording.
+# Run again to stop; bound to the screenrec button in the noctalia bar.
 set -euo pipefail
 
 if pkill -INT -x wl-screenrec; then
     exit 0
 fi
 
+bar_state() {
+    noctalia msg config-set widget.screenrec.glyph "\"$1\"" >/dev/null || true
+    noctalia msg config-set widget.screenrec.color "\"$2\"" >/dev/null || true
+    noctalia msg config-set widget.screenrec.tooltip "\"$3\"" >/dev/null || true
+}
+
 region=$(slurp) || exit 0
 out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).mp4"
 
-yad --notification --image=media-record --text="Recording - click to stop" \
-    --command="pkill -INT -x wl-screenrec" --no-middle &
-tray=$!
-trap 'kill "$tray" 2>/dev/null || true' EXIT
+bar_state circle-filled error "stop recording"
+trap 'bar_state player-record on_surface "start recording"' EXIT
 
 mkdir -p "$(dirname "$out")"
 if wl-screenrec -g "$region" -f "$out"; then
-    notify-send "Screen recording" "Saved $out"
+    ( choice=$(notify-send -a "Screen recording" -A folder="Open folder" -A play="Play" "Screen recording" "Saved $(basename "$out")") || exit 0
+      case $choice in
+          folder) xdg-open "$(dirname "$out")" ;;
+          play) xdg-open "$out" ;;
+      esac ) >/dev/null 2>&1 &
 else
-    notify-send "Screen recording" "Failed"
+    notify-send -a "Screen recording" -u critical "Screen recording" "Failed"
 fi

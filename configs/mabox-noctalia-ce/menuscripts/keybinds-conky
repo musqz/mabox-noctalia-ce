@@ -75,6 +75,8 @@ def label_for(kb):
             return "to monitor " + (a.get("output") or a.get("direction")), "windows"
         if name == "SendToDesktop":
             return "to desktop " + a.get("to", "").replace("Workspace ", ""), "windows"
+        if name == "ShowMenu" and a.get("menu") == "root-menu":
+            return "root menu", "apps"
         if name == "ToggleMaximize":
             return "maximize", "windows"
     return None, None

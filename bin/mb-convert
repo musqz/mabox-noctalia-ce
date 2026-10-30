@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Convert media files with ffmpeg / magick. Usage: mb-convert <preset> [file...]
+# Without files a picker opens. Output goes next to the source, never overwriting.
+set -euo pipefail
+
+preset=${1:-}
+[[ -n $preset ]] || { echo "usage: mb-convert <preset> [file...]" >&2; exit 2; }
+shift
+
+EVEN='scale=trunc(iw/2)*2:trunc(ih/2)*2'
+
+kind=video ext=
+need() { command -v "$1" >/dev/null || { notify-send -a Converter -u critical "Converter" "$1 is not installed"; exit 1; }; }
+case $preset in
+    mp4)         ext=mp4;  args="-vf $EVEN -c:v libx264 -crf 20 -preset medium -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart" ;;
+    mp4-remux)   ext=mp4;  args="-c copy -movflags +faststart" ;;
+    mkv-remux)   ext=mkv;  args="-c copy" ;;
+    hevc)        ext=mp4;  args="-vf $EVEN -c:v libx265 -crf 24 -preset medium -pix_fmt yuv420p -tag:v hvc1 -c:a aac -b:a 192k -movflags +faststart" ;;
+    av1)         ext=mkv;  args="-c:v libsvtav1 -crf 35 -preset 6 -pix_fmt yuv420p10le -c:a libopus -b:a 128k" ;;
+    webm)        ext=webm; args="-c:v libvpx-vp9 -crf 32 -b:v 0 -row-mt 1 -c:a libopus -b:a 128k" ;;
+    gif-low)     ext=gif;  fps=10 width=480  quality=60 ;;
+    gif-medium)  ext=gif;  fps=15 width=720  quality=80 ;;
+    gif-high)    ext=gif;  fps=20 width=1080 quality=100 ;;
+    mp3)         kind=audio; ext=mp3;  args="-vn -c:a libmp3lame -q:a 2" ;;
+    flac)        kind=audio; ext=flac; args="-vn -c:a flac" ;;
+    opus)        kind=audio; ext=opus; args="-vn -c:a libopus -b:a 128k" ;;
+    ogg)         kind=audio; ext=ogg;  args="-vn -c:a libvorbis -q:a 5" ;;
+    m4a)         kind=audio; ext=m4a;  args="-vn -c:a aac -b:a 192k" ;;
+    wav)         kind=audio; ext=wav;  args="-vn -c:a pcm_s16le" ;;
+    png|jpg|webp|avif)
+                 kind=image; ext=$preset ;;
+    *) echo "unknown preset: $preset" >&2; exit 2 ;;
+esac
+
+case $kind in image) need magick ;; *) need ffmpeg ;; esac
+[[ $preset == gif-* ]] && need gifski
+
+if (($# == 0)); then
+    case $kind in
+        video) dir=$HOME/Videos/Recordings; filter="Video|*.mkv *.mp4 *.webm *.mov *.avi *.gif *.m4v *.ts" ;;
+        audio) dir=$HOME/Music;             filter="Audio and video|*.mp3 *.flac *.ogg *.opus *.m4a *.wav *.aac *.mkv *.mp4 *.webm *.mov" ;;
+        image) dir=$HOME/Pictures;          filter="Images|*.png *.jpg *.jpeg *.webp *.avif *.bmp *.tiff *.gif" ;;
+    esac
+    [[ -d $dir ]] || dir=$HOME
+    mapfile -t files < <(yad --file --multiple --separator=$'\n' --title="Convert to $preset" \
+        --width=900 --height=600 --filename="$dir/" --file-filter="$filter" --file-filter="All|*") || true
+    set --
+    for f in "${files[@]}"; do [[ -n $f ]] && set -- "$@" "$f"; done
+fi
+(($# > 0)) && [[ -n $1 ]] || exit 0
+
+notify() { notify-send -a "Converter" "$@"; }
+
+# Noctalia sends ActionInvoked only to the calling connection, so wait on it with notify-send -A.
+notify_done() { # id dir out
+    ( choice=$(notify -r "$1" -A folder="Open folder" -A play="Play" "Converted to $preset" "$(basename "$3")") || exit 0
+      case $choice in
+          folder) xdg-open "$2" ;;
+          play) xdg-open "$3" ;;
+      esac ) >/dev/null 2>&1 &
+}
+
+ok=0 fail=0
+err=$(mktemp)
+cur=
+trap 'rm -f "$err" "$cur"' EXIT
+for src in "$@"; do
+    dir=$(dirname "$src") base=$(basename "$src"); base=${base%.*}
+    out="$dir/$base.$ext"
+    n=1
+    while [[ -e $out ]]; do out="$dir/$base-$n.$ext"; ((n++)); done
+    cur=$out
+
+    id=$(notify -p "Converting to $preset" "$(basename "$src")")
+    if [[ $kind == image ]]; then
+        magick "$src" "$out" 2>"$err"
+    elif [[ $ext == gif ]]; then
+        { ffmpeg -nostdin -loglevel error -i "$src" -vf "fps=$fps,scale='min($width,iw)':-2:flags=lanczos" -f yuv4mpegpipe - \
+            | gifski --quiet --fps "$fps" --quality "$quality" -o "$out" -; } 2>"$err"
+    else
+        # shellcheck disable=SC2086
+        ffmpeg -nostdin -loglevel error -i "$src" $args "$out" 2>"$err"
+    fi && st=0 || st=$?
+
+    if ((st == 0)); then
+        cur=
+        ((ok++)) || true
+        notify_done "$id" "$dir" "$out"
+    else
+        ((fail++)) || true
+        rm -f "$out"
+        notify -r "$id" -u critical "Conversion failed" "$(basename "$src"): $(tail -n1 "$err")"
+    fi
+done
+((fail == 0))

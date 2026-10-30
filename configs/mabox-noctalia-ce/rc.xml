@@ -171,7 +171,8 @@
     <keybind key="S-C-KP_9"><action name="Execute" command="skippy-wl-send-to-dell"/></keybind>
     <keybind key="S-C-KP_Prior"><action name="Execute" command="skippy-wl-send-to-dell"/></keybind>
     <keybind key="S-C-KP_8"><action name="Execute" command="skippy-wl-send-to-desk"/></keybind>
-    <keybind key="A-Space"><action name="Execute" command="skippy-wl-tiling"/></keybind>
+    <keybind key="A-Space"><action name="ShowMenu" menu="root-menu"/></keybind>
+    <keybind key="C-Space"><action name="Execute" command="skippy-wl-tiling"/></keybind>
 
     <!-- helper binds the scripts use -->
     <keybind key="W-A-C-7"><action name="MoveToOutput" output="HDMI-A-1"/></keybind>
