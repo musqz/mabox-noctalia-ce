@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Toggle desktop-scroll workspace switching: wheel up/down on the desktop goes to the previous/next workspace.
+# Adds or removes a marked block in the live rc.xml, then reloads labwc.
+set -euo pipefail
+
+rc="$HOME/.config/mabox-noctalia-ce/rc.xml"
+bak=$(mktemp)
+trap 'rm -f "$bak"' EXIT
+cp "$rc" "$bak"
+
+fail() {
+    cp "$bak" "$rc"
+    notify-send -a "Desktop scroll" -u critical "Desktop scroll" "$1"
+    exit 1
+}
+
+if grep -q 'desktop-scroll:begin' "$rc"; then
+    grep -q 'desktop-scroll:end' "$rc" || fail "rc.xml has a begin marker without an end marker; remove it by hand"
+    sed -i --follow-symlinks '/desktop-scroll:begin/,/desktop-scroll:end/d' "$rc"
+    state=off
+else
+    sed -i --follow-symlinks '/<context name="Root">/a\
+        <!-- desktop-scroll:begin -->\
+        <mousebind direction="Up" action="Scroll"><action name="GoToDesktop" to="left" /></mousebind>\
+        <mousebind direction="Down" action="Scroll"><action name="GoToDesktop" to="right" /></mousebind>\
+        <!-- desktop-scroll:end -->' "$rc"
+    grep -q 'desktop-scroll:begin' "$rc" || fail 'No <context name="Root"> in rc.xml'
+    state=on
+fi
+
+labwc --reconfigure || fail "labwc --reconfigure failed; rc.xml restored"
+notify-send -a "Desktop scroll" "Desktop scroll" "Workspace switching on scroll: $state"

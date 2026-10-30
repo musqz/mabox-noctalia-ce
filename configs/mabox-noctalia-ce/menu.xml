@@ -69,6 +69,9 @@
     <item label="Conky manager" icon="conky">
       <action name="Execute" command="~/.config/mabox-noctalia-ce/menuscripts/conky-manager" />
     </item>
+    <item label="Toggle desktop scroll" icon="preferences-desktop">
+      <action name="Execute" command="desktop-scroll-toggle" />
+    </item>
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>
