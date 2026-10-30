@@ -35,10 +35,6 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
     <td><img alt="Blue theme with matching conky" src="docs/theme-blue-2.png" /></td>
     <td><img alt="Red theme with matching conky" src="docs/theme-red-2.png" /></td>
   </tr>
-  <tr>
-    <td align="center">Conky follows the wallpaper colors: blue</td>
-    <td align="center">Conky follows the wallpaper colors: red</td>
-  </tr>
 </table>
 
 ## Custom tools
