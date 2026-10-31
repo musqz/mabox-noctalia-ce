@@ -176,6 +176,8 @@ menu() {
         has_pipx && echo "Update pipx,$self upgrade pipx"
         (( orph )) && echo "Remove orphans ($orph),$self orphans"
         echo "Check now,$self check"
+        echo "^sep()"
+        echo "✕ Close,true"
     } | jgmenu --simple --config-file="$rc"
 }
 
