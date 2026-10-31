@@ -42,6 +42,15 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
   </tr>
 </table>
 
+<table>
+  <tr>
+    <td><img alt="Update menu on the bar button" src="docs/updates-menu.png" /></td>
+  </tr>
+  <tr>
+    <td align="center">Update menu</td>
+  </tr>
+</table>
+
 ## Custom tools
 
 | Tool | Key | Setup |
