@@ -7,7 +7,6 @@ conky.config = {
 
 	own_window = true,
 	own_window_type = 'desktop',
-	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
 	own_window_colour = c.bg,
 	own_window_class = 'Conky',
 	own_window_title = 'Mabox Sysinfo Bar Conky',
