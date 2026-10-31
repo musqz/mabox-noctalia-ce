@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Stop all conky widgets if any run, otherwise start the enabled set.
+if pgrep -x conky >/dev/null; then
+    pkill -x conky
+else
+    exec "$HOME/.config/mabox-noctalia-ce/menuscripts/conky-start"
+fi

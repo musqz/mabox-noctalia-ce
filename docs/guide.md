@@ -111,6 +111,7 @@ Action file `~/.local/share/file-manager/actions/changewpdir.desktop`: set `Exec
 
 - Widgets: clock, sysinfo, cpu, ram, network, mount points, shortcuts, todo, polaroid and more.
 - Pick which run: root menu → Mabox Config → Conky manager.
+- All on/off: root menu → Mabox Config → Conky on/off.
 - Restart the set: `~/.config/mabox-noctalia-ce/menuscripts/conky-start`.
 - Colors follow the theme.
 
