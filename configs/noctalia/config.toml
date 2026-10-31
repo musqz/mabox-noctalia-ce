@@ -27,6 +27,10 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
 input_path = "~/.config/noctalia/templates/jgmenu.conf"
 output_path = "~/.config/mabox-noctalia-ce/jgmenurc"
 
+[widget.sysmon-ram]
+type = "sysmon"
+stat = "ram"
+
 [idle.behavior.screen_off]
   action = "custom"
   timeout = 450
@@ -34,7 +38,7 @@ output_path = "~/.config/mabox-noctalia-ce/jgmenurc"
   resume_command = "wlopm --on '*'"
 
 [bar.default]
-end = ['media', 'updates', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
+end = ['media', 'sysmon-ram', 'updates', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
 
 [widget.screenrec]
 type = "custom_button"
