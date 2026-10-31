@@ -45,7 +45,7 @@
     <action name="Execute" command="exo-open --launch WebBrowser" />
   </item>
   <item label="File Manager" icon="system-file-manager">
-    <action name="Execute" command="exo-open --launch FileManager" />
+    <action name="Execute" command="pcmanfm" />
   </item>
   <item label="Add/Remove software" icon="system-software-install">
     <action name="Execute" command="pamac-manager" />
