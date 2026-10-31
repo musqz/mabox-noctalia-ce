@@ -58,9 +58,10 @@ The bar is noctalia's. Extra buttons:
 |---|---|---|
 | Updates | menu: update all, repo + AUR, repo only, flatpak, snap, check now | check now |
 | Screen recording | start / stop | |
-| RAM | | |
 
-Click the updates button again to close the menu.
+Click the updates button again to close the menu. The snap entry is hidden while `snapd` is stopped.
+
+The RAM button is a noctalia `sysmon` widget: it shows memory use and has no click action.
 
 ### Updates
 
@@ -68,7 +69,7 @@ Click the updates button again to close the menu.
 - Tooltip shows the split: `5 updates (2 repo, 1 AUR, 2 flatpak)`.
 - Check runs 30 s after login, then hourly, and after every change to `pacman.log` (offline, no refresh).
 - `yay` is used when installed, else `pacman`.
-- Snap is skipped while `snapd` is stopped.
+- Snap is skipped in the check and hidden in the menu while `snapd` is stopped.
 - Command line: `mb-updates-ce [check|offline|upgrade [all|aur|repo|flatpak|snap]|menu]`.
 
 ### Change the bar
