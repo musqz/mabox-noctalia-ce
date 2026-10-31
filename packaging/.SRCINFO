@@ -36,7 +36,6 @@ pkgbase = mabox-noctalia-ce
 	optdepends = ffmpeg: converter menu
 	optdepends = gifski: converter GIF output
 	optdepends = wl-clipboard: clipboard URL for music scripts
-	optdepends = swaylock-effects: lock screen (AUR)
 	optdepends = labwc-menu-generator-git: Applications menu (AUR)
 	optdepends = beautysolar-icon-theme: default icon theme
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)

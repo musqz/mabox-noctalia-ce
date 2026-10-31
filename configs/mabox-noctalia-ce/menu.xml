@@ -185,7 +185,7 @@
     </menu>
   </menu>
   <item label="Lock screen" icon="system-lock-screen">
-    <action name="Execute" command="swaylock -f" />
+    <action name="Execute" command="noctalia msg session lock" />
   </item>
   <item label="Session menu" icon="system-shutdown">
     <action name="Execute" command="noctalia msg panel-toggle session" />
