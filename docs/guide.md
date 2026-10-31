@@ -105,8 +105,6 @@ Converter: pick a preset, then files; output lands next to the source and never 
 
 Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallpaper-dir <dir>`.
 
-Action file `~/.local/share/file-manager/actions/changewpdir.desktop`: set `Exec=mb-wallpaper-dir %f`.
-
 ## Conky
 
 - Widgets: clock, sysinfo, cpu, ram, network, mount points, shortcuts, todo, polaroid and more.
