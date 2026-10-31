@@ -23,6 +23,10 @@ output_path = "~/.config/geany/colorschemes/noctalia.conf"
 input_path = "~/.config/noctalia/templates/labwc.conf"
 output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
 
+[theme.templates.user.jgmenu]
+input_path = "~/.config/noctalia/templates/jgmenu.conf"
+output_path = "~/.config/mabox-noctalia-ce/jgmenurc"
+
 [idle.behavior.screen_off]
   action = "custom"
   timeout = 450
@@ -48,5 +52,5 @@ color = "on_surface"
 tooltip = "checking updates"
 
 [widget.updates.actions]
-left = "exec mb-updates-ce upgrade"
+left = "exec mb-updates-ce menu"
 right = "exec mb-updates-ce check"
