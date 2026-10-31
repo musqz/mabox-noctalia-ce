@@ -33,6 +33,7 @@ package() {
   install -Dm755 "$root/lib/mabox-noctalia-ce" "$pkgdir/usr/bin/mabox-noctalia-ce"
   install -Dm755 "$root"/bin/* -t "$pkgdir/usr/bin"
   install -Dm644 "$root"/systemd/user/* -t "$pkgdir/usr/lib/systemd/user"
+  install -Dm644 "$root"/configs/file-manager/actions/* -t "$pkgdir/usr/share/file-manager/actions"
   install -Dm644 "$root/configs/noctalia-ce.desktop" \
     "$pkgdir/usr/share/wayland-sessions/noctalia-ce.desktop"
 

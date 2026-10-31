@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Action
+Name=Set wallpaper dir
+Icon=preferences-desktop-wallpaper
+Profiles=profile-setwallpaperdir
+
+[X-Action-Profile profile-setwallpaperdir]
+MimeTypes=inode/directory;
+Exec=mb-wallpaper-dir %f
+Name=Set wallpaper dir
