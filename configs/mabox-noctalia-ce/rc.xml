@@ -216,7 +216,11 @@
     </mouse>
       
   <windowRules>
-    <windowRule identifier="conky*" serverDecoration="no"/>
+    <windowRule identifier="conky*" serverDecoration="no"
+                skipWindowSwitcher="yes" skipTaskbar="yes"
+                ignoreFocusRequest="yes" fixedPosition="yes">
+      <action name="ToggleAlwaysOnBottom"/>
+    </windowRule>
     <windowRule title="q-term">
       <action name="SetDecorations" decorations="none"/>
       <action name="ResizeTo" width="2545" height="700"/>
