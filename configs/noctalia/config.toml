@@ -30,7 +30,7 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
   resume_command = "wlopm --on '*'"
 
 [bar.default]
-end = ['media', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
+end = ['media', 'updates', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
 
 [widget.screenrec]
 type = "custom_button"
@@ -40,3 +40,13 @@ tooltip = "start recording"
 
 [widget.screenrec.actions]
 left = "exec screenrec-toggle"
+
+[widget.updates]
+type = "custom_button"
+glyph = "circle-check"
+color = "on_surface"
+tooltip = "checking updates"
+
+[widget.updates.actions]
+left = "exec mb-updates-ce upgrade"
+right = "exec mb-updates-ce check"

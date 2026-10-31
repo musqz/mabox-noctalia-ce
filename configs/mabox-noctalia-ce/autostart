@@ -11,6 +11,7 @@ systemctl --user --no-block start labwc-session.target
 command -v skippy-wl >/dev/null && systemctl --user --no-block start skippy-wl.service
 
 command -v kanshi >/dev/null && kanshi &
+command -v mb-updates-ce >/dev/null && systemctl --user --no-block start mb-updates-ce.timer mb-updates-ce.path
 
 # Default icon theme for GTK apps; keeps any non-Adwaita choice.
 [ -d /usr/share/icons/BeautySolar ] && [ "$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null)" = "'Adwaita'" ] && gsettings set org.gnome.desktop.interface icon-theme BeautySolar

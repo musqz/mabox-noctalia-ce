@@ -48,5 +48,6 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 |---|---|---|
 | `/music` launcher player | `W-S-m` | [docs/music.md](docs/music.md) |
 | `mb-music-add-url` add track | `C-S-2` | [docs/music.md](docs/music.md) |
+| `mb-updates-ce` bar update indicator | left: upgrade, right: recheck | autostart |
 | `mpv-play-stream` play URL | `C-S-1` | [docs/music.md](docs/music.md) |
 | Media keys | `XF86Audio*` | [docs/music.md](docs/music.md) |
