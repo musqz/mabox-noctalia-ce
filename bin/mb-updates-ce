@@ -87,7 +87,7 @@ check() {
             # exit 1 means outdated packages were found; anything else (timeout, offline) keeps the old list
             rc=0; timeout 30 npm outdated -g --parseable > "$dir/npm.new" 2>/dev/null || rc=$?
             # exit 1 with no output is a failed registry fetch, not an outdated list
-            (( rc == 0 || (rc == 1 && -s "$dir/npm.new") )) && mv "$dir/npm.new" "$dir/npm"
+            { (( rc == 0 )) || { (( rc == 1 )) && [[ -s $dir/npm.new ]]; }; } && mv "$dir/npm.new" "$dir/npm"
             rm -f "$dir/npm.new"
         else
             : > "$dir/npm"
