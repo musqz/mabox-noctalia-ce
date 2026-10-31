@@ -54,9 +54,6 @@
     <action name="Execute" command="noctalia msg panel-toggle launcher" />
   </item>
   <menu id="settings-menu" label="Mabox Config" icon="preferences-system">
-    <item label="Mabox Control Center" icon="applications-system">
-      <action name="Execute" command="mcc" />
-    </item>
     <item label="Noctalia settings" icon="preferences-system">
       <action name="Execute" command="noctalia msg settings-toggle" />
     </item>
