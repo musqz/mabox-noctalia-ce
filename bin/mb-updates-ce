@@ -163,7 +163,7 @@ menu() {
         upgrade all
         return
     fi
-    pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc' && return 0
+    pkill -x jgmenu && return 0
     local orph
     orph=$(pacman -Qtdq 2>/dev/null | grep -c . || true)
     {
@@ -176,6 +176,8 @@ menu() {
         has_pipx && echo "Update pipx,$self upgrade pipx"
         (( orph )) && echo "Remove orphans ($orph),$self orphans"
         echo "Check now,$self check"
+        echo "^sep()"
+        echo "✕ Close,true"
     } | jgmenu --simple --config-file="$rc"
 }
 
