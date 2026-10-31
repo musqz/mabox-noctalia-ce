@@ -53,12 +53,12 @@ check() {
             rm -f "$dir/flatpak.new"
         fi
         # snap hangs when snapd is stopped
+        : > "$dir/snap"
         if command -v snap >/dev/null && systemctl is-active --quiet snapd.socket snapd.service &&
            timeout 30 snap refresh --list 2>/dev/null | tail -n +2 > "$dir/snap.new"; then
             mv "$dir/snap.new" "$dir/snap"
-        else
-            rm -f "$dir/snap.new"
         fi
+        rm -f "$dir/snap.new"
     fi
     flat=$(count_file "$dir/flatpak")
     snp=$(count_file "$dir/snap")
@@ -98,15 +98,21 @@ upgrade() {
 }
 
 menu() {
+    local self rc="${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/jgmenurc"
+    self=$(readlink -f "$0")
+    if ! command -v jgmenu >/dev/null || [[ ! -f $rc ]]; then
+        upgrade all
+        return
+    fi
     pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc' && return 0
     {
-        echo "Update all,${0##*/} upgrade all"
-        echo "Update repo + AUR (yay),${0##*/} upgrade aur"
-        echo "Update repo only (pacman),${0##*/} upgrade repo"
-        command -v flatpak >/dev/null && echo "Update flatpak,${0##*/} upgrade flatpak"
-        systemctl is-active --quiet snapd.socket snapd.service && echo "Update snap,${0##*/} upgrade snap"
-        echo "Check now,${0##*/} check"
-    } | jgmenu --simple --config-file="${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/jgmenurc"
+        echo "Update all,$self upgrade all"
+        echo "Update repo + AUR (yay),$self upgrade aur"
+        echo "Update repo only (pacman),$self upgrade repo"
+        command -v flatpak >/dev/null && echo "Update flatpak,$self upgrade flatpak"
+        systemctl is-active --quiet snapd.socket snapd.service && echo "Update snap,$self upgrade snap"
+        echo "Check now,$self check"
+    } | jgmenu --simple --config-file="$rc"
 }
 
 case ${1:-check} in
