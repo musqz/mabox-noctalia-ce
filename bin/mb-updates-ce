@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Count pending pacman/AUR updates and show the result on the noctalia bar button [widget.updates].
+#   mb-updates-ce [check]    sync a temporary db, count, update the button, print the count
+#   mb-updates-ce offline    same without network (reuses the last synced db and AUR list)
+#   mb-updates-ce upgrade    run the system upgrade in a terminal, then recount
+set -euo pipefail
+
+dir="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
+
+bar_state() {
+    noctalia msg config-set widget.updates.glyph "\"$1\"" >/dev/null || true
+    noctalia msg config-set widget.updates.color "\"$2\"" >/dev/null || true
+    noctalia msg config-set widget.updates.tooltip "\"$3\"" >/dev/null || true
+}
+
+count_file() { grep -c . "$1" || true; }
+
+check() {
+    local args=() rc=0 repo aur=0 n offline=0
+    [[ ${1:-} == offline && -d /tmp/checkup-db-$UID ]] && offline=1
+    (( offline )) && args=(--nosync)
+    mkdir -p "$dir"
+    exec 9> "$dir/lock"
+    flock 9
+
+    checkupdates "${args[@]}" > "$dir/repo.new" || rc=$?
+    if (( rc == 1 )); then
+        rm -f "$dir/repo.new"
+        bar_state alert-circle on_surface_variant "update check failed"
+        echo "checkupdates failed" >&2
+        return 1
+    fi
+    mv "$dir/repo.new" "$dir/repo"
+    repo=$(count_file "$dir/repo")
+
+    touch "$dir/aur"
+    if (( ! offline )) && helper=$(command -v yay || command -v paru); then
+        if "$helper" -Qua 2>/dev/null > "$dir/aur.new"; then
+            mv "$dir/aur.new" "$dir/aur"
+        else
+            rm -f "$dir/aur.new"
+        fi
+    fi
+    aur=$(count_file "$dir/aur")
+
+    n=$((repo + aur))
+    if (( n )); then
+        bar_state package primary "$n updates ($repo repo, $aur AUR)"
+    else
+        bar_state circle-check on_surface "system up to date"
+    fi
+    echo "$n"
+}
+
+upgrade() {
+    local cmd=(sudo pacman -Syu)
+    command -v yay >/dev/null && cmd=(yay -Syu)
+    foot -T "system update" bash -c '"$@"; echo; read -rp "Done. Press Enter to close. " _' _ "${cmd[@]}" || true
+    check
+}
+
+case ${1:-check} in
+    check|offline) check "${1:-check}" ;;
+    upgrade) upgrade ;;
+    *) echo "usage: ${0##*/} [check|offline|upgrade]" >&2; exit 2 ;;
+esac

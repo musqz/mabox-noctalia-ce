@@ -1,0 +1,7 @@
+[Unit]
+Description=Recount package updates after pacman runs
+StartLimitIntervalSec=0
+
+[Path]
+PathChanged=/var/log/pacman.log
+Unit=mb-updates-ce-offline.service

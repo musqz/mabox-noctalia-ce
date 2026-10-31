@@ -1,0 +1,7 @@
+[Unit]
+Description=Check pending package updates for the noctalia bar
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mb-updates-ce check
+SyslogIdentifier=mb-updates-ce

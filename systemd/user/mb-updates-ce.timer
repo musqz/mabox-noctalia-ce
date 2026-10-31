@@ -1,0 +1,9 @@
+[Unit]
+Description=Check pending package updates hourly
+
+[Timer]
+OnActiveSec=30
+OnUnitActiveSec=1h
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Recount pending package updates without network
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/sleep 15
+ExecStart=/usr/bin/mb-updates-ce offline
+SyslogIdentifier=mb-updates-ce

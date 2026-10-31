@@ -23,6 +23,7 @@ pkgbase = mabox-noctalia-ce
 	depends = ddcutil
 	depends = terminator
 	depends = foot
+	depends = pacman-contrib
 	depends = conky
 	depends = gmrun
 	optdepends = kitty: terminal keybind
