@@ -66,6 +66,9 @@
     <item label="Conky manager" icon="conky">
       <action name="Execute" command="~/.config/mabox-noctalia-ce/menuscripts/conky-manager" />
     </item>
+    <item label="Conky on/off" icon="conky">
+      <action name="Execute" command="~/.config/mabox-noctalia-ce/menuscripts/conky-toggle" />
+    </item>
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>

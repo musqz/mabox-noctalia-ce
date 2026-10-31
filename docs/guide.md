@@ -101,10 +101,17 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
 
+## Wallpaper directory
+
+Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallpaper-dir <dir>`.
+
+Action file `~/.local/share/file-manager/actions/changewpdir.desktop`: set `Exec=mb-wallpaper-dir %f`.
+
 ## Conky
 
 - Widgets: clock, sysinfo, cpu, ram, network, mount points, shortcuts, todo, polaroid and more.
 - Pick which run: root menu → Mabox Config → Conky manager.
+- All on/off: root menu → Mabox Config → Conky on/off.
 - Restart the set: `~/.config/mabox-noctalia-ce/menuscripts/conky-start`.
 - Colors follow the theme.
 

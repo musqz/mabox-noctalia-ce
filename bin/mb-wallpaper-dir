@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Set the noctalia wallpaper directory. Used by the pcmanfm action "Set wallpaper dir".
+#   mb-wallpaper-dir <directory>
+set -euo pipefail
+
+d=${1:-}
+[[ -d $d ]] || { notify-send -u critical "Wallpaper dir" "No directory selected." || true; exit 1; }
+d=$(readlink -f "$d")
+
+if [[ -z $(find "$d" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.avif' \) -print -quit) ]]; then
+    notify-send -u critical -i error "Wallpaper dir" "No images in: $d" || true
+    exit 1
+fi
+
+val=${d//\\/\\\\}
+val=${val//\"/\\\"}
+if ! noctalia msg config-set wallpaper.directory "\"$val\"" >/dev/null; then
+    notify-send -u critical -i error "Wallpaper dir" "noctalia rejected the change." || true
+    exit 1
+fi
+notify-send -i preferences-desktop-wallpaper "Wallpaper dir" "Set to: $d" || true
