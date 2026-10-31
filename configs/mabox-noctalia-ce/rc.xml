@@ -210,7 +210,7 @@
       <!-- Show the root menu on desktop right click -->
       <context name="Root">
         <mousebind button="Left" action="Press">
-          <action name="Execute" command="pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc'" />
+          <action name="Execute" command="pkill -x jgmenu" />
           <action name="ShowMenu" menu="root-menu" />
         </mousebind>
         <mousebind button="Right" action="Press">
