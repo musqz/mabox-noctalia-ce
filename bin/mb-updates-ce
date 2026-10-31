@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Count pending pacman/AUR/flatpak/snap updates and show the result on the noctalia bar button [widget.updates].
+# Count pending pacman/AUR/flatpak/snap/npm/pipx updates and show the result on the noctalia bar button [widget.updates].
 #   mb-updates-ce [check]    sync a temporary db, count, update the button, print the count
 #   mb-updates-ce offline    same without network (reuses the last synced db and AUR list)
-#   mb-updates-ce upgrade [all|aur|repo|flatpak|snap]   upgrade in a terminal, then recount
+#   mb-updates-ce upgrade [all|aur|repo|flatpak|snap|npm|pipx]   upgrade in a terminal, then recount
+#   mb-updates-ce orphans    list orphaned packages in a terminal and remove them after confirmation
 #   mb-updates-ce menu       pick the upgrade scope from a popup menu
 set -euo pipefail
 
@@ -16,8 +17,28 @@ bar_state() {
 
 count_file() { grep -c . "$1" || true; }
 
+# npm only counts when the global prefix is user-owned and holds packages (system /usr is pacman's)
+has_npm() {
+    local prefix
+    command -v npm >/dev/null || return 1
+    prefix=$(npm prefix -g 2>/dev/null) && [[ -w $prefix/lib/node_modules ]] &&
+        [[ -n $(npm ls -g --depth=0 --parseable 2>/dev/null | tail -n +2 | grep -v '/npm$') ]]
+}
+
+has_pipx() { command -v pipx >/dev/null && [[ -n $(pipx list --short 2>/dev/null) ]]; }
+
+pipx_outdated() {
+    local venvs v name out
+    venvs=$(pipx environment --value PIPX_LOCAL_VENVS) || return 1
+    for v in "$venvs"/*/; do
+        name=$(basename "$v")
+        out=$(timeout 30 "$v/bin/python" -m pip list --outdated --format=freeze 2>/dev/null) || return 1
+        grep -i "^${name//[-_.]/[-_.]}==" <<< "$out" || true
+    done
+}
+
 check() {
-    local args=() rc=0 repo aur=0 flat=0 snp=0 n offline=0 tip
+    local args=() rc=0 repo aur=0 flat=0 snp=0 npmn=0 pipxn=0 n offline=0 tip
     [[ ${1:-} == offline && -d /tmp/checkup-db-$UID ]] && offline=1
     (( offline )) && args=(--nosync)
     mkdir -p "$dir"
@@ -60,14 +81,36 @@ check() {
         fi
         rm -f "$dir/snap.new"
     fi
+    touch "$dir/npm" "$dir/pipx"
+    if (( ! offline )); then
+        if has_npm; then
+            # exit 1 means outdated packages were found; anything else (timeout, offline) keeps the old list
+            rc=0; timeout 30 npm outdated -g --parseable > "$dir/npm.new" 2>/dev/null || rc=$?
+            # exit 1 with no output is a failed registry fetch, not an outdated list
+            (( rc == 0 || (rc == 1 && -s "$dir/npm.new") )) && mv "$dir/npm.new" "$dir/npm"
+            rm -f "$dir/npm.new"
+        else
+            : > "$dir/npm"
+        fi
+        if has_pipx; then
+            pipx_outdated > "$dir/pipx.new" && mv "$dir/pipx.new" "$dir/pipx"
+            rm -f "$dir/pipx.new"
+        else
+            : > "$dir/pipx"
+        fi
+    fi
+    npmn=$(count_file "$dir/npm")
+    pipxn=$(count_file "$dir/pipx")
     flat=$(count_file "$dir/flatpak")
     snp=$(count_file "$dir/snap")
 
-    n=$((repo + aur + flat + snp))
+    n=$((repo + aur + flat + snp + npmn + pipxn))
     if (( n )); then
         tip="$n updates ($repo repo, $aur AUR"
         (( flat )) && tip+=", $flat flatpak"
         (( snp )) && tip+=", $snp snap"
+        (( npmn )) && tip+=", $npmn npm"
+        (( pipxn )) && tip+=", $pipxn pipx"
         bar_state package primary "$tip)"
     else
         bar_state circle-check on_surface "system up to date"
@@ -90,11 +133,27 @@ upgrade() {
         all|flatpak) command -v flatpak >/dev/null && cmd+='flatpak update; ' ;;
     esac
     case $what in
+        all|npm) has_npm && cmd+='npm update -g; ' ;;
+    esac
+    case $what in
+        all|pipx) has_pipx && cmd+='pipx upgrade-all; ' ;;
+    esac
+    case $what in
         all|snap) (( has_snap )) && cmd+='sudo snap refresh; ' ;;
     esac
     [[ -n $cmd ]] || { echo "nothing to update for '$what'" >&2; return 1; }
     foot -T "system update" bash -c 'eval "$1"; echo; read -rp "Done. Press Enter to close. " _' _ "$cmd" || true
     check
+}
+
+orphans() {
+    foot -T "remove orphans" bash -c '
+        list=$(pacman -Qtdq)
+        [[ -n $list ]] || { echo "no orphans"; read -rp "Press Enter to close. " _; exit; }
+        echo "$list"; echo
+        read -rp "Enter to remove all (Ctrl-C to cancel) " _
+        sudo pacman -Rns $list
+        echo; read -rp "Done. Press Enter to close. " _' || true
 }
 
 menu() {
@@ -105,12 +164,17 @@ menu() {
         return
     fi
     pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc' && return 0
+    local orph
+    orph=$(pacman -Qtdq 2>/dev/null | grep -c . || true)
     {
         echo "Update all,$self upgrade all"
         echo "Update repo + AUR (yay),$self upgrade aur"
         echo "Update repo only (pacman),$self upgrade repo"
         command -v flatpak >/dev/null && echo "Update flatpak,$self upgrade flatpak"
         systemctl is-active --quiet snapd.socket snapd.service && echo "Update snap,$self upgrade snap"
+        has_npm && echo "Update npm,$self upgrade npm"
+        has_pipx && echo "Update pipx,$self upgrade pipx"
+        (( orph )) && echo "Remove orphans ($orph),$self orphans"
         echo "Check now,$self check"
     } | jgmenu --simple --config-file="$rc"
 }
@@ -118,6 +182,7 @@ menu() {
 case ${1:-check} in
     check|offline) check "${1:-check}" ;;
     upgrade) upgrade "${2:-all}" ;;
+    orphans) orphans ;;
     menu) menu ;;
-    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap]|menu]" >&2; exit 2 ;;
+    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|menu]" >&2; exit 2 ;;
 esac

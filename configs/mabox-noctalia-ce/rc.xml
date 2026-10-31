@@ -208,7 +208,26 @@
     <mouse>
       <default />
       <!-- Show the root menu on desktop right click -->
+      <!-- Close the update dropdown (X11 jgmenu) on clicks it cannot see -->
+      <context name="Client">
+        <mousebind button="Left" action="Press">
+          <action name="Focus" />
+          <action name="Raise" />
+          <action name="Execute" command="pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc'" />
+        </mousebind>
+      </context>
+      <context name="Frame">
+        <mousebind button="Left" action="Press">
+          <action name="Focus" />
+          <action name="Raise" />
+          <action name="Execute" command="pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc'" />
+        </mousebind>
+      </context>
       <context name="Root">
+        <mousebind button="Left" action="Press">
+          <action name="Execute" command="pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc'" />
+          <action name="ShowMenu" menu="root-menu" />
+        </mousebind>
         <mousebind button="Right" action="Press">
           <action name="ShowMenu" menu="root-menu" />
         </mousebind>
