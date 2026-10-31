@@ -27,6 +27,9 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
 input_path = "~/.config/noctalia/templates/jgmenu.conf"
 output_path = "~/.config/mabox-noctalia-ce/jgmenurc"
 
+[system.monitor]
+enabled = true
+
 [widget.sysmon-ram]
 type = "sysmon"
 stat = "ram"
