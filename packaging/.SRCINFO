@@ -18,6 +18,7 @@ pkgbase = mabox-noctalia-ce
 	depends = grim
 	depends = slurp
 	depends = yad
+	depends = jgmenu
 	depends = geany
 	depends = libnotify
 	depends = ddcutil

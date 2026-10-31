@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Count pending pacman/AUR updates and show the result on the noctalia bar button [widget.updates].
+# Count pending pacman/AUR/flatpak/snap updates and show the result on the noctalia bar button [widget.updates].
 #   mb-updates-ce [check]    sync a temporary db, count, update the button, print the count
 #   mb-updates-ce offline    same without network (reuses the last synced db and AUR list)
-#   mb-updates-ce upgrade    run the system upgrade in a terminal, then recount
+#   mb-updates-ce upgrade [all|aur|repo|flatpak|snap]   upgrade in a terminal, then recount
+#   mb-updates-ce menu       pick the upgrade scope from a popup menu
 set -euo pipefail
 
 dir="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
@@ -16,7 +17,7 @@ bar_state() {
 count_file() { grep -c . "$1" || true; }
 
 check() {
-    local args=() rc=0 repo aur=0 n offline=0
+    local args=() rc=0 repo aur=0 flat=0 snp=0 n offline=0 tip
     [[ ${1:-} == offline && -d /tmp/checkup-db-$UID ]] && offline=1
     (( offline )) && args=(--nosync)
     mkdir -p "$dir"
@@ -43,9 +44,31 @@ check() {
     fi
     aur=$(count_file "$dir/aur")
 
-    n=$((repo + aur))
+    touch "$dir/flatpak" "$dir/snap"
+    if (( ! offline )); then
+        if command -v flatpak >/dev/null &&
+           timeout 30 flatpak remote-ls --updates --columns=application > "$dir/flatpak.new" 2>/dev/null; then
+            mv "$dir/flatpak.new" "$dir/flatpak"
+        else
+            rm -f "$dir/flatpak.new"
+        fi
+        # snap hangs when snapd is stopped
+        : > "$dir/snap"
+        if command -v snap >/dev/null && systemctl is-active --quiet snapd.socket snapd.service &&
+           timeout 30 snap refresh --list 2>/dev/null | tail -n +2 > "$dir/snap.new"; then
+            mv "$dir/snap.new" "$dir/snap"
+        fi
+        rm -f "$dir/snap.new"
+    fi
+    flat=$(count_file "$dir/flatpak")
+    snp=$(count_file "$dir/snap")
+
+    n=$((repo + aur + flat + snp))
     if (( n )); then
-        bar_state package primary "$n updates ($repo repo, $aur AUR)"
+        tip="$n updates ($repo repo, $aur AUR"
+        (( flat )) && tip+=", $flat flatpak"
+        (( snp )) && tip+=", $snp snap"
+        bar_state package primary "$tip)"
     else
         bar_state circle-check on_surface "system up to date"
     fi
@@ -53,14 +76,48 @@ check() {
 }
 
 upgrade() {
-    local cmd=(sudo pacman -Syu)
-    command -v yay >/dev/null && cmd=(yay -Syu)
-    foot -T "system update" bash -c '"$@"; echo; read -rp "Done. Press Enter to close. " _' _ "${cmd[@]}" || true
+    local what=${1:-all} cmd="" has_snap=0
+    systemctl is-active --quiet snapd.socket snapd.service && has_snap=1
+    case $what in
+        all|repo|aur)
+            if [[ $what == repo ]] || ! command -v yay >/dev/null; then
+                cmd='sudo pacman -Syu; '
+            else
+                cmd='yay -Syu; '
+            fi ;;
+    esac
+    case $what in
+        all|flatpak) command -v flatpak >/dev/null && cmd+='flatpak update; ' ;;
+    esac
+    case $what in
+        all|snap) (( has_snap )) && cmd+='sudo snap refresh; ' ;;
+    esac
+    [[ -n $cmd ]] || { echo "nothing to update for '$what'" >&2; return 1; }
+    foot -T "system update" bash -c 'eval "$1"; echo; read -rp "Done. Press Enter to close. " _' _ "$cmd" || true
     check
+}
+
+menu() {
+    local self rc="${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/jgmenurc"
+    self=$(readlink -f "$0")
+    if ! command -v jgmenu >/dev/null || [[ ! -f $rc ]]; then
+        upgrade all
+        return
+    fi
+    pkill -f 'jgmenu --simple --config-file=.*mabox-noctalia-ce/jgmenurc' && return 0
+    {
+        echo "Update all,$self upgrade all"
+        echo "Update repo + AUR (yay),$self upgrade aur"
+        echo "Update repo only (pacman),$self upgrade repo"
+        command -v flatpak >/dev/null && echo "Update flatpak,$self upgrade flatpak"
+        systemctl is-active --quiet snapd.socket snapd.service && echo "Update snap,$self upgrade snap"
+        echo "Check now,$self check"
+    } | jgmenu --simple --config-file="$rc"
 }
 
 case ${1:-check} in
     check|offline) check "${1:-check}" ;;
-    upgrade) upgrade ;;
-    *) echo "usage: ${0##*/} [check|offline|upgrade]" >&2; exit 2 ;;
+    upgrade) upgrade "${2:-all}" ;;
+    menu) menu ;;
+    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap]|menu]" >&2; exit 2 ;;
 esac
