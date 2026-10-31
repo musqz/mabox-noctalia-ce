@@ -51,12 +51,16 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
   </tr>
 </table>
 
+## Guide
+
+Elements, keys and tips: [docs/guide.md](docs/guide.md).
+
 ## Custom tools
 
 | Tool | Key | Setup |
 |---|---|---|
 | `/music` launcher player | `W-S-m` | [docs/music.md](docs/music.md) |
 | `mb-music-add-url` add track | `C-S-2` | [docs/music.md](docs/music.md) |
-| `mb-updates-ce` bar update indicator | left: upgrade, right: recheck | autostart |
+| `mb-updates-ce` bar update indicator | left: update menu, right: recheck | autostart |
 | `mpv-play-stream` play URL | `C-S-1` | [docs/music.md](docs/music.md) |
 | Media keys | `XF86Audio*` | [docs/music.md](docs/music.md) |
