@@ -41,7 +41,7 @@ stat = "ram"
   resume_command = "wlopm --on '*'"
 
 [bar.default]
-end = ['media', 'sysmon-ram', 'updates', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
+end = ['media', 'sysmon-ram', 'updates', 'colors', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
 
 [widget.screenrec]
 type = "custom_button"
@@ -51,6 +51,15 @@ tooltip = "start recording"
 
 [widget.screenrec.actions]
 left = "exec screenrec-toggle"
+
+[widget.colors]
+type = "custom_button"
+glyph = "color-picker"
+color = "on_surface"
+tooltip = "color picker"
+
+[widget.colors.actions]
+left = "exec noctalia msg panel-toggle musqz/colors:picker"
 
 [widget.updates]
 type = "custom_button"
