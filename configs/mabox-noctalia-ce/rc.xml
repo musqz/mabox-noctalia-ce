@@ -50,7 +50,7 @@
     <keybind key="XF86MonBrightnessUp"><action name="Execute"><command>brightness-primary up</command></action></keybind>
     <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightness-primary down</command></action></keybind>
     
-    
+    <keybind key="W-A-c"><action name="Execute" command="noctalia msg panel-toggle musqz/colors:picker"/></keybind>
 
     <!-- Wallpaper -->
     <keybind key="W-2"><action name="Execute" command="noctalia msg workspace-switch next"/></keybind>

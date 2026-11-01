@@ -64,7 +64,7 @@ case ${1:-} in
         echo "Config restored from $tag-$pick. Log out and back in to apply it all."
         exit 0 ;;
     --uninstall)
-        noctalia msg plugins disable musqz/music >/dev/null 2>&1 \
+        { noctalia msg plugins disable musqz/music; noctalia msg plugins disable musqz/colors; } >/dev/null 2>&1 \
             && noctalia msg plugins source remove musqz-local >/dev/null 2>&1 \
             || echo "Noctalia not running: run 'noctalia msg plugins source remove musqz-local' in the session." >&2
         rm -rf "$data/plugins"
@@ -143,11 +143,12 @@ fi
 rm -rf "$data/plugins"
 cp -r "$dir/configs/mabox-noctalia-ce/plugins" "$data/plugins"
 if noctalia msg plugins source add musqz-local path "$data/plugins" >/dev/null 2>&1 \
-    && noctalia msg plugins enable musqz/music >/dev/null 2>&1; then
-    echo "Enabled plugin musqz/music (/music in the launcher)."
+    && { noctalia msg plugins enable musqz/music; noctalia msg plugins enable musqz/colors; } >/dev/null 2>&1; then
+    echo "Enabled plugins musqz/music (/music in the launcher) and musqz/colors (bar button)."
 else
     echo "Noctalia is not running. In the session run:"
     echo "  noctalia msg plugins source add musqz-local path $data/plugins"
     echo "  noctalia msg plugins enable musqz/music"
+    echo "  noctalia msg plugins enable musqz/colors"
 fi
 echo "Done. Pick \"Noctalia CE\" at the login screen."

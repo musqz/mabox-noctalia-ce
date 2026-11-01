@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Click a screen pixel, print its colour as #RRGGBB. Exit 1 on cancel.
+set -euo pipefail
+
+pos=$(slurp -p -b 00000000 -f '%x %y') || exit 1
+read -r x y <<<"$pos"
+rgb=$(grim -g "$x,$y 1x1" -t ppm - | tail -c3 | od -An -tu1)
+read -r r g b <<<"$rgb"
+printf '#%02X%02X%02X\n' "$r" "$g" "$b"

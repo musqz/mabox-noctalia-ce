@@ -1,0 +1,19 @@
+id = "musqz/colors"
+name = "Colors"
+version = "0.1.0"
+plugin_api = 43
+author = "musqz"
+license = "MIT"
+icon = "color-picker"
+description = "Color picker panel: pick from screen, recent colors and palettes; click a swatch to copy it."
+dependencies = ["grim", "slurp"]
+tags = ["utility", "colors"]
+
+[[panel]]
+id = "picker"
+entry = "panel.luau"
+width = 760
+height = "content"
+max_height = 600
+placement = "attached"
+open_near_click = true

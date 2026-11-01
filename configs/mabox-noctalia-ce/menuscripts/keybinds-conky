@@ -21,6 +21,7 @@ CMD_LABELS = [
     (r"brightness-primary up", "brightness up"), (r"brightness-primary down", "brightness down"),
     (r"grim ", "screenshot"), (r"viewnior", "last screenshot"),
     (r"screenrec", "screen record"),
+    (r"musqz/colors", "color picker"),
     (r"session lock", "lock screen"),
     (r"TerminalEmulator btop", "btop"), (r"TerminalEmulator", "terminal"),
     (r"^foot", "foot"), (r"q-term-toggle", "quake terminal"),
