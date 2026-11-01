@@ -25,7 +25,7 @@ optdepends=('radicale: local calendar (mb-calendar-setup)'
             'beautysolar-icon-theme: default icon theme'
             'tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)'
             'pyradio: PyRadio theme template'
-            'pywalfox: Firefox theme template')
+            'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
 source=()
 

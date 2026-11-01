@@ -44,6 +44,6 @@ pkgbase = mabox-noctalia-ce
 	optdepends = beautysolar-icon-theme: default icon theme
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
-	optdepends = pywalfox: Firefox theme template
+	optdepends = python-pywalfox: Firefox theme template
 
 pkgname = mabox-noctalia-ce

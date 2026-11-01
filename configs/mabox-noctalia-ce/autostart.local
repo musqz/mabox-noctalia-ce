@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Your own startup programs. Started by autostart; delete this file if unused.
+# Keep your changes here so updates to autostart don't touch them.
+# Examples (remove the leading # to enable):
+
+# fittsmon-wl: use your output names from wlr-randr
+#(sleep 7 && fittsmon-wl --monitor HDMI-A-1 DP-1) &
+#(sleep 5 && tabdock) &
+#(sleep 30 && /usr/bin/vorta) &
+#(sleep 8 && /opt/piavpn/bin/pia-client) &
