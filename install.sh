@@ -190,8 +190,9 @@ report() {
     grep -qv '^\s*\(#\|$\)' "$al" 2>/dev/null \
         || echo "[todo] autostart.local (optional): add personal startup programs in $al"
     if command -v kanshi >/dev/null && [[ ! -f $conf/kanshi/config ]]; then echo "[todo] kanshi needs ~/.config/kanshi/config"; fi
-    if command -v radicale >/dev/null; then echo "[todo] calendar (optional): run mb-calendar-setup, then Noctalia Settings > Calendar > Local (vdir)"
-    else echo "[todo] calendar (optional): sudo pacman -S radicale, then mb-calendar-setup"; fi
+    if ! command -v radicale >/dev/null; then echo "[todo] calendar (optional): sudo pacman -S radicale, then mb-calendar-setup"
+    elif systemctl --user is-enabled radicale >/dev/null 2>&1; then echo "[done] calendar: radicale service enabled (Noctalia: Settings > Calendar > Local (vdir))"
+    else echo "[todo] calendar (optional): run mb-calendar-setup, then Noctalia Settings > Calendar > Local (vdir)"; fi
     for p in kitty pavucontrol viewnior ffmpeg colormenu beautysolar-icon-theme pyradio python-pywalfox; do
         pacman -Qq "$p" >/dev/null 2>&1 || opt+=("$p")
     done
