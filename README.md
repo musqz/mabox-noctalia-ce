@@ -51,6 +51,17 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
   </tr>
 </table>
 
+<table>
+  <tr>
+    <td valign="top"><img alt="Colors panel on the bar button with the color selector open" src="docs/colors-dropdown.png" width="520" /></td>
+    <td valign="top"><img alt="Pinned Colors window with the built-in flat_character palette" src="docs/colors-pinned.png" width="240" /></td>
+  </tr>
+  <tr>
+    <td align="center">Colors panel (W-A-c)</td>
+    <td align="center">Pinned window</td>
+  </tr>
+</table>
+
 ## Guide
 
 Elements, keys and tips: [docs/guide.md](docs/guide.md).
