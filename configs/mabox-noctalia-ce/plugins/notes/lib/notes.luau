@@ -241,8 +241,13 @@ local function deleteNote()
 end
 
 local function copyNote(n)
-  noctalia.copyToClipboard(n.body, "text/plain")
-  noctalia.notify("Note copied", n.title)
+  -- wl-copy sets the live selection; copyToClipboard only reaches the history.
+  noctalia.runAsync({ "wl-copy", "--", n.body }, function(result)
+    if result.exitCode ~= 0 then
+      noctalia.copyToClipboard(n.body, "text/plain")
+    end
+    noctalia.notify("Note copied", n.title)
+  end)
 end
 
 local function indexOf(list, id)
