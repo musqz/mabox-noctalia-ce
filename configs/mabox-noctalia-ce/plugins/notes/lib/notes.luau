@@ -20,6 +20,7 @@ local selecting = false
 local selected = {}
 local confirming = false
 local armedDelete = nil
+local wrote = false
 local armedFresh = false
 local NOTES = nil
 local render
@@ -127,6 +128,7 @@ local function saveNote(n)
   head = head .. "\n"
   noctalia.mkdirAll(NOTES)
   noctalia.writeFile(NOTES .. "/" .. n.id, head .. n.body)
+  wrote = true
 end
 
 local function loadNotes()
@@ -676,6 +678,7 @@ render = function()
     end }))
   end
   table.insert(side, ui.spacer({ flexGrow = 1 }))
+  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", tooltip = "Re-read notes from disk", onClick = reload }))
   table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", onClick = function()
     finishEdit()
     panel.close()
@@ -732,6 +735,12 @@ local function tick()
   ticks += 1
   if NOTES and ticks % 2 == 0 then
     local sig = signature()
+    if wrote then
+      -- Own saves are not external changes; reloading would redraw the editor while typing.
+      wrote = false
+      lastSignature = sig
+      return
+    end
     if sig ~= lastSignature then
       lastSignature = sig
       reload()
