@@ -1,8 +1,8 @@
-id = "musqz/colors"
+id = "mabox/colors"
 name = "Colors"
 version = "0.1.0"
 plugin_api = 43
-author = "musqz"
+author = "mabox"
 license = "MIT"
 icon = "color-picker"
 description = "Color picker panel: pick from screen, recent colors and palettes; click a swatch to copy it."

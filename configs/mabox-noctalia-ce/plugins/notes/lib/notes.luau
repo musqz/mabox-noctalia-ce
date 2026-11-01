@@ -539,7 +539,7 @@ local function selectBar()
 end
 
 local function openMain(context)
-  noctalia.runAsync({ "noctalia", "msg", "panel-open", "musqz/notes:main", context or "list" })
+  noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/notes:main", context or "list" })
 end
 
 -- File times of all notes; the two windows notice each other's writes by comparing them.
@@ -604,7 +604,7 @@ render = function()
   table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", onClick = function()
     finishEdit()
     panel.close()
-    noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "musqz/notes:pinned" })
+    noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/notes:pinned" })
   end }))
 
   local right

@@ -64,7 +64,7 @@ case ${1:-} in
         echo "Config restored from $tag-$pick. Log out and back in to apply it all."
         exit 0 ;;
     --uninstall)
-        for id in music colors notes; do noctalia msg plugins disable "musqz/$id" >/dev/null 2>&1 || true; done
+        for id in music colors notes; do noctalia msg plugins disable "mabox/$id" >/dev/null 2>&1 || true; done
         noctalia msg plugins source remove musqz-local >/dev/null 2>&1 \
             || echo "Noctalia not running: run 'noctalia msg plugins source remove musqz-local' in the session." >&2
         rm -rf "$data/plugins"
@@ -147,10 +147,14 @@ if [[ -n $stale ]] || ! pacman -Qq mabox-noctalia-ce >/dev/null 2>&1; then
     [[ -z $new ]] || record mabox-noctalia-ce
     self=built
 fi
+# Existing installs: disable the old musqz/* ids and keep their data under mabox/*.
+for id in music colors notes; do noctalia msg plugins disable "musqz/$id" >/dev/null 2>&1 || true; done
+pdata="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data"
+[[ -d $pdata/musqz && ! -e $pdata/mabox ]] && cp -r "$pdata/musqz" "$pdata/mabox"
 rm -rf "$data/plugins"
 cp -r "$dir/configs/mabox-noctalia-ce/plugins" "$data/plugins"
 if noctalia msg plugins source add musqz-local path "$data/plugins" >/dev/null 2>&1 \
-    && { noctalia msg plugins enable musqz/music; noctalia msg plugins enable musqz/colors; noctalia msg plugins enable musqz/notes; } >/dev/null 2>&1; then
+    && { noctalia msg plugins enable mabox/music; noctalia msg plugins enable mabox/colors; noctalia msg plugins enable mabox/notes; } >/dev/null 2>&1; then
     plugins_on=1
 else
     plugins_on=0
@@ -172,7 +176,7 @@ report() {
     else echo "[skip] mabox-noctalia-ce package already installed"; fi
     [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
     echo "[done] plugins copied to $data/plugins"
-    if (( plugins_on )); then echo "[done] plugins musqz/music, musqz/colors and musqz/notes enabled"
+    if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors and mabox/notes enabled"
     else echo "[skip] plugins not enabled: noctalia not running or the source call failed"; fi
 
     echo; echo "To do by hand"
@@ -180,9 +184,9 @@ report() {
     if (( ! plugins_on )); then
         echo "[todo] in the session run:"
         echo "         noctalia msg plugins source add musqz-local path $data/plugins"
-        echo "         noctalia msg plugins enable musqz/music"
-        echo "         noctalia msg plugins enable musqz/colors"
-        echo "         noctalia msg plugins enable musqz/notes"
+        echo "         noctalia msg plugins enable mabox/music"
+        echo "         noctalia msg plugins enable mabox/colors"
+        echo "         noctalia msg plugins enable mabox/notes"
     fi
     if [[ -f /usr/share/wayland-sessions/noctalia-ce.desktop ]]; then echo "[todo] pick \"Noctalia CE\" at the login screen"
     else echo "[todo] noctalia-ce.desktop session file is missing: reinstall the package"; fi
