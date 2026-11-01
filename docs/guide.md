@@ -35,6 +35,7 @@ The desktop cheat sheet (conky, left side) lists every bind from the live `rc.xm
 | `C-S-a` | screenshot |
 | `C-Insert` | open last screenshot |
 | `W-A-c` | color picker |
+| `W-n` | notes |
 | `A-Space` | root menu |
 | `C-S-r` | reload labwc |
 
