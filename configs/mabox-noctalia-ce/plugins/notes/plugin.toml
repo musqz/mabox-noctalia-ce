@@ -1,0 +1,30 @@
+id = "musqz/notes"
+name = "Notes"
+version = "0.1.0"
+plugin_api = 43
+author = "musqz"
+license = "MIT"
+icon = "notes"
+description = "Quick notes and favorites: search by keyword, #tag or date, star, copy. Plain files, so the folder can be synced."
+tags = ["utility", "notes"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 760
+height = "content"
+max_height = 600
+placement = "attached"
+open_near_click = true
+
+[[panel]]
+id = "pinned"
+entry = "pinned.luau"
+width = 330
+height = "fill"
+placement = "floating"
+position = "top_left"
+persistent = true
+dismiss_on_outside_click = false
+keyboard_focus = "none"
+layer = "overlay"
