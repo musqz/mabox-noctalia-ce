@@ -189,6 +189,10 @@ local function reload()
 end
 
 local function createNote()
+  -- A new note has no color, so an active filter or search would hide it again.
+  colorFilter = {}
+  query = ""
+  searchNonce += 1
   noctalia.mkdirAll(NOTES)
   current = { id = uniqueName(NOTES, ".md"), tags = "", body = "", fresh = true }
   saveNote(current)
@@ -412,22 +416,34 @@ local function noteRows()
   return rows
 end
 
+-- Only colors in use (or ticked, so they can be unticked) get a dot; nil when there are none.
 local function colorBar()
+  local used = {}
+  for _, n in ipairs(notes) do
+    if n.color then
+      used[n.color] = true
+    end
+  end
   local cells = { ui.label({ text = "Colors", fontSize = 11, color = "on_surface_variant" }) }
   local any = next(colorFilter) ~= nil
   for _, c in ipairs(COLORS) do
     local on = colorFilter[c.name]
-    local dot = { key = "cf" .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function()
-      colorFilter[c.name] = not on or nil
-      selected = {}
-      confirming = false
-      render()
-    end }
-    if on then
-      dot.border = "on_surface"
-      dot.borderWidth = 2
+    if used[c.name] or on then
+      local dot = { key = "cf" .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function()
+        colorFilter[c.name] = not on or nil
+        selected = {}
+        confirming = false
+        render()
+      end }
+      if on then
+        dot.border = "on_surface"
+        dot.borderWidth = 2
+      end
+      table.insert(cells, ui.box(dot))
     end
-    table.insert(cells, ui.box(dot))
+  end
+  if #cells == 1 then
+    return nil
   end
   return ui.row({ gap = 8, align = "center" }, cells)
 end
@@ -565,8 +581,7 @@ render = function()
     armedDelete = nil
   end
   if pinned then
-    local rows = noteRows()
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, {
+    local children = {
       ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "plus", text = "New", variant = "primary", controlSize = "sm", tooltip = "New note in the notes window", onClick = function() openMain("new") end }),
         ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", tooltip = "Open the notes window", onClick = function() openMain() end }),
@@ -574,9 +589,13 @@ render = function()
         ui.spacer({ flexGrow = 1 }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
-      colorBar(),
-      ui.scroll({ gap = 0, flexGrow = 1, key = "list" }, rows),
-    }))
+    }
+    local bar = colorBar()
+    if bar then
+      table.insert(children, bar)
+    end
+    table.insert(children, ui.scroll({ gap = 0, flexGrow = 1, key = "list" }, noteRows()))
+    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, children))
     return
   end
 
@@ -600,7 +619,11 @@ render = function()
   if current then
     right = { editor() }
   else
-    right = { searchBox(), colorBar() }
+    right = { searchBox() }
+    local bar = colorBar()
+    if bar then
+      table.insert(right, bar)
+    end
     if selecting then
       table.insert(right, selectBar())
     end
