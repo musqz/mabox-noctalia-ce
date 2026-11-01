@@ -2,6 +2,8 @@
 
 musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noctalia-dev/noctalia-shell) session on labwc, selectable as **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and package choices.
 
+**Screenshots:** [Themes](#themes) · [Windows and menus](#windows-and-menus) · [Launcher and bar panels](#launcher-and-bar-panels) · [Notes and colors](#notes-and-colors)
+
 **Work in progress.** This repo is for inspiration and development: take what you like, or install it as is.
 
 - **Separate:** own session entry and own config in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
@@ -11,64 +13,79 @@ musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noc
 
 Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
+## Screenshots
+
+Click an image for the full size.
+
+### Themes
 
 <table>
   <tr>
-    <td><img alt="skippy-wl search" src="docs/skippy-wl-search.png" /></td>
-    <td><img alt="Root menu with icons" src="docs/root-menu.gif" /></td>
-    <td><img alt="skippy-wl expose" src="docs/skippy-wl.png" /></td>
-    <td><img alt="skippy-wl multiselect" src="docs/skippy-wl-multiselect.png" /></td>
+    <td valign="top"><a href="docs/theme-blue-2.png"><img alt="Blue theme with matching conky" src="docs/theme-blue-2.png" width="430" /></a></td>
+    <td valign="top"><a href="docs/theme-red-2.png"><img alt="Red theme with matching conky" src="docs/theme-red-2.png" width="430" /></a></td>
+  </tr>
+  <tr>
+    <td align="center">Blue theme with matching conky</td>
+    <td align="center">Red theme with matching conky</td>
+  </tr>
+</table>
+
+### Windows and menus
+
+<table>
+  <tr>
+    <td valign="top"><a href="docs/skippy-wl-search.png"><img alt="skippy-wl search" src="docs/skippy-wl-search.png" width="430" /></a></td>
+    <td valign="top"><a href="docs/skippy-wl.png"><img alt="skippy-wl expose" src="docs/skippy-wl.png" width="430" /></a></td>
   </tr>
   <tr>
     <td align="center">skippy-wl: <code>/</code> search</td>
-    <td align="center">Root menu with icons</td>
     <td align="center">skippy-wl: expose view of all windows</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td valign="top"><a href="docs/skippy-wl-multiselect.png"><img alt="skippy-wl multiselect" src="docs/skippy-wl-multiselect.png" width="430" /></a></td>
+    <td valign="top"><a href="docs/root-menu.gif"><img alt="Root menu with icons" src="docs/root-menu.gif" width="430" /></a></td>
+  </tr>
+  <tr>
     <td align="center">skippy-wl: multiselect</td>
+    <td align="center">Root menu with icons</td>
   </tr>
 </table>
 
-<table>
-  <tr>
-    <td><img alt="Blue theme with matching conky" src="docs/theme-blue-2.png" /></td>
-    <td><img alt="Red theme with matching conky" src="docs/theme-red-2.png" /></td>
-  </tr>
-</table>
+### Launcher and bar panels
 
 <table>
   <tr>
-    <td><img alt="/music launcher with keybind cheat sheet and conky" src="docs/music-launcher.png" /></td>
+    <td valign="top"><a href="docs/music-launcher.png"><img alt="/music launcher with keybind cheat sheet and conky" src="docs/music-launcher.png" width="560" /></a></td>
+    <td valign="top"><a href="docs/updates-menu.png"><img alt="Update menu on the bar button" src="docs/updates-menu.png" /></a></td>
   </tr>
   <tr>
     <td align="center">/music launcher</td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td><img alt="Update menu on the bar button" src="docs/updates-menu.png" /></td>
-  </tr>
-  <tr>
     <td align="center">Update menu</td>
   </tr>
 </table>
 
+### Notes and colors
+
 <table>
   <tr>
-    <td valign="top"><img alt="Colors panel on the bar button with the color selector open" src="docs/colors-dropdown.png" width="520" /></td>
-    <td valign="top"><img alt="Pinned Colors window with the built-in flat_character palette" src="docs/colors-pinned.png" width="240" /></td>
+    <td valign="top"><a href="docs/notes.png"><img alt="Notes dropdown with color filter next to the pinned notes window" src="docs/notes.png" width="640" /></a></td>
   </tr>
   <tr>
-    <td align="center">Colors panel (W-A-c)</td>
-    <td align="center">Pinned window</td>
+    <td align="center">Notes (W-n) and pinned window (W-A-n)</td>
   </tr>
 </table>
 
 <table>
   <tr>
-    <td><img alt="Notes dropdown with color filter next to the pinned notes window" src="docs/notes.png" /></td>
+    <td valign="top"><a href="docs/colors-dropdown.png"><img alt="Colors panel on the bar button with the color selector open" src="docs/colors-dropdown.png" width="520" /></a></td>
+    <td valign="top"><a href="docs/colors-pinned.png"><img alt="Pinned Colors window with the built-in flat_character palette" src="docs/colors-pinned.png" width="240" /></a></td>
   </tr>
   <tr>
-    <td align="center">Notes (W-n) and pinned window (W-A-n)</td>
+    <td align="center">Colors panel (W-A-c)</td>
+    <td align="center">Pinned window</td>
   </tr>
 </table>
 
