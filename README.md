@@ -1,17 +1,44 @@
 # mabox-noctalia-ce
 
-musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noctalia-dev/noctalia-shell) session on labwc, selectable as **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and package choices.
+Noctalia session on labwc for Mabox Linux. Pick **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and packages.
 
 **Screenshots:** [Themes](#themes) · [Windows and menus](#windows-and-menus) · [Launcher and bar panels](#launcher-and-bar-panels) · [Notes and colors](#notes-and-colors)
 
-**Work in progress.** This repo is for inspiration and development: take what you like, or install it as is.
+Work in progress. Take what you like, or install it as is.
 
-- **Separate:** own session entry and own config in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
-- **Install:** `./install.sh` installs the needed packages and builds the `mabox-noctalia-ce` package. Packages you already have are skipped. The package is rebuilt when `bin/` differs from `/usr/bin`. The script ends with a `[done]`/`[skip]`/`[todo]` summary.
-- **Autostart:** put your own startup programs in `~/.config/mabox-noctalia-ce/autostart.local`. `autostart` stays the shared default.
-- **Remove:** `./install.sh --uninstall` removes the package and the packages the script installed. Then `rm -rf ~/.config/mabox-noctalia-ce`.
+## Install
 
-Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
+Needs Mabox Linux and `noctalia` 5.4 or newer (repo `[maboxlinux]`).
+
+```sh
+git clone https://github.com/musqz/mabox-noctalia-ce
+cd mabox-noctalia-ce
+./install.sh
+```
+
+- Installs the missing packages and builds `mabox-noctalia-ce`.
+- Skips packages you already have; rebuilds when `bin/` differs from `/usr/bin`.
+- Ends with a `[done]` / `[skip]` / `[todo]` summary.
+- Config lives in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
+
+## Autostart
+
+Add your own programs, one per line:
+
+```sh
+echo 'myapp &' >> ~/.config/mabox-noctalia-ce/autostart.local
+```
+
+`autostart` stays the shared default.
+
+## Remove
+
+```sh
+./install.sh --uninstall
+rm -rf ~/.config/mabox-noctalia-ce
+```
+
+`--uninstall` removes the package and the packages the script installed.
 
 ## Screenshots
 
