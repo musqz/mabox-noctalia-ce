@@ -8,7 +8,8 @@ url='https://github.com/musqz/mabox-noctalia-ce'
 license=('GPL')
 depends=('python' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlr-randr' 'wlopm' 'wtype' 'wlrctl' 'grim' 'slurp' 'yad' 'jgmenu'
          'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'conky' 'gmrun')
-optdepends=('kitty: terminal keybind'
+optdepends=('radicale: local calendar (mb-calendar-setup)'
+            'kitty: terminal keybind'
             'pavucontrol: volume control keybind'
             'viewnior: screenshot viewer keybind'
             'fittsmon: provides fittsmon-wl (github.com/musqz/fittsmon)'

@@ -73,6 +73,7 @@ Elements, keys and tips: [docs/guide.md](docs/guide.md).
 | `/music` launcher player | `W-S-m` | [docs/music.md](docs/music.md) |
 | `mb-music-add-url` add track | `C-S-2` | [docs/music.md](docs/music.md) |
 | `mb-updates-ce` bar update indicator | left: update menu, right: recheck | autostart |
+| `mb-calendar-setup` local calendar (radicale) | run once in a terminal | Thunderbird + Noctalia Settings > Calendar > Local (vdir) |
 | `mb-colorpick` + Colors bar panel | bar button: pick from screen, recent colors, palettes | `~/.config/colormenu/*.clr` |
 | `mpv-play-stream` play URL | `C-S-1` | [docs/music.md](docs/music.md) |
 | Media keys | `XF86Audio*` | [docs/music.md](docs/music.md) |
