@@ -5,7 +5,8 @@ musqz's community edition of Mabox Noctalia: a [Noctalia](https://github.com/noc
 **Work in progress.** This repo is for inspiration and development: take what you like, or install it as is.
 
 - **Separate:** own session entry and own config in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
-- **Install:** `./install.sh` installs the needed packages and builds the `mabox-noctalia-ce` package. Packages you already have are skipped.
+- **Install:** `./install.sh` installs the needed packages and builds the `mabox-noctalia-ce` package. Packages you already have are skipped. The package is rebuilt when `bin/` differs from `/usr/bin`. The script ends with a `[done]`/`[skip]`/`[todo]` summary.
+- **Autostart:** put your own startup programs in `~/.config/mabox-noctalia-ce/autostart.local`. `autostart` stays the shared default.
 - **Remove:** `./install.sh --uninstall` removes the package and the packages the script installed. Then `rm -rf ~/.config/mabox-noctalia-ce`.
 
 Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
