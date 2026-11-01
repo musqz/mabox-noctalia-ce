@@ -34,6 +34,9 @@ enabled = true
 type = "sysmon"
 stat = "ram"
 
+[shell.panel]
+floating_layer = "overlay"
+
 [idle.behavior.screen_off]
   action = "custom"
   timeout = 450
