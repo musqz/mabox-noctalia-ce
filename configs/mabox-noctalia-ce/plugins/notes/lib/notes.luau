@@ -20,7 +20,7 @@ local selecting = false
 local selected = {}
 local confirming = false
 local armedDelete = nil
-local wrote = false
+local lastSnapshot = {}
 local armedFresh = false
 local NOTES = nil
 local render
@@ -128,7 +128,10 @@ local function saveNote(n)
   head = head .. "\n"
   noctalia.mkdirAll(NOTES)
   noctalia.writeFile(NOTES .. "/" .. n.id, head .. n.body)
-  wrote = true
+  local info = noctalia.fileInfo(NOTES .. "/" .. n.id)
+  if info then
+    lastSnapshot[NOTES .. "/" .. n.id] = info.mtime
+  end
 end
 
 local function loadNotes()
@@ -623,16 +626,30 @@ local function openMain(context)
   noctalia.runAsync({ "noctalia", "msg", "panel-open", "musqz/notes:main", context or "list" })
 end
 
--- Changes made in the dropdown reach the pinned window by polling file times.
-local function signature()
-  local parts = {}
+-- File times of all notes and favorites; the two windows notice each other's writes by comparing them.
+local function snapshot()
+  local map = {}
   for _, dir in ipairs({ NOTES, favoriteDir() }) do
     for _, name in ipairs(noctalia.listDir(dir) or {}) do
       local info = noctalia.fileInfo(dir .. "/" .. name)
-      table.insert(parts, name .. (info and info.mtime or 0))
+      map[dir .. "/" .. name] = info and info.mtime or 0
     end
   end
-  return table.concat(parts, "|")
+  return map
+end
+
+local function sameSnapshot(a, b)
+  for k, v in pairs(a) do
+    if b[k] ~= v then
+      return false
+    end
+  end
+  for k in pairs(b) do
+    if a[k] == nil then
+      return false
+    end
+  end
+  return true
 end
 
 render = function()
@@ -706,7 +723,6 @@ render = function()
   }))
 end
 
-local lastSignature = ""
 local ticks = 0
 
 local function open(context)
@@ -725,7 +741,7 @@ local function open(context)
   armedDelete = nil
   armedFresh = false
   reload()
-  lastSignature = signature()
+  lastSnapshot = snapshot()
   if context == "new" and not pinned then
     createNote()
   end
@@ -733,16 +749,11 @@ end
 
 local function tick()
   ticks += 1
-  if NOTES and ticks % 2 == 0 then
-    local sig = signature()
-    if wrote then
-      -- Own saves are not external changes; reloading would redraw the editor while typing.
-      wrote = false
-      lastSignature = sig
-      return
-    end
-    if sig ~= lastSignature then
-      lastSignature = sig
+  -- An open editor is not redrawn under the user; Back reloads the list.
+  if NOTES and not current and ticks % 2 == 0 then
+    local snap = snapshot()
+    if not sameSnapshot(snap, lastSnapshot) then
+      lastSnapshot = snap
       reload()
     end
   end
