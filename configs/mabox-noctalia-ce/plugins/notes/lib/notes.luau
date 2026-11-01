@@ -297,14 +297,17 @@ local function listRow(key, glyph, title, detail, onClick, actions)
   return ui.row({ key = key, gap = 8, padding = 8, radius = 6, fill = "surface_container", align = "center", onClick = onClick }, cells)
 end
 
--- pos is the slot before list[pos]; only the moved note's file changes.
-local function moveNote(list, id, pos)
-  local from
+local function indexOf(list, id)
   for i, n in ipairs(list) do
     if n.id == id then
-      from = i
+      return i
     end
   end
+end
+
+-- Moves the note to the slot before list[pos]; only that note's file changes.
+local function placeNote(list, id, pos)
+  local from = indexOf(list, id)
   if not from or pos == from or pos == from + 1 then
     return
   end
@@ -313,34 +316,56 @@ local function moveNote(list, id, pos)
     pos -= 1
   end
   local above, below = list[pos - 1], list[pos]
+  local key
   if above and below then
-    n.order = (above.key + below.key) / 2
+    key = (above.key + below.key) / 2
   elseif below then
-    n.order = below.key + 1
+    key = below.key + 1
   elseif above then
-    n.order = above.key - 1
-  else
-    return
+    key = above.key - 1
   end
-  saveNote(n)
-  loadNotes()
-  render()
+  if key then
+    n.order = key
+    n.key = key
+    saveNote(n)
+  end
+  table.insert(list, pos, n)
 end
 
--- Thin drop slot between cards; while searching the list is filtered, so only a spacer.
-local function slot(pos, list)
-  if query ~= "" or selecting then
-    return ui.spacer({ height = 6 })
+-- dir: "up", "down", "top" or "bottom"; every note in ids moves as a block.
+local function moveNotes(ids, dir)
+  local list = notes
+  local order = {}
+  for _, n in ipairs(list) do
+    if ids[n.id] then
+      table.insert(order, n.id)
+    end
   end
-  return ui.dropZone({
-    key = "z" .. tab .. pos,
-    accepts = { "note" },
-    value = tostring(pos),
-    height = 6,
-    expandOnDrag = true,
-    hitSlop = 24,
-    onDrop = function(id, value) moveNote(list, id, tonumber(value)) end,
-  }, {})
+  if dir == "up" then
+    for _, id in ipairs(order) do
+      local i = indexOf(list, id)
+      if i > 1 and not ids[list[i - 1].id] then
+        placeNote(list, id, i - 1)
+      end
+    end
+  elseif dir == "down" then
+    for k = #order, 1, -1 do
+      local i = indexOf(list, order[k])
+      if i < #list and not ids[list[i + 1].id] then
+        placeNote(list, order[k], i + 2)
+      end
+    end
+  elseif dir == "top" then
+    for k = #order, 1, -1 do
+      placeNote(list, order[k], 1)
+    end
+  else
+    for _, id in ipairs(order) do
+      placeNote(list, id, #list + 1)
+    end
+  end
+  loadNotes()
+  render()
 end
 
 -- Click the title to show or hide the full text; right click or the copy button copies it.
@@ -353,10 +378,6 @@ local function noteItem(key, n, detail)
       confirming = false
       render()
     end }))
-  elseif query == "" then
-    table.insert(head, ui.dragSource({ key = "g" .. key, dragType = "note", payload = n.id, previewAncestor = 2, liftFromLayout = true, tooltip = "Drag to reorder", width = 22 }, {
-      ui.glyph({ name = "grip-vertical", size = 14, color = "on_surface_variant" }),
-    }))
   end
   local buttons = {
     ui.button({
@@ -377,6 +398,10 @@ local function noteItem(key, n, detail)
   }
   for _, b in ipairs(buttons) do
     table.insert(head, b)
+  end
+  if not selecting and query == "" then
+    table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
+    table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
   end
   if not pinned then
     table.insert(head, ui.button({ glyph = "pencil", variant = "ghost", controlSize = "sm", tooltip = "Edit", onClick = function()
@@ -416,18 +441,16 @@ local function noteRows()
       table.insert(list, n)
     end
   end
-  for i, n in ipairs(list) do
+  for _, n in ipairs(list) do
     local detail = prettyDate(n.id)
     if n.tags ~= "" then
       detail = detail .. "  " .. hashtags(n.tags)
     end
-    table.insert(rows, slot(i, list))
     table.insert(rows, noteItem("n" .. n.id, n, detail))
+    table.insert(rows, ui.spacer({ height = 6 }))
   end
   if #list == 0 then
     table.insert(rows, ui.label({ text = "No notes", color = "on_surface_variant" }))
-  else
-    table.insert(rows, slot(#list + 1, list))
   end
   return rows
 end
@@ -440,12 +463,9 @@ local function favoriteRows()
       table.insert(list, n)
     end
   end
-  for i, n in ipairs(list) do
-    table.insert(rows, slot(i, list))
+  for _, n in ipairs(list) do
     table.insert(rows, noteItem("fn" .. n.id, n, prettyDate(n.id)))
-  end
-  if #list > 0 then
-    table.insert(rows, slot(#list + 1, list))
+    table.insert(rows, ui.spacer({ height = 6 }))
   end
   for _, f in ipairs(favorites) do
     if matches(f.title .. " " .. f.value .. " " .. prettyDate(f.id), query) then
@@ -553,6 +573,10 @@ local function selectBar()
       render()
     end }),
     ui.spacer({ flexGrow = 1 }),
+    ui.button({ glyph = "arrow-bar-up", variant = "ghost", controlSize = "sm", tooltip = "Move to top", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "top") end }),
+    ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "up") end }),
+    ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "down") end }),
+    ui.button({ glyph = "arrow-bar-down", variant = "ghost", controlSize = "sm", tooltip = "Move to bottom", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "bottom") end }),
     ui.button({
       glyph = "trash",
       text = confirming and `Confirm delete ({count})` or `Delete ({count})`,
