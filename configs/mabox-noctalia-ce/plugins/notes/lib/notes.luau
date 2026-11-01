@@ -1,19 +1,27 @@
 --!nonstrict
--- Notes and favorites. One .md file per note and one .fav file per favorite entry, so a synced folder rarely conflicts.
--- A favorite is a starred note or an entry (title + one-line value: URL, path or text).
+-- Notes: one .md file per note, so a synced folder rarely conflicts. A favorite is a starred note.
 -- Folder: <plugin data dir>/notes, or the path written in <plugin data dir>/path.
 
 return function(pinned)
 local TABS = { "Notes", "Favorites" }
+local COLORS = {
+  { name = "red", hex = "#e5534b" },
+  { name = "orange", hex = "#f0883e" },
+  { name = "yellow", hex = "#d4a72c" },
+  { name = "green", hex = "#57ab5a" },
+  { name = "blue", hex = "#539bf5" },
+  { name = "purple", hex = "#986ee2" },
+}
+local COLOR_HEX = {}
+for _, c in ipairs(COLORS) do
+  COLOR_HEX[c.name] = c.hex
+end
 
 local tab = "Notes"
 local query = ""
 local searchNonce = 0
-local formNonce = 0
-local newTitle = ""
-local newValue = ""
 local notes = {}
-local favorites = {}
+local colorFilter = {}
 local current = nil
 local expanded = {}
 local selecting = false
@@ -80,10 +88,22 @@ local function hashtags(tags)
 end
 
 local function noteHay(n)
-  return n.body .. " " .. hashtags(n.tags) .. " " .. prettyDate(n.id)
+  return n.body .. " " .. hashtags(n.tags) .. " " .. prettyDate(n.id) .. " " .. (n.color or "")
 end
 
--- Header lines "tags:", "favorite:" and "order:" end at the first other line; a blank line there is the separator.
+local function isFiltered()
+  return query ~= "" or next(colorFilter) ~= nil
+end
+
+-- Ticked colors narrow the list to those colors; none ticked shows every note.
+local function visible(n)
+  if next(colorFilter) ~= nil and not (n.color and colorFilter[n.color]) then
+    return false
+  end
+  return matches(noteHay(n), query)
+end
+
+-- Header lines "tags:", "favorite:", "color:" and "order:" end at the first other line; a blank line there is the separator.
 local function parseNote(raw)
   raw = string.gsub(raw, "\r\n", "\n")
   local note = { tags = "", favorite = false }
@@ -98,6 +118,8 @@ local function parseNote(raw)
       note.order = tonumber(value)
     elseif key == "favorite" then
       note.favorite = value == "yes"
+    elseif key == "color" then
+      note.color = COLOR_HEX[value] and value or nil
     else
       if line == "" and nl then
         pos = nl + 1
@@ -122,6 +144,9 @@ end
 
 local function saveNote(n)
   local head = "tags: " .. string.gsub(n.tags, "[\r\n]", " ") .. "\nfavorite: " .. (n.favorite and "yes" or "no") .. "\n"
+  if n.color then
+    head = head .. "color: " .. n.color .. "\n"
+  end
   if n.order then
     head = head .. string.format("order: %.6f\n", n.order)
   end
@@ -157,39 +182,8 @@ local function loadNotes()
   end)
 end
 
-local function favoriteDir()
-  return NOTES .. "/favorites"
-end
-
-local function loadFavorites()
-  favorites = {}
-  local entries = noctalia.listDir(favoriteDir())
-  for _, name in ipairs(entries or {}) do
-    if string.match(name, "%.fav$") then
-      local raw = noctalia.readFile(favoriteDir() .. "/" .. name)
-      if raw then
-        local f = { id = name, title = "", value = "" }
-        for line in string.gmatch(raw, "[^\r\n]+") do
-          local key, value = string.match(line, "^(%a+):%s*(.*)$")
-          if key == "title" or key == "value" then
-            f[key] = value
-          end
-        end
-        if f.value ~= "" then
-          if f.title == "" then
-            f.title = f.value
-          end
-          table.insert(favorites, f)
-        end
-      end
-    end
-  end
-  table.sort(favorites, function(a, b) return a.id > b.id end)
-end
-
 local function reload()
   loadNotes()
-  loadFavorites()
   render()
 end
 
@@ -227,51 +221,6 @@ local function copyNote(n)
   noctalia.notify("Note copied", n.title)
 end
 
--- Only http(s) URLs are launched; anything else is copied.
-local function openEntry(f)
-  if string.match(f.value, "^https?://%S+$") then
-    noctalia.runAsync({ "xdg-open", f.value })
-  else
-    noctalia.copyToClipboard(f.value, "text/plain")
-    noctalia.notify("Copied", f.title)
-  end
-end
-
-local function addEntry(value, title)
-  value = noctalia.string.trim((string.gsub(value, "[\r\n]+", " ")))
-  if value == "" then
-    noctalia.notify("Notes", "Enter a value")
-    return
-  end
-  title = noctalia.string.trim((string.gsub(title, "[\r\n]", " ")))
-  if title == "" then
-    title = string.match(value, "^%a[%w+.-]*://([^/]+)") or value
-  end
-  noctalia.mkdirAll(favoriteDir())
-  noctalia.writeFile(favoriteDir() .. "/" .. uniqueName(favoriteDir(), ".fav"), `title: {title}\nvalue: {value}\n`)
-  newTitle = ""
-  newValue = ""
-  formNonce += 1
-  loadFavorites()
-  render()
-end
-
-local function addFromClipboard()
-  local text = noctalia.clipboardText()
-  text = text and noctalia.string.trim(text) or ""
-  if text == "" or string.find(text, "[\r\n]") then
-    noctalia.notify("Notes", "Clipboard needs one line of text")
-    return
-  end
-  addEntry(text, newTitle)
-end
-
-local function deleteEntry(f)
-  noctalia.removeFile(favoriteDir() .. "/" .. f.id)
-  loadFavorites()
-  render()
-end
-
 local function setTab(name)
   finishEdit()
   selecting = false
@@ -294,20 +243,6 @@ local function tabChooser()
     ui.label({ text = tab, flexGrow = 1, textAlign = "center" }),
     ui.button({ glyph = "chevron-right", variant = "ghost", controlSize = "sm", onClick = step }),
   })
-end
-
-local function listRow(key, glyph, title, detail, onClick, actions)
-  local cells = {
-    ui.glyph({ name = glyph, size = 18, color = "on_surface_variant" }),
-    ui.column({ gap = 1, flexGrow = 1 }, {
-      ui.label({ text = title, maxLines = 1 }),
-      ui.label({ text = detail, fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
-    }),
-  }
-  for _, a in ipairs(actions or {}) do
-    table.insert(cells, a)
-  end
-  return ui.row({ key = key, gap = 8, padding = 8, radius = 6, fill = "surface_container", align = "center", onClick = onClick }, cells)
 end
 
 local function indexOf(list, id)
@@ -392,6 +327,9 @@ local function noteItem(key, n, detail)
       render()
     end }))
   end
+  if n.color then
+    table.insert(head, ui.box({ width = 5, height = 22, radius = 2, fill = COLOR_HEX[n.color], tooltip = n.color }))
+  end
   local buttons = {
     ui.button({
       key = "m" .. key,
@@ -412,7 +350,7 @@ local function noteItem(key, n, detail)
   for _, b in ipairs(buttons) do
     table.insert(head, b)
   end
-  if not selecting and query == "" then
+  if not selecting and not isFiltered() then
     table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
     table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
   end
@@ -438,23 +376,36 @@ local function noteItem(key, n, detail)
     }))
     if not pinned and not selecting then
       local armed = armedDelete == n.id
-      table.insert(items, ui.row({ gap = 6, align = "center" }, {
-        ui.spacer({ flexGrow = 1 }),
-        ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", onClick = function()
-          current = n
+      local cells = {}
+      for _, c in ipairs(COLORS) do
+        local on = n.color == c.name
+        local dot = { key = "c" .. key .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, tooltip = on and ("Clear " .. c.name) or c.name, onClick = function()
+          n.color = (not on) and c.name or nil
+          saveNote(n)
           render()
-        end }),
-        ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", onClick = function()
-          if armed then
-            removeNote(n.id)
-            loadNotes()
-          else
-            armedDelete = n.id
-            armedFresh = true
-          end
-          render()
-        end }),
-      }))
+        end }
+        if on then
+          dot.border = "on_surface"
+          dot.borderWidth = 2
+        end
+        table.insert(cells, ui.box(dot))
+      end
+      table.insert(cells, ui.spacer({ flexGrow = 1 }))
+      table.insert(cells, ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", onClick = function()
+        current = n
+        render()
+      end }))
+      table.insert(cells, ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", onClick = function()
+        if armed then
+          removeNote(n.id)
+          loadNotes()
+        else
+          armedDelete = n.id
+          armedFresh = true
+        end
+        render()
+      end }))
+      table.insert(items, ui.row({ gap = 6, align = "center" }, cells))
     end
   end
   return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container" }, items)
@@ -464,7 +415,7 @@ local function noteRows()
   local rows = {}
   local list = {}
   for _, n in ipairs(notes) do
-    if matches(noteHay(n), query) then
+    if visible(n) then
       table.insert(list, n)
     end
   end
@@ -484,23 +435,9 @@ end
 
 local function favoriteRows()
   local rows = {}
-  local list = {}
   for _, n in ipairs(notes) do
-    if n.favorite and matches(noteHay(n), query) then
-      table.insert(list, n)
-    end
-  end
-  for _, n in ipairs(list) do
-    table.insert(rows, noteItem("fn" .. n.id, n, prettyDate(n.id)))
-    table.insert(rows, ui.spacer({ height = 6 }))
-  end
-  for _, f in ipairs(favorites) do
-    if matches(f.title .. " " .. f.value .. " " .. prettyDate(f.id), query) then
-      local actions = nil
-      if not pinned then
-        actions = { ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove", onClick = function() deleteEntry(f) end }) }
-      end
-      table.insert(rows, listRow("f" .. f.id, "star", f.title, f.value, function() openEntry(f) end, actions))
+    if n.favorite and visible(n) then
+      table.insert(rows, noteItem("fn" .. n.id, n, prettyDate(n.id)))
       table.insert(rows, ui.spacer({ height = 6 }))
     end
   end
@@ -508,6 +445,26 @@ local function favoriteRows()
     table.insert(rows, ui.label({ text = "No favorites", color = "on_surface_variant" }))
   end
   return rows
+end
+
+local function colorBar()
+  local cells = { ui.label({ text = "Colors", fontSize = 11, color = "on_surface_variant" }) }
+  local any = next(colorFilter) ~= nil
+  for _, c in ipairs(COLORS) do
+    local on = colorFilter[c.name]
+    local dot = { key = "cf" .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function()
+      colorFilter[c.name] = not on or nil
+      selected = {}
+      confirming = false
+      render()
+    end }
+    if on then
+      dot.border = "on_surface"
+      dot.borderWidth = 2
+    end
+    table.insert(cells, ui.box(dot))
+  end
+  return ui.row({ gap = 8, align = "center" }, cells)
 end
 
 local function searchBox()
@@ -554,15 +511,6 @@ local function editor()
   })
 end
 
-local function favoriteForm()
-  return ui.row({ gap = 6, align = "center" }, {
-    ui.input({ key = "favtitle" .. formNonce, value = newTitle, placeholder = "title (optional)", controlSize = "sm", width = 180, onChange = function(text) newTitle = text end }),
-    ui.input({ key = "favvalue" .. formNonce, value = newValue, placeholder = "URL, path or text", controlSize = "sm", flexGrow = 1, onChange = function(text) newValue = text end, onSubmit = function() addEntry(newValue, newTitle) end }),
-    ui.button({ glyph = "plus", text = "Add", variant = "primary", controlSize = "sm", onClick = function() addEntry(newValue, newTitle) end }),
-    ui.button({ glyph = "clipboard", text = "Clipboard", variant = "ghost", controlSize = "sm", tooltip = "Add the clipboard text", onClick = addFromClipboard }),
-  })
-end
-
 local function countSelected()
   local count = 0
   for _ in pairs(selected) do
@@ -587,7 +535,7 @@ local function selectBar()
   return ui.row({ gap = 6, align = "center" }, {
     ui.button({ text = "All", variant = "ghost", controlSize = "sm", onClick = function()
       for _, n in ipairs(notes) do
-        if matches(noteHay(n), query) then
+        if visible(n) then
           selected[n.id] = true
         end
       end
@@ -600,10 +548,10 @@ local function selectBar()
       render()
     end }),
     ui.spacer({ flexGrow = 1 }),
-    ui.button({ glyph = "arrow-bar-up", variant = "ghost", controlSize = "sm", tooltip = "Move to top", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "top") end }),
-    ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "up") end }),
-    ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "down") end }),
-    ui.button({ glyph = "arrow-bar-down", variant = "ghost", controlSize = "sm", tooltip = "Move to bottom", enabled = count > 0 and query == "", onClick = function() moveNotes(selected, "bottom") end }),
+    ui.button({ glyph = "arrow-bar-up", variant = "ghost", controlSize = "sm", tooltip = "Move to top", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "top") end }),
+    ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "up") end }),
+    ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "down") end }),
+    ui.button({ glyph = "arrow-bar-down", variant = "ghost", controlSize = "sm", tooltip = "Move to bottom", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "bottom") end }),
     ui.button({
       glyph = "trash",
       text = confirming and `Confirm delete ({count})` or `Delete ({count})`,
@@ -626,14 +574,12 @@ local function openMain(context)
   noctalia.runAsync({ "noctalia", "msg", "panel-open", "musqz/notes:main", context or "list" })
 end
 
--- File times of all notes and favorites; the two windows notice each other's writes by comparing them.
+-- File times of all notes; the two windows notice each other's writes by comparing them.
 local function snapshot()
   local map = {}
-  for _, dir in ipairs({ NOTES, favoriteDir() }) do
-    for _, name in ipairs(noctalia.listDir(dir) or {}) do
-      local info = noctalia.fileInfo(dir .. "/" .. name)
-      map[dir .. "/" .. name] = info and info.mtime or 0
-    end
+  for _, name in ipairs(noctalia.listDir(NOTES) or {}) do
+    local info = noctalia.fileInfo(NOTES .. "/" .. name)
+    map[NOTES .. "/" .. name] = info and info.mtime or 0
   end
   return map
 end
@@ -669,6 +615,7 @@ render = function()
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
       tabChooser(),
+      colorBar(),
       ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, rows),
     }))
     return
@@ -706,13 +653,13 @@ render = function()
   if current then
     right = { editor() }
   elseif tab == "Notes" then
-    right = { searchBox() }
+    right = { searchBox(), colorBar() }
     if selecting then
       table.insert(right, selectBar())
     end
     table.insert(right, ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, noteRows()))
   else
-    right = { searchBox(), ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, favoriteRows()), favoriteForm() }
+    right = { searchBox(), colorBar(), ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, favoriteRows()) }
   end
 
   panel.render(ui.column({ gap = 10, padding = 12, height = 520 }, {
@@ -738,6 +685,7 @@ local function open(context)
   selecting = false
   selected = {}
   confirming = false
+  colorFilter = {}
   armedDelete = nil
   armedFresh = false
   reload()
