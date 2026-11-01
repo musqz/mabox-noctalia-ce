@@ -19,6 +19,8 @@ local expanded = {}
 local selecting = false
 local selected = {}
 local confirming = false
+local armedDelete = nil
+local armedFresh = false
 local NOTES = nil
 local render
 
@@ -403,12 +405,6 @@ local function noteItem(key, n, detail)
     table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
     table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
   end
-  if not pinned then
-    table.insert(head, ui.button({ glyph = "pencil", variant = "ghost", controlSize = "sm", tooltip = "Edit", onClick = function()
-      current = n
-      render()
-    end }))
-  end
   local items = {
     ui.row({ gap = 4, align = "center" }, head),
     ui.label({ text = detail, fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
@@ -429,6 +425,27 @@ local function noteItem(key, n, detail)
         end
       end }),
     }))
+    if not pinned and not selecting then
+      local armed = armedDelete == n.id
+      table.insert(items, ui.row({ gap = 6, align = "center" }, {
+        ui.spacer({ flexGrow = 1 }),
+        ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", onClick = function()
+          current = n
+          render()
+        end }),
+        ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", onClick = function()
+          if armed then
+            noctalia.removeFile(NOTES .. "/" .. n.id)
+            expanded[n.id] = nil
+            loadNotes()
+          else
+            armedDelete = n.id
+            armedFresh = true
+          end
+          render()
+        end }),
+      }))
+    end
   end
   return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container" }, items)
 end
@@ -612,6 +629,11 @@ local function signature()
 end
 
 render = function()
+  if armedFresh then
+    armedFresh = false
+  else
+    armedDelete = nil
+  end
   if pinned then
     local rows = tab == "Notes" and noteRows() or favoriteRows()
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, {
