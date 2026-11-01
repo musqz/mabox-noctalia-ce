@@ -420,7 +420,7 @@ local function colorBar()
       used[n.color] = true
     end
   end
-  local cells = { ui.label({ text = "Colors", fontSize = 11, color = "on_surface_variant" }) }
+  local cells = {}
   local any = next(colorFilter) ~= nil
   for _, c in ipairs(COLORS) do
     local on = colorFilter[c.name]
@@ -434,7 +434,7 @@ local function colorBar()
       table.insert(cells, ui.box(dot))
     end
   end
-  if #cells == 1 then
+  if #cells == 0 then
     return nil
   end
   return ui.row({ gap = 8, align = "center" }, cells)
