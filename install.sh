@@ -187,6 +187,13 @@ report() {
         echo "         noctalia msg plugins enable mabox/music"
         echo "         noctalia msg plugins enable mabox/colors"
         echo "         noctalia msg plugins enable mabox/notes"
+        if [[ -d $pdata/musqz ]]; then
+            for id in music colors notes; do echo "         noctalia msg plugins disable musqz/$id"; done
+        fi
+    fi
+    if grep -qs 'musqz/\(notes\|colors\|music\)' "$conf/mabox-noctalia-ce/rc.xml" "$conf/noctalia/config.toml"; then
+        echo "[todo] keybinds or bar button still use the old plugin ids; run:"
+        echo "         sed -i 's#musqz/\(notes\|colors\|music\)#mabox/\1#g' ~/.config/mabox-noctalia-ce/rc.xml ~/.config/noctalia/config.toml && labwc --reconfigure"
     fi
     if [[ -f /usr/share/wayland-sessions/noctalia-ce.desktop ]]; then echo "[todo] pick \"Noctalia CE\" at the login screen"
     else echo "[todo] noctalia-ce.desktop session file is missing: reinstall the package"; fi
