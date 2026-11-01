@@ -16,6 +16,7 @@ height = "content"
 max_height = 600
 placement = "attached"
 open_near_click = true
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+enter", "alt+c", "alt+e", "alt+s"]
 
 [[panel]]
 id = "pinned"
@@ -26,5 +27,6 @@ placement = "floating"
 position = "top_left"
 persistent = true
 dismiss_on_outside_click = false
-keyboard_focus = "none"
+keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+enter", "alt+c", "alt+e", "alt+s"]
 layer = "overlay"

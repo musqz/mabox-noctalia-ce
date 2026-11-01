@@ -23,6 +23,15 @@ local query = ""
 local searchNonce = 0
 local notes = {}
 local colorFilter = {}
+local cursorId = nil
+local dotCursor = 0
+local zone = "list"
+local focusSearch = false
+local editField = "body"
+local editNonce = 0
+local editHead = 1
+local topCursor = 1
+local sideCursor = 1
 local current = nil
 local expanded = {}
 local selecting = false
@@ -206,6 +215,8 @@ local function finishEdit()
     lastSnapshot[NOTES .. "/" .. current.id] = nil
   end
   current = nil
+  editField = "body"
+  editHead = 1
   loadNotes()
 end
 
@@ -387,7 +398,8 @@ local function noteItem(key, n, detail)
       table.insert(items, ui.row({ gap = 6, align = "center" }, cells))
     end
   end
-  return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container" }, items)
+  local onCursor = zone == "list" and cursorId == n.id
+  return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container", border = "primary", borderWidth = onCursor and 2 or 0 }, items)
 end
 
 local function noteRows()
@@ -412,30 +424,46 @@ local function noteRows()
   return rows
 end
 
--- Only colors in use (or ticked, so they can be unticked) get a dot; nil when there are none.
-local function colorBar()
+-- Only colors in use (or ticked, so they can be unticked) get a dot.
+local function dotColors()
   local used = {}
   for _, n in ipairs(notes) do
     if n.color then
       used[n.color] = true
     end
   end
-  local cells = {}
-  local any = next(colorFilter) ~= nil
+  local out = {}
   for _, c in ipairs(COLORS) do
-    local on = colorFilter[c.name]
-    if used[c.name] or on then
-      local dot = { key = "cf" .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, border = "on_surface", borderWidth = on and 2 or 0, opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function()
-        colorFilter[c.name] = not on or nil
-        selected = {}
-        confirming = false
-        render()
-      end }
-      table.insert(cells, ui.box(dot))
+    if used[c.name] or colorFilter[c.name] then
+      table.insert(out, c)
     end
   end
-  if #cells == 0 then
+  return out
+end
+
+local function toggleColor(name)
+  colorFilter[name] = not colorFilter[name] or nil
+  selected = {}
+  confirming = false
+  render()
+end
+
+local function colorBar()
+  local dots = dotColors()
+  if #dots == 0 then
     return nil
+  end
+  local any = next(colorFilter) ~= nil
+  local cells = {}
+  for i, c in ipairs(dots) do
+    local on = colorFilter[c.name]
+    local ring = zone == "dots" and i == dotCursor
+    local size = ring and 24 or 18
+    local dot = { key = "cf" .. c.name, width = size, height = size, radius = size // 2, fill = c.hex, border = "on_surface", borderWidth = ring and 3 or (on and 2 or 0), opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function() toggleColor(c.name) end }
+    table.insert(cells, ui.column({ gap = 3, align = "center" }, {
+      ui.box(dot),
+      ui.box({ key = "cu" .. c.name, width = 14, height = 2, radius = 1, fill = "on_surface", opacity = on and 1 or 0 }),
+    }))
   end
   return ui.row({ gap = 8, align = "center" }, cells)
 end
@@ -443,6 +471,7 @@ end
 local function searchBox()
   return ui.input({
     key = "search" .. searchNonce,
+    focus = focusSearch,
     value = query,
     placeholder = "search words, #tag or date",
     controlSize = "sm",
@@ -459,20 +488,20 @@ local function editor()
   local n = current
   return ui.column({ gap = 8, flexGrow = 1 }, {
     ui.row({ gap = 6, align = "center" }, {
-      ui.button({ glyph = "arrow-left", text = "Back", variant = "ghost", controlSize = "sm", onClick = function()
+      ui.button({ glyph = "arrow-left", text = "Back", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 1, onClick = function()
         finishEdit()
         render()
       end }),
       ui.label({ text = prettyDate(n.id), color = "on_surface_variant" }),
       ui.spacer({ flexGrow = 1 }),
-      ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", onClick = function() copyNote({ body = n.body, title = titleOf(n.body) }) end }),
-      ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", onClick = deleteNote }),
+      ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 2, onClick = function() copyNote({ body = n.body, title = titleOf(n.body) }) end }),
+      ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 3, onClick = deleteNote }),
     }),
-    ui.input({ key = "tags" .. n.id, value = n.tags, placeholder = "tags, space separated", controlSize = "sm", onChange = function(text)
+    ui.input({ key = "tags" .. n.id .. editNonce, focus = editField == "tags", value = n.tags, placeholder = "tags, space separated", controlSize = "sm", onChange = function(text)
       n.tags = text
       saveNote(n)
     end }),
-    ui.input({ key = "body" .. n.id, value = n.body, placeholder = "Write a note", multiline = true, focus = true, flexGrow = 1, onChange = function(text)
+    ui.input({ key = "body" .. n.id .. editNonce, value = n.body, placeholder = "Write a note", multiline = true, focus = editField == "body", flexGrow = 1, onChange = function(text)
       n.body = text
       saveNote(n)
     end }),
@@ -566,6 +595,19 @@ local function sameSnapshot(a, b)
   return true
 end
 
+local function toggleSelect()
+  selecting = not selecting
+  selected = {}
+  confirming = false
+  render()
+end
+
+local function pinWindow()
+  finishEdit()
+  panel.close()
+  noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/notes:pinned" })
+end
+
 render = function()
   if armedFresh then
     armedFresh = false
@@ -575,37 +617,29 @@ render = function()
   if pinned then
     local children = {
       ui.row({ gap = 6, align = "center" }, {
-        ui.button({ glyph = "plus", text = "New", variant = "primary", controlSize = "sm", tooltip = "New note in the notes window", onClick = function() openMain("new") end }),
-        ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", tooltip = "Open the notes window", onClick = function() openMain() end }),
-        ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
+        ui.button({ glyph = "plus", text = "New", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 1, tooltip = "New note in the notes window", onClick = function() openMain("new") end }),
+        ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 2, tooltip = "Open the notes window", onClick = function() openMain() end }),
+        ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
-        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
+        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Close", onClick = function() panel.close() end }),
       }),
     }
     local bar = colorBar()
     if bar then
       table.insert(children, bar)
     end
-    table.insert(children, ui.scroll({ gap = 0, flexGrow = 1, key = "list" }, noteRows()))
+    table.insert(children, ui.scroll({ gap = 0, flexGrow = 1, key = "list", revealKey = cursorId and ("n" .. cursorId) or nil }, noteRows()))
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, children))
     return
   end
 
+  local function onSide(i) return zone == "side" and sideCursor == i end
   local side = {}
-  table.insert(side, ui.button({ text = "New note", glyph = "plus", variant = "ghost", contentAlign = "start", onClick = createNote }))
-  table.insert(side, ui.button({ text = "Select", glyph = "square-check", variant = selecting and "primary" or "ghost", contentAlign = "start", onClick = function()
-    selecting = not selecting
-    selected = {}
-    confirming = false
-    render()
-  end }))
+  table.insert(side, ui.button({ text = "New note", glyph = "plus", variant = "ghost", contentAlign = "start", selected = onSide(1), onClick = createNote }))
+  table.insert(side, ui.button({ text = "Select", glyph = "square-check", variant = selecting and "primary" or "ghost", contentAlign = "start", selected = onSide(2), onClick = toggleSelect }))
   table.insert(side, ui.spacer({ flexGrow = 1 }))
-  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", tooltip = "Re-read notes from disk", onClick = reload }))
-  table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", onClick = function()
-    finishEdit()
-    panel.close()
-    noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/notes:pinned" })
-  end }))
+  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", selected = onSide(3), tooltip = "Re-read notes from disk", onClick = reload }))
+  table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", selected = onSide(4), onClick = pinWindow }))
 
   local right
   if current then
@@ -619,7 +653,7 @@ render = function()
     if selecting then
       table.insert(right, selectBar())
     end
-    table.insert(right, ui.scroll({ gap = 0, flexGrow = 1, key = "list" }, noteRows()))
+    table.insert(right, ui.scroll({ gap = 0, flexGrow = 1, key = "list", revealKey = cursorId and ("n" .. cursorId) or nil }, noteRows()))
   end
 
   panel.render(ui.column({ gap = 10, padding = 12, height = 520 }, {
@@ -640,11 +674,15 @@ local function open(context)
   end
   query = ""
   searchNonce += 1
+  focusSearch = false
   current = nil
   selecting = false
   selected = {}
   confirming = false
   colorFilter = {}
+  cursorId = nil
+  dotCursor = 0
+  zone = "list"
   armedDelete = nil
   armedFresh = false
   reload()
@@ -666,5 +704,143 @@ local function tick()
   end
 end
 
-return open, tick, finishEdit
+-- Alt chords only: plain arrows and letters belong to the text boxes.
+local function onKey(chord)
+  if current then
+    local rows = { "head", "tags", "body" }
+    local at = 3
+    for i, r in ipairs(rows) do
+      if r == editField then
+        at = i
+      end
+    end
+    if chord == "alt+s" then
+      editField = editField == "body" and "tags" or "body"
+      editNonce += 1
+    elseif chord == "alt+up" or chord == "alt+down" then
+      local to = rows[math.max(1, math.min(3, at + (chord == "alt+down" and 1 or -1)))]
+      if to == editField then
+        return
+      end
+      editField = to
+      if to ~= "head" then
+        editNonce += 1
+      end
+    elseif (chord == "alt+left" or chord == "alt+right") and editField == "head" then
+      editHead = (editHead - 1 + (chord == "alt+right" and 1 or -1)) % 3 + 1
+    elseif chord == "alt+enter" and editField == "head" then
+      if editHead == 1 then
+        finishEdit()
+      elseif editHead == 2 then
+        copyNote({ body = current.body, title = titleOf(current.body) })
+        return
+      else
+        deleteNote()
+        return
+      end
+    else
+      return
+    end
+    render()
+    return
+  end
+  local list = {}
+  for _, n in ipairs(notes) do
+    if visible(n) then
+      table.insert(list, n)
+    end
+  end
+  local dots = #dotColors()
+  local step = (chord == "alt+down" or chord == "alt+right") and 1 or -1
+  if chord == "alt+up" or chord == "alt+down" then
+    local idx = 0
+    for i, n in ipairs(list) do
+      if n.id == cursorId then
+        idx = i
+      end
+    end
+    if zone == "side" then
+      sideCursor = math.max(1, math.min(4, sideCursor + step))
+    elseif zone == "list" and (step == 1 or idx > 1) then
+      idx = idx == 0 and (step == 1 and 1 or #list) or math.max(1, math.min(#list, idx + step))
+      cursorId = list[idx] and list[idx].id or nil
+    elseif step == -1 then
+      if zone == "list" and dots > 0 then
+        zone = "dots"
+        dotCursor = math.max(1, math.min(dots, dotCursor))
+      elseif pinned then
+        zone = "top"
+      end
+    elseif zone == "top" then
+      zone = dots > 0 and "dots" or "list"
+    elseif zone == "dots" then
+      zone = "list"
+      cursorId = cursorId or (list[1] and list[1].id)
+    end
+  elseif chord == "alt+left" or chord == "alt+right" then
+    if zone == "top" then
+      topCursor = (topCursor - 1 + step) % 4 + 1
+    elseif zone == "side" then
+      if step == -1 then
+        return
+      end
+      zone = "list"
+      cursorId = cursorId or (list[1] and list[1].id)
+    elseif not pinned and (zone == "list" or (zone == "dots" and step == -1 and dotCursor <= 1)) then
+      if step == 1 then
+        return
+      end
+      zone = "side"
+    elseif dots > 0 then
+      zone = "dots"
+      if dotCursor < 1 or dotCursor > dots then
+        dotCursor = step == 1 and 1 or dots
+      else
+        dotCursor = (dotCursor - 1 + step) % dots + 1
+      end
+    else
+      return
+    end
+  elseif chord == "alt+s" then
+    if pinned then
+      return
+    end
+    searchNonce += 1
+    focusSearch = true
+  elseif chord == "alt+enter" then
+    if zone == "top" then
+      local actions = { function() openMain("new") end, function() openMain() end, reload, function() panel.close() end }
+      actions[topCursor]()
+      return
+    elseif zone == "side" then
+      local actions = { createNote, toggleSelect, reload, pinWindow }
+      actions[sideCursor]()
+      return
+    elseif zone == "dots" then
+      local c = dotColors()[dotCursor]
+      if c then
+        toggleColor(c.name)
+      end
+      return
+    end
+    if cursorId then
+      expanded[cursorId] = not expanded[cursorId] or nil
+    end
+  elseif chord == "alt+c" or chord == "alt+e" then
+    for _, n in ipairs(list) do
+      if n.id == cursorId then
+        if chord == "alt+c" then
+          copyNote(n)
+        elseif not pinned then
+          current = n
+        end
+      end
+    end
+  else
+    return
+  end
+  render()
+end
+
+return open, tick, finishEdit, onKey
 end
