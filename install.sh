@@ -156,6 +156,12 @@ else
     plugins_on=0
 fi
 
+al=$conf/mabox-noctalia-ce/autostart.local
+if [[ -d $conf/mabox-noctalia-ce && ! -e $al ]]; then
+    cp "$dir/configs/mabox-noctalia-ce/autostart.local" "$al"
+    al_new=1
+fi
+
 report() {
     local opt=() p
     echo; echo "Install summary"
@@ -164,6 +170,7 @@ report() {
     echo "[done] GitHub builds: ${built[*]:-none, all present}"
     if [[ $self == built ]]; then echo "[done] mabox-noctalia-ce package built and installed"
     else echo "[skip] mabox-noctalia-ce package already installed"; fi
+    [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
     echo "[done] plugins copied to $data/plugins"
     if (( plugins_on )); then echo "[done] plugins musqz/music and musqz/colors enabled"
     else echo "[skip] plugins not enabled: noctalia not running or the source call failed"; fi
@@ -178,11 +185,14 @@ report() {
     fi
     if [[ -f /usr/share/wayland-sessions/noctalia-ce.desktop ]]; then echo "[todo] pick \"Noctalia CE\" at the login screen"
     else echo "[todo] noctalia-ce.desktop session file is missing: reinstall the package"; fi
-    echo "[todo] autostart.local (optional): add personal startup programs in ~/.config/mabox-noctalia-ce/autostart.local"
+    [[ ! -f $conf/mabox-noctalia-ce/autostart ]] || grep -q autostart.local "$conf/mabox-noctalia-ce/autostart" \
+        || echo "[todo] autostart: add the line  [ -f ~/.config/mabox-noctalia-ce/autostart.local ] && bash ~/.config/mabox-noctalia-ce/autostart.local &"
+    grep -qv '^\s*\(#\|$\)' "$al" 2>/dev/null \
+        || echo "[todo] autostart.local (optional): add personal startup programs in $al"
     if command -v kanshi >/dev/null && [[ ! -f $conf/kanshi/config ]]; then echo "[todo] kanshi needs ~/.config/kanshi/config"; fi
     if command -v radicale >/dev/null; then echo "[todo] calendar (optional): run mb-calendar-setup, then Noctalia Settings > Calendar > Local (vdir)"
     else echo "[todo] calendar (optional): sudo pacman -S radicale, then mb-calendar-setup"; fi
-    for p in kitty pavucontrol viewnior ffmpeg colormenu beautysolar-icon-theme pyradio pywalfox; do
+    for p in kitty pavucontrol viewnior ffmpeg colormenu beautysolar-icon-theme pyradio python-pywalfox; do
         pacman -Qq "$p" >/dev/null 2>&1 || opt+=("$p")
     done
     if (( ${#opt[@]} )); then echo "[todo] optional packages not installed: ${opt[*]}"; fi
