@@ -33,7 +33,7 @@ mabox-noctalia-ce/
 │   │   ├── themerc, themerc-override, noctalia.conf   window theme
 │   │   ├── rc.xml.all          reference: every labwc option
 │   │   ├── conky/              conky widgets (*_mbcolor.conkyrc) and colors.lua
-│   │   ├── menuscripts/        conky-start, conky-toggle, conky-manager, keybinds-conky, polaroid*
+│   │   ├── menuscripts/        conky-start, conky-toggle, conky-manager, keybinds-conky
 │   │   └── plugins/            Noctalia plugins: colors, music, notes (not in the package)
 │   ├── noctalia/               Noctalia config and templates → /usr/share/mabox-noctalia-ce/noctalia/
 │   │   ├── config.toml         bar, widgets, hooks
@@ -81,7 +81,6 @@ First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/m
 | `~/.config/colormenu/` | recent colors and palettes | Colors plugin |
 | `~/.config/mabox/mb-music/yt_music_list.csv` | music playlist | `mb-music-add-url`, Music plugin |
 | `~/.config/kanshi/config` | monitor layout | you |
-| `~/.config/mbwallpaper/` | polaroid slideshow settings | `polaroid_slideshow_12pix` |
 
 Notes data: `~/.local/state/noctalia/plugins/data/musqz/notes/notes/*.md`. To sync it, write another folder path into `…/musqz/notes/path`.
 
@@ -102,7 +101,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/musqz/notes/notes/*.md`. To sy
 | `skippy-wl-tiling` | pick up to 4 windows and tile them | `C-Space` |
 | `skippy-wl-send-to-{philips,dell,desk}` | pick windows, send to a monitor or workspace | `S-C-KP_7`, `S-C-KP_9`, `S-C-KP_8` |
 
-`menuscripts/` (in the config, not `/usr/bin`): `conky-start`, `conky-toggle` (`W-c`), `conky-manager`, `keybinds-conky` (reads `rc.xml` for the keybind conky), `polaroid`, `polaroid_slideshow_12pix`.
+`menuscripts/` (in the config, not `/usr/bin`): `conky-start`, `conky-toggle` (`W-c`), `conky-manager`, `keybinds-conky` (reads `rc.xml` for the keybind conky).
 
 ## Plugins
 
