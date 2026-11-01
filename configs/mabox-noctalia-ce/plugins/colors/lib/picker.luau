@@ -264,7 +264,7 @@ local function pickFromScreen()
       end
     end
     if not pinned and not pasting() then
-      noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "musqz/colors:picker" })
+      noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/colors:picker" })
     end
   end)
 end
@@ -484,7 +484,7 @@ render = function()
       pinned and ui.button({ glyph = "x", variant = "ghost", tooltip = "Close", onClick = function() panel.close() end })
         or ui.button({ glyph = "pin", variant = "ghost", tooltip = "Pin window", onClick = function()
           panel.close()
-          noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "musqz/colors:pinned" })
+          noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/colors:pinned" })
         end }),
     }),
     ui.row({ gap = 12, flexGrow = 1 }, {

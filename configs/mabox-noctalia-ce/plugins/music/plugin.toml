@@ -1,8 +1,8 @@
-id = "musqz/music"
+id = "mabox/music"
 name = "Music"
 version = "0.1.0"
 plugin_api = 43
-author = "musqz"
+author = "mabox"
 license = "MIT"
 icon = "music"
 description = "Play and shuffle the mb-music CSV list through mpv; controls via the MPRIS media widget."

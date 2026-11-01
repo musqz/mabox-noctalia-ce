@@ -1,8 +1,8 @@
-id = "musqz/notes"
+id = "mabox/notes"
 name = "Notes"
 version = "0.1.0"
 plugin_api = 43
-author = "musqz"
+author = "mabox"
 license = "MIT"
 icon = "notes"
 description = "Quick notes with colors: search by keyword, #tag or date, filter by color, copy. Plain files, so the folder can be synced."

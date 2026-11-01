@@ -62,7 +62,7 @@ color = "on_surface"
 tooltip = "color picker"
 
 [widget.colors.actions]
-left = "exec noctalia msg panel-toggle musqz/colors:picker"
+left = "exec noctalia msg panel-toggle mabox/colors:picker"
 
 [widget.updates]
 type = "custom_button"

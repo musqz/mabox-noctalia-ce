@@ -73,7 +73,7 @@ First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/m
 | `~/.config/noctalia/config.toml` | Noctalia bar and widgets | you; seeded from package |
 | `~/.config/noctalia/{Conky,Geany,PyRadio,Pywalfox,templates,palettes}/` | theme templates | seeded from package |
 | `~/.local/state/noctalia/settings.toml`, `state.toml` | Noctalia state; wins over `config.toml` | Noctalia, `noctalia msg config-set` |
-| `~/.local/state/noctalia/plugins/data/musqz/<plugin>/` | plugin data (notes, color settings) | the plugins |
+| `~/.local/state/noctalia/plugins/data/mabox/<plugin>/` | plugin data (notes, color settings) | the plugins |
 | `~/.local/share/mabox-noctalia-ce/plugins/` | installed plugin copies | `install.sh` |
 | `~/.local/share/mabox-noctalia-ce/installed` | packages the script installed | `install.sh` |
 | `~/.config/mabox-noctalia-ce.bak-*`, `.save-*` | config backups | `install.sh --reset-config`, `--save-config` |
@@ -82,7 +82,7 @@ First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/m
 | `~/.config/mabox/mb-music/yt_music_list.csv` | music playlist | `mb-music-add-url`, Music plugin |
 | `~/.config/kanshi/config` | monitor layout | you |
 
-Notes data: `~/.local/state/noctalia/plugins/data/musqz/notes/notes/*.md`. To sync it, write another folder path into `…/musqz/notes/path`.
+Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sync it, write another folder path into `…/mabox/notes/path`.
 
 ## Tools in `bin/`
 
@@ -109,14 +109,14 @@ Source: `configs/mabox-noctalia-ce/plugins/`. `install.sh` copies them and adds 
 
 | Plugin | Entries | Open | Data / needs |
 |---|---|---|---|
-| `musqz/notes` | `main` dropdown, `pinned` window | `W-n`, `W-A-n` | notes in the plugin data folder |
-| `musqz/colors` | `picker` dropdown, `pinned` window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
-| `musqz/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
+| `mabox/notes` | `main` dropdown, `pinned` window | `W-n`, `W-A-n` | notes in the plugin data folder |
+| `mabox/colors` | `picker` dropdown, `pinned` window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
+| `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh
 noctalia msg plugins list
-noctalia msg panel-toggle musqz/notes:main
-noctalia msg panel-toggle musqz/notes:pinned
+noctalia msg panel-toggle mabox/notes:main
+noctalia msg panel-toggle mabox/notes:pinned
 ```
 
 ## Services
