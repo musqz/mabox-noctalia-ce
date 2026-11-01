@@ -63,6 +63,15 @@ Requires Mabox Linux with `noctalia` 5.4 or newer (repo `[maboxlinux]`).
   </tr>
 </table>
 
+<table>
+  <tr>
+    <td><img alt="Notes dropdown with color filter next to the pinned notes window" src="docs/notes.png" /></td>
+  </tr>
+  <tr>
+    <td align="center">Notes (W-n) and pinned window (W-A-n)</td>
+  </tr>
+</table>
+
 ## Guide
 
 Elements, keys and tips: [docs/guide.md](docs/guide.md).
