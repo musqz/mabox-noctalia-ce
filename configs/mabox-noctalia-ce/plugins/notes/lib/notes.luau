@@ -25,6 +25,8 @@ local notes = {}
 local colorFilter = {}
 local cursorId = nil
 local dotCursor = 0
+local itemRow = 1
+local itemIdx = 1
 local zone = "list"
 local focusSearch = false
 local editField = "body"
@@ -314,16 +316,78 @@ local function moveNotes(ids, dir)
   render()
 end
 
+local function resetControl()
+  itemRow = 1
+  itemIdx = selecting and 2 or 1
+end
+
+local function toggleOpen(n)
+  expanded[n.id] = not expanded[n.id] or nil
+  render()
+end
+
+local function toggleChecked(n)
+  selected[n.id] = not selected[n.id] or nil
+  confirming = false
+  render()
+end
+
+local function setColor(n, name)
+  n.color = n.color ~= name and name or nil
+  saveNote(n)
+  render()
+end
+
+local function pressDelete(n)
+  if armedDelete == n.id then
+    removeNote(n.id)
+    loadNotes()
+    cursorId = nil
+    resetControl()
+  else
+    armedDelete = n.id
+    armedFresh = true
+  end
+  render()
+end
+
+-- Keyboard stops of a note: row 1 is the header buttons, row 2 the colors, Edit and Delete of an open note.
+local function noteControls(n)
+  local head = {}
+  if selecting then
+    table.insert(head, "select")
+  end
+  table.insert(head, "title")
+  table.insert(head, "copy")
+  if not selecting and not isFiltered() then
+    table.insert(head, "up")
+    table.insert(head, "down")
+  end
+  local acts = {}
+  if expanded[n.id] and not pinned and not selecting then
+    for _, c in ipairs(COLORS) do
+      table.insert(acts, "color:" .. c.name)
+    end
+    table.insert(acts, "edit")
+    table.insert(acts, "delete")
+  end
+  return head, acts
+end
+
+local function currentControl(n)
+  local head, acts = noteControls(n)
+  local row = itemRow == 2 and #acts > 0 and acts or head
+  return row[math.max(1, math.min(#row, itemIdx))]
+end
+
 -- Click the title to show or hide the full text; right click or the copy button copies it.
 local function noteItem(key, n, detail)
   local open = expanded[n.id]
+  local onCursor = zone == "list" and cursorId == n.id
+  local cur = onCursor and currentControl(n) or nil
   local head = {}
   if selecting then
-    table.insert(head, ui.button({ key = "s" .. key, glyph = selected[n.id] and "square-check" or "square", variant = "ghost", controlSize = "sm", tooltip = "Select", onClick = function()
-      selected[n.id] = not selected[n.id] or nil
-      confirming = false
-      render()
-    end }))
+    table.insert(head, ui.button({ key = "s" .. key, glyph = selected[n.id] and "square-check" or "square", variant = "ghost", controlSize = "sm", selected = cur == "select", tooltip = "Select", onClick = function() toggleChecked(n) end }))
   end
   if n.color then
     table.insert(head, ui.box({ width = 5, height = 22, radius = 2, fill = COLOR_HEX[n.color], tooltip = n.color }))
@@ -336,21 +400,19 @@ local function noteItem(key, n, detail)
       variant = "ghost",
       contentAlign = "start",
       flexGrow = 1,
+      selected = cur == "title",
       tooltip = "Click: show text, right click: copy",
-      onClick = function()
-        expanded[n.id] = not open or nil
-        render()
-      end,
+      onClick = function() toggleOpen(n) end,
       onRightClick = function() copyNote(n) end,
     }),
-    ui.button({ glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy", onClick = function() copyNote(n) end }),
+    ui.button({ glyph = "copy", variant = "ghost", controlSize = "sm", selected = cur == "copy", tooltip = "Copy", onClick = function() copyNote(n) end }),
   }
   for _, b in ipairs(buttons) do
     table.insert(head, b)
   end
   if not selecting and not isFiltered() then
-    table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
-    table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
+    table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", selected = cur == "up", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
+    table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", selected = cur == "down", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
   end
   local items = {
     ui.row({ gap = 4, align = "center" }, head),
@@ -377,32 +439,20 @@ local function noteItem(key, n, detail)
       local cells = {}
       for _, c in ipairs(COLORS) do
         local on = n.color == c.name
-        local dot = { key = "c" .. key .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, border = "on_surface", borderWidth = on and 2 or 0, tooltip = on and ("Clear " .. c.name) or c.name, onClick = function()
-          n.color = (not on) and c.name or nil
-          saveNote(n)
-          render()
-        end }
+        local ring = cur == "color:" .. c.name
+        local size = ring and 24 or 18
+        local dot = { key = "c" .. key .. c.name, width = size, height = size, radius = size // 2, fill = c.hex, border = "on_surface", borderWidth = ring and 3 or (on and 2 or 0), tooltip = on and ("Clear " .. c.name) or c.name, onClick = function() setColor(n, c.name) end }
         table.insert(cells, ui.box(dot))
       end
       table.insert(cells, ui.spacer({ flexGrow = 1 }))
-      table.insert(cells, ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", onClick = function()
+      table.insert(cells, ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", selected = cur == "edit", onClick = function()
         current = n
         render()
       end }))
-      table.insert(cells, ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", onClick = function()
-        if armed then
-          removeNote(n.id)
-          loadNotes()
-        else
-          armedDelete = n.id
-          armedFresh = true
-        end
-        render()
-      end }))
+      table.insert(cells, ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", selected = cur == "delete", onClick = function() pressDelete(n) end }))
       table.insert(items, ui.row({ gap = 6, align = "center" }, cells))
     end
   end
-  local onCursor = zone == "list" and cursorId == n.id
   return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container", border = "primary", borderWidth = onCursor and 2 or 0 }, items)
 end
 
@@ -601,6 +651,7 @@ end
 
 local function toggleSelect()
   selecting = not selecting
+  resetControl()
   selected = {}
   confirming = false
   render()
@@ -686,6 +737,7 @@ local function open(context)
   colorFilter = {}
   cursorId = nil
   dotCursor = 0
+  resetControl()
   zone = "list"
   armedDelete = nil
   armedFresh = false
@@ -755,6 +807,12 @@ local function onKey(chord)
     end
   end
   local dots = #dotColors()
+  local cursorNote
+  for _, n in ipairs(list) do
+    if n.id == cursorId then
+      cursorNote = n
+    end
+  end
   local step = (chord == "alt+down" or chord == "alt+right") and 1 or -1
   if chord == "alt+up" or chord == "alt+down" then
     local idx = 0
@@ -763,9 +821,22 @@ local function onKey(chord)
         idx = i
       end
     end
+    local acts = {}
+    if zone == "list" and idx > 0 then
+      local _, a = noteControls(list[idx])
+      acts = a
+    end
     if zone == "side" then
       sideCursor = math.max(1, math.min(4, sideCursor + step))
+    elseif #acts > 0 and ((step == 1 and itemRow == 1) or (step == -1 and itemRow == 2)) then
+      if step == 1 then
+        itemRow = 2
+        itemIdx = 1
+      else
+        resetControl()
+      end
     elseif zone == "list" and (step == 1 or idx > 1) then
+      resetControl()
       idx = idx == 0 and (step == 1 and 1 or #list) or math.max(1, math.min(#list, idx + step))
       cursorId = list[idx] and list[idx].id or nil
     elseif step == -1 then
@@ -793,6 +864,17 @@ local function onKey(chord)
       end
       zone = "list"
       cursorId = cursorId or (list[1] and list[1].id)
+    elseif zone == "list" and cursorNote then
+      local head, acts = noteControls(cursorNote)
+      local row = itemRow == 2 and #acts > 0 and acts or head
+      local to = math.max(1, math.min(#row, itemIdx)) + step
+      if to >= 1 and to <= #row then
+        itemIdx = to
+      elseif step == -1 and itemRow == 1 and not pinned then
+        zone = "side"
+      else
+        return
+      end
     elseif not pinned and (zone == "list" or (zone == "dots" and step == -1 and dotCursor <= 1)) then
       if step == 1 then
         return
@@ -830,9 +912,26 @@ local function onKey(chord)
       end
       return
     end
-    if cursorId then
-      expanded[cursorId] = not expanded[cursorId] or nil
+    if cursorNote then
+      local ctl = currentControl(cursorNote)
+      if ctl == "select" then
+        toggleChecked(cursorNote)
+      elseif ctl == "copy" then
+        copyNote(cursorNote)
+      elseif ctl == "up" or ctl == "down" then
+        moveNotes({ [cursorNote.id] = true }, ctl)
+      elseif ctl == "edit" then
+        current = cursorNote
+        render()
+      elseif ctl == "delete" then
+        pressDelete(cursorNote)
+      elseif ctl and string.sub(ctl, 1, 6) == "color:" then
+        setColor(cursorNote, string.sub(ctl, 7))
+      else
+        toggleOpen(cursorNote)
+      end
     end
+    return
   elseif chord == "alt+c" or chord == "alt+e" then
     for _, n in ipairs(list) do
       if zone == "list" and n.id == cursorId then
