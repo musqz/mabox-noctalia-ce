@@ -88,7 +88,7 @@ local function hashtags(tags)
 end
 
 local function noteHay(n)
-  return n.body .. " " .. hashtags(n.tags) .. " " .. prettyDate(n.id) .. " " .. (n.color or "")
+  return n.body .. " " .. hashtags(n.tags) .. " " .. prettyDate(n.id)
 end
 
 local function isFiltered()
@@ -198,6 +198,7 @@ end
 local function finishEdit()
   if current and current.fresh and noctalia.string.trim(current.body) == "" and noctalia.string.trim(current.tags) == "" then
     noctalia.removeFile(NOTES .. "/" .. current.id)
+    lastSnapshot[NOTES .. "/" .. current.id] = nil
   end
   current = nil
   loadNotes()
@@ -205,6 +206,7 @@ end
 
 local function removeNote(id)
   noctalia.removeFile(NOTES .. "/" .. id)
+  lastSnapshot[NOTES .. "/" .. id] = nil
   expanded[id] = nil
   selected[id] = nil
 end
