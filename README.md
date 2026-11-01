@@ -42,8 +42,6 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 ## Screenshots
 
-Click an image for the full size.
-
 ### Themes
 
 <table>
