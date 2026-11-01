@@ -18,6 +18,20 @@ flock 9
 [[ -f $list ]] || printf '%s\n' ce-sysinfo_mbcolor POLSLIDE_mbcolor_slideshow > "$list"
 pkill -x conky
 sleep 1
+# Xwayland numbers heads in output start-up order, so look up the Philips head each time
+for _ in {1..10}; do
+    xhead=$(xrandr --listmonitors 2>/dev/null | awk '$NF == "HDMI-A-1" {sub(":", "", $1); print $1}')
+    [[ -n $xhead ]] && break
+    sleep 1
+done
+tmp="${XDG_RUNTIME_DIR:-/tmp}/conky-rc"
+mkdir -p "$tmp"
 while read -r c; do
-    if [[ -n $c ]]; then conky -c "$dir/$c.conkyrc" 9>&- & fi
+    [[ -n $c && -f $dir/$c.conkyrc ]] || continue
+    rc="$dir/$c.conkyrc"
+    if [[ -n $xhead ]]; then
+        sed "s/^\([[:space:]]*\)xinerama_head *= *[0-9]*/\1xinerama_head = $xhead/" "$rc" > "$tmp/$c.conkyrc"
+        rc="$tmp/$c.conkyrc"
+    fi
+    conky -c "$rc" 9>&- &
 done < "$list"
