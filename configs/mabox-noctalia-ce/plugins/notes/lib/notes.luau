@@ -1,23 +1,24 @@
 --!nonstrict
--- Notes: one .md file per note, so a synced folder rarely conflicts. A favorite is a starred note.
+-- Notes: one .md file per note, so a synced folder rarely conflicts.
 -- Folder: <plugin data dir>/notes, or the path written in <plugin data dir>/path.
 
 return function(pinned)
-local TABS = { "Notes", "Favorites" }
 local COLORS = {
   { name = "red", hex = "#e5534b" },
   { name = "orange", hex = "#f0883e" },
   { name = "yellow", hex = "#d4a72c" },
   { name = "green", hex = "#57ab5a" },
+  { name = "teal", hex = "#2ea89a" },
+  { name = "cyan", hex = "#39b5c7" },
   { name = "blue", hex = "#539bf5" },
   { name = "purple", hex = "#986ee2" },
+  { name = "pink", hex = "#e275ad" },
 }
 local COLOR_HEX = {}
 for _, c in ipairs(COLORS) do
   COLOR_HEX[c.name] = c.hex
 end
 
-local tab = "Notes"
 local query = ""
 local searchNonce = 0
 local notes = {}
@@ -103,10 +104,10 @@ local function visible(n)
   return matches(noteHay(n), query)
 end
 
--- Header lines "tags:", "favorite:", "color:" and "order:" end at the first other line; a blank line there is the separator.
+-- Header lines "tags:", "color:" and "order:" (a legacy "favorite:" line is skipped) end at the first other line; a blank line there is the separator.
 local function parseNote(raw)
   raw = string.gsub(raw, "\r\n", "\n")
-  local note = { tags = "", favorite = false }
+  local note = { tags = "" }
   local pos = 1
   while pos <= #raw do
     local nl = string.find(raw, "\n", pos, true)
@@ -117,7 +118,7 @@ local function parseNote(raw)
     elseif key == "order" then
       note.order = tonumber(value)
     elseif key == "favorite" then
-      note.favorite = value == "yes"
+      -- legacy line, dropped on the next save
     elseif key == "color" then
       note.color = COLOR_HEX[value] and value or nil
     else
@@ -143,7 +144,7 @@ local function titleOf(body)
 end
 
 local function saveNote(n)
-  local head = "tags: " .. string.gsub(n.tags, "[\r\n]", " ") .. "\nfavorite: " .. (n.favorite and "yes" or "no") .. "\n"
+  local head = "tags: " .. string.gsub(n.tags, "[\r\n]", " ") .. "\n"
   if n.color then
     head = head .. "color: " .. n.color .. "\n"
   end
@@ -189,7 +190,7 @@ end
 
 local function createNote()
   noctalia.mkdirAll(NOTES)
-  current = { id = uniqueName(NOTES, ".md"), tags = "", favorite = false, body = "", fresh = true }
+  current = { id = uniqueName(NOTES, ".md"), tags = "", body = "", fresh = true }
   saveNote(current)
   render()
 end
@@ -221,30 +222,6 @@ end
 local function copyNote(n)
   noctalia.copyToClipboard(n.body, "text/plain")
   noctalia.notify("Note copied", n.title)
-end
-
-local function setTab(name)
-  finishEdit()
-  selecting = false
-  selected = {}
-  confirming = false
-  tab = name
-  query = ""
-  searchNonce += 1
-  render()
-end
-
--- Persistent panels cannot host ui.select, so the pinned window cycles with < > buttons.
-local function tabChooser()
-  local index = tab == "Notes" and 1 or 2
-  local function step()
-    setTab(TABS[index % #TABS + 1])
-  end
-  return ui.row({ key = "tabs", gap = 4, align = "center" }, {
-    ui.button({ glyph = "chevron-left", variant = "ghost", controlSize = "sm", onClick = step }),
-    ui.label({ text = tab, flexGrow = 1, textAlign = "center" }),
-    ui.button({ glyph = "chevron-right", variant = "ghost", controlSize = "sm", onClick = step }),
-  })
 end
 
 local function indexOf(list, id)
@@ -335,7 +312,7 @@ local function noteItem(key, n, detail)
   local buttons = {
     ui.button({
       key = "m" .. key,
-      glyph = open and "chevron-down" or (n.favorite and "bookmark" or "note"),
+      glyph = open and "chevron-down" or "note",
       text = n.title,
       variant = "ghost",
       contentAlign = "start",
@@ -435,20 +412,6 @@ local function noteRows()
   return rows
 end
 
-local function favoriteRows()
-  local rows = {}
-  for _, n in ipairs(notes) do
-    if n.favorite and visible(n) then
-      table.insert(rows, noteItem("fn" .. n.id, n, prettyDate(n.id)))
-      table.insert(rows, ui.spacer({ height = 6 }))
-    end
-  end
-  if #rows == 0 then
-    table.insert(rows, ui.label({ text = "No favorites", color = "on_surface_variant" }))
-  end
-  return rows
-end
-
 local function colorBar()
   local cells = { ui.label({ text = "Colors", fontSize = 11, color = "on_surface_variant" }) }
   local any = next(colorFilter) ~= nil
@@ -471,7 +434,7 @@ end
 
 local function searchBox()
   return ui.input({
-    key = "search" .. tab .. searchNonce,
+    key = "search" .. searchNonce,
     value = query,
     placeholder = "search words, #tag or date",
     controlSize = "sm",
@@ -494,11 +457,6 @@ local function editor()
       end }),
       ui.label({ text = prettyDate(n.id), color = "on_surface_variant" }),
       ui.spacer({ flexGrow = 1 }),
-      ui.button({ glyph = "bookmark", text = n.favorite and "Unfavorite" or "Favorite", variant = n.favorite and "primary" or "ghost", controlSize = "sm", onClick = function()
-        n.favorite = not n.favorite
-        saveNote(n)
-        render()
-      end }),
       ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", onClick = function() copyNote({ body = n.body, title = titleOf(n.body) }) end }),
       ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", onClick = deleteNote }),
     }),
@@ -607,7 +565,7 @@ render = function()
     armedDelete = nil
   end
   if pinned then
-    local rows = tab == "Notes" and noteRows() or favoriteRows()
+    local rows = noteRows()
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, {
       ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "plus", text = "New", variant = "primary", controlSize = "sm", tooltip = "New note in the notes window", onClick = function() openMain("new") end }),
@@ -616,33 +574,20 @@ render = function()
         ui.spacer({ flexGrow = 1 }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
-      tabChooser(),
       colorBar(),
-      ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, rows),
+      ui.scroll({ gap = 0, flexGrow = 1, key = "list" }, rows),
     }))
     return
   end
 
   local side = {}
-  for _, name in ipairs(TABS) do
-    table.insert(side, ui.button({
-      key = "t" .. name,
-      text = name,
-      variant = name == tab and "primary" or "ghost",
-      contentAlign = "start",
-      onClick = function() setTab(name) end,
-    }))
-  end
-  if tab == "Notes" then
-    table.insert(side, ui.separator({ spacing = 4 }))
-    table.insert(side, ui.button({ text = "New note", glyph = "plus", variant = "ghost", contentAlign = "start", onClick = createNote }))
-    table.insert(side, ui.button({ text = "Select", glyph = "square-check", variant = selecting and "primary" or "ghost", contentAlign = "start", onClick = function()
-      selecting = not selecting
-      selected = {}
-      confirming = false
-      render()
-    end }))
-  end
+  table.insert(side, ui.button({ text = "New note", glyph = "plus", variant = "ghost", contentAlign = "start", onClick = createNote }))
+  table.insert(side, ui.button({ text = "Select", glyph = "square-check", variant = selecting and "primary" or "ghost", contentAlign = "start", onClick = function()
+    selecting = not selecting
+    selected = {}
+    confirming = false
+    render()
+  end }))
   table.insert(side, ui.spacer({ flexGrow = 1 }))
   table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", tooltip = "Re-read notes from disk", onClick = reload }))
   table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", onClick = function()
@@ -654,14 +599,12 @@ render = function()
   local right
   if current then
     right = { editor() }
-  elseif tab == "Notes" then
+  else
     right = { searchBox(), colorBar() }
     if selecting then
       table.insert(right, selectBar())
     end
-    table.insert(right, ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, noteRows()))
-  else
-    right = { searchBox(), colorBar(), ui.scroll({ gap = 0, flexGrow = 1, key = "list" .. tab }, favoriteRows()) }
+    table.insert(right, ui.scroll({ gap = 0, flexGrow = 1, key = "list" }, noteRows()))
   end
 
   panel.render(ui.column({ gap = 10, padding = 12, height = 520 }, {
@@ -680,7 +623,6 @@ local function open(context)
     noctalia.notify("Notes", "No plugin data directory")
     return
   end
-  tab = "Notes"
   query = ""
   searchNonce += 1
   current = nil
