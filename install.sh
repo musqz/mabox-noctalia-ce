@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install the packages mabox-noctalia-ce needs, then build and install mabox-noctalia-ce itself.
-# Already installed packages are skipped.
+# Already installed packages are skipped; mabox-noctalia-ce is rebuilt when bin/ differs from /usr/bin.
 # --uninstall removes only the packages this script installed.
 # --reset-config backs up and overwrites the user config with the one in this repo.
 # --save-config backs up the user config without changing it.
@@ -40,7 +40,7 @@ case ${1:-} in
             cp "$live" "$dir/$f"
             echo "synced ${f#configs/}"
             n=$((n + 1))
-        done < <(git -C "$dir" ls-files -z configs/mabox-noctalia-ce configs/noctalia)
+        done < <(git -C "$dir" ls-files -z configs/mabox-noctalia-ce configs/noctalia | grep -zv "autostart.local$")
         (( n )) && echo "Review with: git -C $dir diff" || echo "No changes."
         exit 0 ;;
     --recover-profile)
@@ -121,6 +121,8 @@ if (( ${#need_aur[@]} )); then
 fi
 
 tmp=
+built=()
+self=
 trap '[[ -z $tmp ]] || rm -rf "$tmp"' EXIT
 while read -r -u 3 cmd url; do
     command -v "$cmd" >/dev/null 2>&1 && continue
@@ -129,26 +131,61 @@ while read -r -u 3 cmd url; do
     git clone --depth 1 "$url" "$tmp/src"
     (cd "$tmp/src/packaging" && makepkg -si)
     record "$(cd "$tmp/src/packaging" && makepkg --printsrcinfo | sed -n 's/^pkgname = //p')"
+    built+=("$cmd")
     rm -rf "$tmp"; tmp=
 done 3< <(read_list "$dir/lists/github.txt")
 
 for c in labwc noctalia; do
     command -v "$c" >/dev/null 2>&1 || { echo "$c is not in PATH" >&2; exit 1; }
 done
-if ! pacman -Qq mabox-noctalia-ce >/dev/null 2>&1; then
+stale=
+for f in "$dir"/bin/*; do cmp -s "$f" "/usr/bin/${f##*/}" || stale=1; done
+if [[ -n $stale ]] || ! pacman -Qq mabox-noctalia-ce >/dev/null 2>&1; then
     echo "Building mabox-noctalia-ce"
-    (cd "$dir/packaging" && makepkg -si)
-    record mabox-noctalia-ce
+    new=; pacman -Qq mabox-noctalia-ce >/dev/null 2>&1 || new=1
+    (cd "$dir/packaging" && makepkg -fsi)
+    [[ -z $new ]] || record mabox-noctalia-ce
+    self=built
 fi
 rm -rf "$data/plugins"
 cp -r "$dir/configs/mabox-noctalia-ce/plugins" "$data/plugins"
 if noctalia msg plugins source add musqz-local path "$data/plugins" >/dev/null 2>&1 \
     && { noctalia msg plugins enable musqz/music; noctalia msg plugins enable musqz/colors; } >/dev/null 2>&1; then
-    echo "Enabled plugins musqz/music (/music in the launcher) and musqz/colors (bar button)."
+    plugins_on=1
 else
-    echo "Noctalia is not running. In the session run:"
-    echo "  noctalia msg plugins source add musqz-local path $data/plugins"
-    echo "  noctalia msg plugins enable musqz/music"
-    echo "  noctalia msg plugins enable musqz/colors"
+    plugins_on=0
 fi
-echo "Done. Pick \"Noctalia CE\" at the login screen."
+
+report() {
+    local opt=() p
+    echo; echo "Install summary"
+    echo "[done] repo packages: ${#need_repo[@]} installed, $(( ${#repo[@]} - ${#need_repo[@]} )) already present"
+    echo "[done] AUR packages: ${#need_aur[@]} installed, $(( ${#aur[@]} - ${#need_aur[@]} )) already present"
+    echo "[done] GitHub builds: ${built[*]:-none, all present}"
+    if [[ $self == built ]]; then echo "[done] mabox-noctalia-ce package built and installed"
+    else echo "[skip] mabox-noctalia-ce package already installed"; fi
+    echo "[done] plugins copied to $data/plugins"
+    if (( plugins_on )); then echo "[done] plugins musqz/music and musqz/colors enabled"
+    else echo "[skip] plugins not enabled: noctalia not running or the source call failed"; fi
+
+    echo; echo "To do by hand"
+    [[ -d $conf/mabox-noctalia-ce ]] || echo "[todo] config: cp -rn /etc/skel/.config/mabox-noctalia-ce ~/.config/"
+    if (( ! plugins_on )); then
+        echo "[todo] in the session run:"
+        echo "         noctalia msg plugins source add musqz-local path $data/plugins"
+        echo "         noctalia msg plugins enable musqz/music"
+        echo "         noctalia msg plugins enable musqz/colors"
+    fi
+    if [[ -f /usr/share/wayland-sessions/noctalia-ce.desktop ]]; then echo "[todo] pick \"Noctalia CE\" at the login screen"
+    else echo "[todo] noctalia-ce.desktop session file is missing: reinstall the package"; fi
+    echo "[todo] autostart.local (optional): add personal startup programs in ~/.config/mabox-noctalia-ce/autostart.local"
+    if command -v kanshi >/dev/null && [[ ! -f $conf/kanshi/config ]]; then echo "[todo] kanshi needs ~/.config/kanshi/config"; fi
+    if command -v radicale >/dev/null; then echo "[todo] calendar (optional): run mb-calendar-setup, then Noctalia Settings > Calendar > Local (vdir)"
+    else echo "[todo] calendar (optional): sudo pacman -S radicale, then mb-calendar-setup"; fi
+    for p in kitty pavucontrol viewnior ffmpeg colormenu beautysolar-icon-theme pyradio pywalfox; do
+        pacman -Qq "$p" >/dev/null 2>&1 || opt+=("$p")
+    done
+    if (( ${#opt[@]} )); then echo "[todo] optional packages not installed: ${opt[*]}"; fi
+    echo "[todo] log out and back in"
+}
+report

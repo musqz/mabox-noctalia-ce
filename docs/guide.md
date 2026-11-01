@@ -134,5 +134,5 @@ See [music.md](music.md).
 - Scripts in `bin/` run from `/usr/bin` after a package install. While testing, copy: `sudo install -Dm755 bin/<script> /usr/bin/<script>`.
 - Bar widget shows `--`: enable `[system.monitor]`.
 - `snap` hangs: start `snapd`, or ignore it; the update check skips it.
-- Autostart: `~/.config/mabox-noctalia-ce/autostart`. Uncomment the lines for Enpass, tabdock, Vorta or PIA VPN to start them with the session.
+- Autostart: `~/.config/mabox-noctalia-ce/autostart`. Personal programs (tabdock, Vorta, PIA VPN, `fittsmon-wl --monitor`) go in `~/.config/mabox-noctalia-ce/autostart.local`; copy the template from `/etc/skel/.config/mabox-noctalia-ce/`.
 - Session PATH does not include `~/bin`. Use `~/.local/bin` or an absolute path in binds.
