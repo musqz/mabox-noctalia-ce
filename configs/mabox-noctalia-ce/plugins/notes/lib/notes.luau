@@ -204,8 +204,14 @@ local function finishEdit()
   loadNotes()
 end
 
+local function removeNote(id)
+  noctalia.removeFile(NOTES .. "/" .. id)
+  expanded[id] = nil
+  selected[id] = nil
+end
+
 local function deleteNote()
-  noctalia.removeFile(NOTES .. "/" .. current.id)
+  removeNote(current.id)
   current = nil
   loadNotes()
   render()
@@ -435,8 +441,7 @@ local function noteItem(key, n, detail)
         end }),
         ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", onClick = function()
           if armed then
-            noctalia.removeFile(NOTES .. "/" .. n.id)
-            expanded[n.id] = nil
+            removeNote(n.id)
             loadNotes()
           else
             armedDelete = n.id
@@ -563,7 +568,7 @@ end
 
 local function deleteSelected()
   for id in pairs(selected) do
-    noctalia.removeFile(NOTES .. "/" .. id)
+    removeNote(id)
   end
   selected = {}
   confirming = false
@@ -714,6 +719,8 @@ local function open(context)
   selecting = false
   selected = {}
   confirming = false
+  armedDelete = nil
+  armedFresh = false
   reload()
   lastSignature = signature()
   if context == "new" and not pinned then
