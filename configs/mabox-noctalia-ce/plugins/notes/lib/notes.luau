@@ -362,15 +362,11 @@ local function noteItem(key, n, detail)
       local cells = {}
       for _, c in ipairs(COLORS) do
         local on = n.color == c.name
-        local dot = { key = "c" .. key .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, tooltip = on and ("Clear " .. c.name) or c.name, onClick = function()
+        local dot = { key = "c" .. key .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, border = "on_surface", borderWidth = on and 2 or 0, tooltip = on and ("Clear " .. c.name) or c.name, onClick = function()
           n.color = (not on) and c.name or nil
           saveNote(n)
           render()
         end }
-        if on then
-          dot.border = "on_surface"
-          dot.borderWidth = 2
-        end
         table.insert(cells, ui.box(dot))
       end
       table.insert(cells, ui.spacer({ flexGrow = 1 }))
@@ -429,16 +425,12 @@ local function colorBar()
   for _, c in ipairs(COLORS) do
     local on = colorFilter[c.name]
     if used[c.name] or on then
-      local dot = { key = "cf" .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function()
+      local dot = { key = "cf" .. c.name, width = 18, height = 18, radius = 9, fill = c.hex, border = "on_surface", borderWidth = on and 2 or 0, opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function()
         colorFilter[c.name] = not on or nil
         selected = {}
         confirming = false
         render()
       end }
-      if on then
-        dot.border = "on_surface"
-        dot.borderWidth = 2
-      end
       table.insert(cells, ui.box(dot))
     end
   end
