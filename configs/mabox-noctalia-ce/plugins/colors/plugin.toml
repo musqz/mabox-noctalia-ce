@@ -17,3 +17,15 @@ height = "content"
 max_height = 600
 placement = "attached"
 open_near_click = true
+
+[[panel]]
+id = "pinned"
+entry = "pinned.luau"
+width = 330
+height = "fill"
+placement = "floating"
+position = "top_left"
+persistent = true
+dismiss_on_outside_click = false
+keyboard_focus = "none"
+layer = "overlay"
