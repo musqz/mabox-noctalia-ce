@@ -217,6 +217,7 @@ local function finishEdit()
   current = nil
   editField = "body"
   editHead = 1
+  focusSearch = false
   loadNotes()
 end
 
@@ -230,6 +231,9 @@ end
 local function deleteNote()
   removeNote(current.id)
   current = nil
+  editField = "body"
+  editHead = 1
+  focusSearch = false
   loadNotes()
   render()
 end
@@ -773,6 +777,9 @@ local function onKey(chord)
       end
     elseif zone == "top" then
       zone = dots > 0 and "dots" or "list"
+      if zone == "list" then
+        cursorId = cursorId or (list[1] and list[1].id)
+      end
     elseif zone == "dots" then
       zone = "list"
       cursorId = cursorId or (list[1] and list[1].id)
@@ -828,7 +835,7 @@ local function onKey(chord)
     end
   elseif chord == "alt+c" or chord == "alt+e" then
     for _, n in ipairs(list) do
-      if n.id == cursorId then
+      if zone == "list" and n.id == cursorId then
         if chord == "alt+c" then
           copyNote(n)
         elseif not pinned then
