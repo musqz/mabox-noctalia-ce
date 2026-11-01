@@ -26,7 +26,8 @@ The desktop cheat sheet (conky, left side) lists every bind from the live `rc.xm
 | `W-l` | lock screen |
 | `W-=` | wallpaper panel |
 | `C-A-a` | random wallpaper |
-| `W-c` | caffeine (no idle) |
+| `W-c` | conky on/off |
+| `W-S-c` | caffeine (no idle) |
 | `W-t` | terminal |
 | `F12` | quake terminal |
 | `W-h` | btop |

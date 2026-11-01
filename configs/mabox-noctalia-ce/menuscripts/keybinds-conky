@@ -14,6 +14,7 @@ CMD_LABELS = [
     (r"panel-toggle session", "session menu"),
     (r"panel-toggle wallpaper", "wallpaper panel"),
     (r"wallpaper-random", "random wallpaper"),
+    (r"conky-toggle", "conky on/off"),
     (r"caffeine-toggle", "caffeine toggle"),
     (r"workspace-switch next", "workspace next"),
     (r"workspace-switch prev", "workspace prev"),
