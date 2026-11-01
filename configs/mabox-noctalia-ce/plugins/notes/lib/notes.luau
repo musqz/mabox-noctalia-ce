@@ -224,7 +224,7 @@ local function deleteNote()
 end
 
 local function copyNote(n)
-  noctalia.copyToClipboard(n.body, "text/plain")
+  noctalia.runAsync({ "wl-copy", "--", n.body })
   noctalia.notify("Note copied", n.title)
 end
 

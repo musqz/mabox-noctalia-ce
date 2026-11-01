@@ -26,5 +26,5 @@ placement = "floating"
 position = "top_left"
 persistent = true
 dismiss_on_outside_click = false
-keyboard_focus = "none"
+keyboard_focus = "on_demand"
 layer = "overlay"
