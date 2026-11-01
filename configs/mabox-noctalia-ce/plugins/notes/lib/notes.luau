@@ -19,6 +19,9 @@ local expanded = {}
 local selecting = false
 local selected = {}
 local confirming = false
+local armedDelete = nil
+local lastSnapshot = {}
+local armedFresh = false
 local NOTES = nil
 local render
 
@@ -125,6 +128,10 @@ local function saveNote(n)
   head = head .. "\n"
   noctalia.mkdirAll(NOTES)
   noctalia.writeFile(NOTES .. "/" .. n.id, head .. n.body)
+  local info = noctalia.fileInfo(NOTES .. "/" .. n.id)
+  if info then
+    lastSnapshot[NOTES .. "/" .. n.id] = info.mtime
+  end
 end
 
 local function loadNotes()
@@ -202,8 +209,14 @@ local function finishEdit()
   loadNotes()
 end
 
+local function removeNote(id)
+  noctalia.removeFile(NOTES .. "/" .. id)
+  expanded[id] = nil
+  selected[id] = nil
+end
+
 local function deleteNote()
-  noctalia.removeFile(NOTES .. "/" .. current.id)
+  removeNote(current.id)
   current = nil
   loadNotes()
   render()
@@ -403,12 +416,6 @@ local function noteItem(key, n, detail)
     table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
     table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
   end
-  if not pinned then
-    table.insert(head, ui.button({ glyph = "pencil", variant = "ghost", controlSize = "sm", tooltip = "Edit", onClick = function()
-      current = n
-      render()
-    end }))
-  end
   local items = {
     ui.row({ gap = 4, align = "center" }, head),
     ui.label({ text = detail, fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
@@ -429,6 +436,26 @@ local function noteItem(key, n, detail)
         end
       end }),
     }))
+    if not pinned and not selecting then
+      local armed = armedDelete == n.id
+      table.insert(items, ui.row({ gap = 6, align = "center" }, {
+        ui.spacer({ flexGrow = 1 }),
+        ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", onClick = function()
+          current = n
+          render()
+        end }),
+        ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", onClick = function()
+          if armed then
+            removeNote(n.id)
+            loadNotes()
+          else
+            armedDelete = n.id
+            armedFresh = true
+          end
+          render()
+        end }),
+      }))
+    end
   end
   return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container" }, items)
 end
@@ -546,7 +573,7 @@ end
 
 local function deleteSelected()
   for id in pairs(selected) do
-    noctalia.removeFile(NOTES .. "/" .. id)
+    removeNote(id)
   end
   selected = {}
   confirming = false
@@ -599,19 +626,38 @@ local function openMain(context)
   noctalia.runAsync({ "noctalia", "msg", "panel-open", "musqz/notes:main", context or "list" })
 end
 
--- Changes made in the dropdown reach the pinned window by polling file times.
-local function signature()
-  local parts = {}
+-- File times of all notes and favorites; the two windows notice each other's writes by comparing them.
+local function snapshot()
+  local map = {}
   for _, dir in ipairs({ NOTES, favoriteDir() }) do
     for _, name in ipairs(noctalia.listDir(dir) or {}) do
       local info = noctalia.fileInfo(dir .. "/" .. name)
-      table.insert(parts, name .. (info and info.mtime or 0))
+      map[dir .. "/" .. name] = info and info.mtime or 0
     end
   end
-  return table.concat(parts, "|")
+  return map
+end
+
+local function sameSnapshot(a, b)
+  for k, v in pairs(a) do
+    if b[k] ~= v then
+      return false
+    end
+  end
+  for k in pairs(b) do
+    if a[k] == nil then
+      return false
+    end
+  end
+  return true
 end
 
 render = function()
+  if armedFresh then
+    armedFresh = false
+  else
+    armedDelete = nil
+  end
   if pinned then
     local rows = tab == "Notes" and noteRows() or favoriteRows()
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, {
@@ -649,6 +695,7 @@ render = function()
     end }))
   end
   table.insert(side, ui.spacer({ flexGrow = 1 }))
+  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", tooltip = "Re-read notes from disk", onClick = reload }))
   table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", onClick = function()
     finishEdit()
     panel.close()
@@ -676,7 +723,6 @@ render = function()
   }))
 end
 
-local lastSignature = ""
 local ticks = 0
 
 local function open(context)
@@ -692,8 +738,10 @@ local function open(context)
   selecting = false
   selected = {}
   confirming = false
+  armedDelete = nil
+  armedFresh = false
   reload()
-  lastSignature = signature()
+  lastSnapshot = snapshot()
   if context == "new" and not pinned then
     createNote()
   end
@@ -701,10 +749,11 @@ end
 
 local function tick()
   ticks += 1
-  if NOTES and ticks % 2 == 0 then
-    local sig = signature()
-    if sig ~= lastSignature then
-      lastSignature = sig
+  -- An open editor is not redrawn under the user; Back reloads the list.
+  if NOTES and not current and ticks % 2 == 0 then
+    local snap = snapshot()
+    if not sameSnapshot(snap, lastSnapshot) then
+      lastSnapshot = snap
       reload()
     end
   end
