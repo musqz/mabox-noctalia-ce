@@ -118,6 +118,8 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 Elements, keys and tips: [docs/guide.md](docs/guide.md).
 
+Files, paths and tools: [docs/overview.md](docs/overview.md).
+
 ## Custom tools
 
 | Tool | Key | Setup |
