@@ -1,11 +1,10 @@
 # Music
 
-Two separate players read `~/.config/mabox/mb-music/yt_music_list.csv`.
+The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-music/yt_music_list.csv`.
 
 | Key | Tool |
 |---|---|
-| `W-m` | `mb-music` (jgmenu) |
-| `W-S-m` | `/music` in the Noctalia launcher |
+| `W-m` | `/music` in the Noctalia launcher |
 | `C-S-2` | `mb-music-add-url`: add a track to the playlist |
 | `C-S-1` | `mpv-play-stream`: play a copied URL in mpv |
 | `XF86AudioPlay` / `Stop` / `Next` / `Prev` | `noctalia msg media toggle / stop / next / previous` |
@@ -44,12 +43,12 @@ The URL is pre-filled from the clipboard. On Wayland this needs `wl-clipboard`.
 
 ## Use
 
-1. Press `W-S-m`.
+1. Press `W-m`.
 2. Pick a category, or "Shuffle all".
 3. Inside a category: "Shuffle <category>", "Play <category>" or a single track.
 4. Pause, skip and stop with the media keys or the bar media widget.
 
-Note: `mpv-mpris` exposes mpv to the media keys and bar widget. `mb-music` uses its own mpv; stop one before starting the other.
+Note: `mpv-mpris` exposes mpv to the media keys and bar widget.
 
 ## Check
 
