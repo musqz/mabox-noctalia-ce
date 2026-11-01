@@ -5,7 +5,7 @@ plugin_api = 43
 author = "musqz"
 license = "MIT"
 icon = "notes"
-description = "Quick notes and favorites: search by keyword, #tag or date, star, copy. Plain files, so the folder can be synced."
+description = "Quick notes with colors: search by keyword, #tag or date, filter by color, copy. Plain files, so the folder can be synced."
 tags = ["utility", "notes"]
 
 [[panel]]
