@@ -22,3 +22,4 @@ pipewire
 wireplumber
 wl-clipboard
 qt6ct
+nwg-look
