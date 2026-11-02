@@ -100,7 +100,7 @@ local function hashtags(tags)
 end
 
 local function noteHay(n)
-  return n.body .. " " .. hashtags(n.tags) .. " " .. prettyDate(n.id)
+  return (n.name or "") .. " " .. n.body .. " " .. hashtags(n.tags) .. " " .. prettyDate(n.id)
 end
 
 local function isFiltered()
@@ -115,7 +115,7 @@ local function visible(n)
   return matches(noteHay(n), query)
 end
 
--- Header lines "tags:", "color:" and "order:" (a legacy "favorite:" line is skipped) end at the first other line; a blank line there is the separator.
+-- Header lines "title:", "tags:", "color:" and "order:" (a legacy "favorite:" line is skipped) end at the first other line; a blank line there is the separator.
 local function parseNote(raw)
   raw = string.gsub(raw, "\r\n", "\n")
   local note = { tags = "" }
@@ -124,7 +124,9 @@ local function parseNote(raw)
     local nl = string.find(raw, "\n", pos, true)
     local line = string.sub(raw, pos, (nl or #raw + 1) - 1)
     local key, value = string.match(line, "^(%a+):%s*(.*)$")
-    if key == "tags" then
+    if key == "title" then
+      note.name = value
+    elseif key == "tags" then
       note.tags = value
     elseif key == "order" then
       note.order = tonumber(value)
@@ -154,8 +156,21 @@ local function titleOf(body)
   return "(empty)"
 end
 
+local function displayTitle(n)
+  local name = noctalia.string.trim(n.name or "")
+  if name ~= "" then
+    return name
+  end
+  return titleOf(n.body)
+end
+
 local function saveNote(n)
-  local head = "tags: " .. string.gsub(n.tags, "[\r\n]", " ") .. "\n"
+  local head = ""
+  local name = noctalia.string.trim(n.name or "")
+  if name ~= "" then
+    head = "title: " .. string.gsub(name, "[\r\n]", " ") .. "\n"
+  end
+  head = head .. "tags: " .. string.gsub(n.tags, "[\r\n]", " ") .. "\n"
   if n.color then
     head = head .. "color: " .. n.color .. "\n"
   end
@@ -181,7 +196,7 @@ local function loadNotes()
         local n = parseNote(raw)
         n.id = name
         n.key = n.order or stampKey(name)
-        n.title = titleOf(n.body)
+        n.title = displayTitle(n)
         table.insert(notes, n)
       end
     end
@@ -212,7 +227,7 @@ end
 
 -- Leaves the editor; an untouched new note is not kept.
 local function finishEdit()
-  if current and current.fresh and noctalia.string.trim(current.body) == "" and noctalia.string.trim(current.tags) == "" then
+  if current and current.fresh and noctalia.string.trim(current.body) == "" and noctalia.string.trim(current.name or "") == "" then
     noctalia.removeFile(NOTES .. "/" .. current.id)
     lastSnapshot[NOTES .. "/" .. current.id] = nil
   end
@@ -553,13 +568,16 @@ local function editor()
       end }),
       ui.label({ text = prettyDate(n.id), color = "on_surface_variant" }),
       ui.spacer({ flexGrow = 1 }),
-      ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 2, onClick = function() copyNote({ body = n.body, title = titleOf(n.body) }) end }),
+      ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 2, onClick = function() copyNote({ body = n.body, title = displayTitle(n) }) end }),
       ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 3, onClick = deleteNote }),
     }),
-    ui.input({ key = "tags" .. n.id .. editNonce, focus = editField == "tags", value = n.tags, placeholder = "tags, space separated", controlSize = "sm", onChange = function(text)
-      n.tags = text
-      saveNote(n)
-    end }),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.label({ text = "Title", color = "on_surface_variant", width = 40 }),
+      ui.input({ key = "title" .. n.id .. editNonce, focus = editField == "title", value = n.name or "", placeholder = "default: first line", controlSize = "sm", flexGrow = 1, onChange = function(text)
+        n.name = text
+        saveNote(n)
+      end }),
+    }),
     ui.input({ key = "body" .. n.id .. editNonce, value = n.body, placeholder = "Write a note", multiline = true, focus = editField == "body", flexGrow = 1, onChange = function(text)
       n.body = text
       saveNote(n)
@@ -768,7 +786,7 @@ end
 -- Alt chords only: plain arrows and letters belong to the text boxes.
 local function onKey(chord)
   if current then
-    local rows = { "head", "tags", "body" }
+    local rows = { "head", "title", "body" }
     local at = 3
     for i, r in ipairs(rows) do
       if r == editField then
@@ -776,7 +794,7 @@ local function onKey(chord)
       end
     end
     if chord == "alt+s" then
-      editField = editField == "body" and "tags" or "body"
+      editField = editField == "body" and "title" or "body"
       editNonce += 1
     elseif chord == "alt+up" or chord == "alt+down" then
       local to = rows[math.max(1, math.min(3, at + (chord == "alt+down" and 1 or -1)))]
@@ -793,7 +811,7 @@ local function onKey(chord)
       if editHead == 1 then
         finishEdit()
       elseif editHead == 2 then
-        copyNote({ body = current.body, title = titleOf(current.body) })
+        copyNote({ body = current.body, title = displayTitle(current) })
         return
       else
         deleteNote()
