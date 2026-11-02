@@ -83,6 +83,26 @@
       <action name="Reconfigure" />
     </item>
   </menu>
+  <menu id="tools-menu" label="Tools" icon="applications-utilities">
+    <item label="Colors" icon="applications-graphics">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker" />
+    </item>
+    <item label="Notes" icon="accessories-text-editor">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
+    </item>
+    <item label="Notes pinned" icon="accessories-text-editor">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/notes:pinned" />
+    </item>
+    <item label="Status" icon="utilities-system-monitor">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
+    </item>
+    <item label="Status pinned" icon="utilities-system-monitor">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/status:pinned" />
+    </item>
+    <item label="Music" icon="multimedia-audio-player">
+      <action name="Execute" command="noctalia msg panel-open launcher /music" />
+    </item>
+  </menu>
   <menu id="apps-menu" label="Applications" icon="applications-other" execute="labwc-menu-generator -p -I" />
   <menu id="client-list-combined-menu" label="Running..." icon="window-duplicate" />
   <separator />
