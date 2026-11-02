@@ -63,6 +63,9 @@
     <item label="Wallpaper" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle wallpaper" />
     </item>
+    <item label="GTK theme" icon="preferences-desktop-theme">
+      <action name="Execute" command="nwg-look" />
+    </item>
     <item label="Conky manager" icon="conky">
       <action name="Execute" command="~/.config/mabox-noctalia-ce/menuscripts/conky-manager" />
     </item>
