@@ -315,6 +315,10 @@ local function cleanRows(rows)
   -- opts: { label, run, dry, size, bad }; one option runs on click, several unfold under the row.
   local function add(id, label, value, title, opts, warn)
     local function go(o)
+      if o.open then
+        noctalia.runAsync(o.open)
+        return
+      end
       runTerminal(o.title or title, o.size or "", o.dry or "", o.run)
     end
     if #opts == 1 then
@@ -452,7 +456,7 @@ local function cleanRows(rows)
   local trash = size("~/.local/share/Trash")
   if not dyn or trash > 4096 then
     add("trash", "Trash", human(trash), "Empty the trash", {
-      { label = "Open the trash", run = "xdg-open trash:///" },
+      { label = "Open the trash", open = { "pcmanfm", "trash://" } },
       { label = "Empty the trash", bad = true, size = "du -sh ~/.local/share/Trash", run = "rm -rf ~/.local/share/Trash/files ~/.local/share/Trash/info ~/.local/share/Trash/expunged" },
     })
   end
