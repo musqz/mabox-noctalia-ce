@@ -14,7 +14,7 @@ The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-musi
 `./install.sh` installs the `/music` plugin. By hand:
 
 1. Install `mpv`, `socat`, `yt-dlp`, `mpv-mpris` and `yad`.
-2. `noctalia msg plugins source add musqz-local path <repo>/configs/mabox-noctalia-ce/plugins`
+2. `noctalia msg plugins source add mabox path /usr/share/mabox-noctalia-ce/plugins`
 3. `noctalia msg plugins enable mabox/music`
 
 ## Playlist file

@@ -13,7 +13,7 @@ optdepends=('radicale: local calendar (mb-calendar-setup)'
             'pavucontrol: volume control keybind'
             'viewnior: screenshot viewer keybind'
             'fittsmon: provides fittsmon-wl (github.com/musqz/fittsmon)'
-            'fittsmon-wl-gui: fittsmon-wl config GUI (github.com/musqz/fittsmon-wl-gui)'
+            'fittsmon-gui: fittsmon-wl config GUI (github.com/musqz/fittsmon-gui)'
             'skippy-wl: window switcher keybinds (github.com/musqz/skippy-wl)'
             'jumpapp-ng: app launch/focus keybinds (AUR)'
             'wl-screenrec: screen recording keybind (AUR)'
@@ -27,10 +27,11 @@ optdepends=('radicale: local calendar (mb-calendar-setup)'
             'pyradio: PyRadio theme template'
             'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
-source=()
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
 
 package() {
-  local root="$startdir/.."
+  local root="$srcdir/$pkgname-$pkgver"
 
   install -Dm755 "$root/lib/mabox-noctalia-ce" "$pkgdir/usr/bin/mabox-noctalia-ce"
   install -Dm755 "$root"/bin/* -t "$pkgdir/usr/bin"
@@ -48,5 +49,6 @@ package() {
 
   install -dm755 "$pkgdir/usr/share/mabox-noctalia-ce"
   cp -r "$root/configs/noctalia" "$pkgdir/usr/share/mabox-noctalia-ce/"
+  cp -r "$root/configs/mabox-noctalia-ce/plugins" "$pkgdir/usr/share/mabox-noctalia-ce/"
   find "$skel" -name "*.png" -exec chmod 644 {} +
 }

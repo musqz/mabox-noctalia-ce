@@ -19,6 +19,7 @@ command -v mb-status-warn >/dev/null && systemctl --user --no-block start mb-sta
 [ -f ~/.config/mabox-noctalia-ce/autostart.local ] && bash ~/.config/mabox-noctalia-ce/autostart.local &
 
 noctalia &
+(sleep 3 && noctalia msg plugins source add mabox path /usr/share/mabox-noctalia-ce/plugins) >/dev/null 2>&1 &
 
 # Conky
 (sleep 5 && ~/.config/mabox-noctalia-ce/menuscripts/conky-start --wait) &
