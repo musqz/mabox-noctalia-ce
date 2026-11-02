@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install the packages mabox-noctalia-ce needs, then build and install mabox-noctalia-ce itself.
-# Already installed packages are skipped; mabox-noctalia-ce is rebuilt when bin/ differs from /usr/bin.
+# Already installed packages are skipped; mabox-noctalia-ce is rebuilt on every run.
 # --uninstall removes only the packages this script installed.
 # --reset-config backs up and overwrites the user config with the one in this repo.
 # --save-config backs up the user config without changing it.
@@ -122,7 +122,6 @@ fi
 
 tmp=
 built=()
-self=
 trap '[[ -z $tmp ]] || rm -rf "$tmp"' EXIT
 while read -r -u 3 cmd url; do
     command -v "$cmd" >/dev/null 2>&1 && continue
@@ -138,15 +137,10 @@ done 3< <(read_list "$dir/lists/github.txt")
 for c in labwc noctalia; do
     command -v "$c" >/dev/null 2>&1 || { echo "$c is not in PATH" >&2; exit 1; }
 done
-stale=
-for f in "$dir"/bin/*; do cmp -s "$f" "/usr/bin/${f##*/}" || stale=1; done
-if [[ -n $stale ]] || ! pacman -Qq mabox-noctalia-ce >/dev/null 2>&1; then
-    echo "Building mabox-noctalia-ce"
-    new=; pacman -Qq mabox-noctalia-ce >/dev/null 2>&1 || new=1
-    (cd "$dir/packaging" && makepkg -fsi)
-    [[ -z $new ]] || record mabox-noctalia-ce
-    self=built
-fi
+echo "Building mabox-noctalia-ce"
+new=; pacman -Qq mabox-noctalia-ce >/dev/null 2>&1 || new=1
+(cd "$dir/packaging" && makepkg -fsi)
+[[ -z $new ]] || record mabox-noctalia-ce
 # Existing installs: disable the old musqz/* ids and keep their data under mabox/*.
 for id in music colors notes; do noctalia msg plugins disable "musqz/$id" >/dev/null 2>&1 || true; done
 pdata="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data"
@@ -172,8 +166,7 @@ report() {
     echo "[done] repo packages: ${#need_repo[@]} installed, $(( ${#repo[@]} - ${#need_repo[@]} )) already present"
     echo "[done] AUR packages: ${#need_aur[@]} installed, $(( ${#aur[@]} - ${#need_aur[@]} )) already present"
     echo "[done] GitHub builds: ${built[*]:-none, all present}"
-    if [[ $self == built ]]; then echo "[done] mabox-noctalia-ce package built and installed"
-    else echo "[skip] mabox-noctalia-ce package already installed"; fi
+    echo "[done] mabox-noctalia-ce package built and installed"
     [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
     echo "[done] plugins copied to $data/plugins"
     if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors, mabox/notes and mabox/status enabled"
@@ -195,6 +188,18 @@ report() {
     if grep -qs 'musqz/\(notes\|colors\|music\)' "$conf/mabox-noctalia-ce/rc.xml" "$conf/noctalia/config.toml"; then
         echo "[todo] keybinds or bar button still use the old plugin ids; run:"
         echo "         sed -i 's#musqz/\(notes\|colors\|music\)#mabox/\1#g' ~/.config/mabox-noctalia-ce/rc.xml ~/.config/noctalia/config.toml && labwc --reconfigure"
+    fi
+    local skel=/etc/skel/.config/mabox-noctalia-ce live=$conf/mabox-noctalia-ce repo=$dir/configs/mabox-noctalia-ce f out=()
+    if [[ -d $live ]]; then
+        while IFS= read -r f; do
+            if [[ -e $live/$f ]]; then out+=("         meld $repo/$f $live/$f")
+            else out+=("         cp -n $repo/$f $live/$f   # new in the package"); fi
+        done < <(cd "$skel" && find . -type f ! -name autostart.local ! -path './plugins/*' ! -path './conky/colors.lua' -print | sed 's#^\./##' | sort \
+                 | while read -r f; do cmp -s "$skel/$f" "$live/$f" || echo "$f"; done)
+        if (( ${#out[@]} )); then
+            echo "[todo] your config differs from the package default (colors.lua is generated and ignored); repo file left, yours right:"
+            printf '%s\n' "${out[@]}"
+        else echo "[done] config matches the package default"; fi
     fi
     if [[ -f /usr/share/wayland-sessions/noctalia-ce.desktop ]]; then echo "[todo] pick \"Noctalia CE\" at the login screen"
     else echo "[todo] noctalia-ce.desktop session file is missing: reinstall the package"; fi
