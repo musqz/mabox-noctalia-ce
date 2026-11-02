@@ -330,11 +330,11 @@ local function cleanRows(rows)
       render()
     end, warn))
     if expanded == id then
+      local buttons = {}
       for _, o in ipairs(opts) do
-        table.insert(list, ui.row({ gap = 6, padding = 2 }, {
-          ui.button({ text = (o.bad and "! " or "") .. o.label, variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = function() go(o) end }),
-        }))
+        table.insert(buttons, ui.button({ text = (o.bad and "! " or "") .. o.label, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function() go(o) end }))
       end
+      table.insert(list, ui.column({ fill = "surface", radius = 6, padding = 4, gap = 0 }, buttons))
     end
   end
 
