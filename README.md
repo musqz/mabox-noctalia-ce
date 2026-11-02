@@ -83,11 +83,9 @@ rm -rf ~/.config/mabox-noctalia-ce
 <table>
   <tr>
     <td valign="top"><a href="docs/skippy-wl-multiselect.png"><img alt="skippy-wl multiselect" src="docs/skippy-wl-multiselect.png" width="430" /></a></td>
-    <td valign="top"><a href="docs/root-menu.gif"><img alt="Root menu with icons" src="docs/root-menu.gif" width="430" /></a></td>
   </tr>
   <tr>
     <td align="center">skippy-wl: multiselect</td>
-    <td align="center">Root menu with icons</td>
   </tr>
 </table>
 
