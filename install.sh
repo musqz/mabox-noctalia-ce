@@ -79,7 +79,7 @@ case ${1:-} in
         mkdir -p "$conf/noctalia"
         cp -r "$dir/configs/mabox-noctalia-ce" "$conf/"
         rm -rf "$conf/mabox-noctalia-ce/plugins"
-        chmod 755 "$conf"/mabox-noctalia-ce/menuscripts/* "$conf/mabox-noctalia-ce/autostart"
+        chmod 755 "$conf/mabox-noctalia-ce/autostart"
         cp -rf "$dir/configs/noctalia/." "$conf/noctalia/"
         labwc --reconfigure >/dev/null 2>&1 || true
         echo "Config reset from $dir/configs. Log out and back in to apply it all."
@@ -201,10 +201,10 @@ report() {
         while IFS= read -r f; do
             if [[ -e $live/$f ]]; then out+=("         meld $repo/$f $live/$f")
             else out+=("         cp -n $repo/$f $live/$f   # new in the package"); fi
-        done < <(cd "$skel" && find . -type f ! -name autostart.local ! -path './plugins/*' ! -path './conky/colors.lua' -print | sed 's#^\./##' | sort \
+        done < <(cd "$skel" && find . -type f ! -name autostart.local ! -path './plugins/*' -print | sed 's#^\./##' | sort \
                  | while read -r f; do cmp -s "$skel/$f" "$live/$f" || echo "$f"; done)
         if (( ${#out[@]} )); then
-            echo "[todo] your config differs from the package default (colors.lua is generated and ignored); repo file left, yours right:"
+            echo "[todo] your config differs from the package default; repo file left, yours right:"
             printf '%s\n' "${out[@]}"
         else echo "[done] config matches the package default"; fi
     fi

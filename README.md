@@ -58,12 +58,12 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 <table>
   <tr>
-    <td valign="top"><a href="docs/theme-blue-2.png"><img alt="Blue theme with matching conky" src="docs/theme-blue-2.png" width="430" /></a></td>
-    <td valign="top"><a href="docs/theme-red-2.png"><img alt="Red theme with matching conky" src="docs/theme-red-2.png" width="430" /></a></td>
+    <td valign="top"><a href="docs/theme-blue-2.png"><img alt="Blue theme" src="docs/theme-blue-2.png" width="430" /></a></td>
+    <td valign="top"><a href="docs/theme-red-2.png"><img alt="Red theme" src="docs/theme-red-2.png" width="430" /></a></td>
   </tr>
   <tr>
-    <td align="center">Blue theme with matching conky</td>
-    <td align="center">Red theme with matching conky</td>
+    <td align="center">Blue theme</td>
+    <td align="center">Red theme</td>
   </tr>
 </table>
 
@@ -95,7 +95,7 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 <table>
   <tr>
-    <td valign="top"><a href="docs/music-launcher.png"><img alt="/music launcher with keybind cheat sheet and conky" src="docs/music-launcher.png" width="560" /></a></td>
+    <td valign="top"><a href="docs/music-launcher.png"><img alt="/music launcher with keybind cheat sheet" src="docs/music-launcher.png" width="560" /></a></td>
     <td valign="top"><a href="docs/updates-menu.png"><img alt="Update menu on the bar button" src="docs/updates-menu.png" /></a></td>
   </tr>
   <tr>

@@ -12,7 +12,6 @@ libnotify
 ddcutil
 terminator
 foot
-conky
 gmrun
 geany
 gtk-layer-shell

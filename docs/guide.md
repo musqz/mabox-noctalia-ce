@@ -6,7 +6,7 @@ What the Noctalia CE session adds on top of Mabox, and how to use it.
 
 | Path | Content |
 |---|---|
-| `~/.config/mabox-noctalia-ce/` | labwc config: `rc.xml`, `menu.xml`, `autostart`, `environment`, conky, menuscripts, plugins |
+| `~/.config/mabox-noctalia-ce/` | labwc config: `rc.xml`, `menu.xml`, `autostart`, `environment`, plugins |
 | `~/.config/noctalia/` | noctalia config, theme templates, palettes |
 | `~/.local/state/noctalia/settings.toml` | settings saved by the noctalia GUI and `config-set`; overrides `config.toml` |
 | `~/.config/mabox-noctalia-ce/jgmenurc` | generated; do not edit |
@@ -15,7 +15,7 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 
 ## Keys
 
-The desktop cheat sheet (conky, left side) lists every bind from the live `rc.xml`. Edit `rc.xml`, press `C-S-r`, and the sheet follows.
+Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
 | Key | Action |
 |---|---|
@@ -26,7 +26,6 @@ The desktop cheat sheet (conky, left side) lists every bind from the live `rc.xm
 | `W-l` | lock screen |
 | `W-=` | wallpaper panel |
 | `C-A-a` | random wallpaper |
-| `W-c` | conky on/off |
 | `W-S-c` | caffeine (no idle) |
 | `W-t` | terminal |
 | `F12` | quake terminal |
@@ -93,7 +92,6 @@ One palette drives everything. Change it in noctalia settings or with the wallpa
 | Target | Output |
 |---|---|
 | labwc window borders and titlebars | `~/.local/share/themes/noctalia/openbox-3/themerc` |
-| conky colors | `conky/colors.lua`, conky restarts |
 | update menu | `jgmenurc` |
 | Geany | `colorschemes/noctalia.conf` |
 | PyRadio | `themes/mbcolors.pyradio-theme` |
@@ -103,21 +101,13 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 ## Root menu
 
-`A-Space`. Entries: favorites, Mabox Config (settings, control center, wallpaper, conky manager, edit and reload labwc), applications, running windows, screenshot, screen recording, converter.
+`A-Space`. Entries: favorites, Mabox Config (settings, control center, wallpaper, edit and reload labwc), applications, running windows, screenshot, screen recording, converter.
 
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
 
 ## Wallpaper directory
 
 Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallpaper-dir <dir>`.
-
-## Conky
-
-- Widgets: clock, sysinfo, cpu, ram, network, mount points, shortcuts, todo, polaroid and more.
-- Pick which run: root menu → Mabox Config → Conky manager.
-- All on/off: root menu → Mabox Config → Conky on/off.
-- Restart the set: `~/.config/mabox-noctalia-ce/menuscripts/conky-start`.
-- Colors follow the theme.
 
 ## Monitors
 
