@@ -34,7 +34,7 @@ mabox-noctalia-ce/
 │   │   ├── rc.xml.all          reference: every labwc option
 │   │   ├── conky/              conky widgets (*_mbcolor.conkyrc) and colors.lua
 │   │   ├── menuscripts/        conky-start, conky-toggle, conky-manager, keybinds-conky
-│   │   └── plugins/            Noctalia plugins: colors, music, notes (not in the package)
+│   │   └── plugins/            Noctalia plugins: colors, music, notes, status (not in the package)
 │   ├── noctalia/               Noctalia config and templates → /usr/share/mabox-noctalia-ce/noctalia/
 │   │   ├── config.toml         bar, widgets, hooks
 │   │   ├── templates/          jgmenu.conf, labwc.conf
@@ -110,6 +110,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. `install.sh` copies them and adds 
 | Plugin | Entries | Open | Data / needs |
 |---|---|---|---|
 | `mabox/notes` | `main` dropdown, `pinned` window | `W-n`, `W-A-n` | notes in the plugin data folder |
+| `mabox/status` | `main` dropdown, `pinned` window | `W-A-s`, `W-S-s` | none; cleanup rows run in a terminal |
 | `mabox/colors` | `picker` dropdown, `pinned` window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 

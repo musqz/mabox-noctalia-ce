@@ -37,6 +37,8 @@ The desktop cheat sheet (conky, left side) lists every bind from the live `rc.xm
 | `W-A-c` | color picker |
 | `W-n` | notes |
 | `W-A-n` | pinned notes window |
+| `W-A-s` | status |
+| `W-S-s` | pinned status window |
 | `A-Space` | root menu |
 | `C-S-r` | reload labwc |
 
