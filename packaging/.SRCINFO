@@ -27,6 +27,7 @@ pkgbase = mabox-noctalia-ce
 	depends = pacman-contrib
 	depends = conky
 	depends = gmrun
+	depends = qt6ct
 	optdepends = radicale: local calendar (mb-calendar-setup)
 	optdepends = kitty: terminal keybind
 	optdepends = pavucontrol: volume control keybind
