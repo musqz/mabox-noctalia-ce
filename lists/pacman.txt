@@ -21,3 +21,4 @@ gifski
 pipewire
 wireplumber
 wl-clipboard
+qt6ct
