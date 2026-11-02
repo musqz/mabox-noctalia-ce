@@ -107,28 +107,30 @@
   <menu id="client-list-combined-menu" label="Running..." icon="window-duplicate" />
   <separator />
   <menu id="screenshot-menu" label="Screenshot" icon="accessories-screenshot">
+    <item label="Screen">
+      <action name="Execute" command="mb-screenshot screenshot-fullscreen" />
+    </item>
     <item label="All screens">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+      <action name="Execute" command="mb-screenshot screenshot-fullscreen all" />
     </item>
-    <item label="Primary screen">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    <item label="Pick a screen">
+      <action name="Execute" command="mb-screenshot screenshot-fullscreen pick" />
     </item>
-    <separator />
-    <item label="Primary in 3s">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; sleep 3 &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+    <item label="Window">
+      <action name="Execute" command="mb-screenshot screenshot-window" />
     </item>
-    <item label="Primary in 5s">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; sleep 5 &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
-    </item>
-    <item label="Primary in 10s">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; sleep 10 &amp;&amp; grim -o HDMI-A-1 ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
-    </item>
-    <separator />
     <item label="Select area">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; grim -g &quot;$(slurp)&quot; ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+      <action name="Execute" command="mb-screenshot screenshot-region" />
+    </item>
+    <item label="Annotate">
+      <action name="Execute" command="noctalia msg screenshot-annotate" />
+    </item>
+    <separator />
+    <item label="Screen in 5s">
+      <action name="Execute" command="sh -c 'sleep 5 &amp;&amp; mb-screenshot screenshot-fullscreen'" />
     </item>
     <item label="Select area in 5s">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Pictures/screenshots &amp;&amp; slurp &gt; $XDG_RUNTIME_DIR/area &amp;&amp; sleep 5 &amp;&amp; grim -g &quot;$(cat $XDG_RUNTIME_DIR/area)&quot; ~/Pictures/screenshots/$(date +%F_%H-%M-%S).png'" />
+      <action name="Execute" command="sh -c 'sleep 5 &amp;&amp; mb-screenshot screenshot-region'" />
     </item>
   </menu>
   <menu id="record-menu" label="Screen recording" icon="media-record">
