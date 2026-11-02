@@ -134,7 +134,7 @@ noctalia msg panel-toggle mabox/notes:pinned
 |---|---|
 | `lists/pacman.txt` | repo packages (`labwc`, `noctalia`, `kanshi`, …) |
 | `lists/aur.txt` | AUR packages (`jumpapp-ng`, `wl-screenrec`, `labwc-menu-generator-git`) |
-| `lists/github.txt` | built from source with `makepkg`: `fittsmon`, `fittsmon-gui`, `skippy-wl`, `tabdock` |
+| `lists/github.txt` | built from source with `makepkg`: `fittsmon`, `fittsmon-wl-gui`, `skippy-wl`, `tabdock` |
 | `packaging/PKGBUILD` | `depends` and `optdepends` of `mabox-noctalia-ce` itself |
 
 ## Handy commands
