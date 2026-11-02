@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# mb-screenshot <noctalia screenshot-* args>: save to ~/Pictures/screenshots, then open the image.
+if [[ ${1-} == --view ]]; then
+    rt=${XDG_RUNTIME_DIR:-/tmp}
+    find "$rt" -maxdepth 1 -name 'mb-shot.*.png' -mmin +60 -delete 2>/dev/null
+    f=$(mktemp --suffix=.png -p "$rt" mb-shot.XXXXXX)
+    cat > "$f"
+    [[ -s $f ]] || { rm -f "$f"; exit 0; }
+    if command -v viewnior >/dev/null; then exec viewnior "$f"; else exec xdg-open "$f"; fi
+fi
+dir=$HOME/Pictures/screenshots
+mkdir -p "$dir"
+exec noctalia msg "$@" --save-to-file --directory "$dir" --pipe-to-command --pipe-command "$(readlink -f "$0") --view"

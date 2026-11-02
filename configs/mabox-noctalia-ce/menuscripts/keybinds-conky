@@ -20,7 +20,7 @@ CMD_LABELS = [
     (r"workspace-switch prev", "workspace prev"),
     (r"volume-up", "volume up"), (r"volume-down", "volume down"), (r"volume-mute", "mute"),
     (r"brightness-primary up", "brightness up"), (r"brightness-primary down", "brightness down"),
-    (r"grim ", "screenshot"), (r"viewnior", "last screenshot"),
+    (r"mb-screenshot", "screenshot"), (r"viewnior", "last screenshot"),
     (r"screenrec", "screen record"),
     (r"mabox/colors", "color picker"),
     (r"mabox/notes:pinned", "notes pinned"),
