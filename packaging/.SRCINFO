@@ -25,7 +25,6 @@ pkgbase = mabox-noctalia-ce
 	depends = terminator
 	depends = foot
 	depends = pacman-contrib
-	depends = conky
 	depends = gmrun
 	depends = qt6ct
 	depends = nwg-look

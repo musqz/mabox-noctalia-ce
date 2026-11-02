@@ -32,13 +32,11 @@ mabox-noctalia-ce/
 │   │   ├── shutdown            runs when labwc exits
 │   │   ├── themerc, themerc-override, noctalia.conf   window theme
 │   │   ├── rc.xml.all          reference: every labwc option
-│   │   ├── conky/              conky widgets (*_mbcolor.conkyrc) and colors.lua
-│   │   ├── menuscripts/        conky-start, conky-toggle, conky-manager, keybinds-conky
 │   │   └── plugins/            Noctalia plugins: colors, music, notes, status (installed to `/usr/share/mabox-noctalia-ce/plugins`)
 │   ├── noctalia/               Noctalia config and templates → /usr/share/mabox-noctalia-ce/noctalia/
 │   │   ├── config.toml         bar, widgets, hooks
 │   │   ├── templates/          jgmenu.conf, labwc.conf
-│   │   ├── Conky/, Geany/, PyRadio/, Pywalfox/   theme templates
+│   │   ├── Geany/, PyRadio/, Pywalfox/   theme templates
 │   │   └── palettes/           color palette JSON
 │   └── file-manager/actions/   file manager action → /usr/share/file-manager/actions/
 ├── systemd/user/               mb-updates-ce .service .timer .path → /usr/lib/systemd/user/
@@ -67,11 +65,10 @@ First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/m
 
 | Path | What | Written by |
 |---|---|---|
-| `~/.config/mabox-noctalia-ce/` | labwc config (`rc.xml`, `menu.xml`, `autostart`, themes, conky) | you; seeded from skel |
+| `~/.config/mabox-noctalia-ce/` | labwc config (`rc.xml`, `menu.xml`, `autostart`, themes) | you; seeded from skel |
 | `~/.config/mabox-noctalia-ce/autostart.local` | your own startup programs | you |
-| `~/.config/mabox-noctalia-ce/conky/enabled.list` | which conkies run | `conky-manager` |
 | `~/.config/noctalia/config.toml` | Noctalia bar and widgets | you; seeded from package |
-| `~/.config/noctalia/{Conky,Geany,PyRadio,Pywalfox,templates,palettes}/` | theme templates | seeded from package |
+| `~/.config/noctalia/{Geany,PyRadio,Pywalfox,templates,palettes}/` | theme templates | seeded from package |
 | `~/.local/state/noctalia/settings.toml`, `state.toml` | Noctalia state; wins over `config.toml` | Noctalia, `noctalia msg config-set` |
 | `~/.local/state/noctalia/plugins/data/mabox/<plugin>/` | plugin data (notes, color settings) | the plugins |
 | `~/.local/share/mabox-noctalia-ce/installed` | packages the script installed | `install.sh` |
@@ -99,8 +96,6 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `screenrec-toggle` | start/stop region recording with `wl-screenrec` | bar button, root menu, `rc.xml` |
 | `skippy-wl-tiling` | pick up to 4 windows and tile them | `C-Space` |
 | `skippy-wl-send-to-{philips,dell,desk}` | pick windows, send to a monitor or workspace | `S-C-KP_7`, `S-C-KP_9`, `S-C-KP_8` |
-
-`menuscripts/` (in the config, not `/usr/bin`): `conky-start`, `conky-toggle` (`W-c`), `conky-manager`, `keybinds-conky` (reads `rc.xml` for the keybind conky).
 
 ## Plugins
 

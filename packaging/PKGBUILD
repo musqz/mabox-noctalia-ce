@@ -7,7 +7,7 @@ arch=('any')
 url='https://github.com/musqz/mabox-noctalia-ce'
 license=('GPL')
 depends=('python' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlr-randr' 'wlopm' 'wtype' 'wlrctl' 'grim' 'slurp' 'yad' 'jgmenu'
-         'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'conky' 'gmrun' 'qt6ct' 'nwg-look')
+         'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'gmrun' 'qt6ct' 'nwg-look')
 optdepends=('radicale: local calendar (mb-calendar-setup)'
             'kitty: terminal keybind'
             'pavucontrol: volume control keybind'
@@ -43,7 +43,6 @@ package() {
   local skel="$pkgdir/etc/skel/.config"
   install -dm755 "$skel"
   cp -r "$root/configs/mabox-noctalia-ce" "$skel/"
-  chmod 755 "$skel"/mabox-noctalia-ce/menuscripts/*
   chmod 755 "$skel"/mabox-noctalia-ce/autostart
   rm -rf "$skel"/mabox-noctalia-ce/plugins
 
