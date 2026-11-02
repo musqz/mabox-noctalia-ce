@@ -15,7 +15,7 @@ if [[ ${1-} == --wait ]]; then
 fi
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/conky-start.lock"
 flock 9
-[[ -f $list ]] || printf '%s\n' ce-sysinfo_mbcolor POLSLIDE_mbcolor_slideshow > "$list"
+[[ -f $list ]] || printf '%s\n' ce-sysinfo_mbcolor shortcuts_mbcolor > "$list"
 pkill -x conky
 sleep 1
 # Xwayland numbers heads in output start-up order, so look up the Philips head each time
