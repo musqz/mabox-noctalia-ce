@@ -189,7 +189,7 @@ report() {
         echo "[todo] keybinds or bar button still use the old plugin ids; run:"
         echo "         sed -i 's#musqz/\(notes\|colors\|music\)#mabox/\1#g' ~/.config/mabox-noctalia-ce/rc.xml ~/.config/noctalia/config.toml && labwc --reconfigure"
     fi
-    local skel=/etc/skel/.config/mabox-noctalia-ce live=$conf/mabox-noctalia-ce repo=$dir/configs/mabox-noctalia-ce f out=()
+    local skel=/etc/skel/.config/mabox-noctalia-ce live=$conf/mabox-noctalia-ce repo=$dir/configs/mabox-noctalia-ce f pl out=()
     if [[ -d $live ]]; then
         while IFS= read -r f; do
             if [[ -e $live/$f ]]; then out+=("         meld $repo/$f $live/$f")
@@ -201,6 +201,9 @@ report() {
             printf '%s\n' "${out[@]}"
         else echo "[done] config matches the package default"; fi
     fi
+    pl=$conf/mabox/mb-music/yt_music_list.csv src=$dir/configs/mabox/mb-music/yt_music_list.csv
+    if [[ ! -e $pl ]]; then echo "[todo] default /music playlist: mkdir -p ${pl%/*} && cp -n $src $pl"
+    elif ! cmp -s "$src" "$pl"; then echo "[todo] /music playlist differs from the default: meld $src $pl"; fi
     if [[ -f /usr/share/wayland-sessions/noctalia-ce.desktop ]]; then echo "[todo] pick \"Noctalia CE\" at the login screen"
     else echo "[todo] noctalia-ce.desktop session file is missing: reinstall the package"; fi
     [[ ! -f $conf/mabox-noctalia-ce/autostart ]] || grep -q autostart.local "$conf/mabox-noctalia-ce/autostart" \
