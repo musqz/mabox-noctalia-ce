@@ -17,7 +17,7 @@ Where everything lives: in the repo, after install, and in your home folder.
 
 ```text
 mabox-noctalia-ce/
-├── install.sh                  installs packages, builds the package, copies plugins
+├── install.sh                  installs packages, builds and installs the package, enables plugins
 ├── README.md
 ├── bin/                        helper scripts → /usr/bin
 ├── lib/mabox-noctalia-ce       session launcher → /usr/bin/mabox-noctalia-ce
@@ -34,7 +34,7 @@ mabox-noctalia-ce/
 │   │   ├── rc.xml.all          reference: every labwc option
 │   │   ├── conky/              conky widgets (*_mbcolor.conkyrc) and colors.lua
 │   │   ├── menuscripts/        conky-start, conky-toggle, conky-manager, keybinds-conky
-│   │   └── plugins/            Noctalia plugins: colors, music, notes, status (not in the package)
+│   │   └── plugins/            Noctalia plugins: colors, music, notes, status (installed to `/usr/share/mabox-noctalia-ce/plugins`)
 │   ├── noctalia/               Noctalia config and templates → /usr/share/mabox-noctalia-ce/noctalia/
 │   │   ├── config.toml         bar, widgets, hooks
 │   │   ├── templates/          jgmenu.conf, labwc.conf
@@ -58,7 +58,7 @@ mabox-noctalia-ce/
 | `configs/noctalia/` | `/usr/share/mabox-noctalia-ce/noctalia/` | package |
 | `configs/file-manager/actions/*` | `/usr/share/file-manager/actions/` | package |
 | `systemd/user/*` | `/usr/lib/systemd/user/` | package |
-| `configs/mabox-noctalia-ce/plugins/` | `~/.local/share/mabox-noctalia-ce/plugins/` | `install.sh` |
+| `configs/mabox-noctalia-ce/plugins/` | `/usr/share/mabox-noctalia-ce/plugins/` | package |
 | `configs/mabox-noctalia-ce/autostart.local` | `~/.config/mabox-noctalia-ce/autostart.local` (only if missing) | `install.sh` |
 
 First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/mabox-noctalia-ce/` and the Noctalia files to `~/.config/noctalia/`. Existing files are never overwritten (`cp -n`).
@@ -74,7 +74,6 @@ First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/m
 | `~/.config/noctalia/{Conky,Geany,PyRadio,Pywalfox,templates,palettes}/` | theme templates | seeded from package |
 | `~/.local/state/noctalia/settings.toml`, `state.toml` | Noctalia state; wins over `config.toml` | Noctalia, `noctalia msg config-set` |
 | `~/.local/state/noctalia/plugins/data/mabox/<plugin>/` | plugin data (notes, color settings) | the plugins |
-| `~/.local/share/mabox-noctalia-ce/plugins/` | installed plugin copies | `install.sh` |
 | `~/.local/share/mabox-noctalia-ce/installed` | packages the script installed | `install.sh` |
 | `~/.config/mabox-noctalia-ce.bak-*`, `.save-*` | config backups | `install.sh --reset-config`, `--save-config` |
 | `~/.cache/noctalia/noctalia.log` | Noctalia log | Noctalia |
@@ -105,7 +104,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 
 ## Plugins
 
-Source: `configs/mabox-noctalia-ce/plugins/`. `install.sh` copies them and adds the path source `musqz-local`.
+Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autostart` and `install.sh` add the path source `mabox`. Enable each one by hand: `noctalia msg plugins enable mabox/notes`.
 
 | Plugin | Entries | Open | Data / needs |
 |---|---|---|---|
@@ -135,7 +134,7 @@ noctalia msg panel-toggle mabox/notes:pinned
 |---|---|
 | `lists/pacman.txt` | repo packages (`labwc`, `noctalia`, `kanshi`, …) |
 | `lists/aur.txt` | AUR packages (`jumpapp-ng`, `wl-screenrec`, `labwc-menu-generator-git`) |
-| `lists/github.txt` | built from source with `makepkg`: `fittsmon`, `fittsmon-wl-gui`, `skippy-wl`, `tabdock` |
+| `lists/github.txt` | built from source with `makepkg`: `fittsmon`, `fittsmon-gui`, `skippy-wl`, `tabdock` |
 | `packaging/PKGBUILD` | `depends` and `optdepends` of `mabox-noctalia-ce` itself |
 
 ## Handy commands

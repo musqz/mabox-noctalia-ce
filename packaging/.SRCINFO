@@ -34,7 +34,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = pavucontrol: volume control keybind
 	optdepends = viewnior: screenshot viewer keybind
 	optdepends = fittsmon: provides fittsmon-wl (github.com/musqz/fittsmon)
-	optdepends = fittsmon-wl-gui: fittsmon-wl config GUI (github.com/musqz/fittsmon-wl-gui)
+	optdepends = fittsmon-gui: fittsmon-wl config GUI (github.com/musqz/fittsmon-gui)
 	optdepends = skippy-wl: window switcher keybinds (github.com/musqz/skippy-wl)
 	optdepends = jumpapp-ng: app launch/focus keybinds (AUR)
 	optdepends = wl-screenrec: screen recording keybind (AUR)
@@ -47,5 +47,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = python-pywalfox: Firefox theme template
+	source = mabox-noctalia-ce-0.1.0.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.1.0.tar.gz
+	sha256sums = SKIP
 
 pkgname = mabox-noctalia-ce

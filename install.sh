@@ -12,6 +12,7 @@ set -euo pipefail
 dir=$(dirname "$(readlink -f "$0")")
 data="${XDG_DATA_HOME:-$HOME/.local/share}/mabox-noctalia-ce"
 state="$data/installed"
+plugins=/usr/share/mabox-noctalia-ce/plugins
 read_list() { grep -v '^\s*\(#\|$\)' "$1"; }
 
 conf="$HOME/.config"
@@ -65,9 +66,8 @@ case ${1:-} in
         exit 0 ;;
     --uninstall)
         for id in music colors notes status; do noctalia msg plugins disable "mabox/$id" >/dev/null 2>&1 || true; done
-        noctalia msg plugins source remove musqz-local >/dev/null 2>&1 \
-            || echo "Noctalia not running: run 'noctalia msg plugins source remove musqz-local' in the session." >&2
-        rm -rf "$data/plugins"
+        noctalia msg plugins source remove mabox >/dev/null 2>&1 \
+            || echo "Noctalia not running: run 'noctalia msg plugins source remove mabox' in the session." >&2
         [[ -s $state ]] || { echo "Nothing recorded in $state"; exit 0; }
         mapfile -t pkgs < <(while read -r p; do pacman -Qq "$p" 2>/dev/null; done < "$state")
         (( ${#pkgs[@]} )) && sudo pacman -Rns "${pkgs[@]}"
@@ -139,15 +139,22 @@ for c in labwc noctalia; do
 done
 echo "Building mabox-noctalia-ce"
 new=; pacman -Qq mabox-noctalia-ce >/dev/null 2>&1 || new=1
-(cd "$dir/packaging" && makepkg -fsi)
+# Build the working tree: makepkg reuses a tarball found in SRCDEST.
+pkgver=$(sed -n 's/^pkgver=//p' "$dir/packaging/PKGBUILD")
+tmp=$(mktemp -d)
+(cd "$dir" && git ls-files -z --cached --others --exclude-standard \
+    | while IFS= read -r -d '' f; do [[ -e $f ]] && printf '%s\0' "$f"; done \
+    | tar --null -T - --transform "s,^,mabox-noctalia-ce-$pkgver/," -czf "$tmp/mabox-noctalia-ce-$pkgver.tar.gz")
+(cd "$dir/packaging" && SRCDEST=$tmp makepkg -fsi --skipchecksums)
 [[ -z $new ]] || record mabox-noctalia-ce
 # Existing installs: disable the old musqz/* ids and keep their data under mabox/*.
 for id in music colors notes; do noctalia msg plugins disable "musqz/$id" >/dev/null 2>&1 || true; done
 pdata="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data"
 [[ -d $pdata/musqz && ! -e $pdata/mabox ]] && cp -r "$pdata/musqz" "$pdata/mabox"
+# Older installs: drop the copied plugins and the musqz-local source.
+noctalia msg plugins source remove musqz-local >/dev/null 2>&1 || true
 rm -rf "$data/plugins"
-cp -r "$dir/configs/mabox-noctalia-ce/plugins" "$data/plugins"
-if noctalia msg plugins source add musqz-local path "$data/plugins" >/dev/null 2>&1 \
+if noctalia msg plugins source add mabox path "$plugins" >/dev/null 2>&1 \
     && { noctalia msg plugins enable mabox/music; noctalia msg plugins enable mabox/colors; noctalia msg plugins enable mabox/notes; noctalia msg plugins enable mabox/status; } >/dev/null 2>&1; then
     plugins_on=1
 else
@@ -168,7 +175,7 @@ report() {
     echo "[done] GitHub builds: ${built[*]:-none, all present}"
     echo "[done] mabox-noctalia-ce package built and installed"
     [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
-    echo "[done] plugins copied to $data/plugins"
+    echo "[done] plugin source mabox: $plugins"
     if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors, mabox/notes and mabox/status enabled"
     else echo "[skip] plugins not enabled: noctalia not running or the source call failed"; fi
 
@@ -176,7 +183,7 @@ report() {
     [[ -d $conf/mabox-noctalia-ce ]] || echo "[todo] config: cp -rn /etc/skel/.config/mabox-noctalia-ce ~/.config/"
     if (( ! plugins_on )); then
         echo "[todo] in the session run:"
-        echo "         noctalia msg plugins source add musqz-local path $data/plugins"
+        echo "         noctalia msg plugins source add mabox path $plugins"
         echo "         noctalia msg plugins enable mabox/music"
         echo "         noctalia msg plugins enable mabox/colors"
         echo "         noctalia msg plugins enable mabox/notes"
