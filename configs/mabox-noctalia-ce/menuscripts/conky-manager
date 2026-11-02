@@ -2,7 +2,7 @@
 # Pick which labwc conkies run; saves the choice to conky/enabled.list.
 dir="$HOME/.config/mabox-noctalia-ce/conky"
 list="$dir/enabled.list"
-[[ -f $list ]] || printf "%s\n" ce-sysinfo_mbcolor POLSLIDE_mbcolor_slideshow > "$list"
+[[ -f $list ]] || printf "%s\n" ce-sysinfo_mbcolor shortcuts_mbcolor > "$list"
 
 rows=()
 for f in "$dir"/*.conkyrc; do
