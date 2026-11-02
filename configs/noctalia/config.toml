@@ -44,7 +44,7 @@ floating_layer = "overlay"
   resume_command = "wlopm --on '*'"
 
 [bar.default]
-end = ['media', 'sysmon-ram', 'updates', 'colors', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
+end = ['media', 'sysmon-ram', 'updates', 'status', 'colors', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
 
 [widget.screenrec]
 type = "custom_button"
@@ -54,6 +54,16 @@ tooltip = "start recording"
 
 [widget.screenrec.actions]
 left = "exec screenrec-toggle"
+
+[widget.status]
+type = "custom_button"
+glyph = "activity"
+color = "on_surface"
+tooltip = "system status"
+
+[widget.status.actions]
+left = "exec noctalia msg panel-toggle mabox/status:main"
+right = "exec noctalia msg panel-toggle mabox/status:pinned"
 
 [widget.colors]
 type = "custom_button"

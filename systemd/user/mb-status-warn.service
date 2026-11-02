@@ -1,0 +1,7 @@
+[Unit]
+Description=Color the status bar button when a disc is nearly full
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mb-status-warn
+SyslogIdentifier=mb-status-warn

@@ -53,6 +53,8 @@
     <keybind key="W-A-c"><action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker"/></keybind>
     <keybind key="W-n"><action name="Execute" command="noctalia msg panel-toggle mabox/notes:main"/></keybind>
     <keybind key="W-A-n"><action name="Execute" command="noctalia msg panel-toggle mabox/notes:pinned"/></keybind>
+    <keybind key="W-A-s"><action name="Execute" command="noctalia msg panel-toggle mabox/status:main"/></keybind>
+    <keybind key="W-S-s"><action name="Execute" command="noctalia msg panel-toggle mabox/status:pinned"/></keybind>
 
     <!-- Wallpaper -->
     <keybind key="W-2"><action name="Execute" command="noctalia msg workspace-switch next"/></keybind>

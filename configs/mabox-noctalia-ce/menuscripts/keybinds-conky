@@ -25,6 +25,8 @@ CMD_LABELS = [
     (r"mabox/colors", "color picker"),
     (r"mabox/notes:pinned", "notes pinned"),
     (r"mabox/notes", "notes"),
+    (r"mabox/status:pinned", "status pinned"),
+    (r"mabox/status", "status"),
     (r"session lock", "lock screen"),
     (r"TerminalEmulator btop", "btop"), (r"TerminalEmulator", "terminal"),
     (r"^foot", "foot"), (r"q-term-toggle", "quake terminal"),

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Color the noctalia bar button [widget.status] when a disc is at or over the alert level of the mabox/status plugin.
+set -euo pipefail
+
+conf="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/status/settings"
+limit=90
+warn='#ff9800'
+if [[ -f $conf ]]; then
+    v=$(sed -n 's/^disk_limit=//p' "$conf"); [[ $v =~ ^[0-9]+$ ]] && limit=$v
+    v=$(sed -n 's/^warn=//p' "$conf"); [[ $v =~ ^#[0-9a-fA-F]{6}$ ]] && warn=$v
+fi
+
+full=""
+if ((limit > 0)); then
+    full=$(df -h --output=source,pcent,target | awk -v lim="$limit" '
+        NR > 1 && $1 ~ /^\/dev\// && $1 !~ /loop/ && $3 !~ /^\/(boot|run)/ && !seen[$1]++ {
+            p = $2; sub(/%/, "", p)
+            m = $0; sub(/^[^ ]+ +[^ ]+ +/, "", m)
+            if (p + 0 >= lim) printf "%s %s%%; ", m, p
+        }')
+fi
+
+set_bar() {
+    local state="$1|$2|$3" cache="${XDG_RUNTIME_DIR:-/tmp}/mb-status-warn.state"
+    [[ -f $cache && $(<"$cache") == "$state" ]] && return 0
+    noctalia msg config-set widget.status.glyph "\"$1\"" >/dev/null &&
+        noctalia msg config-set widget.status.color "\"$2\"" >/dev/null &&
+        noctalia msg config-set widget.status.tooltip "\"$3\"" >/dev/null &&
+        printf '%s' "$state" > "$cache"
+}
+
+full=${full//[\"\\]/}
+if [[ -n $full ]]; then
+    set_bar alert-triangle "$warn" "disc full: ${full%; }"
+else
+    set_bar activity on_surface "system status"
+fi

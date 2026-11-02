@@ -1,0 +1,30 @@
+id = "mabox/status"
+name = "Status"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "activity"
+description = "System status: packages, discs, and cleanup rows for journal, caches, orphans, trash and containers. Cleanup runs in a terminal after a dry run and a confirmation."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 640
+placement = "attached"
+open_near_click = true
+
+[[panel]]
+id = "pinned"
+entry = "pinned.luau"
+width = 330
+height = "fill"
+placement = "floating"
+position = "top_right"
+persistent = true
+dismiss_on_outside_click = false
+keyboard_focus = "none"
+layer = "overlay"
