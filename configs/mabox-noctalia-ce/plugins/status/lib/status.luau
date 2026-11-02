@@ -48,6 +48,7 @@ local data = {}
 local queue = {}
 local running = false
 local again = false
+local fullNext = false
 local lastRun = 0
 local ticks = 0
 local view = "main"
@@ -222,10 +223,10 @@ local function sizeMap()
   return map
 end
 
+-- setsid: the dropdown closing when the terminal takes focus would otherwise kill it.
 local function runTerminal(title, size, dry, run)
-  noctalia.runAsync({ "foot", "-e", "sh", "-c", TERM_SCRIPT, "sh", title, size, dry, run }, function()
-    refresh(false)
-  end)
+  noctalia.runAsync({ "setsid", "-f", "foot", "-e", "sh", "-c", TERM_SCRIPT, "sh", title, size, dry, run })
+  fullNext = true
 end
 
 local function openDir(path)
@@ -619,7 +620,8 @@ end
 local function tick()
   ticks += 1
   if view == "main" and ticks - lastRun >= REFRESH then
-    refresh(true)
+    refresh(not fullNext)
+    fullNext = false
   end
 end
 
