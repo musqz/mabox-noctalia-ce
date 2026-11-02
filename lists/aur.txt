@@ -1,4 +1,3 @@
 jumpapp-ng
 wl-screenrec
-lswt
 labwc-menu-generator-git
