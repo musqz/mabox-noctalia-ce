@@ -81,7 +81,6 @@
     <keybind key="F3" name.action="Execute" command.action="jumpapp -m geany"/>
     <keybind key="W-e" name.action="Execute" command.action="geany"/>
     <keybind key="W-f" name.action="Execute" command.action="pcmanfm"/>
-    <keybind key="W-i" name.action="Execute" command.action="~/bin/ml-info"/>
     <keybind key="W-r" name.action="Execute" command.action="jumpapp -m -c pyradio kitty --class pyradio -e pyradio"/>
     <keybind key="W-w" name.action="Execute" command.action="firefox"/>
     <keybind key="W-v" name.action="Execute" command.action="pavucontrol"/>

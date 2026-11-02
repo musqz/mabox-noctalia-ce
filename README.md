@@ -17,9 +17,21 @@ cd mabox-noctalia-ce
 ```
 
 - Installs the missing packages and builds `mabox-noctalia-ce`.
-- Skips packages you already have; rebuilds when `bin/` differs from `/usr/bin`.
+- Skips packages you already have; rebuilds `mabox-noctalia-ce` on every run.
 - Ends with a `[done]` / `[skip]` / `[todo]` summary.
 - Config lives in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
+
+## Update
+
+```sh
+cd mabox-noctalia-ce
+git pull
+./install.sh
+```
+
+- Run each `meld` line listed under `[todo]` and merge what you want.
+- Apply the merged config: `labwc --reconfigure`.
+- Log out and back in after changes to `environment` or the plugins.
 
 ## Autostart
 
