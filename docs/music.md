@@ -30,7 +30,7 @@ END,-
 ## Add a track
 
 1. Copy a YouTube or stream URL.
-2. Press `C-S-2`, or pick "Add a track..." in `/music`.
+2. Press `C-S-2`.
 3. Check Artist and Title (filled from `yt-dlp`), pick a category, press Enter or Add.
 
 The category stays selected until you pick another. Choose "+ New category" to create one.

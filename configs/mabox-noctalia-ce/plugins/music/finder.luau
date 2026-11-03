@@ -89,7 +89,6 @@ function onQuery(text)
 
   if q == "" then
     table.insert(rows, { id = "shuffle:", title = "Shuffle all", glyph = "arrows-shuffle", score = 1000 })
-    table.insert(rows, { id = "add:", title = "Add a track...", glyph = "plus", score = 950 })
     for i, c in cats do
       table.insert(rows, { id = "cat:" .. c.name, title = c.name, subtitle = #c.tracks .. " tracks", glyph = "folder", score = 900 - i })
     end
@@ -123,8 +122,6 @@ function onActivate(id)
   local cats = loadCategories()
   if kind == "cat" then
     launcher.setQuery(arg)
-  elseif kind == "add" then
-    noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/music:add" })
   elseif kind == "play" then
     play({ arg }, false, "Playing track")
   elseif kind == "shuffle" or kind == "playcat" then
