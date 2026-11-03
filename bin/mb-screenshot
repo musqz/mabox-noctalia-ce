@@ -44,20 +44,30 @@ countdown() {
     (( delay > 0 )) || return 0
     sleep "$delay"
 }
+# Save a png (a file path) in the chosen format and open it.
+finish() {
+    out=$dir/screenshot_$(date +%Y%m%d_%H%M%S)-$2.$fmt
+    if [[ $fmt == png ]]; then cp "$1" "$out" || out=; else magick "$1" "$out" || out=; fi
+    rm -f "$1"
+    [[ -n $out ]] || { notify-send "Screenshot" "failed"; exit 1; }
+    if command -v viewnior >/dev/null; then exec viewnior "$out"; else exec xdg-open "$out"; fi
+}
 # Area with a delay: select first, then count down and capture.
 if [[ ${1-} == screenshot-region && $delay -gt 0 ]]; then
     region=$(slurp) || exit 0
     countdown
-    out=$dir/screenshot_$(date +%Y%m%d_%H%M%S)-region.$fmt
-    if [[ $fmt == png ]]; then
-        grim -g "$region" "$out" || { notify-send "Screenshot" "failed"; exit 1; }
-    else
-        tmp=$(mktemp --suffix=.png)
-        grim -g "$region" "$tmp" && magick "$tmp" "$out"; rc=$?
-        rm -f "$tmp"
-        (( rc == 0 )) || { notify-send "Screenshot" "failed"; exit 1; }
-    fi
-    if command -v viewnior >/dev/null; then exec viewnior "$out"; else exec xdg-open "$out"; fi
+    tmp=$(mktemp --suffix=.png)
+    grim -g "$region" "$tmp" || { rm -f "$tmp"; notify-send "Screenshot" "failed"; exit 1; }
+    finish "$tmp" region
+fi
+# Window: pick it first (skippy-wl), then count down and capture it.
+if [[ ${1-} == screenshot-window ]] && command -v skippy-wl >/dev/null; then
+    id=$(skippy-wl --show) || exit 0
+    [[ -n $id ]] || exit 0
+    countdown
+    tmp=$(mktemp --suffix=.png)
+    { skippy-wl --capture "$id" "$tmp" >/dev/null && [[ -s $tmp ]]; } || { rm -f "$tmp"; notify-send "Screenshot" "failed"; exit 1; }
+    finish "$tmp" window
 fi
 countdown
 cmd=$1; shift
