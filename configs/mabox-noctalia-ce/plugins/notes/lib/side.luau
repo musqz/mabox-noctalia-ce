@@ -42,8 +42,23 @@ function M.set(plugin, side)
   noctalia.writeFile(path(), table.concat(out, "\n") .. "\n")
 end
 
+-- Pinned windows on the same side lie on top of each other: close the others, then run verb.
+local PLUGINS = { "colors", "notes", "status", "configs" }
+
+local function command(plugin, side, verb)
+  local sides = read()
+  local cmd = {}
+  for _, other in ipairs(PLUGINS) do
+    if other ~= plugin and (sides[other] == "right" and "right" or "left") == side then
+      table.insert(cmd, "noctalia msg panel-close " .. id(other, side) .. " >/dev/null 2>&1")
+    end
+  end
+  table.insert(cmd, "noctalia msg " .. verb .. " " .. id(plugin, side))
+  return table.concat(cmd, "; ")
+end
+
 function M.toggle(plugin)
-  noctalia.runAsync({ "noctalia", "msg", "panel-toggle", id(plugin, M.get(plugin)) })
+  noctalia.runAsync({ "sh", "-c", command(plugin, M.get(plugin), "panel-toggle") })
 end
 
 -- From a pinned window: move this plugin's window to the other side.
@@ -51,7 +66,7 @@ function M.swap(plugin, current)
   local other = current == "left" and "right" or "left"
   M.set(plugin, other)
   panel.close()
-  noctalia.runAsync({ "noctalia", "msg", "panel-open", id(plugin, other) })
+  noctalia.runAsync({ "sh", "-c", command(plugin, other, "panel-open") })
 end
 
 return M
