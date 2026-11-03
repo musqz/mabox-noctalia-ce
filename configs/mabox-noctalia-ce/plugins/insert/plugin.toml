@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "keyboard"
-description = "Type a shell history line (/hist) or an Espanso snippet (/es) into the previous window with wtype."
+description = "Type a shell history line (/hist) or an Espanso snippet (/es) into the previous window with wtype; a panel adds and edits your snippets."
 dependencies = ["wtype"]
 tags = ["launcher", "utility"]
 
@@ -22,3 +22,13 @@ entry = "espanso.luau"
 prefix = "es"
 glyph = "text-plus"
 include_in_global_search = false
+
+[[panel]]
+id = "snippets"
+entry = "snippets.luau"
+width = 520
+height = "content"
+max_height = 520
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
