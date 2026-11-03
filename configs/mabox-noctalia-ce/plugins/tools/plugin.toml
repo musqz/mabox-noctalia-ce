@@ -1,0 +1,16 @@
+id = "mabox/tools"
+name = "Mabox tools"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "tools"
+description = "Launcher entries for the Mabox plugins: Colors, Notes, Status, Config files and Reset, each with a pinned variant. Type /mb or search by name."
+tags = ["launcher", "utility"]
+
+[[launcher_provider]]
+id = "finder"
+entry = "finder.luau"
+prefix = "mb"
+glyph = "tools"
+include_in_global_search = true

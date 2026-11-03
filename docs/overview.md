@@ -108,6 +108,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/configs` | `main` dropdown, pinned window | none (Mabox Config menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
 | `mabox/reset` | `main` dropdown | none (Mabox Config menu) | `mb-reset-wl` |
 | `mabox/colors` | `picker` dropdown, pinned window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
+| `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh
