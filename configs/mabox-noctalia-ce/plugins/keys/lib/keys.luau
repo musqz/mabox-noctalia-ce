@@ -1,6 +1,6 @@
 --!nonstrict
 -- Keys: binds from `mb-keys list --tsv`, grouped in cards; Basics, All or a search over everything.
-local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Capture", "Media", "Jump", "Helpers", "Other" }
+local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Capture", "Media", "Jump", "labwc defaults", "Helpers", "Other" }
 
 return function(wide)
   local columns = wide and 3 or 2
