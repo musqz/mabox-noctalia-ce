@@ -93,6 +93,7 @@
     <keybind key="A-F2"><action name="Execute" command="gmrun"/></keybind>
     <keybind key="A-grave"><action name="Iconify"/></keybind>
     <keybind key="W-q"><action name="Close" /></keybind>
+    <keybind key="W-b"><action name="ToggleDecorations"/></keybind>
     <keybind key="C-W-A-Return"><action name="Execute"><command>tabdock --find</command></action></keybind>  
     <keybind key="W-h"><action name="Execute"><command>exo-open --launch TerminalEmulator btop</command></action></keybind>
 
