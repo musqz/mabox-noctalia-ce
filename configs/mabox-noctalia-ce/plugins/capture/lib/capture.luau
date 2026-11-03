@@ -163,37 +163,40 @@ local function headingWithFolder(text, path)
   })
 end
 
-local function choice(label, key, values, suffix, names)
-  local buttons = {}
-  for _, v in ipairs(values) do
-    table.insert(buttons, ui.button({ text = names and names[v] or v .. (suffix or ""), variant = S[key] == v and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = function()
-      setSetting(key, v)
-      render()
-    end }))
+-- Setting shown as one small button; a click moves to the next value.
+local function cycle(label, key, values, suffix, names, hint)
+  local at = 0
+  for n, v in ipairs(values) do
+    if v == S[key] then
+      at = n
+    end
   end
-  return ui.column({ gap = 2 }, {
-    ui.label({ text = label, fontSize = 11, color = "on_surface_variant" }),
-    ui.row({ gap = 4 }, buttons),
-  })
+  local shown = names and names[S[key]] or S[key] .. (suffix or "")
+  return ui.button({ text = label and (label .. " " .. shown) or shown, variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = (hint or label or key) .. ": click for the next value", onClick = function()
+    setSetting(key, values[at % #values + 1])
+    render()
+  end })
 end
 
-local function action(text, glyph, onClick, primary)
-  return ui.button({ text = text, glyph = glyph, variant = primary and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = onClick })
+local function action(text, glyph, onClick, variant)
+  return ui.button({ text = text, glyph = glyph, variant = variant or "primary", flexGrow = 1, onClick = onClick })
 end
 
 local function shotBlock()
   return card({
     headingWithFolder("Screenshot", HOME .. "/Pictures/screenshots"),
-    choice("Delay (next screenshot only)", "shot_delay", { "0", "3", "5", "10", "30" }, "s"),
-    choice("Format", "shot_format", { "png", "jpg", "webp", "avif" }),
     ui.row({ gap = 4 }, {
       action("Screen", "device-desktop", function() shot({ "screenshot-fullscreen" }) end),
       action("All", "layout-grid", function() shot({ "screenshot-fullscreen", "all" }) end),
+      action("Window", "app-window", function() shot({ "screenshot-window" }) end),
     }),
     ui.row({ gap = 4 }, {
-      action("Window", "app-window", function() shot({ "screenshot-window" }) end),
       action("Area", "crop", function() shot({ "screenshot-region" }) end),
       action("Annotate", "pencil", function() shot(nil, true) end),
+    }),
+    ui.row({ gap = 4 }, {
+      cycle("Delay", "shot_delay", { "0", "3", "5", "10", "30" }, "s", nil, "Delay for the next screenshot only"),
+      cycle("Format", "shot_format", { "png", "jpg", "webp", "avif" }),
     }),
   })
 end
@@ -203,14 +206,16 @@ local function recBlock()
   if recording then
     table.insert(rows, action("Stop recording", "player-stop", function()
       launch({ "pkill", "-INT", "-x", "wl-screenrec" }, false)
-    end, true))
+    end, "destructive"))
   else
-    table.insert(rows, choice("Container", "rec_container", { "mp4", "mkv" }))
-    table.insert(rows, choice("Frame rate", "rec_fps", { "15", "30", "60" }, " fps"))
-    table.insert(rows, choice("Audio", "rec_audio", { "none", "system", "mic" }))
     table.insert(rows, ui.row({ gap = 4 }, {
       action("Screen", "device-desktop", function() record(false) end),
       action("Area", "crop", function() record(true) end),
+    }))
+    table.insert(rows, ui.row({ gap = 4 }, {
+      cycle(nil, "rec_container", { "mp4", "mkv" }, nil, nil, "Container"),
+      cycle(nil, "rec_fps", { "15", "30", "60" }, " fps", nil, "Frame rate"),
+      cycle("Audio", "rec_audio", { "none", "system", "mic" }),
     }))
   end
   return card(rows)
@@ -219,10 +224,18 @@ end
 local function intervalBlock()
   local title = (intervalOn and "Interval (running)" or "Interval") .. (ivCount > 0 and ("  " .. ivCount .. " images") or "")
   local rows = { headingWithFolder(title, HOME .. "/Pictures/shot_interval") }
-  if not intervalOn then
-    table.insert(rows, choice("Every", "interval", { "2", "5", "10", "30", "60" }, "s"))
-    table.insert(rows, choice("Capture", "iv_mode", { "screen", "area" }))
-  end
+  table.insert(rows, ui.row({ gap = 4 }, {
+    action(intervalOn and "Stop" or "Start", intervalOn and "player-stop" or "player-play", function()
+      if intervalOn then
+        launch({ "mb-shots-interval", "-s" }, false)
+      elseif S.iv_mode == "area" then
+        launch({ "mb-shots-interval", "-a", S.interval }, false)
+      else
+        launch({ "mb-shots-interval", "-o", "auto", S.interval }, false)
+      end
+    end, intervalOn and "destructive" or "primary"),
+    action("GIF", "gif", function() launch({ "mb-gifmaker", "-s", S.gif_size }, true) end),
+  }))
   if not intervalOn and ivCount > 0 then
     table.insert(rows, ui.row({ gap = 4 }, {
       ui.button({ text = "Backup", glyph = "archive", variant = "outline", controlSize = "sm", flexGrow = 1, tooltip = "Move the images to backup/DATE", onClick = function()
@@ -240,19 +253,13 @@ local function intervalBlock()
       end }),
     }))
   end
-  table.insert(rows, choice("GIF size (longest side)", "gif_size", { "480", "800", "1280", "1920", "0" }, nil, { ["0"] = "original" }))
-  table.insert(rows, ui.row({ gap = 4 }, {
-    action(intervalOn and "Stop" or "Start", intervalOn and "player-stop" or "player-play", function()
-      if intervalOn then
-        launch({ "mb-shots-interval", "-s" }, false)
-      elseif S.iv_mode == "area" then
-        launch({ "mb-shots-interval", "-a", S.interval }, false)
-      else
-        launch({ "mb-shots-interval", "-o", "auto", S.interval }, false)
-      end
-    end, intervalOn),
-    action("GIF", "gif", function() launch({ "mb-gifmaker", "-s", S.gif_size }, true) end),
-  }))
+  local opts = {}
+  if not intervalOn then
+    table.insert(opts, cycle("Every", "interval", { "2", "5", "10", "30", "60" }, "s"))
+    table.insert(opts, cycle(nil, "iv_mode", { "screen", "area" }, nil, nil, "Capture"))
+  end
+  table.insert(opts, cycle("GIF", "gif_size", { "480", "800", "1280", "1920", "0" }, nil, { ["0"] = "original" }, "GIF size (longest side)"))
+  table.insert(rows, ui.row({ gap = 4 }, opts))
   return card(rows)
 end
 
