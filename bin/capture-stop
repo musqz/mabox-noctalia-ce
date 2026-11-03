@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Stop a running screen recording and/or interval screenshots. Bound to one key in rc.xml.
+pidfile=${XDG_RUNTIME_DIR:-/tmp}/mb-shots-interval.pid
+
+pkill -INT -x wl-screenrec || true
+if [[ -f $pidfile ]] && grep -qa mb-shots-interval "/proc/$(<"$pidfile")/cmdline" 2>/dev/null; then
+    mb-shots-interval
+fi

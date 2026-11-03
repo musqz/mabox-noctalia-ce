@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Toggle interval screenshots with grim; run again to stop.
+#   mb-shots-interval [-o OUTPUT|auto | -a] [SECONDS]
+#   mb-shots-interval -n | -b | -x     count the images / move them to backup/DATE / delete them
+# -o: one monitor (auto = SCREENSHOT_OUTPUT or the first output), -a: select an area once.
+# Without either option all monitors are captured into one image.
+# Config: ~/.config/mabox/mb-interval-shots.conf (interval=, screenshot_dir=).
+set -euo pipefail
+
+conf=${XDG_CONFIG_HOME:-$HOME/.config}/mabox/mb-interval-shots.conf
+pidfile=${XDG_RUNTIME_DIR:-/tmp}/mb-shots-interval.pid
+
+load_conf() {
+    interval=5
+    dir=$HOME/Pictures/shot_interval
+    if [[ -f $conf ]]; then
+        v=$(sed -n 's/^interval=//p' "$conf" | tail -n1)
+        [[ $v =~ ^[0-9]+$ ]] && interval=$v
+        v=$(sed -n 's/^screenshot_dir=//p' "$conf" | tail -n1)
+        v=${v//\"/}
+        [[ -n $v ]] && dir=${v/#\~/$HOME}
+    fi
+    return 0
+}
+
+running() { [[ -f $pidfile ]] && grep -qa mb-shots-interval "/proc/$(<"$pidfile")/cmdline" 2>/dev/null; }
+
+case ${1-} in
+    -n) load_conf; ls "$dir"/*.png 2>/dev/null | wc -l; exit 0 ;;
+    -b|-x)
+        running && { echo "interval screenshots are running" >&2; exit 1; }
+        load_conf
+        shopt -s nullglob
+        files=("$dir"/*.png)
+        (( ${#files[@]} )) || exit 0
+        if [[ $1 == -b ]]; then
+            dest=$dir/backup/$(date +%Y%m%d-%H%M%S)
+            mkdir -p "$dest"
+            mv -- "${files[@]}" "$dest"/
+        else
+            rm -f -- "${files[@]}"
+        fi
+        exit 0 ;;
+esac
+
+if running; then
+    kill "$(<"$pidfile")"
+    rm -f "$pidfile"
+    exit 0
+fi
+
+output= area=
+while getopts o:a opt; do
+    case $opt in
+        o) output=$OPTARG ;;
+        a) area=1 ;;
+        *) exit 2 ;;
+    esac
+done
+shift $((OPTIND - 1))
+if [[ $output == auto ]]; then
+    output=${SCREENSHOT_OUTPUT:-$(wlr-randr | awk 'NR==1{print $1}')}
+fi
+args=()
+if [[ -n $area ]]; then
+    region=$(slurp) || exit 0
+    args=(-g "$region")
+elif [[ -n $output ]]; then
+    args=(-o "$output")
+fi
+
+load_conf
+[[ ${1-} =~ ^[0-9]+$ && $1 -gt 0 ]] && interval=$1
+(( interval > 0 )) || interval=5
+
+mkdir -p "$dir"
+echo $$ > "$pidfile"
+trap 'rm -f "$pidfile"' EXIT
+while true; do
+    grim "${args[@]}" "$dir/Shot-$(date +%Y%m%d-%H%M%S).png" || true
+    sleep "$interval" & wait $!
+done

@@ -105,6 +105,16 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
 
+## Interval screenshots and GIF
+
+- `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT` or the first), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.
+- `mb-shots-interval -b` moves the images to `backup/DATE`; `-x` deletes them; `-n` counts them.
+- `mb-gifmaker [-s PIXELS]` turns the images into a GIF in `~/Pictures/Mabox-Animations`. Settings: `~/.config/mabox/mb-gifmaker.conf`.
+- Interval settings: `~/.config/mabox/mb-interval-shots.conf` (`interval=`, `screenshot_dir=`).
+- `W-S-x` stops a running recording and interval screenshots.
+- `mb-screenshot --delay N <screenshot-* args>` waits N seconds first; `--format png|jpg|webp|avif` sets the file type.
+- `screenrec-toggle -o auto` records a whole monitor instead of an area.
+
 ## Wallpaper directory
 
 Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallpaper-dir <dir>`.
@@ -113,6 +123,7 @@ Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallp
 
 - `kanshi` sets positions per profile: `~/.config/kanshi/config`.
 - `W-A-C-7` / `W-A-C-9` move a window to a monitor.
+- Screenshots of a whole screen use the focused monitor. Set `SCREENSHOT_OUTPUT` (for example `HDMI-A-1`) in `~/.config/mabox-noctalia-ce/environment` to always take the same one; re-login to apply.
 - Brightness keys control one output; set `BRIGHTNESS_OUTPUT` (default `HDMI-A-1`).
 - `skippy-wl-send-to-*` send the picked window to a named monitor.
 

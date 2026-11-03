@@ -156,6 +156,9 @@
 
 
 
+    <!-- Stop recording and interval screenshots -->
+    <keybind key="W-S-x"><action name="Execute"><command>capture-stop</command></action></keybind>
+
     <!-- Show the Screenshot -->
     <keybind key="C-Insert"><action name="Execute"><command>bash -c 'viewnior "$(ls -t $HOME/Pictures/screenshots/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1)"'</command></action></keybind>
 

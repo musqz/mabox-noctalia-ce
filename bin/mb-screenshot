@@ -1,24 +1,73 @@
 #!/usr/bin/env bash
-# mb-screenshot <noctalia screenshot-* args>: save to ~/Pictures/screenshots, then open the image.
-# mb-screenshot --delay <seconds>: select an area, wait, then take the shot (slurp + grim).
+# mb-screenshot [--delay SECONDS] [--format png|jpg|webp|avif] <noctalia screenshot-* args>: save to ~/Pictures/screenshots, then open the image.
+# screenshot-fullscreen without a target uses SCREENSHOT_OUTPUT (connector, e.g. HDMI-A-1) instead of the focused monitor.
+# --view FORMAT NAME: open the file that was just saved as NAME.EXT; stdin is the png noctalia pipes.
 if [[ ${1-} == --view ]]; then
+    dir=$HOME/Pictures/screenshots
+    ext=${2-png}
+    name=${3-}
     rt=${XDG_RUNTIME_DIR:-/tmp}
     find "$rt" -maxdepth 1 -name 'mb-shot.*.png' -mmin +60 -delete 2>/dev/null
     f=$(mktemp --suffix=.png -p "$rt" mb-shot.XXXXXX)
     cat > "$f"
     [[ -s $f ]] || { rm -f "$f"; exit 0; }
-    if command -v viewnior >/dev/null; then exec viewnior "$f"; else exec xdg-open "$f"; fi
+    out=
+    if [[ -n $name ]]; then
+        out=$dir/$name.$ext
+        if [[ $ext == avif ]]; then
+            magick "$f" "$out"
+        else
+            for _ in {1..20}; do [[ -s $out ]] && break; sleep 0.1; done
+        fi
+        [[ -s $out ]] && rm -f "$f" || out=
+    fi
+    file=${out:-$f}
+    if command -v viewnior >/dev/null; then exec viewnior "$file"; else exec xdg-open "$file"; fi
+fi
+delay=0
+if [[ ${1-} == --delay ]]; then
+    [[ ${2-} =~ ^[0-9]+$ ]] || { echo "usage: mb-screenshot --delay SECONDS <args>" >&2; exit 2; }
+    delay=$2
+    shift 2
+fi
+fmt=png
+if [[ ${1-} == --format ]]; then
+    [[ ${2-} =~ ^(png|jpg|webp|avif)$ ]] || { echo "usage: mb-screenshot --format png|jpg|webp|avif <args>" >&2; exit 2; }
+    fmt=$2
+    shift 2
+fi
+if [[ ${1-} == screenshot-fullscreen && $# -eq 1 && -n ${SCREENSHOT_OUTPUT-} ]]; then
+    set -- screenshot-fullscreen "$SCREENSHOT_OUTPUT"
 fi
 dir=$HOME/Pictures/screenshots
 mkdir -p "$dir"
-if [[ ${1-} == --delay ]]; then
-    delay=${2:-5}
-    [[ $delay =~ ^[0-9]+$ ]] || { echo "usage: mb-screenshot --delay <seconds>" >&2; exit 2; }
-    geom=$(slurp) || exit 0
-    notify-send -t 1500 "Screenshot" "in ${delay}s"
+countdown() {
+    (( delay > 0 )) || return 0
     sleep "$delay"
-    f=$dir/screenshot-$(date +%Y-%m-%d_%H-%M-%S).png
-    grim -g "$geom" "$f" || { notify-send "Screenshot" "failed"; exit 1; }
-    if command -v viewnior >/dev/null; then exec viewnior "$f"; else exec xdg-open "$f"; fi
+}
+# Area with a delay: select first, then count down and capture.
+if [[ ${1-} == screenshot-region && $delay -gt 0 ]]; then
+    region=$(slurp) || exit 0
+    countdown
+    out=$dir/screenshot_$(date +%Y%m%d_%H%M%S)-region.$fmt
+    if [[ $fmt == png ]]; then
+        grim -g "$region" "$out" || { notify-send "Screenshot" "failed"; exit 1; }
+    else
+        tmp=$(mktemp --suffix=.png)
+        grim -g "$region" "$tmp" && magick "$tmp" "$out"; rc=$?
+        rm -f "$tmp"
+        (( rc == 0 )) || { notify-send "Screenshot" "failed"; exit 1; }
+    fi
+    if command -v viewnior >/dev/null; then exec viewnior "$out"; else exec xdg-open "$out"; fi
 fi
-exec noctalia msg "$@" --save-to-file --directory "$dir" --pipe-to-command --pipe-command "$(readlink -f "$0") --view"
+countdown
+cmd=$1; shift
+# noctalia writes png, jpeg and webp itself; avif is written by --view from the piped png.
+name=screenshot_$(date +%Y%m%d_%H%M%S)
+opts=(--save-to-file --directory "$dir" --filename-pattern "$name")
+case $fmt in
+    jpg) opts+=(--format jpeg) ;;
+    webp) opts+=(--format webp) ;;
+    avif) opts=(--no-save-to-file) ;;
+esac
+exec noctalia msg "$cmd" "$@" "${opts[@]}" --pipe-to-command --pipe-command "$(readlink -f "$0") --view $fmt $name"
