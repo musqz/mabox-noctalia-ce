@@ -1,6 +1,6 @@
 --!nonstrict
 -- /es: search Espanso matches; Enter types the replacement text into the previous window.
--- The first row opens the snippets panel. Matches with variables ({{...}}) need the Espanso daemon and are listed only.
+-- The first row opens the add-snippet panel. Matches with variables ({{...}}) need the Espanso daemon and are listed only.
 
 local PY = [[
 import json, sys
@@ -55,7 +55,7 @@ end
 local function render(text, q)
   local rows = {}
   if q == "" then
-    table.insert(rows, { id = "manage", title = "Manage snippets", subtitle = "Add, edit and delete your snippets", glyph = "pencil-plus", score = 2000 })
+    table.insert(rows, { id = "manage", title = "Add snippet", subtitle = "Create a new Espanso snippet", glyph = "pencil-plus", score = 2000 })
   end
   for i, m in ipairs(matches or {}) do
     local score
