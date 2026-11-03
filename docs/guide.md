@@ -114,6 +114,8 @@ Converter: pick a preset, then files; output lands next to the source and never 
 - `W-S-x` stops a running recording and interval screenshots.
 - `mb-screenshot --delay N <screenshot-* args>` waits N seconds first; `--format png|jpg|webp|avif` sets the file type.
 - `screenrec-toggle -o auto` records a whole monitor instead of an area.
+- While recording, a red stop button appears next to the `screenrec` bar button; click it to stop.
+- Capture pinned window: `mb-pinned capture`; the side is set like for the other plugins.
 
 ## Wallpaper directory
 
