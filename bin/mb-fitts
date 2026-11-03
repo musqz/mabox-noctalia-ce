@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+# Shows what fittsmon-wl does in every screen edge and corner, on each output with its own commands.
+# Run again to close; closes itself after 20 s.
+import os
+import re
+import subprocess
+import sys
+
+import cairo
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+from gi.repository import Gdk, GLib, Gtk, GtkLayerShell
+
+RC = os.path.expanduser("~/.config/fittsmon-wl/fittsmon-wlrc")
+ZONES = {
+    "TopLeft": ("↖ Top left", 0, 0), "TopCenter": ("↑ Top", 0.5, 0), "TopRight": ("↗ Top right", 1, 0),
+    "Left": ("← Left", 0, 0.5), "Right": ("→ Right", 1, 0.5),
+    "BottomLeft": ("↙ Bottom left", 0, 1), "BottomCenter": ("↓ Bottom", 0.5, 1), "BottomRight": ("↘ Bottom right", 1, 1),
+}
+EVENTS = [
+    ("LeftButton", "Left click"), ("RightButton", "Right click"), ("MiddleButton", "Middle click"),
+    ("WheelUp", "Wheel up"), ("WheelDown", "Wheel down"), ("WheelUpOnce", "Wheel up once"),
+    ("WheelDownOnce", "Wheel down once"), ("Enter", "Enter"), ("Leave", "Leave"),
+]
+
+
+def read_rc():
+    sections, cur = {}, None
+    with open(RC) as f:
+        for line in f:
+            line = line.strip()
+            m = re.match(r"^\[(.+)\]$", line)
+            if m:
+                cur = sections.setdefault(m.group(1), {})
+            elif cur is not None and "=" in line and not line.startswith("#"):
+                k, v = line.split("=", 1)
+                cur[k] = v
+    return sections
+
+
+def card(output, zone, cmds, monitor):
+    label, x, y = ZONES[zone]
+    win = Gtk.Window()
+    GtkLayerShell.init_for_window(win)
+    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+    GtkLayerShell.set_namespace(win, "mb-fitts")
+    GtkLayerShell.set_monitor(win, monitor)
+    for edge, on in ((GtkLayerShell.Edge.LEFT, x == 0), (GtkLayerShell.Edge.RIGHT, x == 1),
+                     (GtkLayerShell.Edge.TOP, y == 0), (GtkLayerShell.Edge.BOTTOM, y == 1)):
+        GtkLayerShell.set_anchor(win, edge, on)
+        if on:
+            GtkLayerShell.set_margin(win, edge, 20)
+    visual = win.get_screen().get_rgba_visual()
+    if visual:
+        win.set_visual(visual)
+    win.set_app_paintable(True)
+    win.connect("draw", draw_bg)
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin=12)
+    head = Gtk.Label()
+    head.set_markup(f"<b>{label}</b>  <small>{output}</small>")
+    head.set_halign(Gtk.Align.START)
+    box.pack_start(head, False, False, 0)
+    shown = False
+    for key, name in EVENTS:
+        if cmds.get(key, "").strip():
+            shown = True
+            row = Gtk.Label()
+            row.set_markup(f"<small><b>{GLib.markup_escape_text(name)}</b>  {GLib.markup_escape_text(cmds[key])}</small>")
+            row.set_halign(Gtk.Align.START)
+            row.set_line_wrap(True)
+            row.set_max_width_chars(40)
+            box.pack_start(row, False, False, 0)
+    if not shown:
+        return None
+    win.add(box)
+    win.show_all()
+    win.input_shape_combine_region(cairo.Region())
+    return win
+
+
+def draw_bg(widget, cr):
+    cr.set_source_rgba(0.08, 0.1, 0.14, 0.92)
+    cr.set_operator(cairo.OPERATOR_SOURCE)
+    cr.paint()
+    return False
+
+
+def main():
+    pidfile = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mb-fitts.pid")
+    try:
+        with open(pidfile) as f:
+            os.kill(int(f.read()), 15)
+        return 0
+    except (OSError, ValueError):
+        pass
+    with open(pidfile, "w") as f:
+        f.write(str(os.getpid()))
+    css = Gtk.CssProvider()
+    css.load_from_data(b"label { color: #e6e6e6; }")
+    Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+    rc = read_rc()
+    display = Gdk.Display.get_default()
+    wins = []
+    for i in range(display.get_n_monitors()):
+        mon = display.get_monitor(i)
+        # The rc names outputs by connector; match them against wlr-randr.
+        connector = connector_of(mon)
+        for zone in ZONES:
+            cmds = rc.get(f"{connector}-{zone}", {})
+            w = card(connector, zone, cmds, mon)
+            if w:
+                wins.append(w)
+    if not wins:
+        print("no actions in", RC, file=sys.stderr)
+        os.unlink(pidfile)
+        return 1
+    GLib.timeout_add_seconds(20, Gtk.main_quit)
+    Gtk.main()
+    os.unlink(pidfile)
+    return 0
+
+
+def connector_of(mon):
+    """Output name whose wlr-randr position equals the monitor's (GDK has no connector names)."""
+    geom = mon.get_geometry()
+    name = None
+    for line in subprocess.run(["wlr-randr"], capture_output=True, text=True).stdout.splitlines():
+        if line and not line[0].isspace():
+            name = line.split()[0]
+        m = re.match(r"\s+Position:\s*(-?\d+),(-?\d+)", line)
+        if m and name and (int(m.group(1)), int(m.group(2))) == (geom.x, geom.y):
+            return name
+    return ""
+
+
+if __name__ == "__main__":
+    sys.exit(main())
