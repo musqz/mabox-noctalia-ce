@@ -26,7 +26,7 @@ load_conf() {
 running() { [[ -f $pidfile ]] && grep -qa mb-shots-interval "/proc/$(<"$pidfile")/cmdline" 2>/dev/null; }
 
 case ${1-} in
-    -n) load_conf; ls "$dir"/*.png 2>/dev/null | wc -l; exit 0 ;;
+    -n) load_conf; shopt -s nullglob; files=("$dir"/*.png); echo "${#files[@]}"; exit 0 ;;
     -b|-x)
         running && { echo "interval screenshots are running" >&2; exit 1; }
         load_conf
@@ -75,7 +75,7 @@ load_conf
 
 mkdir -p "$dir"
 echo $$ > "$pidfile"
-trap 'rm -f "$pidfile"' EXIT
+trap 'rm -f "$pidfile"; kill $(jobs -p) 2>/dev/null || true' EXIT
 while true; do
     grim "${args[@]}" "$dir/Shot-$(date +%Y%m%d-%H%M%S).png" || true
     sleep "$interval" & wait $!

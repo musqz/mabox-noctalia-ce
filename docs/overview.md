@@ -110,6 +110,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `W-S-s` | none; cleanup rows run in a terminal |
 | `mabox/configs` | `main` dropdown, pinned window | none (Mabox Config menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
 | `mabox/reset` | `main` dropdown | none (Mabox Config menu) | `mb-reset-wl` |
+| `mabox/capture` | `main` dropdown, `pinned` window | `noctalia msg panel-toggle mabox/capture:main` | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
 | `mabox/colors` | `picker` dropdown, pinned window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
