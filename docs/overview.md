@@ -105,7 +105,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 |---|---|---|---|
 | `mabox/notes` | `main` dropdown, pinned window | `W-n`, `W-A-n` | notes in the plugin data folder |
 | `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `W-S-s` | none; cleanup rows run in a terminal |
-| `mabox/configs` | `main` dropdown, pinned window | none (root menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
+| `mabox/configs` | `main` dropdown, pinned window | none (Mabox Config menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
 | `mabox/reset` | `main` dropdown | none (Mabox Config menu) | `mb-reset-wl` |
 | `mabox/colors` | `picker` dropdown, pinned window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
