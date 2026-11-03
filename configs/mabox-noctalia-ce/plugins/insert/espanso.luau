@@ -1,6 +1,6 @@
 --!nonstrict
 -- /es: search Espanso matches; Enter types the replacement text into the previous window.
--- Matches with variables ({{...}}) need the Espanso daemon and are listed only.
+-- The first row opens the snippets panel. Matches with variables ({{...}}) need the Espanso daemon and are listed only.
 
 local PY = [[
 import json, sys
@@ -54,6 +54,9 @@ end
 
 local function render(text, q)
   local rows = {}
+  if q == "" then
+    table.insert(rows, { id = "manage", title = "Manage snippets", subtitle = "Add, edit and delete your snippets", glyph = "pencil-plus", score = 2000 })
+  end
   for i, m in ipairs(matches or {}) do
     local score
     if q == "" then
@@ -92,6 +95,10 @@ end
 
 -- The sleep lets the launcher close and focus return to the previous window.
 function onActivate(id)
+  if id == "manage" then
+    noctalia.runAsync({ "sh", "-c", "sleep 0.2; exec noctalia msg panel-open mabox/insert:snippets" })
+    return
+  end
   local m = (matches or {})[tonumber(string.match(id or "", "^m(%d+)$")) or 0]
   if m and not m.dynamic then
     noctalia.runAsync({ "sh", "-c", 'sleep 0.25; printf "%s" "$1" | exec wtype -', "sh", m.replace })

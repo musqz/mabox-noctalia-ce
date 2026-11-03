@@ -21,6 +21,8 @@ Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
 `W-A-h` opens `/hist` and `W-A-e` opens `/es` in the launcher. Enter types the shell history line or the Espanso replacement text into the previous window (no Enter key). Snippets with variables (`{{...}}`) are listed only.
 
+The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete snippets. They are saved in `~/.config/espanso/match/mabox.yml` (backup: `mabox.yml.bak`); other Espanso files are not touched.
+
 | Key | Action |
 |---|---|
 | `W-k` | hotkey list |
