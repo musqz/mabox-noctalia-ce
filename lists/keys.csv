@@ -10,6 +10,7 @@ W-n,Panels,1,Notes
 W-A-n,Panels,0,Notes as pinned window
 W-A-c,Panels,0,Color picker
 W-A-s,Panels,0,Status panel
+W-A-k,Panels,0,Fittsmon zone commands on each monitor
 W-S-s,Panels,0,Status as pinned window
 W-=,Panels,0,Wallpaper picker
 W-m,Panels,0,Music launcher

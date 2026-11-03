@@ -323,6 +323,7 @@ render = function()
   })
   local reload = ui.row({ gap = 6 }, {
     ui.button({ text = "labwc", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to rc.xml, menu.xml and themerc without logging out", onClick = function() noctalia.runAsync({ "labwc", "--reconfigure" }) end }),
+    ui.button({ glyph = "mouse", variant = "ghost", controlSize = "sm", tooltip = "Show what the screen edges and corners do (fittsmon)", onClick = function() panel.close(); noctalia.runAsync({ "mb-fitts" }) end }),
     ui.button({ text = "Noctalia", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to the bar, widget tooltips and click actions", onClick = function() noctalia.runAsync({ "noctalia", "msg", "config-reload" }) end }),
   })
   local sideOpen = expanded["Pinned windows"]

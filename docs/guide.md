@@ -26,6 +26,7 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | Key | Action |
 |---|---|
 | `W-k` | hotkey list |
+| `W-A-k` | show the fittsmon zone commands on each monitor (press again to hide) |
 | `W-space` | launcher |
 | `W-s` | control center |
 | `W-,` | noctalia settings |
