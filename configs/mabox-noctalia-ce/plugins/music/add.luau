@@ -8,7 +8,8 @@ local NEW = "+ New category"
 
 local cats, catIndex = {}, 1
 local url, artist, title, newName, status = "", "", "", "", ""
-local nonce, busy = 0, false
+local nonce, busy, validated = 0, false, nil
+local INVALID = "Not a valid stream URL, try again"
 
 local function trim(s)
   return noctalia.string.trim(s or "")
@@ -87,23 +88,45 @@ end
 local render
 
 -- Fills Artist and Title from "Artist - Title"; a new nonce re-seeds the inputs.
-local function fetchTitle(force)
-  if not string.match(url, "^https?://%S+$") or busy then
+-- yt-dlp is the validity check: it fails for a page that is not a playable stream. onValid runs after a good check.
+local function fetchTitle(force, onValid)
+  if busy then
+    return
+  end
+  if not string.match(url, "^https?://%S+$") then
+    status = INVALID
+    render()
     return
   end
   busy = true
-  status = "Fetching title..."
+  status = "Checking the URL..."
   render()
+  local checked = url
   noctalia.runAsync({ "yt-dlp", "--no-playlist", "--no-warnings", "--print", "title", url }, function(result)
     busy = false
-    status = ""
+    if url ~= checked then
+      status = ""
+      render()
+      return
+    end
     local t = trim(string.match(result.stdout or "", "[^\r\n]+") or "")
-    if t ~= "" and (force == true or (trim(artist) == "" and trim(title) == "")) then
+    if result.exitCode ~= 0 or t == "" then
+      validated = nil
+      status = INVALID
+      render()
+      return
+    end
+    validated = checked
+    status = ""
+    if force == true or (trim(artist) == "" and trim(title) == "") then
       local a, b = string.match(t, "^(.-) %- (.+)$")
       artist, title = a or "", b or t
     end
     nonce = nonce + 1
     render()
+    if onValid then
+      onValid()
+    end
   end)
 end
 
@@ -117,8 +140,9 @@ local function add()
       end
     end
   end
-  if not string.match(url, "^https?://%S+$") then
-    status = "Enter an http(s) URL"
+  if validated ~= url then
+    fetchTitle(false, add)
+    return
   elseif trim(title) == "" then
     status = "Title is required"
   elseif name == "" then
@@ -222,8 +246,10 @@ function onOpen()
   end
   local clip = trim(noctalia.clipboardText() or "")
   url = string.match(clip, "^https?://%S+$") and clip or ""
-  artist, title, newName, status = "", "", "", ""
+  artist, title, newName, status, validated = "", "", "", "", nil
   nonce = nonce + 1
   render()
-  fetchTitle()
+  if url ~= "" then
+    fetchTitle()
+  end
 end
