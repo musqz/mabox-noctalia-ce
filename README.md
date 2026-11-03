@@ -139,6 +139,7 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 | `mb-updates-ce` bar update indicator | left: update menu, right: recheck | autostart |
 | `mb-calendar-setup` local calendar (radicale) | run once in a terminal | Thunderbird + Noctalia Settings > Calendar > Local (vdir) |
 | `mb-colorpick` + Colors bar panel | bar button: pick from screen, recent colors, palettes | `~/.config/colormenu/*.clr` |
+| Keys panel: hotkey list with search, Basics and All | `W-k` | [docs/guide.md](docs/guide.md#keys) |
 | Notes panel: notes with colors | `W-n`, pinned window `W-A-n` | `~/.local/state/noctalia/plugins/data/mabox/notes/path`: one line, folder to sync (optional) |
 | Status panel: system info, discs, cleanup rows; bar button turns warning-colored when a disc is full (`mb-status-warn`, left click opens it, right click pins it) | `W-A-s`, pinned window `W-S-s` | settings (gear button) in `~/.local/state/noctalia/plugins/data/mabox/status/settings` |
 | `mpv-play-stream` play URL | `C-S-1` | [docs/music.md](docs/music.md) |

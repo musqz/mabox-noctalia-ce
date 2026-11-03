@@ -1,0 +1,29 @@
+id = "mabox/keys"
+name = "Keys"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "keyboard"
+description = "Hotkey list of the labwc session: grouped, searchable, click a row to try the key's action."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "keys"
+entry = "panel.luau"
+width = 700
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+
+[[panel]]
+id = "keys-wide"
+entry = "wide.luau"
+width = "fill"
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
