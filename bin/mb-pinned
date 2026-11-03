@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
-# Toggle the pinned window of a Mabox plugin on the saved side.
-#   mb-pinned <plugin>           notes, status, colors, configs
-#   mb-pinned --side [left|right]   print or set the side for all pinned windows
+# Toggle the pinned window of a Mabox plugin on its saved side.
+#   mb-pinned <plugin>                       notes, status, colors, configs
+#   mb-pinned --side <plugin> [left|right]   print or set the side of a plugin
 set -euo pipefail
 
 file=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/pinned-side
 
-side() { grep -qs right "$file" && echo right || echo left; }
+side() { grep -qxs "$1=right" "$file" && echo right || echo left; }
 
 case ${1:-} in
     "" | -h | --help) sed -n '2,4p' "$0" | sed 's/^# \?//' ;;
     --side)
-        case ${2:-} in
-            "") side ;;
-            left | right) mkdir -p "${file%/*}"; echo "$2" > "$file" ;;
-            *) echo "usage: mb-pinned --side [left|right]" >&2; exit 2 ;;
+        [[ ${2:-} =~ ^[a-z0-9_-]+$ ]] || { echo "usage: mb-pinned --side <plugin> [left|right]" >&2; exit 2; }
+        case ${3:-} in
+            "") side "$2" ;;
+            left | right)
+                mkdir -p "${file%/*}"
+                { grep -E '^[a-z0-9_-]+=' "$file" 2>/dev/null | grep -v "^$2=" || true; echo "$2=$3"; } | sort > "$file.tmp" && mv "$file.tmp" "$file" ;;
+            *) echo "usage: mb-pinned --side <plugin> [left|right]" >&2; exit 2 ;;
         esac ;;
-    *) exec noctalia msg panel-toggle "mabox/$1:pinned-$(side)" ;;
+    *) exec noctalia msg panel-toggle "mabox/$1:pinned-$(side "$1")" ;;
 esac

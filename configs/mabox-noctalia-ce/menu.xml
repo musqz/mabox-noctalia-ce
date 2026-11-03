@@ -73,12 +73,6 @@
     <item label="Config files pinned" icon="document-properties">
       <action name="Execute" command="mb-pinned configs" />
     </item>
-    <item label="Edit rc.xml" icon="text-editor">
-      <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/rc.xml" />
-    </item>
-    <item label="Edit menu.xml" icon="text-editor">
-      <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/menu.xml" />
-    </item>
     <item label="Reset configs" icon="edit-undo">
       <action name="Execute" command="noctalia msg panel-toggle mabox/reset:main" />
     </item>
@@ -89,6 +83,9 @@
   <menu id="tools-menu" label="Tools" icon="applications-utilities">
     <item label="Colors" icon="applications-graphics">
       <action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker" />
+    </item>
+    <item label="Colors pinned" icon="applications-graphics">
+      <action name="Execute" command="mb-pinned colors" />
     </item>
     <item label="Notes" icon="accessories-text-editor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />

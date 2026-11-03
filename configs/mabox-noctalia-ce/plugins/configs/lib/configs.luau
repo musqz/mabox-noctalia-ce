@@ -37,6 +37,9 @@ c=${c#file://}
 printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 ]]
 
+-- Plugins with pinned-left and pinned-right panels.
+local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
+
 local entries = {}
 local expanded = {}
 local newName = ""
@@ -123,7 +126,7 @@ local function addCustom()
   refresh()
 end
 
-local function pastePath()
+local function pastePath(thenAdd)
   noctalia.runAsync({ "sh", "-c", PASTE }, function(result)
     local p = string.gsub(result.stdout or "", "%s+$", "")
     if p == "" then
@@ -131,7 +134,11 @@ local function pastePath()
       return
     end
     newPath = p
-    render()
+    if thenAdd then
+      addCustom()
+    else
+      render()
+    end
   end)
 end
 
@@ -163,19 +170,20 @@ end
 
 local function entryRow(e)
   local items = {
-    ui.label({ text = e.name, flexGrow = 1, color = e.state == "ok" and "on_surface" or "on_surface_variant" }),
+    ui.label({ text = e.name, color = e.state == "ok" and "on_surface" or "on_surface_variant" }),
+    ui.spacer({ flexGrow = 1 }),
+    ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = function() show(e.path) end }),
+    ui.button({
+      glyph = "pencil",
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = e.state == "ok" and e.path or e.path .. " (missing)",
+      onClick = function() open(e.path) end,
+    }),
   }
   if e.group == "Custom" then
     table.insert(items, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove from the list", onClick = function() removeCustom(e.name, e.path) end }))
   end
-  table.insert(items, ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = function() show(e.path) end }))
-  table.insert(items, ui.button({
-    glyph = "pencil",
-    variant = "ghost",
-    controlSize = "sm",
-    tooltip = e.state == "ok" and e.path or e.path .. " (missing)",
-    onClick = function() open(e.path) end,
-  }))
   return ui.row({ gap = 6, align = "center" }, items)
 end
 
@@ -235,9 +243,16 @@ render = function()
         ui.input({ key = "newPath", value = newPath, onChange = function(t) newPath = t end }),
         ui.row({ gap = 4 }, {
           ui.button({ text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = function() show(noctalia.getenv("HOME") .. "/.config") end }),
-          ui.button({ text = "Paste", glyph = "clipboard", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Use the copied file", onClick = pastePath }),
+          ui.button({ text = "Paste", glyph = "clipboard", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Use the copied file", onClick = function() pastePath(false) end }),
           ui.button({ text = "Add", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, onClick = addCustom }),
         }),
+      }))
+    end
+    -- The pinned window takes no keyboard input: no fields, the copied file is added at once.
+    if g == "Custom" and not closed and pinned then
+      table.insert(rows, ui.row({ gap = 4 }, {
+        ui.button({ text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = function() show(noctalia.getenv("HOME") .. "/.config") end }),
+        ui.button({ text = "Add copied", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, tooltip = "Add the file you copied in the file manager", onClick = function() pastePath(true) end }),
       }))
     end
     table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows))
@@ -253,6 +268,45 @@ render = function()
       end
     end }),
   })
+  local sideOpen = expanded["Pinned windows"]
+  local sideRows = {
+    ui.button({
+      text = "Pinned windows",
+      glyph = sideOpen and "chevron-down" or "chevron-right",
+      variant = "ghost",
+      controlSize = "sm",
+      contentAlign = "start",
+      onClick = function()
+        expanded["Pinned windows"] = not sideOpen or nil
+        saveExpanded()
+        render()
+      end,
+    }),
+  }
+  if sideOpen then
+    for _, pl in ipairs(PINNED_PLUGINS) do
+      local current = pinSide.get(pl[1])
+      local function sideButton(value, text)
+        return ui.button({
+          text = text,
+          variant = current == value and "primary" or "ghost",
+          controlSize = "sm",
+          tooltip = "An open window moves after you close and reopen it",
+          onClick = function()
+            pinSide.set(pl[1], value)
+            render()
+          end,
+        })
+      end
+      table.insert(sideRows, ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = pl[2] }),
+        ui.spacer({ flexGrow = 1 }),
+        sideButton("left", "Left"),
+        sideButton("right", "Right"),
+      }))
+    end
+  end
+  table.insert(cards, 1, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
   local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards)
   if pinned then
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, list }))
