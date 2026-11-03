@@ -38,6 +38,7 @@ function M.set(plugin, side)
   for _, k in ipairs(keys) do
     table.insert(out, k .. "=" .. sides[k])
   end
+  noctalia.mkdirAll(noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce")
   noctalia.writeFile(path(), table.concat(out, "\n") .. "\n")
 end
 

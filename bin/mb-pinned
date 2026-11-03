@@ -11,12 +11,12 @@ side() { grep -qxs "$1=right" "$file" && echo right || echo left; }
 case ${1:-} in
     "" | -h | --help) sed -n '2,4p' "$0" | sed 's/^# \?//' ;;
     --side)
-        [[ -n ${2:-} ]] || { echo "usage: mb-pinned --side <plugin> [left|right]" >&2; exit 2; }
+        [[ ${2:-} =~ ^[a-z0-9_-]+$ ]] || { echo "usage: mb-pinned --side <plugin> [left|right]" >&2; exit 2; }
         case ${3:-} in
             "") side "$2" ;;
             left | right)
                 mkdir -p "${file%/*}"
-                { grep -vs "^$2=" "$file" || true; echo "$2=$3"; } | sort > "$file.tmp" && mv "$file.tmp" "$file" ;;
+                { grep -E '^[a-z0-9_-]+=' "$file" 2>/dev/null | grep -v "^$2=" || true; echo "$2=$3"; } | sort > "$file.tmp" && mv "$file.tmp" "$file" ;;
             *) echo "usage: mb-pinned --side <plugin> [left|right]" >&2; exit 2 ;;
         esac ;;
     *) exec noctalia msg panel-toggle "mabox/$1:pinned-$(side "$1")" ;;
