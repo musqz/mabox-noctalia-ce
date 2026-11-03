@@ -1,5 +1,7 @@
 # key,group,basic,description  (key as written in rc.xml; basic=1 shows in the Basics view)
 W-k,Panels,1,Show this hotkey list
+W-A-h,Panels,0,Type a shell history line (/hist)
+W-A-e,Panels,0,Type an Espanso snippet (/es)
 W-space,Panels,1,Launcher
 W-s,Panels,1,Control center
 W-x,Panels,1,"Session menu (logout, reboot, shutdown)"

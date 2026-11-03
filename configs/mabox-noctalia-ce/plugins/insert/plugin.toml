@@ -1,0 +1,24 @@
+id = "mabox/insert"
+name = "Insert"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "keyboard"
+description = "Type a shell history line (/hist) or an Espanso snippet (/es) into the previous window with wtype."
+dependencies = ["wtype"]
+tags = ["launcher", "utility"]
+
+[[launcher_provider]]
+id = "hist"
+entry = "hist.luau"
+prefix = "hist"
+glyph = "history"
+include_in_global_search = false
+
+[[launcher_provider]]
+id = "espanso"
+entry = "espanso.luau"
+prefix = "es"
+glyph = "text-plus"
+include_in_global_search = false

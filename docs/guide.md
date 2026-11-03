@@ -19,6 +19,8 @@ Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
 `W-k` opens the hotkey list: search, Basics or All, arrow button for full width, play button runs a bind's command. `/keys` in the launcher searches the binds and runs the one you pick.
 
+`W-A-h` opens `/hist` and `W-A-e` opens `/es` in the launcher. Enter types the shell history line or the Espanso replacement text into the previous window (no Enter key). Snippets with variables (`{{...}}`) are listed only.
+
 | Key | Action |
 |---|---|
 | `W-k` | hotkey list |

@@ -155,7 +155,7 @@ pdata="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data"
 noctalia msg plugins source remove musqz-local >/dev/null 2>&1 || true
 rm -rf "$data/plugins"
 if noctalia msg plugins source add mabox path "$plugins" >/dev/null 2>&1 \
-    && { noctalia msg plugins enable mabox/music; noctalia msg plugins enable mabox/colors; noctalia msg plugins enable mabox/notes; noctalia msg plugins enable mabox/status; noctalia msg plugins enable mabox/configs; noctalia msg plugins enable mabox/reset; noctalia msg plugins enable mabox/tools; noctalia msg plugins enable mabox/capture; noctalia msg plugins enable mabox/keys; } >/dev/null 2>&1; then
+    && { noctalia msg plugins enable mabox/music; noctalia msg plugins enable mabox/colors; noctalia msg plugins enable mabox/notes; noctalia msg plugins enable mabox/status; noctalia msg plugins enable mabox/configs; noctalia msg plugins enable mabox/reset; noctalia msg plugins enable mabox/tools; noctalia msg plugins enable mabox/capture; noctalia msg plugins enable mabox/keys; noctalia msg plugins enable mabox/insert; } >/dev/null 2>&1; then
     plugins_on=1
 else
     plugins_on=0
@@ -176,7 +176,7 @@ report() {
     echo "[done] mabox-noctalia-ce package built and installed"
     [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
     echo "[done] plugin source mabox: $plugins"
-    if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors, mabox/notes, mabox/status, mabox/configs, mabox/reset, mabox/tools, mabox/capture and mabox/keys enabled"
+    if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors, mabox/notes, mabox/status, mabox/configs, mabox/reset, mabox/tools, mabox/capture, mabox/keys and mabox/insert enabled"
     else echo "[skip] plugins not enabled: noctalia not running or the source call failed"; fi
 
     echo; echo "To do by hand"
@@ -193,6 +193,7 @@ report() {
         echo "         noctalia msg plugins enable mabox/tools"
         echo "         noctalia msg plugins enable mabox/keys"
         echo "         noctalia msg plugins enable mabox/capture"
+        echo "         noctalia msg plugins enable mabox/insert"
         if [[ -d $pdata/musqz ]]; then
             for id in music colors notes; do echo "         noctalia msg plugins disable musqz/$id"; done
         fi

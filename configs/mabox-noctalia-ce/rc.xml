@@ -85,6 +85,8 @@
     <keybind key="W-w" name.action="Execute" command.action="firefox"/>
     <keybind key="W-v" name.action="Execute" command.action="pavucontrol"/>
     <keybind key="W-m"><action name="Execute"><command>noctalia msg panel-open launcher /music</command></action></keybind>
+    <keybind key="W-A-h"><action name="Execute"><command>noctalia msg panel-open launcher /hist</command></action></keybind>
+    <keybind key="W-A-e"><action name="Execute"><command>noctalia msg panel-open launcher /es</command></action></keybind>
     <keybind key="C-S-1" name.action="Execute" command.action="mpv-play-stream"/>
     <keybind key="C-S-2"><action name="Execute" command="noctalia msg panel-toggle mabox/music:add"/></keybind>
     <keybind key="W-slash" name.action="Execute" command.action="runraisehide fsearch"/>
