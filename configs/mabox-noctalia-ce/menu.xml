@@ -66,6 +66,9 @@
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>
+    <item label="Config files" icon="document-properties">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/configs:main" />
+    </item>
     <separator />
     <item label="Edit rc.xml" icon="text-editor">
       <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/rc.xml" />

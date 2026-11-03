@@ -1,0 +1,30 @@
+id = "mabox/configs"
+name = "Configs"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "file-settings"
+description = "Overview of the config files of this session; entries show up when the tool is installed. Add your own files in the Custom section."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 560
+placement = "attached"
+open_near_click = true
+
+[[panel]]
+id = "pinned"
+entry = "pinned.luau"
+width = 330
+height = "fill"
+placement = "floating"
+position = "top_left"
+persistent = true
+dismiss_on_outside_click = false
+keyboard_focus = "none"
+layer = "overlay"
