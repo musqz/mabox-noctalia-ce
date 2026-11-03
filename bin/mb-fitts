@@ -42,6 +42,8 @@ def read_rc():
 
 
 def card(output, zone, cmds, monitor):
+    if not any(cmds.get(k, "").strip() for k, _ in EVENTS):
+        return None
     label, x, y = ZONES[zone]
     win = Gtk.Window()
     GtkLayerShell.init_for_window(win)
@@ -61,13 +63,11 @@ def card(output, zone, cmds, monitor):
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=14)
     box.set_size_request(380, -1)
     head = Gtk.Label()
-    head.set_markup(f"<big><b>{label}</b></big>  {output}")
+    head.set_markup(f"<big><b>{label}</b></big>  {GLib.markup_escape_text(output)}")
     head.set_halign(Gtk.Align.START)
     box.pack_start(head, False, False, 0)
-    shown = False
     for key, name in EVENTS:
         if cmds.get(key, "").strip():
-            shown = True
             row = Gtk.Label()
             row.set_markup(f"<b>{GLib.markup_escape_text(name)}</b>\n{GLib.markup_escape_text(cmds[key])}")
             row.set_halign(Gtk.Align.START)
@@ -76,8 +76,6 @@ def card(output, zone, cmds, monitor):
             row.set_line_wrap_mode(Pango.WrapMode.CHAR)
             row.set_max_width_chars(44)
             box.pack_start(row, False, False, 0)
-    if not shown:
-        return None
     win.add(box)
     win.show_all()
     win.input_shape_combine_region(cairo.Region())
@@ -95,22 +93,40 @@ def main():
     pidfile = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mb-fitts.pid")
     try:
         with open(pidfile) as f:
-            os.kill(int(f.read()), 15)
-        return 0
+            pid = int(f.read())
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            running = b"mb-fitts" in f.read()
+        if running:
+            os.kill(pid, 15)
+            return 0
     except (OSError, ValueError):
         pass
+    try:
+        rc = read_rc()
+    except OSError as e:
+        print(f"mb-fitts: {e}", file=sys.stderr)
+        return 1
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 15, Gtk.main_quit)
+    try:
+        return show(rc)
+    finally:
+        os.unlink(pidfile)
+
+
+def show(rc):
     css = Gtk.CssProvider()
     css.load_from_data(b"label { color: #e6e6e6; font-size: 13pt; }")
     Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-    rc = read_rc()
     display = Gdk.Display.get_default()
+    positions = output_positions()
     wins = []
     for i in range(display.get_n_monitors()):
         mon = display.get_monitor(i)
         # The rc names outputs by connector; match them against wlr-randr.
-        connector = connector_of(mon)
+        geom = mon.get_geometry()
+        connector = positions.get((geom.x, geom.y), "")
         for zone in ZONES:
             # A monitor section overrides the plain [Zone] defaults per event, as in the GUI.
             cmds = dict(rc.get(zone, {}))
@@ -120,25 +136,22 @@ def main():
                 wins.append(w)
     if not wins:
         print("no actions in", RC, file=sys.stderr)
-        os.unlink(pidfile)
         return 1
     GLib.timeout_add_seconds(20, Gtk.main_quit)
     Gtk.main()
-    os.unlink(pidfile)
     return 0
 
 
-def connector_of(mon):
-    """Output name whose wlr-randr position equals the monitor's (GDK has no connector names)."""
-    geom = mon.get_geometry()
-    name = None
+def output_positions():
+    """{(x, y): output name} from wlr-randr; GDK has no connector names."""
+    pos, name = {}, None
     for line in subprocess.run(["wlr-randr"], capture_output=True, text=True).stdout.splitlines():
         if line and not line[0].isspace():
             name = line.split()[0]
         m = re.match(r"\s+Position:\s*(-?\d+),(-?\d+)", line)
-        if m and name and (int(m.group(1)), int(m.group(2))) == (geom.x, geom.y):
-            return name
-    return ""
+        if m and name:
+            pos[(int(m.group(1)), int(m.group(2)))] = name
+    return pos
 
 
 if __name__ == "__main__":
