@@ -226,8 +226,17 @@ local function sizeMap()
 end
 
 -- setsid: the dropdown closing when the terminal takes focus would otherwise kill it.
+local FIND_TERM = [[
+script=$1; shift
+for t in "${TERMINAL:-}" foot kitty alacritty terminator xfce4-terminal xterm; do
+  [ -n "$t" ] && command -v "$t" >/dev/null && break
+done
+case $t in terminator|xfce4-terminal) f=-x ;; *) f=-e ;; esac
+exec setsid -f "$t" "$f" sh -c "$script" sh "$@"
+]]
+
 local function runTerminal(title, size, dry, run)
-  noctalia.runAsync({ "setsid", "-f", "foot", "-e", "sh", "-c", TERM_SCRIPT, "sh", title, size, dry, run })
+  noctalia.runAsync({ "sh", "-c", FIND_TERM, "sh", TERM_SCRIPT, title, size, dry, run })
   fullNext = true
 end
 
