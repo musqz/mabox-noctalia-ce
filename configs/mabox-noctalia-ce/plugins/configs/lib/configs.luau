@@ -42,6 +42,7 @@ local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status
 
 local entries = {}
 local plugins = {}
+local failed = {}
 local expanded = {}
 local newName = ""
 local newPath = ""
@@ -110,9 +111,18 @@ refresh = function()
   end)
   noctalia.runAsync({ "noctalia", "msg", "plugins", "list" }, function(result)
     plugins = {}
+    failed = {}
+    for l in string.gmatch(noctalia.readFile((noctalia.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/mb-plugin-errors") or "", "[^\n]+") do
+      failed[l] = true
+    end
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
       local id = string.match(l, "^(%S+) %[%S+%] %S+ enabled")
       if id then
+        table.insert(plugins, id)
+      end
+    end
+    for id in pairs(failed) do
+      if not table.find(plugins, id) then
         table.insert(plugins, id)
       end
     end
@@ -120,8 +130,36 @@ refresh = function()
   end)
 end
 
-local function reloadPlugin(id)
-  noctalia.runAsync({ "setsid", "-f", "sh", "-c", 'noctalia msg plugins disable "$1"; noctalia msg plugins enable "$1"', "sh", id })
+local RELOAD = [[
+ERR="${XDG_RUNTIME_DIR:-/tmp}/mb-plugin-errors"
+pin="$1"; shift
+touch "$ERR"
+for id in "$@"; do
+  noctalia msg plugins disable "$id" >/dev/null 2>&1
+  out=$(noctalia msg plugins enable "$id" 2>&1)
+  grep -vxF "$id" "$ERR" >"$ERR.$$"; mv "$ERR.$$" "$ERR"
+  case "$out" in error*) echo "$id" >>"$ERR" ;; esac
+done
+if [ -n "$pin" ]; then sleep 0.5; noctalia msg panel-open "$pin"; fi
+]]
+
+-- Reloading configs itself ends this script's panel: it goes last and a pinned window is reopened.
+local function reloadPlugins(ids)
+  local list, self = {}, false
+  for _, id in ipairs(ids) do
+    if id == "mabox/configs" then
+      self = true
+    else
+      table.insert(list, id)
+    end
+  end
+  if self then
+    table.insert(list, "mabox/configs")
+  end
+  local pin = pinned and ("mabox/configs:pinned-" .. pinSide.get("configs")) or ""
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", RELOAD, "sh", pin, table.unpack(list) }, function()
+    refresh()
+  end)
 end
 
 local function addCustom()
@@ -327,9 +365,11 @@ render = function()
   end
   table.insert(cards, 1, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
   local plugOpen = expanded["Plugins"]
-  local plugRows = {
+  local plugRows = {}
+  local plugHead = {
     ui.button({
       text = "Plugins",
+      flexGrow = 1,
       glyph = plugOpen and "chevron-down" or "chevron-right",
       variant = "ghost",
       controlSize = "sm",
@@ -341,10 +381,12 @@ render = function()
         render()
       end,
     }),
+    ui.button({ text = "Reload all", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Restart every enabled plugin; failed ones turn red", onClick = function() reloadPlugins(plugins) end }),
   }
+  table.insert(plugRows, ui.row({ gap = 6, align = "center" }, plugHead))
   if plugOpen then
     for _, id in ipairs(plugins) do
-      table.insert(plugRows, ui.button({ text = id, glyph = "refresh", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function() reloadPlugin(id) end }))
+      table.insert(plugRows, ui.button({ text = id, glyph = failed[id] and "alert-circle" or "refresh", variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; click to retry" or nil, onClick = function() reloadPlugins({ id }) end }))
     end
   end
   table.insert(cards, 2, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, plugRows))
