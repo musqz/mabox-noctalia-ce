@@ -43,7 +43,7 @@ function M.set(plugin, side)
 end
 
 -- Pinned windows on the same side lie on top of each other: close the others, then run verb.
-local PLUGINS = { "colors", "notes", "status", "configs" }
+local PLUGINS = { "colors", "notes", "status", "configs", "capture" }
 
 local function command(plugin, side, verb)
   local sides = read()

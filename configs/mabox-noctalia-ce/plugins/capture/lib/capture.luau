@@ -2,6 +2,8 @@
 -- Capture: buttons call mb-screenshot, screenrec-toggle, mb-shots-interval and mb-gifmaker.
 -- Choices live in <plugin data dir>/settings.
 
+local pinSide = require("./side.luau")
+
 return function(pinned)
 local REFRESH = 2
 local HOME = noctalia.getenv("HOME")
@@ -102,7 +104,7 @@ local function launch(argv, reopen)
   panel.close()
   local sh = 'sleep 0.2; "$@"'
   if reopen and pinned then
-    sh = sh .. "; noctalia msg panel-open mabox/capture:pinned"
+    sh = sh .. "; noctalia msg panel-open mabox/capture:pinned-" .. pinned
   end
   local cmd = { "setsid", "-f", "sh", "-c", sh, "sh" }
   for _, a in ipairs(argv) do
@@ -200,7 +202,7 @@ local function recBlock()
   local rows = { headingWithFolder(recording and "Recording" or "Record", HOME .. "/Videos/Recordings") }
   if recording then
     table.insert(rows, action("Stop recording", "player-stop", function()
-      launch({ "screenrec-toggle" }, false)
+      launch({ "pkill", "-INT", "-x", "wl-screenrec" }, false)
     end, true))
   else
     table.insert(rows, choice("Container", "rec_container", { "mp4", "mkv" }))
@@ -242,7 +244,7 @@ local function intervalBlock()
   table.insert(rows, ui.row({ gap = 4 }, {
     action(intervalOn and "Stop" or "Start", intervalOn and "player-stop" or "player-play", function()
       if intervalOn then
-        launch({ "mb-shots-interval" }, false)
+        launch({ "mb-shots-interval", "-s" }, false)
       elseif S.iv_mode == "area" then
         launch({ "mb-shots-interval", "-a", S.interval }, false)
       else
@@ -271,10 +273,11 @@ end
 render = function()
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = recording and "Capture  (recording)" or "Capture", flexGrow = 1 }),
+    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
     ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       panel.close()
       if not pinned then
-        noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/capture:pinned" })
+        pinSide.toggle("capture")
       end
     end }),
   })

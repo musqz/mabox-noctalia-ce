@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Toggle interval screenshots with grim; run again to stop.
 #   mb-shots-interval [-o OUTPUT|auto | -a] [SECONDS]
-#   mb-shots-interval -n | -b | -x     count the images / move them to backup/DATE / delete them
+#   mb-shots-interval -s | -n | -b | -x     count the images / move them to backup/DATE / delete them
 # -o: one monitor (auto = SCREENSHOT_OUTPUT or the first output), -a: select an area once.
 # Without either option all monitors are captured into one image.
 # Config: ~/.config/mabox/mb-interval-shots.conf (interval=, screenshot_dir=).
@@ -26,6 +26,7 @@ load_conf() {
 running() { [[ -f $pidfile ]] && grep -qa mb-shots-interval "/proc/$(<"$pidfile")/cmdline" 2>/dev/null; }
 
 case ${1-} in
+    -s) if running; then kill "$(<"$pidfile")"; rm -f "$pidfile"; fi; exit 0 ;;
     -n) load_conf; shopt -s nullglob; files=("$dir"/*.png); echo "${#files[@]}"; exit 0 ;;
     -b|-x)
         running && { echo "interval screenshots are running" >&2; exit 1; }

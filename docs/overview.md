@@ -95,7 +95,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `q-term-toggle` | show/hide the quake terminal | keybind in `rc.xml` |
 | `screenrec-toggle` | start/stop recording with `wl-screenrec`; options `-o` output, `-f` fps, `-c` mp4/mkv, `-a` none/system/mic | bar button, root menu, `rc.xml` |
 | `mb-shots-interval` | start/stop screenshots of one monitor or an area every N seconds | run by hand |
-| `capture-stop` | stop a running recording and interval screenshots | `W-S-x` |
+| `capture-stop` | stop a running recording and interval screenshots | `W-S-x`, stop button in the bar while recording |
 | `mb-gifmaker` | make a GIF from the interval screenshots (`gifski`) | run by hand |
 | `skippy-wl-tiling` | pick up to 4 windows and tile them | `C-Space` |
 | `skippy-wl-send-to-{philips,dell,desk}` | pick windows, send to a monitor or workspace | `S-C-KP_7`, `S-C-KP_9`, `S-C-KP_8` |
@@ -110,7 +110,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `W-S-s` | none; cleanup rows run in a terminal |
 | `mabox/configs` | `main` dropdown, pinned window | none (Mabox Config menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
 | `mabox/reset` | `main` dropdown | none (Mabox Config menu) | `mb-reset-wl` |
-| `mabox/capture` | `main` dropdown, `pinned` window | `noctalia msg panel-toggle mabox/capture:main` | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
+| `mabox/capture` | `main` dropdown, pinned window | `noctalia msg panel-toggle mabox/capture:main` | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
 | `mabox/colors` | `picker` dropdown, pinned window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
