@@ -28,7 +28,7 @@ optdepends=('radicale: local calendar (mb-calendar-setup)'
             'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('8cd8f264c6ba7b19dd1040514d1d4f05da10e0e376abdbd635fb19d0ce90ef46')
 
 package() {
   local root="$srcdir/$pkgname-$pkgver"
