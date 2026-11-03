@@ -18,6 +18,7 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
 `W-k` opens the hotkey list: search, Basics or All, arrow button for full width, play button runs a bind's command. Group names and descriptions: `/usr/share/mabox-noctalia-ce/keys.csv`.
+Edit tab: pencil changes the key, command and description, "Add key" adds a bind, Delete removes it. Every change backs up `rc.xml` to `~/.config/mabox-noctalia-ce/backups/` (last 20) and reloads labwc. Backups tab: Restore. Your descriptions go to `~/.config/mabox-noctalia-ce/keys.csv`.
 
 | Key | Action |
 |---|---|
