@@ -66,6 +66,9 @@
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>
+    <item label="Config files" icon="document-properties">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/configs:main" />
+    </item>
     <separator />
     <item label="Edit rc.xml" icon="text-editor">
       <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/rc.xml" />
@@ -85,13 +88,13 @@
       <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
     </item>
     <item label="Notes pinned" icon="accessories-text-editor">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/notes:pinned" />
+      <action name="Execute" command="mb-pinned notes" />
     </item>
     <item label="Status" icon="utilities-system-monitor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
     </item>
     <item label="Status pinned" icon="utilities-system-monitor">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/status:pinned" />
+      <action name="Execute" command="mb-pinned status" />
     </item>
     <item label="Music" icon="multimedia-audio-player">
       <action name="Execute" command="noctalia msg panel-open launcher /music" />

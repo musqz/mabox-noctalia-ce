@@ -1,6 +1,8 @@
 --!nonstrict
 -- Color picker panel. History and palettes reuse colormenu's plain .clr files (one "#hex" per line).
 
+local pinSide = require("./side.luau")
+
 return function(pinned)
 local HOME = noctalia.getenv("HOME")
 local RECENT = HOME .. "/.config/colormenu/recent.clr"
@@ -481,10 +483,13 @@ render = function()
         saveChoice("format", FORMATS[formatIndex])
         render()
       end),
-      pinned and ui.button({ glyph = "x", variant = "ghost", tooltip = "Close", onClick = function() panel.close() end })
+      pinned and ui.row({ gap = 2 }, {
+        ui.button({ glyph = "arrows-left-right", variant = "ghost", tooltip = "Move to the other side", onClick = function() pinSide.swap("colors", pinned) end }),
+        ui.button({ glyph = "x", variant = "ghost", tooltip = "Close", onClick = function() panel.close() end }),
+      })
         or ui.button({ glyph = "pin", variant = "ghost", tooltip = "Pin window", onClick = function()
           panel.close()
-          noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/colors:pinned" })
+          pinSide.toggle("colors")
         end }),
     }),
     ui.row({ gap = 12, flexGrow = 1 }, {

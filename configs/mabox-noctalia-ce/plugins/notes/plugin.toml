@@ -19,12 +19,25 @@ open_near_click = true
 capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+enter", "alt+c", "alt+e", "alt+s"]
 
 [[panel]]
-id = "pinned"
-entry = "pinned.luau"
+id = "pinned-left"
+entry = "pinned-left.luau"
 width = 330
 height = "fill"
 placement = "floating"
 position = "top_left"
+persistent = true
+dismiss_on_outside_click = false
+keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+enter", "alt+c", "alt+e", "alt+s"]
+layer = "overlay"
+
+[[panel]]
+id = "pinned-right"
+entry = "pinned-right.luau"
+width = 330
+height = "fill"
+placement = "floating"
+position = "top_right"
 persistent = true
 dismiss_on_outside_click = false
 keyboard_focus = "on_demand"

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Toggle the pinned window of a Mabox plugin on the saved side.
+#   mb-pinned <plugin>           notes, status, colors, configs
+#   mb-pinned --side [left|right]   print or set the side for all pinned windows
+set -euo pipefail
+
+file=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/pinned-side
+
+side() { grep -qs right "$file" && echo right || echo left; }
+
+case ${1:-} in
+    "" | -h | --help) sed -n '2,4p' "$0" | sed 's/^# \?//' ;;
+    --side)
+        case ${2:-} in
+            "") side ;;
+            left | right) mkdir -p "${file%/*}"; echo "$2" > "$file" ;;
+            *) echo "usage: mb-pinned --side [left|right]" >&2; exit 2 ;;
+        esac ;;
+    *) exec noctalia msg panel-toggle "mabox/$1:pinned-$(side)" ;;
+esac

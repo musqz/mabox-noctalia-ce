@@ -1,5 +1,5 @@
 --!nonstrict
-local open, tick, _, key = require("./lib/notes.luau")(true)
+local open, tick, _, key = require("./lib/notes.luau")("left")
 function onOpen()
   open()
   panel.setWantsSecondTicks(true)

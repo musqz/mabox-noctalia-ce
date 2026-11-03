@@ -58,7 +58,7 @@ tooltip = "system status"
 
 [widget.status.actions]
 left = "exec noctalia msg panel-toggle mabox/status:main"
-right = "exec noctalia msg panel-toggle mabox/status:pinned"
+right = "exec mb-pinned status"
 
 [widget.colors]
 type = "custom_button"
