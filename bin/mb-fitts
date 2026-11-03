@@ -61,7 +61,7 @@ def card(output, zone, cmds, monitor):
     win.set_app_paintable(True)
     win.connect("draw", draw_bg)
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=14)
-    box.set_size_request(380, -1)
+    box.set_size_request(320, -1)
     head = Gtk.Label()
     head.set_markup(f"<big><b>{label}</b></big>  {GLib.markup_escape_text(output)}")
     head.set_halign(Gtk.Align.START)
@@ -74,7 +74,7 @@ def card(output, zone, cmds, monitor):
             row.set_xalign(0)
             row.set_line_wrap(True)
             row.set_line_wrap_mode(Pango.WrapMode.CHAR)
-            row.set_max_width_chars(44)
+            row.set_max_width_chars(38)
             box.pack_start(row, False, False, 0)
     win.add(box)
     win.show_all()
@@ -117,7 +117,7 @@ def main():
 
 def show(rc):
     css = Gtk.CssProvider()
-    css.load_from_data(b"label { color: #e6e6e6; font-size: 13pt; }")
+    css.load_from_data(b"label { color: #e6e6e6; font-size: 11pt; }")
     Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     display = Gdk.Display.get_default()
     positions = output_positions()
