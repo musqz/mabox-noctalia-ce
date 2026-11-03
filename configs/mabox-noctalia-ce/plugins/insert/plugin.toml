@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "keyboard"
-description = "Type a shell history line (/hist) or an Espanso snippet (/es) into the previous window with wtype; a panel adds snippets."
+description = "Type a shell history line (/hist) or an Espanso snippet (/es) into the previous window with wtype; a panel adds and edits your snippets."
 dependencies = ["wtype"]
 tags = ["launcher", "utility"]
 
