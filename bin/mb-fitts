@@ -12,7 +12,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import Gdk, GLib, Gtk, GtkLayerShell
+from gi.repository import Gdk, GLib, Gtk, GtkLayerShell, Pango
 
 RC = os.path.expanduser("~/.config/fittsmon-wl/fittsmon-wlrc")
 ZONES = {
@@ -58,9 +58,10 @@ def card(output, zone, cmds, monitor):
         win.set_visual(visual)
     win.set_app_paintable(True)
     win.connect("draw", draw_bg)
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin=12)
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=14)
+    box.set_size_request(380, -1)
     head = Gtk.Label()
-    head.set_markup(f"<b>{label}</b>  <small>{output}</small>")
+    head.set_markup(f"<big><b>{label}</b></big>  {output}")
     head.set_halign(Gtk.Align.START)
     box.pack_start(head, False, False, 0)
     shown = False
@@ -68,10 +69,12 @@ def card(output, zone, cmds, monitor):
         if cmds.get(key, "").strip():
             shown = True
             row = Gtk.Label()
-            row.set_markup(f"<small><b>{GLib.markup_escape_text(name)}</b>  {GLib.markup_escape_text(cmds[key])}</small>")
+            row.set_markup(f"<b>{GLib.markup_escape_text(name)}</b>\n{GLib.markup_escape_text(cmds[key])}")
             row.set_halign(Gtk.Align.START)
+            row.set_xalign(0)
             row.set_line_wrap(True)
-            row.set_max_width_chars(40)
+            row.set_line_wrap_mode(Pango.WrapMode.CHAR)
+            row.set_max_width_chars(44)
             box.pack_start(row, False, False, 0)
     if not shown:
         return None
@@ -99,7 +102,7 @@ def main():
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
     css = Gtk.CssProvider()
-    css.load_from_data(b"label { color: #e6e6e6; }")
+    css.load_from_data(b"label { color: #e6e6e6; font-size: 13pt; }")
     Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     rc = read_rc()
     display = Gdk.Display.get_default()
@@ -109,7 +112,9 @@ def main():
         # The rc names outputs by connector; match them against wlr-randr.
         connector = connector_of(mon)
         for zone in ZONES:
-            cmds = rc.get(f"{connector}-{zone}", {})
+            # A monitor section overrides the plain [Zone] defaults per event, as in the GUI.
+            cmds = dict(rc.get(zone, {}))
+            cmds.update({k: v for k, v in rc.get(f"{connector}-{zone}", {}).items() if v.strip()})
             w = card(connector, zone, cmds, mon)
             if w:
                 wins.append(w)
