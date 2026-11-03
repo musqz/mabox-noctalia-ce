@@ -1,34 +1,17 @@
 #!/usr/bin/env python3
-"""mb-keys - list and edit the labwc keybinds of rc.xml for the mabox/keys plugin.
+"""mb-keys - list the labwc keybinds of rc.xml for the mabox/keys plugin.
 
-  mb-keys list [--tsv]
-  mb-keys check KEY [--ignore KEY]       binds that already use KEY
-  mb-keys set KEY [--key NEW] [--command CMD] [--desc TEXT]
-  mb-keys add KEY COMMAND [--desc TEXT]
-  mb-keys delete KEY
-  mb-keys backups                        newest first
-  mb-keys restore NAME
+  mb-keys list [--tsv] [--rc FILE]
 
-Options: --rc FILE (default: the live rc.xml), --no-reload (skip labwc --reconfigure).
-Edits change only the touched lines of rc.xml and back it up first.
-Descriptions: keys.csv (key,group,basic,description; ~/.config/mabox-noctalia-ce/keys.csv
-wins), else the comment above a lone keybind, else the command.
+Descriptions: keys.csv (key,group,basic,description), else the comment above
+a lone keybind, else the command.
 """
-import argparse
 import csv
 import os
-import re
-import shutil
-import subprocess
 import sys
-import time
 import xml.etree.ElementTree as ET
-from xml.sax.saxutils import escape
 
-CFG_DIR = os.path.join(os.environ["HOME"], ".config", "mabox-noctalia-ce")
-CFG = os.path.join(CFG_DIR, "rc.xml")
-USER_CSV = os.path.join(CFG_DIR, "keys.csv")
-KEEP_BACKUPS = 20
+CFG = os.path.join(os.environ["HOME"], ".config", "mabox-noctalia-ce", "rc.xml")
 CSV_PATHS = (
     "/usr/share/mabox-noctalia-ce/keys.csv",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "keys.csv"),
@@ -116,22 +99,13 @@ def ident(spec):
     return frozenset(mods), key.lower()
 
 
-def read_csv_file(path):
-    if not os.path.isfile(path):
-        return {}
-    with open(path, newline="", encoding="utf-8") as f:
-        rows = csv.reader(row for row in f if row.strip() and not row.startswith("#"))
-        return {r[0]: r for r in rows if len(r) >= 4}
-
-
 def read_csv():
-    meta = {}
     for path in CSV_PATHS:
         if os.path.isfile(path):
-            meta = read_csv_file(path)
-            break
-    meta.update(read_csv_file(USER_CSV))
-    return meta
+            with open(path, newline="", encoding="utf-8") as f:
+                rows = csv.reader(row for row in f if row.strip() and not row.startswith("#"))
+                return {r[0]: r for r in rows if len(r) >= 4}
+    return {}
 
 
 def comment_labels(keyboard):
@@ -182,7 +156,6 @@ def collect(rc):
                 "desc": (row[3] if row else None) or labels.get(id(kb)) or command,
                 "command": command,
                 "run": name == "Execute",
-                "edit": True,
             })
     if uses_defaults or not binds:
         for spec, desc in DEFAULTS:
@@ -192,234 +165,30 @@ def collect(rc):
                 binds.append({"spec": spec, "mods": mods, "key": key,
                               "group": row[1] if row else "labwc defaults",
                               "basic": bool(row and row[2].strip() == "1"),
-                              "desc": row[3] if row else desc, "command": "labwc default", "run": False,
-                              "edit": False})
+                              "desc": row[3] if row else desc, "command": "labwc default", "run": False})
     return binds
 
 
-def comment_spans(text):
-    return [m.span() for m in re.finditer(r"<!--.*?-->", text, re.S)]
-
-
-def in_comment(spans, pos):
-    return any(a <= pos < b for a, b in spans)
-
-
-def find_bind(text, spec):
-    """(start, end) of the <keybind> element for spec; binds inside comments are skipped."""
-    spans = comment_spans(text)
-    pat = re.compile(r'<keybind\b[^>]*?\bkey="' + re.escape(escape(spec, {'"': "&quot;"})) + r'"[^>]*?(/?)>')
-    for m in pat.finditer(text):
-        if in_comment(spans, m.start()):
-            continue
-        if m.group(1):
-            return m.start(), m.end()
-        close = text.find("</keybind>", m.end())
-        if close < 0:
-            raise ValueError("unclosed keybind " + spec)
-        return m.start(), close + len("</keybind>")
-    raise ValueError("no keybind " + spec + " in rc.xml")
-
-
-def xml_attr(value):
-    return escape(value, {'"': "&quot;"})
-
-
-def check_spec(spec):
-    if not spec or re.search(r'[\s<>&"\']', spec):
-        raise ValueError("invalid key: " + spec)
-
-
-def check_command(cmd):
-    if not cmd or "\n" in cmd:
-        raise ValueError("invalid command")
-
-
-def set_command(elem, cmd):
-    value = xml_attr(cmd)
-    new, n = re.subn(r'\bcommand\.action="[^"]*"', lambda m: 'command.action="' + value + '"', elem, count=1)
-    if n:
-        return new
-    new, n = re.subn(r'(<action\b[^>]*?)\bcommand="[^"]*"', lambda m: m.group(1) + 'command="' + value + '"', elem, count=1)
-    if n:
-        return new
-    new, n = re.subn(r"(<command>).*?(</command>)", lambda m: m.group(1) + escape(cmd) + m.group(2), elem, count=1, flags=re.S)
-    if n:
-        return new
-    raise ValueError("this bind has no command to change")
-
-
-def backup_dir(rc):
-    return os.path.join(os.path.dirname(os.path.abspath(rc)), "backups")
-
-
-def backup(rc):
-    d = backup_dir(rc)
-    os.makedirs(d, exist_ok=True)
-    dest = os.path.join(d, "rc.xml." + time.strftime("%Y%m%d-%H%M%S"))
-    n = 1
-    while os.path.exists(dest):
-        n += 1
-        dest = os.path.join(d, "rc.xml.%s-%02d" % (time.strftime("%Y%m%d-%H%M%S"), n))
-    shutil.copy2(rc, dest)
-    for old in sorted(os.listdir(d))[:-KEEP_BACKUPS]:
-        os.remove(os.path.join(d, old))
-
-
-def read_text(rc):
-    with open(rc, newline="", encoding="utf-8") as f:
-        return f.read()
-
-
-def write_rc(rc, text):
-    """Backup, write, and keep the old file when the result is not valid XML."""
-    ET.fromstring(text)
-    backup(rc)
-    tmp = rc + ".tmp"
-    with open(tmp, "w", newline="", encoding="utf-8") as f:
-        f.write(text)
-    os.replace(tmp, rc)
-
-
-def write_user_csv(mutate):
-    rows = read_csv_file(USER_CSV)
-    mutate(rows)
-    os.makedirs(os.path.dirname(USER_CSV), exist_ok=True)
-    with open(USER_CSV, "w", newline="", encoding="utf-8") as f:
-        f.write("# key,group,basic,description\n")
-        csv.writer(f).writerows(rows[k] for k in sorted(rows))
-
-
-def cmd_set(a):
-    text = read_text(a.rc)
-    start, end = find_bind(text, a.spec)
-    elem = text[start:end]
-    before = {b["spec"]: b["desc"] for b in collect(a.rc)}.get(a.spec)
-    new_spec = a.key or a.spec
-    if a.key:
-        check_spec(a.key)
-        elem = re.sub(r'(<keybind\b[^>]*?\bkey=")[^"]*(")', lambda m: m.group(1) + xml_attr(a.key) + m.group(2), elem, count=1)
-    if a.command is not None:
-        check_command(a.command)
-        elem = set_command(elem, a.command)
-    write_rc(a.rc, text[:start] + elem + text[end:])
-    if a.desc is not None and a.desc.strip() and a.desc.strip() != before:
-        meta = read_csv().get(a.spec)
-        set_desc(a.spec, new_spec, a.desc.strip(), meta)
-    elif a.key and a.key != a.spec:
-        set_desc(a.spec, new_spec, None, read_csv().get(a.spec))
-
-
-def set_desc(old, new, desc, meta):
-    """Move or write the user csv row for a bind; desc None keeps the text."""
-    def mutate(rows):
-        rows.pop(old, None)
-        if desc is None and not meta:
-            return
-        group = meta[1] if meta else "Custom"
-        basic = meta[2] if meta else "0"
-        text = desc if desc else meta[3]
-        rows[new] = [new, group, basic, text]
-    write_user_csv(mutate)
-
-
-def cmd_add(a):
-    check_spec(a.spec)
-    check_command(a.command)
-    text = read_text(a.rc)
-    spans = comment_spans(text)
-    closes = [m.start() for m in re.finditer(r"</keyboard>", text) if not in_comment(spans, m.start())]
-    if not closes:
-        raise ValueError("no <keyboard> section in rc.xml")
-    at = text.rfind("\n", 0, closes[-1]) + 1
-    line = '    <keybind key="%s"><action name="Execute" command="%s"/></keybind>\n' % (xml_attr(a.spec), xml_attr(a.command))
-    if text[at:closes[-1]].strip():
-        line, at = "\n" + line, closes[-1]
-    write_rc(a.rc, text[:at] + line + text[at:])
-    if a.desc and a.desc.strip():
-        set_desc(a.spec, a.spec, a.desc.strip(), None)
-
-
-def cmd_delete(a):
-    text = read_text(a.rc)
-    start, end = find_bind(text, a.spec)
-    line = text.rfind("\n", 0, start) + 1
-    stop = text.find("\n", end)
-    stop = len(text) if stop < 0 else stop + 1
-    if text[line:start].strip() or text[end:stop].strip():
-        line, stop = start, end
-    write_rc(a.rc, text[:line] + text[stop:])
-    if a.spec in read_csv_file(USER_CSV):
-        write_user_csv(lambda rows: rows.pop(a.spec, None))
-
-
-def cmd_check(a):
-    want = ident(a.spec)
-    binds = collect(a.rc)
-    for b in binds:
-        if b["spec"] != a.ignore and ident(b["spec"]) == want:
-            print("\t".join(["default" if not b["edit"] else "bind", b["spec"], b["desc"]]))
-
-
-def cmd_backups(a):
-    d = backup_dir(a.rc)
-    for name in sorted(os.listdir(d) if os.path.isdir(d) else [], reverse=True):
-        print(name)
-
-
-def cmd_restore(a):
-    path = os.path.join(backup_dir(a.rc), os.path.basename(a.name))
-    write_rc(a.rc, read_text(path))
-
-
-def cmd_list(a):
-    binds = collect(a.rc)
-    if a.tsv:
+def main(argv):
+    if not argv or argv[0] != "list":
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+    rc = CFG
+    if "--rc" in argv:
+        rc = os.path.expanduser(argv[argv.index("--rc") + 1])
+    try:
+        binds = collect(rc)
+    except (OSError, ET.ParseError) as e:
+        print("mb-keys: " + str(e), file=sys.stderr)
+        return 1
+    if "--tsv" in argv:
         for b in binds:
             print("\t".join([b["spec"], "+".join(b["mods"]), b["key"], b["group"],
                              "1" if b["basic"] else "0", b["desc"], b["command"],
-                             "1" if b["run"] else "0", "1" if b["edit"] else "0"]))
+                             "1" if b["run"] else "0"]))
     else:
         for b in binds:
             print("{:<18} {:<10} {}".format(b["spec"], b["group"], b["desc"]))
-
-
-def parser():
-    top = argparse.ArgumentParser(prog="mb-keys", description=__doc__.split("\n")[0])
-    sub = top.add_subparsers(dest="cmd", required=True)
-
-    def add(name, fn, *args, **opts):
-        p = sub.add_parser(name)
-        p.set_defaults(fn=fn, writes=opts.get("writes", False))
-        p.add_argument("--rc", type=os.path.expanduser, default=CFG)
-        p.add_argument("--no-reload", action="store_true")
-        for arg in args:
-            p.add_argument(arg[0], **arg[1])
-        return p
-
-    add("list", cmd_list, ("--tsv", {"action": "store_true"}))
-    add("check", cmd_check, ("spec", {}), ("--ignore", {"default": None}))
-    add("set", cmd_set, ("spec", {}), ("--key", {}), ("--command", {}), ("--desc", {}), writes=True)
-    add("add", cmd_add, ("spec", {}), ("command", {}), ("--desc", {}), writes=True)
-    add("delete", cmd_delete, ("spec", {}), writes=True)
-    add("backups", cmd_backups)
-    add("restore", cmd_restore, ("name", {}), writes=True)
-    return top
-
-
-def main(argv):
-    a = parser().parse_args(argv)
-    try:
-        a.fn(a)
-    except (OSError, ValueError, ET.ParseError) as e:
-        print("mb-keys: " + str(e), file=sys.stderr)
-        return 1
-    if a.writes and not a.no_reload and os.path.realpath(a.rc) == os.path.realpath(CFG):
-        try:
-            subprocess.run(["labwc", "--reconfigure"], check=False)
-        except OSError as e:
-            print("mb-keys: saved, labwc not reloaded: " + str(e), file=sys.stderr)
-            return 1
     return 0
 
 
