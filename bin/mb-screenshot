@@ -63,7 +63,7 @@ fi
 # Window: pick it with skippy-wl (it focuses the pick), then take the focused window.
 if [[ ${1-} == screenshot-window ]] && command -v skippy-wl >/dev/null; then
     skippy-wl --show || exit 0
-    sleep 0.3
+    sleep 1
 fi
 countdown
 cmd=$1; shift
