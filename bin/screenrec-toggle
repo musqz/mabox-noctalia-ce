@@ -77,9 +77,13 @@ print("[" + ", ".join("\"%s\"" % i for i in items) + "]")' "$1" <<< "$list") || 
     noctalia msg config-set bar.default.end "$list" >/dev/null || true
 }
 
+# Put the tooltip back as it was, it may be a custom one.
+tip=$(noctalia msg config-get widget.screenrec.tooltip 2>/dev/null) || tip=
+tip=${tip#\'}; tip=${tip%\'}
+[[ $tip == "stop recording" ]] && tip=
 bar_state circle-filled error "stop recording"
 stop_button on
-trap 'bar_state player-record on_surface "start recording"; stop_button off' EXIT
+trap 'bar_state player-record on_surface "${tip:-start recording}"; stop_button off' EXIT
 
 mkdir -p "$(dirname "$out")"
 if wl-screenrec "${args[@]}" -f "$out"; then
