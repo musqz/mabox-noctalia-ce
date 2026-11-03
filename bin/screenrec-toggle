@@ -1,11 +1,33 @@
 #!/usr/bin/env bash
-# Toggle a region recording with wl-screenrec; file is named by date and time.
+# Toggle a recording with wl-screenrec; file is named by date and time.
 # Run again to stop; bound to the screenrec button in the noctalia bar.
+#   screenrec-toggle [-o OUTPUT] [-f FPS] [-c mp4|mkv] [-a none|system|mic]
+# Without -o you select a region; -o auto uses SCREENSHOT_OUTPUT or the first output. -a records the default sink or microphone.
 set -euo pipefail
 
 if pkill -INT -x wl-screenrec; then
     exit 0
 fi
+
+output= fps= container=mp4 audio=none
+# Defaults from the Capture panel, so the bar button records with the same choices.
+saved=${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/capture/settings
+if [[ -f $saved ]]; then
+    v=$(sed -n 's/^rec_container=//p' "$saved"); [[ $v == mp4 || $v == mkv ]] && container=$v
+    v=$(sed -n 's/^rec_fps=//p' "$saved"); [[ $v =~ ^[0-9]+$ ]] && fps=$v
+    v=$(sed -n 's/^rec_audio=//p' "$saved"); [[ $v == none || $v == system || $v == mic ]] && audio=$v
+fi
+while getopts o:f:c:a: opt; do
+    case $opt in
+        o) output=$OPTARG ;;
+        f) fps=$OPTARG ;;
+        c) container=$OPTARG ;;
+        a) audio=$OPTARG ;;
+        *) exit 2 ;;
+    esac
+done
+[[ $container == mp4 || $container == mkv ]] || { echo "container: mp4 or mkv" >&2; exit 2; }
+[[ -z $fps || $fps =~ ^[0-9]+$ ]] || { echo "fps must be a number" >&2; exit 2; }
 
 bar_state() {
     noctalia msg config-set widget.screenrec.glyph "\"$1\"" >/dev/null || true
@@ -13,14 +35,30 @@ bar_state() {
     noctalia msg config-set widget.screenrec.tooltip "\"$3\"" >/dev/null || true
 }
 
-region=$(slurp) || exit 0
-out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).mp4"
+if [[ $output == auto ]]; then
+    output=${SCREENSHOT_OUTPUT:-$(wlr-randr | awk 'NR==1{print $1}')}
+fi
+args=()
+if [[ -n $output ]]; then
+    args+=(-o "$output")
+else
+    region=$(slurp) || exit 0
+    args+=(-g "$region")
+fi
+[[ -n $fps ]] && args+=(-m "$fps")
+case $audio in
+    none) ;;
+    system) args+=(--audio --audio-device "$(pactl get-default-sink).monitor") ;;
+    mic) args+=(--audio --audio-device "$(pactl get-default-source)") ;;
+    *) echo "audio: none, system or mic" >&2; exit 2 ;;
+esac
+out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).$container"
 
 bar_state circle-filled error "stop recording"
 trap 'bar_state player-record on_surface "start recording"' EXIT
 
 mkdir -p "$(dirname "$out")"
-if wl-screenrec -g "$region" -f "$out"; then
+if wl-screenrec "${args[@]}" -f "$out"; then
     ( choice=$(notify-send -a "Screen recording" -A folder="Open folder" -A play="Play" "Screen recording" "Saved $(basename "$out")") || exit 0
       case $choice in
           folder) xdg-open "$(dirname "$out")" ;;

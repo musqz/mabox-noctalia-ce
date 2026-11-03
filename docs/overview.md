@@ -93,7 +93,10 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mb-wallpaper-dir` | set the Noctalia wallpaper folder | file manager action "Set wallpaper dir" |
 | `brightness-primary` | brightness up/down on the main monitor (`BRIGHTNESS_OUTPUT`) | brightness keys |
 | `q-term-toggle` | show/hide the quake terminal | keybind in `rc.xml` |
-| `screenrec-toggle` | start/stop region recording with `wl-screenrec` | bar button, root menu, `rc.xml` |
+| `screenrec-toggle` | start/stop recording with `wl-screenrec`; options `-o` output, `-f` fps, `-c` mp4/mkv, `-a` none/system/mic | bar button, root menu, `rc.xml` |
+| `mb-shots-interval` | start/stop screenshots of one monitor or an area every N seconds | run by hand |
+| `capture-stop` | stop a running recording and interval screenshots | `W-S-x` |
+| `mb-gifmaker` | make a GIF from the interval screenshots (`gifski`) | run by hand |
 | `skippy-wl-tiling` | pick up to 4 windows and tile them | `C-Space` |
 | `skippy-wl-send-to-{philips,dell,desk}` | pick windows, send to a monitor or workspace | `S-C-KP_7`, `S-C-KP_9`, `S-C-KP_8` |
 
