@@ -1,0 +1,31 @@
+id = "mabox/capture"
+name = "Capture"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "camera"
+description = "Screenshots, screen recording, interval screenshots and GIFs. Delay, format, fps and audio are set in the panel."
+dependencies = ["grim", "slurp", "wl-screenrec", "gifski"]
+tags = ["utility", "screenshot", "recording"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 1100
+placement = "attached"
+open_near_click = true
+
+[[panel]]
+id = "pinned"
+entry = "pinned.luau"
+width = 420
+height = "fill"
+placement = "floating"
+position = "top_right"
+persistent = true
+dismiss_on_outside_click = false
+keyboard_focus = "none"
+layer = "overlay"

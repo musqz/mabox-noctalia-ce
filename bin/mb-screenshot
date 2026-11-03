@@ -24,18 +24,17 @@ if [[ ${1-} == --view ]]; then
     file=${out:-$f}
     if command -v viewnior >/dev/null; then exec viewnior "$file"; else exec xdg-open "$file"; fi
 fi
-delay=0
-if [[ ${1-} == --delay ]]; then
-    [[ ${2-} =~ ^[0-9]+$ ]] || { echo "usage: mb-screenshot --delay SECONDS <args>" >&2; exit 2; }
-    delay=$2
+delay=0 fmt=png
+while [[ ${1-} == --delay || ${1-} == --format ]]; do
+    if [[ $1 == --delay ]]; then
+        [[ ${2-} =~ ^[0-9]+$ ]] || { echo "usage: mb-screenshot --delay SECONDS <args>" >&2; exit 2; }
+        delay=$2
+    else
+        [[ ${2-} =~ ^(png|jpg|webp|avif)$ ]] || { echo "usage: mb-screenshot --format png|jpg|webp|avif <args>" >&2; exit 2; }
+        fmt=$2
+    fi
     shift 2
-fi
-fmt=png
-if [[ ${1-} == --format ]]; then
-    [[ ${2-} =~ ^(png|jpg|webp|avif)$ ]] || { echo "usage: mb-screenshot --format png|jpg|webp|avif <args>" >&2; exit 2; }
-    fmt=$2
-    shift 2
-fi
+done
 if [[ ${1-} == screenshot-fullscreen && $# -eq 1 && -n ${SCREENSHOT_OUTPUT-} ]]; then
     set -- screenshot-fullscreen "$SCREENSHOT_OUTPUT"
 fi
@@ -70,4 +69,5 @@ case $fmt in
     webp) opts+=(--format webp) ;;
     avif) opts=(--no-save-to-file) ;;
 esac
-exec noctalia msg "$cmd" "$@" "${opts[@]}" --pipe-to-command --pipe-command "$(readlink -f "$0") --view $fmt $name"
+# Options go before the target (all, pick, a connector); noctalia reads everything after the target as part of it.
+exec noctalia msg "$cmd" "${opts[@]}" --pipe-to-command --pipe-command "$(readlink -f "$0") --view $fmt $name" "$@"

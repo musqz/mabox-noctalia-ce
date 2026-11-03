@@ -33,6 +33,10 @@ EOF
 fi
 
 source "$CONF_FILE"
+# Read the interval folder from the interval config, so both tools agree.
+icnf=${XDG_CONFIG_HOME:-$HOME/.config}/mabox/mb-interval-shots.conf
+v=$(sed -n 's/^screenshot_dir=//p' "$icnf" 2>/dev/null | tail -n1)
+[[ -n $v ]] && screenshot_dir=${v/#\~/$HOME}
 
 # -s N: longest side in pixels (0 = original size); overrides width and height.
 while getopts s: opt; do
@@ -43,7 +47,7 @@ while getopts s: opt; do
     esac
 done
 
-output_file="${output_dir}/mabox-animation-$(date +"%H-%M-%S").gif"
+output_file="${output_dir}/mabox-animation-$(date +"%Y%m%d-%H-%M-%S").gif"
 mkdir -p "$output_dir"
 basename="$(basename "$output_file")"
 
