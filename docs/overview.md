@@ -114,10 +114,10 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 noctalia msg plugins list
 noctalia msg panel-toggle mabox/notes:main
 mb-pinned notes
-mb-pinned --side right
+mb-pinned --side notes right
 ```
 
-Pinned windows are the panels `pinned-left` and `pinned-right`. `mb-pinned <plugin>` opens the one on the saved side. The arrows button in a pinned window moves all pinned windows to the other side (`~/.config/mabox-noctalia-ce/pinned-side`).
+Pinned windows are the panels `pinned-left` and `pinned-right`. `mb-pinned <plugin>` opens the one on the saved side. Each plugin has its own side, one `plugin=side` line in `~/.config/mabox-noctalia-ce/pinned-side`. Change it with the arrows button in a pinned window or in the Configs panel under Pinned windows.
 
 ## Services
 
