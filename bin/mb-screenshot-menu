@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# labwc pipe menu: one entry per delay for a mb-screenshot target.
+#   mb-screenshot-menu screenshot-fullscreen | screenshot-region | screenshot-window
+# Keep the delays in step with the Delay choice in plugins/capture/lib/capture.luau.
+delays=(3 5 10 30)
+
+case ${1-} in
+    screenshot-fullscreen | screenshot-region | screenshot-window) ;;
+    *) echo "usage: mb-screenshot-menu screenshot-fullscreen|screenshot-region|screenshot-window" >&2; exit 2 ;;
+esac
+
+echo '<openbox_pipe_menu>'
+for d in "${delays[@]}"; do
+    printf '  <item label="%ss"><action name="Execute"><command>mb-screenshot --delay %s %s</command></action></item>\n' "$d" "$d" "$1"
+done
+echo '</openbox_pipe_menu>'
