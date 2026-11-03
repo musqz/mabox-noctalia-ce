@@ -1,0 +1,18 @@
+id = "mabox/reset"
+name = "Reset"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "restore"
+description = "Compare the session configs with the shipped defaults and reset them (mb-reset-wl)."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 520
+placement = "attached"
+open_near_click = true

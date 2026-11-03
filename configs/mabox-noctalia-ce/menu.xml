@@ -76,6 +76,9 @@
     <item label="Edit menu.xml" icon="text-editor">
       <action name="Execute" command="geany ~/.config/mabox-noctalia-ce/menu.xml" />
     </item>
+    <item label="Reset configs" icon="edit-undo">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/reset:main" />
+    </item>
     <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />
     </item>
