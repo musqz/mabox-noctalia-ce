@@ -15,3 +15,12 @@ entry = "finder.luau"
 prefix = "music"
 glyph = "music"
 include_in_global_search = false
+
+[[panel]]
+id = "add"
+entry = "add.luau"
+width = 520
+height = "content"
+max_height = 420
+placement = "attached"
+open_near_click = true
