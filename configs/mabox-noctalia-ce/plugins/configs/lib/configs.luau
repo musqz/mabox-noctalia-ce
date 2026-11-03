@@ -41,6 +41,7 @@ printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
 
 local entries = {}
+local plugins = {}
 local expanded = {}
 local newName = ""
 local newPath = ""
@@ -107,6 +108,20 @@ refresh = function()
     end
     render()
   end)
+  noctalia.runAsync({ "noctalia", "msg", "plugins", "list" }, function(result)
+    plugins = {}
+    for l in string.gmatch(result.stdout or "", "[^\n]+") do
+      local id = string.match(l, "^(%S+) %[%S+%] %S+ enabled")
+      if id then
+        table.insert(plugins, id)
+      end
+    end
+    render()
+  end)
+end
+
+local function reloadPlugin(id)
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", 'noctalia msg plugins disable "$1"; noctalia msg plugins enable "$1"', "sh", id })
 end
 
 local function addCustom()
@@ -311,6 +326,28 @@ render = function()
     end
   end
   table.insert(cards, 1, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
+  local plugOpen = expanded["Reload plugins"]
+  local plugRows = {
+    ui.button({
+      text = "Reload plugins",
+      glyph = plugOpen and "chevron-down" or "chevron-right",
+      variant = "ghost",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "After editing plugin.toml or Lua files",
+      onClick = function()
+        expanded["Reload plugins"] = not plugOpen or nil
+        saveExpanded()
+        render()
+      end,
+    }),
+  }
+  if plugOpen then
+    for _, id in ipairs(plugins) do
+      table.insert(plugRows, ui.button({ text = id, glyph = "refresh", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function() reloadPlugin(id) end }))
+    end
+  end
+  table.insert(cards, 2, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, plugRows))
   local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards)
   if pinned then
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, reload, list }))
