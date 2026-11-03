@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Compare or reset the Mabox Noctalia CE session configs to the shipped defaults.
+#   mb-reset-wl                  list items and their state
+#   mb-reset-wl -c <item>        show the difference (meld if installed, else diff)
+#   mb-reset-wl <item>...        overwrite with the default (backup: <file>.bak-DATE)
+#   mb-reset-wl all              reset every item
+# Items: rc menu autostart environment themerc shutdown
+# Never touched: autostart.local, themerc-override, noctalia.conf (yours or generated).
+set -euo pipefail
+
+skel=/etc/skel/.config/mabox-noctalia-ce
+live=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce
+
+items=(rc menu autostart environment themerc shutdown)
+
+# sets $src and $dst for an item name
+resolve() {
+    case $1 in
+        rc)      src=$skel/rc.xml;       dst=$live/rc.xml ;;
+        menu)    src=$skel/menu.xml;     dst=$live/menu.xml ;;
+        autostart|environment|themerc|shutdown) src=$skel/$1; dst=$live/$1 ;;
+        *) echo "unknown item: $1 (items: ${items[*]})" >&2; exit 2 ;;
+    esac
+}
+
+state() {
+    if [[ ! -f $src ]]; then echo no-default
+    elif [[ ! -f $dst ]]; then echo missing
+    elif cmp -s "$src" "$dst"; then echo same
+    else echo differs; fi
+}
+
+list() {
+    for i in "${items[@]}"; do
+        resolve "$i"
+        printf '%-12s %-8s %s\n' "$i" "$(state)" "$dst"
+    done
+}
+
+compare() {
+    resolve "$1"
+    [[ -f $dst ]] || { echo "$dst does not exist" >&2; exit 1; }
+    if [[ -n ${WAYLAND_DISPLAY:-}${DISPLAY:-} ]] && command -v meld >/dev/null && meld "$dst" "$src"; then
+        return
+    fi
+    diff -u "$dst" "$src" || true
+}
+
+reset() {
+    resolve "$1"
+    [[ -f $src ]] || { echo "$1: no default at $src" >&2; return 1; }
+    if [[ -f $dst ]]; then
+        cmp -s "$src" "$dst" && { echo "$1: already default"; return; }
+        cp -a "$dst" "$dst.bak-$(date +%Y%m%d-%H%M%S)"
+    fi
+    install -Dm"$(stat -c %a "$src")" "$src" "$dst"
+    echo "$1: reset ($dst)"
+}
+
+case ${1:-} in
+    "")  list ;;
+    -h|--help) sed -n '2,8p' "$0" | sed 's/^# \?//' ;;
+    -c)  [[ -n ${2:-} ]] || { echo "usage: mb-reset-wl -c <item>" >&2; exit 2; }; compare "$2" ;;
+    *)
+        targets=()
+        for t in "$@"; do
+            if [[ $t == all ]]; then targets+=("${items[@]}"); else resolve "$t"; targets+=("$t"); fi
+        done
+        for t in "${targets[@]}"; do reset "$t"; done
+        echo "Apply: labwc --reconfigure for rc, menu, themerc. autostart, environment, shutdown need a re-login."
+        ;;
+esac
