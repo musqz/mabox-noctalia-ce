@@ -95,6 +95,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `q-term-toggle` | show/hide the quake terminal | keybind in `rc.xml` |
 | `screenrec-toggle` | start/stop recording with `wl-screenrec`; options `-o` output, `-f` fps, `-c` mp4/mkv, `-a` none/system/mic | bar button, root menu, `rc.xml` |
 | `mb-shots-interval` | start/stop screenshots of one monitor or an area every N seconds | run by hand |
+| `mb-screenshot-menu` | root-menu list of screenshot delays (3, 5, 10, 30 s) | root menu, Screenshot |
 | `capture-stop` | stop a running recording and interval screenshots | `W-S-x`, stop button in the bar while recording |
 | `mb-gifmaker` | make a GIF from the interval screenshots (`gifski`) | run by hand |
 | `skippy-wl-tiling` | pick up to 4 windows and tile them | `C-Space` |

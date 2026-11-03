@@ -132,12 +132,8 @@
       <action name="Execute" command="noctalia msg screenshot-annotate" />
     </item>
     <separator />
-    <item label="Screen in 5s">
-      <action name="Execute" command="mb-screenshot --delay 5 screenshot-fullscreen" />
-    </item>
-    <item label="Select area, shot after 5s">
-      <action name="Execute" command="mb-screenshot --delay 5 screenshot-region" />
-    </item>
+    <menu id="shot-delay-screen" label="Screen after..." execute="mb-screenshot-menu screenshot-fullscreen" />
+    <menu id="shot-delay-area" label="Select area, shot after..." execute="mb-screenshot-menu screenshot-region" />
   </menu>
   <menu id="record-menu" label="Screen recording" icon="media-record">
     <item label="Record region / stop">
