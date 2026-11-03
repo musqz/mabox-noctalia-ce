@@ -53,6 +53,12 @@
   <item label="Launcher" icon="applications-all">
     <action name="Execute" command="noctalia msg panel-toggle launcher" />
   </item>
+  <item label="Config files" icon="document-properties">
+    <action name="Execute" command="noctalia msg panel-toggle mabox/configs:main" />
+  </item>
+  <item label="Config files pinned" icon="document-properties">
+    <action name="Execute" command="mb-pinned configs" />
+  </item>
   <menu id="settings-menu" label="Mabox Config" icon="preferences-system">
     <item label="Noctalia settings" icon="preferences-system">
       <action name="Execute" command="noctalia msg settings-toggle" />
@@ -65,9 +71,6 @@
     </item>
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
-    </item>
-    <item label="Config files" icon="document-properties">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/configs:main" />
     </item>
     <separator />
     <item label="Edit rc.xml" icon="text-editor">
