@@ -15,6 +15,7 @@ W-=,Panels,0,Wallpaper picker
 W-m,Panels,0,Music launcher
 C-S-2,Panels,0,Add a track to the music list
 W-slash,Apps,0,File search (fsearch)
+C-KP_7,Apps,0,Obsidian
 W-Return,Apps,0,Terminal (foot)
 W-t,Apps,1,Terminal
 W-h,Apps,0,System monitor (btop)
