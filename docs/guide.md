@@ -47,6 +47,7 @@ Windows:
 |---|---|
 | `W-Tab` | skippy-wl window switcher |
 | `W-q` | close |
+| `W-b` | hide or show the window title bar and border (press again to cycle) |
 | `W-A-1` … `W-A-6` | snap to an edge or corner |
 | `W-A-7` | maximize |
 | `C-Space` | pick up to 4 windows and tile them |
