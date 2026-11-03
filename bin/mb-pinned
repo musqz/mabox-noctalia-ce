@@ -6,6 +6,8 @@ set -euo pipefail
 
 file=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/pinned-side
 
+plugins=(colors notes status configs)
+
 side() { grep -qxs "$1=right" "$file" && echo right || echo left; }
 
 case ${1:-} in
@@ -19,5 +21,12 @@ case ${1:-} in
                 { grep -E '^[a-z0-9_-]+=' "$file" 2>/dev/null | grep -v "^$2=" || true; echo "$2=$3"; } | sort > "$file.tmp" && mv "$file.tmp" "$file" ;;
             *) echo "usage: mb-pinned --side <plugin> [left|right]" >&2; exit 2 ;;
         esac ;;
-    *) exec noctalia msg panel-toggle "mabox/$1:pinned-$(side "$1")" ;;
+    *)
+        [[ " ${plugins[*]} " == *" $1 "* ]] || { echo "unknown plugin: $1 (${plugins[*]})" >&2; exit 2; }
+        s=$(side "$1")
+        # windows on the same side lie on top of each other
+        for o in "${plugins[@]}"; do
+            if [[ $o != "$1" && $(side "$o") == "$s" ]]; then noctalia msg panel-close "mabox/$o:pinned-$s" >/dev/null 2>&1 || true; fi
+        done
+        exec noctalia msg panel-toggle "mabox/$1:pinned-$s" ;;
 esac
