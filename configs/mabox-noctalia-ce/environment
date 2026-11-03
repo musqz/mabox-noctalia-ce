@@ -84,3 +84,10 @@ XKB_DEFAULT_OPTIONS=grp:alt_shift_toggle
 
 # LABWC_FALLBACK_OUTPUT=NOOP-fallback
 
+
+##
+## Screenshots and recordings of a whole screen use the focused monitor.
+## Set a connector (see `wlr-randr`) to always use the same one.
+##
+
+# SCREENSHOT_OUTPUT=HDMI-A-1
