@@ -268,6 +268,10 @@ render = function()
       end
     end }),
   })
+  local reload = ui.row({ gap = 6 }, {
+    ui.button({ text = "Reload labwc", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "labwc --reconfigure: rc.xml, menu.xml, themerc", onClick = function() noctalia.runAsync({ "labwc", "--reconfigure" }) end }),
+    ui.button({ text = "Reload Noctalia", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Reload the Noctalia config: bar widgets, tooltips, actions", onClick = function() noctalia.runAsync({ "noctalia", "msg", "config-reload" }) end }),
+  })
   local sideOpen = expanded["Pinned windows"]
   local sideRows = {
     ui.button({
@@ -309,9 +313,9 @@ render = function()
   table.insert(cards, 1, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
   local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards)
   if pinned then
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, list }))
+    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, reload, list }))
   else
-    panel.render(ui.column({ gap = 8, padding = 12, height = 520 }, { top, list }))
+    panel.render(ui.column({ gap = 8, padding = 12, height = 520 }, { top, reload, list }))
   end
 end
 
