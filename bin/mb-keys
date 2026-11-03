@@ -25,6 +25,22 @@ KEYS = {"space": "Space", "Return": "Enter", "grave": "`", "slash": "/", "comma"
         "Escape": "Esc", "BackSpace": "Backspace"}
 
 
+# Binds labwc loads for <keyboard><default />; a bind in rc.xml with the same key replaces it.
+DEFAULTS = (
+    ("A-Tab", "Next window"),
+    ("A-S-Tab", "Previous window"),
+    ("W-Return", "Terminal (lab-sensible-terminal)"),
+    ("A-F4", "Close window"),
+    ("W-a", "Toggle maximize"),
+    ("W-d", "Show desktop"),
+    ("W-Left", "Window to the left half"),
+    ("W-Right", "Window to the right half"),
+    ("W-Up", "Window to the top half"),
+    ("W-Down", "Window to the bottom half"),
+    ("A-Space", "Window menu"),
+)
+
+
 def clean(text):
     text = " ".join((text or "").split())
     return text or None
@@ -78,6 +94,11 @@ def split_key(spec):
     return mods, KEYS.get(key, key if len(key) > 1 else key.upper() if key.isalpha() else key)
 
 
+def ident(spec):
+    mods, key = split_key(spec)
+    return frozenset(mods), key.lower()
+
+
 def read_csv():
     for path in CSV_PATHS:
         if os.path.isfile(path):
@@ -110,10 +131,15 @@ def collect(rc):
     root = ET.parse(rc, parser).getroot()
     meta = read_csv()
     binds = []
+    taken = set()
+    uses_defaults = False
     for keyboard in root.iter("keyboard"):
+        uses_defaults = uses_defaults or keyboard.find("default") is not None
         labels = comment_labels(keyboard)
         for kb in keyboard.findall("keybind"):
             spec = kb.get("key")
+            if spec:
+                taken.add(ident(spec))
             acts = [a for a in actions(kb) if a[0] != "None"]
             if not spec or not acts:
                 continue
@@ -131,6 +157,15 @@ def collect(rc):
                 "command": command,
                 "run": name == "Execute",
             })
+    if uses_defaults or not binds:
+        for spec, desc in DEFAULTS:
+            if ident(spec) not in taken:
+                mods, key = split_key(spec)
+                row = meta.get(spec)
+                binds.append({"spec": spec, "mods": mods, "key": key,
+                              "group": row[1] if row else "labwc defaults",
+                              "basic": bool(row and row[2].strip() == "1"),
+                              "desc": row[3] if row else desc, "command": "labwc default", "run": False})
     return binds
 
 
