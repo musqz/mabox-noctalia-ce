@@ -1,0 +1,96 @@
+# key,group,basic,description  (key as written in rc.xml; basic=1 shows in the Basics view)
+W-k,Panels,1,Show this hotkey list
+W-space,Panels,1,Launcher
+W-s,Panels,1,Control center
+W-x,Panels,1,"Session menu (logout, reboot, shutdown)"
+"W-,",Panels,0,Noctalia settings
+W-n,Panels,1,Notes
+W-A-n,Panels,0,Notes as pinned window
+W-A-c,Panels,0,Color picker
+W-A-s,Panels,0,Status panel
+W-S-s,Panels,0,Status as pinned window
+W-=,Panels,0,Wallpaper picker
+W-m,Panels,0,Music launcher
+C-S-2,Panels,0,Add a track to the music list
+W-slash,Apps,0,File search (fsearch)
+W-Return,Apps,0,Terminal (foot)
+W-t,Apps,1,Terminal
+W-h,Apps,0,System monitor (btop)
+W-e,Apps,1,Text editor
+W-f,Apps,1,File manager
+W-w,Apps,1,Web browser
+W-v,Apps,0,Volume control
+W-r,Apps,0,Internet radio
+W-o,Apps,0,Todo list
+A-F2,Apps,0,Run a command
+F1,Apps,0,Firefox: focus or start
+F2,Apps,0,Double Commander: focus or start
+F3,Apps,0,Geany: focus or start
+F12,Apps,1,Drop-down terminal
+C-S-1,Media,0,Play a stream from the clipboard
+XF86AudioRaiseVolume,Media,0,Volume up
+XF86AudioLowerVolume,Media,0,Volume down
+XF86AudioMute,Media,0,Mute
+XF86AudioPlay,Media,0,Play / pause
+XF86AudioStop,Media,0,Stop
+XF86AudioNext,Media,0,Next track
+XF86AudioPrev,Media,0,Previous track
+XF86MonBrightnessUp,Media,0,Brightness up
+XF86MonBrightnessDown,Media,0,Brightness down
+W-q,Windows,1,Close window
+W-b,Windows,0,Toggle window decorations
+A-grave,Windows,0,Minimize window
+W-Tab,Windows,1,Window switcher: next
+W-S-Tab,Windows,0,Window switcher: previous
+C-Space,Windows,0,Tile the windows
+A-Space,Windows,0,Root menu
+W-A-1,Windows,0,Snap left
+W-A-2,Windows,0,Snap right
+W-A-3,Windows,0,Snap top left
+W-A-4,Windows,0,Snap top right
+W-A-5,Windows,0,Snap bottom left
+W-A-6,Windows,0,Snap bottom right
+W-A-7,Windows,0,Maximize
+W-A-8,Windows,0,Move window to the next monitor
+S-C-KP_7,Windows,0,Send window to the Philips
+S-C-KP_Home,Windows,0,Send window to the Philips
+S-C-KP_9,Windows,0,Send window to the Dell
+S-C-KP_Prior,Windows,0,Send window to the Dell
+S-C-KP_8,Windows,0,Send window to the desk monitor
+W-1,Workspaces,1,Previous workspace
+W-2,Workspaces,1,Next workspace
+W-S-1,Workspaces,0,Send window to the previous workspace
+W-S-2,Workspaces,0,Send window to the next workspace
+W-grave,Workspaces,0,Find a window (tabdock)
+C-W-A-Return,Workspaces,0,Find a window (tabdock)
+C-W-A-Right,Workspaces,0,Tabdock: next workspace
+C-W-A-Left,Workspaces,0,Tabdock: previous workspace
+C-W-A-Down,Workspaces,0,Tabdock: next window
+C-W-A-Up,Workspaces,0,Tabdock: previous window
+C-W-A-z,Workspaces,0,Tabdock: show all windows
+C-W-A-n,Workspaces,0,Tabdock: new workspace
+C-W-F1,Workspaces,0,Tabdock: wider
+C-W-F2,Workspaces,0,Tabdock: narrower
+S-C-p,Workspaces,0,Tabdock: pin
+C-A-a,Desktop,0,Random wallpaper
+W-l,Desktop,1,Lock screen
+W-S-c,Desktop,0,Caffeine: keep the screen awake
+S-C-r,Desktop,0,Reload the labwc config
+C-S-a,Capture,1,Screenshot of the whole screen
+S-W-r,Capture,0,Start / stop screen recording
+W-S-x,Capture,0,Stop recording and interval screenshots
+C-Insert,Capture,0,Show the last screenshot
+C-KP_1,Jump,0,Waterfox: focus or start
+C-KP_2,Jump,0,Geany: focus or start
+C-KP_3,Jump,0,PCManFM: focus or start
+C-KP_4,Jump,0,Terminator: focus or start
+C-KP_5,Jump,0,Stremio: focus or start
+C-KP_6,Jump,0,Firefox: focus or start
+C-KP_8,Jump,0,Firedragon: focus or start
+C-KP_9,Jump,0,Floorp: focus or start
+W-A-C-7,Helpers,0,Move window to HDMI-A-1 (used by scripts)
+W-A-C-9,Helpers,0,Move window to DP-1 (used by scripts)
+W-A-C-8,Helpers,0,Unsnap window (used by scripts)
+W-A-C-0,Helpers,0,Send window to the right workspace (used by scripts)
+W-A-C-1,Helpers,0,Send window to workspace 1 (used by scripts)
+W-A-C-2,Helpers,0,Send window to workspace 2 (used by scripts)
