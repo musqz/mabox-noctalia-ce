@@ -178,6 +178,7 @@
     <keybind key="C-KP_4"><action name="Execute" command="jumpapp -m /usr/bin/terminator" /></keybind>
     <keybind key="C-KP_5"><action name="Execute" command="jumpapp -m /usr/bin/flatpak run com.stremio.Stremio" /></keybind>
     <keybind key="C-KP_6"><action name="Execute" command="jumpapp -m /usr/bin/firefox" /></keybind>
+    <keybind key="C-KP_7"><action name="Execute" command="jumpapp -m /usr/bin/obsidian" /></keybind>
     <keybind key="C-KP_8"><action name="Execute" command="jumpapp -m /usr/bin/firedragon" /></keybind>
     <keybind key="C-KP_9"><action name="Execute" command="jumpapp -m /usr/bin/floorp" /></keybind>
     
