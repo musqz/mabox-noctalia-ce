@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# screenshot-window with skippy-wl: every window you pick is saved as its own file.
 # mb-screenshot [--delay SECONDS] [--format png|jpg|webp|avif] <noctalia screenshot-* args>: save to ~/Pictures/screenshots, then open the image.
 # screenshot-fullscreen without a target uses SCREENSHOT_OUTPUT (connector, e.g. HDMI-A-1) instead of the focused monitor.
 # --view FORMAT NAME: open the file that was just saved as NAME.EXT; stdin is the png noctalia pipes.
@@ -44,13 +45,19 @@ countdown() {
     (( delay > 0 )) || return 0
     sleep "$delay"
 }
-# Save a png (a file path) in the chosen format and open it.
-finish() {
+# Convert a png (a file path) to the chosen format as $dir/screenshot_<time>-<name>.<fmt>; sets $out, empty on failure.
+save() {
     out=$dir/screenshot_$(date +%Y%m%d_%H%M%S)-$2.$fmt
     if [[ $fmt == png ]]; then cp "$1" "$out" || out=; else magick "$1" "$out" || out=; fi
     rm -f "$1"
+}
+view() {
+    if command -v viewnior >/dev/null; then exec viewnior "$@"; else for f in "$@"; do xdg-open "$f"; done; exit 0; fi
+}
+finish() {
+    save "$1" "$2"
     [[ -n $out ]] || { notify-send "Screenshot" "failed"; exit 1; }
-    if command -v viewnior >/dev/null; then exec viewnior "$out"; else exec xdg-open "$out"; fi
+    view "$out"
 }
 # Area with a delay: select first, then count down and capture.
 if [[ ${1-} == screenshot-region && $delay -gt 0 ]]; then
@@ -60,10 +67,25 @@ if [[ ${1-} == screenshot-region && $delay -gt 0 ]]; then
     grim -g "$region" "$tmp" || { rm -f "$tmp"; notify-send "Screenshot" "failed"; exit 1; }
     finish "$tmp" region
 fi
-# Window: pick it with skippy-wl (it focuses the pick), then take the focused window.
+# Windows: pick one or more with skippy-wl (click or Space toggles, Enter confirms); each gets its own file.
 if [[ ${1-} == screenshot-window ]] && command -v skippy-wl >/dev/null; then
-    skippy-wl --show || exit 0
-    sleep 1
+    ids=$(skippy-wl --show --multi-select) || exit 0
+    countdown
+    files=()
+    n=0
+    while IFS= read -r id; do
+        [[ -n $id ]] || continue
+        n=$((n + 1))
+        tmp=$(mktemp --suffix=.png)
+        if { skippy-wl --capture "$id" "$tmp" >/dev/null && [[ -s $tmp ]]; } && save "$tmp" "window$n" && [[ -n $out ]]; then
+            files+=("$out")
+        else
+            rm -f "$tmp"
+        fi
+    done <<< "$ids"
+    (( ${#files[@]} )) || { notify-send "Screenshot" "failed"; exit 1; }
+    (( ${#files[@]} == n )) || notify-send "Screenshot" "$((n - ${#files[@]})) of $n windows failed"
+    view "${files[@]}"
 fi
 countdown
 cmd=$1; shift
