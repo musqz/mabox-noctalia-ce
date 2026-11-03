@@ -60,14 +60,10 @@ if [[ ${1-} == screenshot-region && $delay -gt 0 ]]; then
     grim -g "$region" "$tmp" || { rm -f "$tmp"; notify-send "Screenshot" "failed"; exit 1; }
     finish "$tmp" region
 fi
-# Window: pick it first (skippy-wl), then count down and capture it.
+# Window: pick it with skippy-wl (it focuses the pick), then take the focused window.
 if [[ ${1-} == screenshot-window ]] && command -v skippy-wl >/dev/null; then
-    id=$(skippy-wl --show) || exit 0
-    [[ -n $id ]] || exit 0
-    countdown
-    tmp=$(mktemp --suffix=.png)
-    { skippy-wl --capture "$id" "$tmp" >/dev/null && [[ -s $tmp ]]; } || { rm -f "$tmp"; notify-send "Screenshot" "failed"; exit 1; }
-    finish "$tmp" window
+    skippy-wl --show || exit 0
+    sleep 0.3
 fi
 countdown
 cmd=$1; shift
