@@ -2,6 +2,8 @@
 -- Notes: one .md file per note, so a synced folder rarely conflicts.
 -- Folder: <plugin data dir>/notes, or the path written in <plugin data dir>/path.
 
+local pinSide = require("./side.luau")
+
 return function(pinned)
 local COLORS = {
   { name = "red", hex = "#e5534b" },
@@ -683,7 +685,7 @@ end
 local function pinWindow()
   finishEdit()
   panel.close()
-  noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/notes:pinned" })
+  pinSide.toggle("notes")
 end
 
 render = function()
@@ -699,6 +701,7 @@ render = function()
         ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 2, tooltip = "Open the notes window", onClick = function() openMain() end }),
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
+        ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Close", onClick = function() panel.close() end }),
       }),
     }

@@ -2,6 +2,8 @@
 -- Status: own probes, one at a time through runAsync; cleanup rows run in a terminal.
 -- Settings follow mb-status-ce and live in <plugin data dir>/settings.
 
+local pinSide = require("./side.luau")
+
 return function(pinned)
 local REFRESH = 30
 local MIB = 1048576
@@ -593,10 +595,11 @@ render = function()
       refresh(false)
       render()
     end }),
+    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end }) or ui.spacer({ width = 0 }),
     ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       panel.close()
       if not pinned then
-        noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/status:pinned" })
+        pinSide.toggle("status")
       end
     end }),
   })

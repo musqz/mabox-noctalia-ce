@@ -103,17 +103,20 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 
 | Plugin | Entries | Open | Data / needs |
 |---|---|---|---|
-| `mabox/notes` | `main` dropdown, `pinned` window | `W-n`, `W-A-n` | notes in the plugin data folder |
-| `mabox/status` | `main` dropdown, `pinned` window | `W-A-s`, `W-S-s` | none; cleanup rows run in a terminal |
-| `mabox/configs` | `main` dropdown, `pinned` window | none (Mabox Config menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
-| `mabox/colors` | `picker` dropdown, `pinned` window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
+| `mabox/notes` | `main` dropdown, pinned window | `W-n`, `W-A-n` | notes in the plugin data folder |
+| `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `W-S-s` | none; cleanup rows run in a terminal |
+| `mabox/configs` | `main` dropdown, pinned window | none (Mabox Config menu) | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
+| `mabox/colors` | `picker` dropdown, pinned window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh
 noctalia msg plugins list
 noctalia msg panel-toggle mabox/notes:main
-noctalia msg panel-toggle mabox/notes:pinned
+mb-pinned notes
+mb-pinned --side right
 ```
+
+Pinned windows are the panels `pinned-left` and `pinned-right`. `mb-pinned <plugin>` opens the one on the saved side. The arrows button in a pinned window moves all pinned windows to the other side (`~/.config/mabox-noctalia-ce/pinned-side`).
 
 ## Services
 

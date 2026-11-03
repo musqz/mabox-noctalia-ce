@@ -2,6 +2,8 @@
 -- Configs: list of config files from paths.luau plus the user's config-paths.local.
 local DEFAULT = require("./paths.luau")
 
+local pinSide = require("./side.luau")
+
 return function(pinned)
 -- Prints group|name|path|state for every entry whose command (or path) exists.
 local PROBE = [[
@@ -105,7 +107,8 @@ refresh = function()
 end
 
 local function addCustom()
-  local path = string.gsub(newPath, "[|\n]", "")
+  local path = string.gsub(string.gsub(newPath, "[|\n]", ""), "^%s+", "")
+  path = string.gsub(path, "%s+$", "")
   local name = string.gsub(newName ~= "" and newName or (string.match(path, "([^/]+)/*$") or ""), "[|\n]", " ")
   if name == "" or path == "" then
     noctalia.notify("Configs", "Enter a name and a path")
@@ -132,12 +135,15 @@ local function pastePath()
   end)
 end
 
-local function removeCustom(name)
+local function removeCustom(name, path)
+  local home = noctalia.getenv("HOME")
   local prefix = "Custom|" .. name .. "|"
   local out = {}
   local done = false
   for l in string.gmatch(noctalia.readFile(localFile()) or "", "[^\n]+") do
-    if not done and string.sub(l, 1, #prefix) == prefix then
+    local raw = string.match(l, "^[^|]*|[^|]*|[^|]*|(.*)$") or ""
+    raw = string.gsub(raw, "^~", home)
+    if not done and string.sub(l, 1, #prefix) == prefix and raw == path then
       done = true
     else
       table.insert(out, l)
@@ -160,7 +166,7 @@ local function entryRow(e)
     ui.label({ text = e.name, flexGrow = 1, color = e.state == "ok" and "on_surface" or "on_surface_variant" }),
   }
   if e.group == "Custom" then
-    table.insert(items, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove from the list", onClick = function() removeCustom(e.name) end }))
+    table.insert(items, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove from the list", onClick = function() removeCustom(e.name, e.path) end }))
   end
   table.insert(items, ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = function() show(e.path) end }))
   table.insert(items, ui.button({
@@ -228,7 +234,7 @@ render = function()
         ui.label({ text = "Path (~ allowed)", fontSize = 11, color = "on_surface_variant" }),
         ui.input({ key = "newPath", value = newPath, onChange = function(t) newPath = t end }),
         ui.row({ gap = 4 }, {
-          ui.button({ text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = function() show(noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce") end }),
+          ui.button({ text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = function() show(noctalia.getenv("HOME") .. "/.config") end }),
           ui.button({ text = "Paste", glyph = "clipboard", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Use the copied file", onClick = pastePath }),
           ui.button({ text = "Add", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, onClick = addCustom }),
         }),
@@ -239,10 +245,11 @@ render = function()
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Configs", flexGrow = 1 }),
     ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
+    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("configs", pinned) end }) or ui.spacer({ width = 0 }),
     ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       panel.close()
       if not pinned then
-        noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/configs:pinned" })
+        pinSide.toggle("configs")
       end
     end }),
   })
