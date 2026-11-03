@@ -113,7 +113,7 @@ Converter: pick a preset, then files; output lands next to the source and never 
 - Interval settings: `~/.config/mabox/mb-interval-shots.conf` (`interval=`, `screenshot_dir=`).
 - `W-S-x` stops a running recording and interval screenshots.
 - `mb-screenshot --delay N <screenshot-* args>` waits N seconds first; `--format png|jpg|webp|avif` sets the file type.
-- `mb-screenshot screenshot-window` shows the skippy-wl picker, then captures the window you pick (without skippy-wl it takes the focused window).
+- `mb-screenshot screenshot-window` shows the skippy-wl picker and captures the window you click (without skippy-wl it takes the focused window). Escape in the picker still captures the focused window.
 - `screenrec-toggle -o auto` records a whole monitor instead of an area.
 - While recording, a red stop button appears next to the `screenrec` bar button; click it to stop.
 - Capture pinned window: `mb-pinned capture`; the side is set like for the other plugins.
