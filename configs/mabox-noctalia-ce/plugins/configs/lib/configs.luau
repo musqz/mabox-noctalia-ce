@@ -284,8 +284,8 @@ render = function()
     end }),
   })
   local reload = ui.row({ gap = 6 }, {
-    ui.button({ text = "Reload labwc", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "labwc --reconfigure: rc.xml, menu.xml, themerc", onClick = function() noctalia.runAsync({ "labwc", "--reconfigure" }) end }),
-    ui.button({ text = "Reload Noctalia", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Reload the Noctalia config: bar widgets, tooltips, actions", onClick = function() noctalia.runAsync({ "noctalia", "msg", "config-reload" }) end }),
+    ui.button({ text = "labwc", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to rc.xml, menu.xml and themerc without logging out", onClick = function() noctalia.runAsync({ "labwc", "--reconfigure" }) end }),
+    ui.button({ text = "Noctalia", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to the bar, widget tooltips and click actions", onClick = function() noctalia.runAsync({ "noctalia", "msg", "config-reload" }) end }),
   })
   local sideOpen = expanded["Pinned windows"]
   local sideRows = {
@@ -326,17 +326,17 @@ render = function()
     end
   end
   table.insert(cards, 1, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
-  local plugOpen = expanded["Reload plugins"]
+  local plugOpen = expanded["Plugins"]
   local plugRows = {
     ui.button({
-      text = "Reload plugins",
+      text = "Plugins",
       glyph = plugOpen and "chevron-down" or "chevron-right",
       variant = "ghost",
       controlSize = "sm",
       contentAlign = "start",
-      tooltip = "After editing plugin.toml or Lua files",
+      tooltip = "Click a plugin to restart it after editing its plugin.toml or Lua files",
       onClick = function()
-        expanded["Reload plugins"] = not plugOpen or nil
+        expanded["Plugins"] = not plugOpen or nil
         saveExpanded()
         render()
       end,
