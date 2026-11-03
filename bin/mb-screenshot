@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # mb-screenshot <noctalia screenshot-* args>: save to ~/Pictures/screenshots, then open the image.
+# mb-screenshot --delay <seconds>: select an area, wait, then take the shot (slurp + grim).
 if [[ ${1-} == --view ]]; then
     rt=${XDG_RUNTIME_DIR:-/tmp}
     find "$rt" -maxdepth 1 -name 'mb-shot.*.png' -mmin +60 -delete 2>/dev/null
@@ -10,4 +11,14 @@ if [[ ${1-} == --view ]]; then
 fi
 dir=$HOME/Pictures/screenshots
 mkdir -p "$dir"
+if [[ ${1-} == --delay ]]; then
+    delay=${2:-5}
+    [[ $delay =~ ^[0-9]+$ ]] || { echo "usage: mb-screenshot --delay <seconds>" >&2; exit 2; }
+    geom=$(slurp) || exit 0
+    notify-send -t 1500 "Screenshot" "in ${delay}s"
+    sleep "$delay"
+    f=$dir/screenshot-$(date +%Y-%m-%d_%H-%M-%S).png
+    grim -g "$geom" "$f" || { notify-send "Screenshot" "failed"; exit 1; }
+    if command -v viewnior >/dev/null; then exec viewnior "$f"; else exec xdg-open "$f"; fi
+fi
 exec noctalia msg "$@" --save-to-file --directory "$dir" --pipe-to-command --pipe-command "$(readlink -f "$0") --view"
