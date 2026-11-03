@@ -5,7 +5,7 @@ The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-musi
 | Key | Tool |
 |---|---|
 | `W-m` | `/music` in the Noctalia launcher |
-| `C-S-2` | `mb-music-add-url`: add a track to the playlist |
+| `C-S-2` | add a track to the playlist |
 | `C-S-1` | `mpv-play-stream`: play a copied URL in mpv |
 | `XF86AudioPlay` / `Stop` / `Next` / `Prev` | `noctalia msg media toggle / stop / next / previous` |
 
@@ -30,10 +30,10 @@ END,-
 ## Add a track
 
 1. Copy a YouTube or stream URL.
-2. Press `C-S-2`.
-3. Fill in Artist, Title and Category, then press Enter.
+2. Press `C-S-2`, or pick "Add a track..." in `/music`.
+3. Check Artist and Title (filled from `yt-dlp`), pick a category, press Enter or Add.
 
-The URL is pre-filled from the clipboard. On Wayland this needs `wl-clipboard`.
+The category stays selected until you pick another. Choose "+ New category" to create one.
 
 ## Play a URL
 

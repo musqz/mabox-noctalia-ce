@@ -75,7 +75,7 @@ First session start (`mabox-noctalia-ce`) copies the skel config to `~/.config/m
 | `~/.config/mabox-noctalia-ce.bak-*`, `.save-*` | config backups | `install.sh --reset-config`, `--save-config` |
 | `~/.cache/noctalia/noctalia.log` | Noctalia log | Noctalia |
 | `~/.config/colormenu/` | recent colors and palettes | Colors plugin |
-| `~/.config/mabox/mb-music/yt_music_list.csv` | music playlist | `mb-music-add-url`, Music plugin |
+| `~/.config/mabox/mb-music/yt_music_list.csv` | music playlist | Music plugin |
 | `~/.config/kanshi/config` | monitor layout | you |
 
 Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sync it, write another folder path into `…/mabox/notes/path`.
@@ -88,7 +88,6 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mb-colorpick` | click a pixel, print `#RRGGBB` | Colors plugin |
 | `mb-calendar-setup` | local calendar: radicale user service + vdir path | run by hand |
 | `mb-convert` | convert media with ffmpeg / magick | root menu |
-| `mb-music-add-url` | add a stream URL to the playlist CSV | `C-S-2` |
 | `mpv-play-stream` | play a copied URL in mpv | `C-S-1` |
 | `mb-wallpaper-dir` | set the Noctalia wallpaper folder | file manager action "Set wallpaper dir" |
 | `brightness-primary` | brightness up/down on the main monitor (`BRIGHTNESS_OUTPUT`) | brightness keys |
