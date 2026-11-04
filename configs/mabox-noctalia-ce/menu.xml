@@ -99,6 +99,9 @@
     <item label="Status pinned" icon="utilities-system-monitor">
       <action name="Execute" command="mb-pinned status" />
     </item>
+    <item label="System info" icon="computer">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
+    </item>
     <item label="Music" icon="multimedia-audio-player">
       <action name="Execute" command="noctalia msg panel-open launcher /music" />
     </item>

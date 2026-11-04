@@ -13,6 +13,14 @@ What the Noctalia CE session adds on top of Mabox, and how to use it.
 
 The repo copy under `configs/` is only the default. Edit the live files under `~/.config/`, or copy the repo version over by hand.
 
+## System info
+
+`W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* and *Report*.
+
+*Report* collects the other tabs in one text without user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names. Read it, then *Copy* or *Save* (to `~/Documents`).
+
+*Upload* appears when *Settings* holds an `http(s)` address of a pastebin that takes a raw POST body and answers with the link. It asks before it sends.
+
 ## Keys
 
 Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.

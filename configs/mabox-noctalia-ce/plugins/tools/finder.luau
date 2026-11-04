@@ -6,6 +6,7 @@ local TOOLS = {
   { id = "notes", title = "Notes", glyph = "notes", cmd = { "noctalia", "msg", "panel-toggle", "mabox/notes:main" }, pinned = "notes" },
   { id = "status", title = "Status", glyph = "activity", cmd = { "noctalia", "msg", "panel-toggle", "mabox/status:main" }, pinned = "status" },
   { id = "configs", title = "Config files", glyph = "file-settings", cmd = { "noctalia", "msg", "panel-toggle", "mabox/configs:main" }, pinned = "configs" },
+  { id = "system", title = "System info", glyph = "device-desktop-analytics", cmd = { "noctalia", "msg", "panel-toggle", "mabox/system:system" } },
   { id = "reset", title = "Reset configs", glyph = "restore", cmd = { "noctalia", "msg", "panel-toggle", "mabox/reset:main" } },
 }
 

@@ -88,6 +88,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mb-colorpick` | click a pixel, print `#RRGGBB` | Colors plugin |
 | `mb-calendar-setup` | local calendar: radicale user service + vdir path | run by hand |
 | `mb-convert` | convert media with ffmpeg / magick | root menu |
+| `mb-sysreport` | system info with user, host, addresses, ids and serials removed; `overview`, `hardware`, `logs`, `report [--save]` | System plugin |
 | `mpv-play-stream` | play a copied URL in mpv | `C-S-1` |
 | `mb-wallpaper-dir` | set the Noctalia wallpaper folder | file manager action "Set wallpaper dir" |
 | `brightness-primary` | brightness up/down on the main monitor (`BRIGHTNESS_OUTPUT`) | brightness keys |
@@ -114,6 +115,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/colors` | `picker` dropdown, pinned window | `W-A-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
 | `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` (`noctalia msg panel-toggle mabox/keys:keys`) | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/`; `wlrctl` for the Focused entry |
+| `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
 | `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
