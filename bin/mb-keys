@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tomllib
 import xml.etree.ElementTree as ET
 
 CFG = os.path.join(os.environ["HOME"], ".config", "mabox-noctalia-ce", "rc.xml")
@@ -30,6 +31,7 @@ APPKEY_DIRS = (
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "appkeys"),
 )
 GEANY_CONF = os.path.join(os.environ["HOME"], ".config", "geany", "keybindings.conf")
+YAZI_KEYMAP = os.path.join(os.environ["HOME"], ".config", "yazi", "keymap.toml")
 KITTY_CONF = os.path.join(os.environ["HOME"], ".config", "kitty", "kitty.conf")
 APP_MODS = {"primary": "Ctrl", "control": "Ctrl", "ctrl": "Ctrl", "shift": "Shift", "alt": "Alt",
             "super": "Super", "mod1": "Alt", "mod4": "Super", "cmd": "Super"}
@@ -190,6 +192,34 @@ def kitty_binds():
     return out
 
 
+def yazi_key(tok):
+    """'<C-a>' -> 'Ctrl+a'; plain tokens ('g', 'G') stay as they are."""
+    if len(tok) < 3 or not (tok.startswith("<") and tok.endswith(">")):
+        return tok
+    *mods, key = tok[1:-1].split("-")
+    names = {"C": "Ctrl", "A": "Alt", "S": "Shift"}
+    return "+".join([names[m] for m in "CAS" if m in mods] + [APP_KEYS.get(key.lower(), key)])
+
+
+def yazi_binds():
+    try:
+        with open(YAZI_KEYMAP, "rb") as f:
+            conf = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError):
+        return []
+    out = []
+    section = conf.get("mgr") or conf.get("manager") or {}
+    for kind in ("prepend_keymap", "keymap", "append_keymap"):
+        for entry in section.get(kind, []):
+            on = entry.get("on")
+            on = [on] if isinstance(on, str) else on
+            if on:
+                run = entry.get("run")
+                run = " ".join(run) if isinstance(run, list) else (run or "")
+                out.append(("Config", " ".join(yazi_key(t) for t in on), entry.get("desc") or run))
+    return out
+
+
 def app_binds(name):
     rows = []
     for d in APPKEY_DIRS:
@@ -198,7 +228,7 @@ def app_binds(name):
             with open(path, newline="", encoding="utf-8") as f:
                 rows = [tuple(r[:3]) for r in csv.reader(x for x in f if x.strip() and not x.startswith("#")) if len(r) >= 3]
             break
-    live = {"geany": geany_binds, "kitty": kitty_binds}.get(name, lambda: [])()
+    live = {"geany": geany_binds, "kitty": kitty_binds, "yazi": yazi_binds}.get(name, lambda: [])()
     taken = {r[1] for r in live}
     return live + [r for r in rows if r[1] not in taken]
 
