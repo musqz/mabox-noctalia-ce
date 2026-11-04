@@ -11,7 +11,7 @@ local info = { distro = "", release = "", kernel = "", pkgs = "", who = "" }
 local topCpu, topMem = {}, {}
 local discs = {}
 local bat = nil
-local extra = { vpn = nil, vpnUp = false, orphans = 0, upd = {}, unchecked = false }
+local extra = { upd = {}, unchecked = false }
 local ticks = 0
 local procBusySince = nil
 
@@ -41,8 +41,6 @@ end
 
 -- Counts come from the lists mb-updates-ce keeps (repo, AUR, flatpak, snap, npm, pipx).
 local SLOW_CMD = [[
-if command -v piactl >/dev/null; then echo "V $(piactl get region 2>/dev/null)"; echo "S $(piactl get connectionstate 2>/dev/null)"; fi
-echo "O $(pacman -Qtdq 2>/dev/null | wc -l)"
 d="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
 [ -d "$d" ] || echo "N"
 for s in repo aur flatpak snap npm pipx; do echo "U $s $(cat "$d/$s" 2>/dev/null | grep -c .)"; done
@@ -110,17 +108,11 @@ end
 
 local function loadSlow()
   noctalia.runAsync(SLOW_CMD, function(r)
-    local e = { vpn = nil, vpnUp = false, orphans = 0, upd = {}, unchecked = false }
+    local e = { upd = {}, unchecked = false }
     for _, line in ipairs(lines(r.stdout)) do
       local tag, rest = string.match(line, "^(%u) ?(.*)")
-      if tag == "V" and rest ~= "" then
-        e.vpn = rest
-      elseif tag == "S" then
-        e.vpnUp = rest == "Connected"
-      elseif tag == "N" then
+      if tag == "N" then
         e.unchecked = true
-      elseif tag == "O" then
-        e.orphans = tonumber(rest) or 0
       elseif tag == "U" then
         local name, n = string.match(rest, "^(%S+) (%d+)")
         if name then
@@ -234,10 +226,6 @@ local function render()
     row("pkgs", info.pkgs, "on_surface"),
     row(info.who, uptime(), "primary"),
   }
-  if extra.vpn then
-    table.insert(body, row("VPN", extra.vpnUp and extra.vpn or "off", extra.vpnUp and "primary" or "on_surface_variant"))
-  end
-  table.insert(body, row("orphans", tostring(extra.orphans), extra.orphans > 0 and "tertiary" or "on_surface"))
   local utext, ucolor = updatesText()
   table.insert(body, row("updates", utext, ucolor))
   table.insert(body, ui.box({ height = 4 }))
