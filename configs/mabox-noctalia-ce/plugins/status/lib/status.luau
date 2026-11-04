@@ -640,10 +640,17 @@ render = function()
     render()
   end
   local function pinOrClose()
-    panel.close()
-    if not pinned then
+    if pinned then
+      noctalia.runAsync({ "noctalia", "msg", "plugin", "mabox/status:pin", "all", "hide" })
+    else
+      panel.close()
       pinSide.toggle("status")
     end
+  end
+  local function toggleDock()
+    pinSide.setDocked("status", not pinSide.docked("status"))
+    noctalia.layer.configure("pinned-" .. pinned, { exclusiveZone = pinSide.docked("status") and pinSide.ZONE or 0 })
+    render()
   end
   stop("t-view", 1, 1, switchView)
   stop("t-refresh", 1, 2, doRefresh)
@@ -655,6 +662,7 @@ render = function()
     ui.label({ text = settingsView and "Status settings" or (running and "Status  (updating)" or "Status"), flexGrow = 1 }),
     ring("t-view", ui.button({ glyph = settingsView and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settingsView and "Back" or "Settings", onClick = switchView })),
     ring("t-refresh", ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = doRefresh })),
+    pinned and ui.button({ glyph = "layout-sidebar", variant = pinSide.docked("status") and "primary" or "ghost", controlSize = "sm", tooltip = pinSide.docked("status") and "Float" or "Dock (reserve the space)", onClick = toggleDock }) or ui.spacer({ width = 0 }),
     pinned and ring("t-swap", ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end })) or ui.spacer({ width = 0 }),
     ring("t-pin", ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose })),
   })
@@ -678,7 +686,7 @@ render = function()
   local inList = cursor and not TOP_IDS[cursor]
   local body = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = inList and "k-" .. cursor or nil }, rows)
   if pinned then
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, body }))
+    layer.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, body }))
   else
     panel.render(ui.column({ gap = 8, padding = 12, height = 560 }, { top, body }))
   end
