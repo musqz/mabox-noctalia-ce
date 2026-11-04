@@ -200,7 +200,7 @@ return function(wide)
         ui.label({ text = b.command, fontSize = 10, color = "on_surface_variant" }),
       }) }
     end
-    return ui.row({ key = id, gap = 8, align = "center", radius = 4, border = kbd.sel(id) and "primary" or "outline", borderWidth = kbd.sel(id) and 2 or 0 }, {
+    return ui.row({ key = id, gap = 8, align = "center", padding = 3, radius = 8, border = "primary", borderWidth = kbd.sel(id) and 3 or 0 }, {
       chips(b),
       line[1],
       b.run and ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = b.command, onClick = function() run(b) end }) or ui.spacer({ width = 0 }),
@@ -234,8 +234,8 @@ return function(wide)
       end
       local rows = { ui.label({ text = g, fontSize = 13 }) }
       local y = heights[at] + 1
-      for _, b in ipairs(groups[g]) do
-        table.insert(rows, bindRow(b, "b" .. g .. b.spec .. b.command, y, at))
+      for n, b in ipairs(groups[g]) do
+        table.insert(rows, bindRow(b, "b" .. g .. n .. b.spec, y, at))
         y = y + (twoLines(b) and 1.7 or 1)
       end
       table.insert(cols[at], ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows))
@@ -255,7 +255,7 @@ return function(wide)
       y += 1
       local sid = "s" .. id
       kbd.stop(sid, y, -1, action)
-      table.insert(items, ui.row({ key = sid, radius = 4, border = kbd.sel(sid) and "primary" or "outline", borderWidth = kbd.sel(sid) and 2 or 0 }, {
+      table.insert(items, ui.row({ key = sid, padding = 3, radius = 8, border = "primary", borderWidth = kbd.sel(sid) and 3 or 0 }, {
         ui.button({ text = label, variant = (not searching and active) and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = action }),
       }))
     end
