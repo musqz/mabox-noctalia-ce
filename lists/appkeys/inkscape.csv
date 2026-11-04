@@ -1,0 +1,53 @@
+# section,keys,description  (defaults)
+Tools,S,Selector
+Tools,N,Node tool
+Tools,R,Rectangle
+Tools,E,Ellipse
+Tools,I,Spiral
+Tools,P,Pencil
+Tools,B,Pen (Bezier)
+Tools,C,Calligraphy
+Tools,T,Text
+Tools,G,Gradient
+Tools,D,Dropper
+Tools,Z,Zoom
+Tools,O,Connector
+View,5,Fit page
+View,4,Fit drawing
+View,3,Fit selection
+View,1,Zoom 1:1
+View,F11,Fullscreen
+View,Ctrl+Tab,Next window
+View,Ctrl+Shift+W,Close all windows
+Edit,Ctrl+Z,Undo
+Edit,Ctrl+Shift+Z,Redo
+Edit,Ctrl+D,Duplicate
+Edit,Ctrl+C,Copy
+Edit,Ctrl+V,Paste
+Edit,Ctrl+Alt+V,Paste in place
+Edit,Ctrl+A,Select all
+Edit,Ctrl+Alt+A,Select all in all layers
+Edit,Delete,Delete
+Edit,Ctrl+G,Group
+Edit,Ctrl+Shift+G,Ungroup
+Object,Ctrl+Shift+C,Object to path
+Object,Ctrl+Alt+C,Stroke to path
+Object,H,Flip horizontal
+Object,V,Flip vertical
+Object,PgUp,Raise
+Object,PgDn,Lower
+Object,Home,Raise to top
+Object,End,Lower to bottom
+Panels,Ctrl+Shift+F,Fill and stroke
+Panels,Ctrl+Shift+X,XML editor
+Panels,Ctrl+Shift+L,Layers
+Panels,Ctrl+Shift+T,Text and font
+Panels,Ctrl+Shift+A,Align and distribute
+Panels,Ctrl+Shift+M,Transform
+Panels,Ctrl+Shift+P,Preferences
+File,Ctrl+N,New
+File,Ctrl+O,Open
+File,Ctrl+S,Save
+File,Ctrl+Shift+S,Save as
+File,Ctrl+Shift+E,Export
+File,Ctrl+Q,Quit

@@ -5,8 +5,8 @@ local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Cap
 local kbd = require("./kbd.luau")
 
 return function(wide)
-  local columns = wide and 3 or 2
-  local keyWidth = wide and 190 or 150
+  local columns = 3
+  local keyWidth = 190
   local binds = {}
   local mode = "basics"
   local profiles = {}
@@ -21,25 +21,6 @@ return function(wide)
   local function statePath()
     local dir = noctalia.pluginDataDir()
     return dir and dir .. "/mode" or nil
-  end
-
-  -- W-k targets the compact panel; it hands over to the full-width one (toggle, so W-k closes it again) when that was the last size.
-  local function sizePath()
-    local dir = noctalia.pluginDataDir()
-    return dir and dir .. "/size" or nil
-  end
-
-  local function lastWide()
-    local path = sizePath()
-    return path ~= nil and string.match(noctalia.readFile(path) or "", "^wide") ~= nil
-  end
-
-  local function saveSize(isWide)
-    local path = sizePath()
-    if path then
-      noctalia.mkdirAll(noctalia.pluginDataDir())
-      noctalia.writeFile(path, (isWide and "wide" or "compact") .. "\n")
-    end
   end
 
   local function loadMode()
@@ -267,38 +248,42 @@ return function(wide)
     return { ui.row({ gap = 8, align = "start" }, out) }
   end
 
-  local function swap()
-    saveSize(not wide)
-    panel.close()
-    noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/keys:" .. (wide and "keys" or "keys-wide") })
-  end
-
-  local function chipRow(searching)
-    local known = activeGroups() ~= nil
-    local function chip(label, name, x, plain)
-      local id = "p" .. label
-      kbd.stop(id, 0, x, function() setProfile(name) end)
-      return ui.row({ key = id, radius = 4, border = kbd.sel(id) and "primary" or "outline", borderWidth = kbd.sel(id) and 2 or 0 }, {
-        ui.button({ text = label, variant = (not searching and not plain and (profile == name or (name == "" and not known))) and "primary" or "ghost", controlSize = "sm", onClick = function() setProfile(name) end }),
-      })
+  local function sidebar(searching)
+    local current = activeProfile()
+    local items, y = {}, 0
+    local function entry(id, label, active, action)
+      y += 1
+      local sid = "s" .. id
+      kbd.stop(sid, y, -1, action)
+      table.insert(items, ui.row({ key = sid, radius = 4, border = kbd.sel(sid) and "primary" or "outline", borderWidth = kbd.sel(sid) and 2 or 0 }, {
+        ui.button({ text = label, variant = (not searching and active) and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = action }),
+      }))
     end
-    local items = { chip("All binds", "", 1) }
-    local x = 2
+    entry("all", "All binds", current == nil, function() setProfile("") end)
     if focused ~= "" then
-      table.insert(items, chip("Focused: " .. focused, focused, x, true))
-      x += 1
+      entry("focused", "Focused: " .. focused, false, function() setProfile(focused) end)
     end
     for _, p in ipairs(profiles) do
-      table.insert(items, chip(p.name, p.name, x))
-      x += 1
+      if not p.app then
+        entry("g" .. p.name, p.name, current == p, function() setProfile(p.name) end)
+      end
     end
-    return ui.row({ gap = 4, align = "center" }, items)
+    local label = false
+    for _, p in ipairs(profiles) do
+      if p.app then
+        if not label then
+          table.insert(items, ui.label({ text = "Applications", fontSize = 11, color = "on_surface_variant" }))
+          label = true
+        end
+        entry("a" .. p.name, p.name, current == p, function() setProfile(p.name) end)
+      end
+    end
+    return ui.column({ width = 170, height = 470, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = kbd.reveal() }, { ui.column({ gap = 2 }, items) }) })
   end
 
   render = function()
     kbd.begin()
     local searching = noctalia.string.trim(query) ~= ""
-    local chipsRow = #profiles > 0 and chipRow(searching) or nil
     local content = body() -- registers the stops that reveal() and the input focus check
     panel.render(ui.column({ gap = 8, padding = 12, height = 560 }, {
       ui.row({ gap = 6, align = "center" }, {
@@ -316,11 +301,12 @@ return function(wide)
         }),
         ui.button({ text = "Basics", variant = (not searching and mode == "basics") and "primary" or "ghost", controlSize = "sm", onClick = function() query = "" setMode("basics") end }),
         ui.button({ text = "All", variant = (not searching and mode == "all") and "primary" or "ghost", controlSize = "sm", onClick = function() query = "" setMode("all") end }),
-        ui.button({ glyph = wide and "arrows-minimize" or "arrows-maximize", variant = "ghost", controlSize = "sm", tooltip = wide and "Compact" or "Full width", onClick = swap }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
-      chipsRow or ui.spacer({ height = 0 }),
-      ui.scroll({ flexGrow = 1, key = "list", revealKey = kbd.reveal() }, content),
+      ui.row({ gap = 8, flexGrow = 1 }, {
+        #profiles > 0 and sidebar(searching) or ui.spacer({ width = 0 }),
+        ui.scroll({ flexGrow = 1, key = "list", revealKey = kbd.reveal() }, content),
+      }),
     }))
   end
 
@@ -335,7 +321,8 @@ return function(wide)
   end
 
   return function()
-    if not wide and lastWide() then
+    -- W-k and /keys still target the compact id; there is only the wide panel.
+    if not wide then
       panel.close()
       noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/keys:keys-wide" })
       return

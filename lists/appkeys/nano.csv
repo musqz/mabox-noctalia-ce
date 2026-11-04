@@ -1,0 +1,28 @@
+# section,keys,description  (defaults)
+File,Ctrl+O,Write out (save)
+File,Ctrl+X,Exit
+File,Ctrl+R,Read file
+File,Alt+<,Previous buffer
+File,Alt+>,Next buffer
+Edit,Ctrl+K,Cut line
+Edit,Ctrl+U,Paste
+Edit,Alt+6,Copy line
+Edit,Alt+U,Undo
+Edit,Alt+E,Redo
+Edit,Ctrl+Shift+6,Set mark
+Edit,Alt+},Indent
+Edit,Alt+{,Unindent
+Edit,Alt+3,Comment line
+Search,Ctrl+W,Search
+Search,Alt+W,Next match
+Search,Alt+R,Replace
+Move,Ctrl+A,Line start
+Move,Ctrl+E,Line end
+Move,Ctrl+Y,Page up
+Move,Ctrl+V,Page down
+Move,Alt+\,File start
+Move,Alt+/,File end
+Move,Ctrl+_,Go to line
+Other,Ctrl+G,Help
+Other,Ctrl+C,Cursor position
+Other,Ctrl+T,Spell check or execute

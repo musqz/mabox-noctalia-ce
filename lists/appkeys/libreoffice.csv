@@ -1,0 +1,42 @@
+# section,keys,description  (defaults)
+File,Ctrl+N,New document
+File,Ctrl+O,Open
+File,Ctrl+S,Save
+File,Ctrl+Shift+S,Save as
+File,Ctrl+P,Print
+File,Ctrl+Q,Quit
+File,Ctrl+W,Close document
+File,Ctrl+Shift+E,Export as PDF
+Edit,Ctrl+Z,Undo
+Edit,Ctrl+Y,Redo
+Edit,Ctrl+F,Find
+Edit,Ctrl+H,Find and replace
+Edit,Ctrl+A,Select all
+Edit,Ctrl+Shift+V,Paste special
+Format,Ctrl+B,Bold
+Format,Ctrl+I,Italic
+Format,Ctrl+U,Underline
+Format,Ctrl+E,Center
+Format,Ctrl+L,Align left
+Format,Ctrl+R,Align right
+Format,Ctrl+J,Justify
+Format,Ctrl+M,Clear direct formatting
+Format,F11,Styles sidebar
+Format,Ctrl+1,Heading 1
+Format,Ctrl+2,Heading 2
+Format,Ctrl+0,Body text
+Writer,Ctrl+Enter,Page break
+Writer,Ctrl+K,Insert hyperlink
+Writer,F5,Navigator
+Writer,F7,Spelling
+Writer,Ctrl+F2,Insert field
+Calc,F2,Edit cell
+Calc,Ctrl+;,Insert date
+Calc,Ctrl+Shift+;,Insert time
+Calc,Ctrl+Home,Go to A1
+Calc,Ctrl+Shift+F4,Define print range
+Calc,F4,Toggle absolute reference
+Calc,Alt+Enter,Line break in cell
+Impress,F5,Start slideshow
+Impress,Shift+F5,Slideshow from current slide
+Impress,Esc,End slideshow

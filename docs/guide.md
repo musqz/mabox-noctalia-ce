@@ -17,11 +17,11 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 
 Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
-`W-k` opens the hotkey list: search, Basics or All, arrow button for full width, play button runs a bind's command. `/keys` in the launcher searches the binds and runs the one you pick.
+`W-k` opens the hotkey list: search, Basics or All, play button runs a bind's command. `/keys` in the launcher searches the binds and runs the one you pick.
 
-Chips under the search filter the list: *Panels*, *Mabox tools*, *Windows*, *Apps*, and the hotkeys of Firefox, Geany, Obsidian and Kitty. *Focused: Name* shows when the window you opened the panel from has a list.
+The list on the left filters the binds: *Panels*, *Mabox tools*, *Windows*, *Apps*, then the hotkeys of each installed application (Firefox, Geany, GIMP, Inkscape, ...). *Focused: Name* shows when the window you opened the panel from has a list.
 
-Edit `lists/keys-profiles.csv` (`name,kind,source`) to add or reorder chips. App lists are `lists/appkeys/NAME.csv` (`section,keys,description`); Geany and Kitty also read their own config.
+Edit `lists/keys-profiles.csv` (`name,kind,source[,app ids]`) to add or reorder entries. An app entry shows only when its command is installed. App lists are `lists/appkeys/NAME.csv` (`section,keys,description`); Geany and Kitty also read their own config.
 
 `W-A-h` opens `/hist` and `W-A-e` opens `/es` in the launcher. Enter types the shell history line or the Espanso replacement text into the previous window (no Enter key). Snippets with variables (`{{...}}`) are listed only.
 

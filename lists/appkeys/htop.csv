@@ -1,0 +1,22 @@
+# section,keys,description  (defaults)
+Processes,F1,Help
+Processes,F2,Setup
+Processes,F3,Search
+Processes,F4,Filter
+Processes,F5,Tree view
+Processes,F6,Sort by
+Processes,F7,Nice down
+Processes,F8,Nice up
+Processes,F9,Kill
+Processes,F10,Quit
+Processes,u,Filter by user
+Processes,t,Tree view
+Processes,H,Toggle user threads
+Processes,K,Toggle kernel threads
+Processes,P,Sort by cpu
+Processes,M,Sort by memory
+Processes,T,Sort by time
+Processes,I,Invert sort
+Processes,Space,Tag process
+Processes,c,Tag with children
+Processes,U,Untag all

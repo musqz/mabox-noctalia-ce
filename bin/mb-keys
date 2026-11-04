@@ -11,6 +11,7 @@ a lone keybind, else the command.
 """
 import csv
 import os
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -127,12 +128,18 @@ def read_csv():
     return {}
 
 
+def installed(row):
+    """An app profile shows only when its source or one of its app ids is a command on PATH."""
+    names = [row[2]] + (row[3].split("+") if len(row) > 3 else [])
+    return any(shutil.which(n) for n in names)
+
+
 def profiles():
     for path in PROFILE_PATHS:
         if os.path.isfile(path):
             with open(path, newline="", encoding="utf-8") as f:
                 rows = csv.reader(row for row in f if row.strip() and not row.startswith("#"))
-                return [r for r in rows if len(r) >= 3]
+                return [r for r in rows if len(r) >= 3 and (r[1] != "app" or installed(r))]
     return []
 
 
@@ -277,8 +284,8 @@ def main(argv):
     if len(argv) >= 2 and argv[0] == "app":
         for section, keys, desc in app_binds(argv[1]):
             parts = keys.split("+")
-            if keys.endswith("++"):
-                parts = keys[:-2].split("+") + ["+"]
+            if keys.endswith("+"):
+                parts = keys[:-1].split("+")[:-1] + ["+"] if keys != "+" else ["+"]
             print("\t".join([keys, "+".join(parts[:-1]), parts[-1], section, "1", desc, "", "0"]))
         return 0
     if not argv or argv[0] != "list":

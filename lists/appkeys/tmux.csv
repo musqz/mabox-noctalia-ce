@@ -1,0 +1,27 @@
+# section,keys,description  (default prefix Ctrl+b)
+Windows,Ctrl+b c,New window
+Windows,Ctrl+b n,Next window
+Windows,Ctrl+b p,Previous window
+Windows,Ctrl+b l,Last window
+Windows,Ctrl+b w,Choose window
+Windows,"Ctrl+b ,",Rename window
+Windows,Ctrl+b &,Kill window
+Panes,Ctrl+b %,Split left/right
+Panes,Ctrl+b ",Split top/bottom
+Panes,Ctrl+b o,Next pane
+Panes,Ctrl+b ;,Last pane
+Panes,Ctrl+b arrow,Select pane
+Panes,Ctrl+b z,Zoom pane
+Panes,Ctrl+b x,Kill pane
+Panes,Ctrl+b {,Swap pane up
+Panes,Ctrl+b },Swap pane down
+Panes,Ctrl+b Space,Next layout
+Sessions,Ctrl+b d,Detach
+Sessions,Ctrl+b s,Choose session
+Sessions,Ctrl+b $,Rename session
+Sessions,Ctrl+b (,Previous session
+Sessions,Ctrl+b ),Next session
+Other,Ctrl+b [,Copy mode
+Other,Ctrl+b ],Paste
+Other,Ctrl+b :,Command prompt
+Other,Ctrl+b ?,List keys
