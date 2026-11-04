@@ -63,6 +63,17 @@ Windows:
 | `W-1`, `W-2` | previous, next workspace |
 | `W-S-1`, `W-S-2` | send window to previous, next workspace |
 | `W-grave` | tabdock find |
+| `W-A-r` | capture |
+
+Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; also the pinned windows). Click the panel once first.
+
+| Key | Action |
+|---|---|
+| `A-Up`, `A-Down`, `A-Left`, `A-Right` | move the cursor |
+| `A-S-Up`, `A-S-Down` | move 5 rows (not in Notes) |
+| `A-Enter` | activate |
+| `A-s` | clear the cursor, back to the search field |
+| `A-q` | close the panel |
 
 ## Bar
 
