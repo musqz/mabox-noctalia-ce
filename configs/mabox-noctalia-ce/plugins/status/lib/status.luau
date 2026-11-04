@@ -3,6 +3,7 @@
 -- Settings follow mb-status-ce and live in <plugin data dir>/settings.
 
 local pinSide = require("./side.luau")
+local kbd = require("./kbd.luau")
 
 return function(pinned)
 local REFRESH = 30
@@ -57,6 +58,33 @@ local view = "main"
 local dirty = false
 local expanded = nil
 local render
+
+-- Keyboard cursor. Row 1 is the top bar; the pinned windows take no keys, so they register no stops.
+local kr = 1
+local TOP_IDS = { ["t-view"] = true, ["t-refresh"] = true, ["t-pin"] = true }
+local function nextRow()
+  kr += 1
+  return kr
+end
+local function stop(id, row, col, action)
+  if not pinned then
+    kbd.stop(id, row, col, action)
+  end
+end
+-- Cursor marker: a thick frame; border props are always sent (retained widgets).
+local function ring(id, child, props)
+  if pinned then
+    return child
+  end
+  props = props or {}
+  props.key = "k-" .. id
+  props.align = "stretch"
+  props.padding = 3
+  props.radius = 8
+  props.border = "on_surface"
+  props.borderWidth = kbd.sel(id) and 3 or 0
+  return ui.column(props, { child })
+end
 
 local function trim(s)
   return (string.gsub(string.gsub(s, "^%s+", ""), "%s+$", ""))
@@ -253,8 +281,10 @@ end
 local function row(label, value, onClick, warn)
   local vlabel = ui.label({ text = value, color = warn and warnColor() or "on_surface_variant" })
   if onClick then
+    local id = "r-" .. label
+    stop(id, nextRow(), 1, onClick)
     return ui.row({ gap = 6, align = "center" }, {
-      ui.button({ text = label, variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = onClick }),
+      ring(id, ui.button({ text = label, variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = onClick }), { flexGrow = 1 }),
       vlabel,
     })
   end
@@ -344,7 +374,9 @@ local function cleanRows(rows)
     if expanded == id then
       local buttons = {}
       for _, o in ipairs(opts) do
-        table.insert(buttons, ui.button({ text = (o.bad and "! " or "") .. o.label, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function() go(o) end }))
+        local oid = "o-" .. id .. o.label
+        stop(oid, nextRow(), 1, function() go(o) end)
+        table.insert(buttons, ring(oid, ui.button({ text = (o.bad and "! " or "") .. o.label, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function() go(o) end })))
       end
       table.insert(list, ui.column({ fill = "surface", radius = 6, padding = 4, gap = 0 }, buttons))
     end
@@ -491,11 +523,15 @@ end
 
 local function choice(label, key, values)
   local buttons = {}
-  for _, v in ipairs(values) do
-    table.insert(buttons, ui.button({ text = v, variant = S[key] == v and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = function()
+  local row = nextRow()
+  for i, v in ipairs(values) do
+    local function pick()
       setSetting(key, v)
       render()
-    end }))
+    end
+    local id = "c-" .. key .. v
+    stop(id, row, i, pick)
+    table.insert(buttons, ring(id, ui.button({ text = v, variant = S[key] == v and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = pick }), { flexGrow = 1 }))
   end
   return ui.column({ gap = 2 }, {
     ui.label({ text = label, fontSize = 11, color = "on_surface_variant" }),
@@ -505,10 +541,13 @@ end
 
 local function toggle(label, key)
   local on = S[key] == "y"
-  return ui.button({ text = label, glyph = on and "square-check" or "square", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function()
+  local function flip()
     setSetting(key, on and "n" or "y")
     render()
-  end })
+  end
+  local id = "g-" .. key
+  stop(id, nextRow(), 1, flip)
+  return ring(id, ui.button({ text = label, glyph = on and "square-check" or "square", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = flip }))
 end
 
 local function settingsCards()
@@ -524,38 +563,53 @@ local function settingsCards()
         render()
       end
     end
+    local stepRow = nextRow()
+    local function stepButton(text, delta, stepFn, col)
+      local id = "n-" .. text
+      stop(id, stepRow, col, stepFn(delta))
+      return ring(id, ui.button({ text = text, variant = "ghost", controlSize = "sm", flexGrow = 1, onClick = stepFn(delta) }), { flexGrow = 1 })
+    end
     card({
       heading("Biggest packages"),
       ui.label({ text = "How many to list (0 hides the list, max 100)", fontSize = 11, color = "on_surface_variant" }),
       ui.row({ gap = 4, align = "center" }, {
-        ui.button({ text = "-10", variant = "ghost", controlSize = "sm", flexGrow = 1, onClick = step(-10) }),
-        ui.button({ text = "-1", variant = "ghost", controlSize = "sm", flexGrow = 1, onClick = step(-1) }),
+        stepButton("-10", -10, step, 1),
+        stepButton("-1", -1, step, 2),
         ui.label({ text = tostring(count), flexGrow = 1, textAlign = "center" }),
-        ui.button({ text = "+1", variant = "ghost", controlSize = "sm", flexGrow = 1, onClick = step(1) }),
-        ui.button({ text = "+10", variant = "ghost", controlSize = "sm", flexGrow = 1, onClick = step(10) }),
+        stepButton("+1", 1, step, 3),
+        stepButton("+10", 10, step, 4),
       }),
     })
   end
   card({ heading("Disc alert level"), choice("Warn at percent used", "disk_limit", { "0", "75", "80", "85", "90", "95" }) })
   local function colorButton(c)
-    return ui.button({ text = c.name, variant = S.warn == c.hex and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = function()
+    local function pick()
       setSetting("warn", c.hex)
       render()
-    end })
+    end
+    local id = "w-" .. c.name
+    stop(id, c.row, c.col, pick)
+    return ring(id, ui.button({ text = c.name, variant = S.warn == c.hex and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = pick }), { flexGrow = 1 })
   end
+  local warnRow1, warnRow2 = nextRow(), nextRow()
+  for i, c in ipairs(WARN_COLORS) do
+    c.row, c.col = i <= 3 and warnRow1 or warnRow2, i <= 3 and i or i - 3
+  end
+  local function pickSpectrum()
+    noctalia.openColorPicker(S.warn, function(color)
+      if color ~= nil then
+        setSetting("warn", string.lower(color))
+        render()
+      end
+    end)
+  end
+  stop("w-pick", nextRow(), 1, pickSpectrum)
   local warnItems = {
     heading("Warning color"),
     ui.label({ text = "Current " .. S.warn, color = S.warn }),
     ui.row({ gap = 4 }, { colorButton(WARN_COLORS[1]), colorButton(WARN_COLORS[2]), colorButton(WARN_COLORS[3]) }),
     ui.row({ gap = 4 }, { colorButton(WARN_COLORS[4]), colorButton(WARN_COLORS[5]) }),
-    ui.button({ text = "Pick from spectrum", glyph = "palette", variant = "ghost", controlSize = "sm", onClick = function()
-      noctalia.openColorPicker(S.warn, function(color)
-        if color ~= nil then
-          setSetting("warn", string.lower(color))
-          render()
-        end
-      end)
-    end }),
+    ring("w-pick", ui.button({ text = "Pick from spectrum", glyph = "palette", variant = "ghost", controlSize = "sm", onClick = pickSpectrum })),
   }
   card(warnItems)
   card({
@@ -574,6 +628,40 @@ local function settingsCards()
 end
 
 render = function()
+  if not pinned then
+    kbd.begin()
+  end
+  kr = 1
+  local settingsView = view == "settings"
+  local function switchView()
+    kbd.clear()
+    view = settingsView and "main" or "settings"
+    if view == "main" and dirty then
+      dirty = false
+      refresh(false)
+    end
+    render()
+  end
+  local function doRefresh()
+    refresh(false)
+    render()
+  end
+  local function pinOrClose()
+    panel.close()
+    if not pinned then
+      pinSide.toggle("status")
+    end
+  end
+  stop("t-view", 1, 1, switchView)
+  stop("t-refresh", 1, 2, doRefresh)
+  stop("t-pin", 1, 3, pinOrClose)
+  local top = ui.row({ gap = 6, align = "center" }, {
+    ui.label({ text = settingsView and "Status settings" or (running and "Status  (updating)" or "Status"), flexGrow = 1 }),
+    ring("t-view", ui.button({ glyph = settingsView and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settingsView and "Back" or "Settings", onClick = switchView })),
+    ring("t-refresh", ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = doRefresh })),
+    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end }) or ui.spacer({ width = 0 }),
+    ring("t-pin", ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose })),
+  })
   local rows = {}
   if view == "settings" then
     rows = settingsCards()
@@ -589,30 +677,10 @@ render = function()
       table.insert(rows, ui.label({ text = "Reading system state", color = "on_surface_variant" }))
     end
   end
-  local settingsView = view == "settings"
-  local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = settingsView and "Status settings" or (running and "Status  (updating)" or "Status"), flexGrow = 1 }),
-    ui.button({ glyph = settingsView and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settingsView and "Back" or "Settings", onClick = function()
-      view = settingsView and "main" or "settings"
-      if view == "main" and dirty then
-        dirty = false
-        refresh(false)
-      end
-      render()
-    end }),
-    ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = function()
-      refresh(false)
-      render()
-    end }),
-    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end }) or ui.spacer({ width = 0 }),
-    ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
-      panel.close()
-      if not pinned then
-        pinSide.toggle("status")
-      end
-    end }),
-  })
-  local body = ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, rows)
+  -- The top bar sits outside the scroll.
+  local cursor = kbd.reveal()
+  local inList = cursor and not TOP_IDS[cursor]
+  local body = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = inList and "k-" .. cursor or nil }, rows)
   if pinned then
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, body }))
   else
@@ -620,7 +688,18 @@ render = function()
   end
 end
 
+-- alt+s drops the cursor so the ignore field can be clicked and typed in.
+local function handleKey(chord)
+  if chord == "alt+s" then
+    kbd.clear()
+    render()
+  elseif kbd.key(chord) == "moved" then
+    render()
+  end
+end
+
 local function open()
+  kbd.clear()
   loadSettings()
   ticks = 0
   view = "main"
@@ -637,5 +716,5 @@ local function tick()
   end
 end
 
-return open, tick
+return open, tick, handleKey
 end
