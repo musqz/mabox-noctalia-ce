@@ -36,6 +36,7 @@ local editNonce = 0
 local editHead = 1
 local topCursor = 1
 local sideCursor = 1
+local selCursor = 1
 local current = nil
 local expanded = {}
 local selecting = false
@@ -602,14 +603,25 @@ local function deleteSelected()
   selected = {}
   confirming = false
   selecting = false
+  if zone == "sel" then
+    zone = "list"
+  end
+  cursorId = nil
   loadNotes()
   render()
 end
 
-local function selectBar()
-  local count = countSelected()
-  return ui.row({ gap = 6, align = "center" }, {
-    ui.button({ text = "All", variant = "ghost", controlSize = "sm", onClick = function()
+-- One function per select-bar button, in button order; the mouse and alt+enter share them.
+local function selectActions()
+  local function reorder(where)
+    return function()
+      if countSelected() > 0 and not isFiltered() then
+        moveNotes(selected, where)
+      end
+    end
+  end
+  return {
+    function()
       for _, n in ipairs(notes) do
         if visible(n) then
           selected[n.id] = true
@@ -617,31 +629,51 @@ local function selectBar()
       end
       confirming = false
       render()
-    end }),
-    ui.button({ text = "None", variant = "ghost", controlSize = "sm", onClick = function()
+    end,
+    function()
       selected = {}
       confirming = false
       render()
-    end }),
+    end,
+    reorder("top"),
+    reorder("up"),
+    reorder("down"),
+    reorder("bottom"),
+    function()
+      if countSelected() == 0 then
+        return
+      end
+      if confirming then
+        deleteSelected()
+      else
+        confirming = true
+        render()
+      end
+    end,
+  }
+end
+
+local function selectBar()
+  local count = countSelected()
+  local act = selectActions()
+  local function on(i) return zone == "sel" and selCursor == i end
+  local movable = count > 0 and not isFiltered()
+  return ui.row({ gap = 6, align = "center" }, {
+    ui.button({ text = "All", variant = "ghost", controlSize = "sm", selected = on(1), onClick = act[1] }),
+    ui.button({ text = "None", variant = "ghost", controlSize = "sm", selected = on(2), onClick = act[2] }),
     ui.spacer({ flexGrow = 1 }),
-    ui.button({ glyph = "arrow-bar-up", variant = "ghost", controlSize = "sm", tooltip = "Move to top", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "top") end }),
-    ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "up") end }),
-    ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "down") end }),
-    ui.button({ glyph = "arrow-bar-down", variant = "ghost", controlSize = "sm", tooltip = "Move to bottom", enabled = count > 0 and not isFiltered(), onClick = function() moveNotes(selected, "bottom") end }),
+    ui.button({ glyph = "arrow-bar-up", variant = "ghost", controlSize = "sm", tooltip = "Move to top", enabled = movable, selected = on(3), onClick = act[3] }),
+    ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move up", enabled = movable, selected = on(4), onClick = act[4] }),
+    ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move down", enabled = movable, selected = on(5), onClick = act[5] }),
+    ui.button({ glyph = "arrow-bar-down", variant = "ghost", controlSize = "sm", tooltip = "Move to bottom", enabled = movable, selected = on(6), onClick = act[6] }),
     ui.button({
       glyph = "trash",
       text = confirming and `Confirm delete ({count})` or `Delete ({count})`,
       variant = "destructive",
       controlSize = "sm",
       enabled = count > 0,
-      onClick = function()
-        if confirming then
-          deleteSelected()
-        else
-          confirming = true
-          render()
-        end
-      end,
+      selected = on(7),
+      onClick = act[7],
     }),
   })
 end
@@ -676,6 +708,10 @@ end
 
 local function toggleSelect()
   selecting = not selecting
+  selCursor = 1
+  if not selecting and zone == "sel" then
+    zone = "list"
+  end
   resetControl()
   selected = {}
   confirming = false
@@ -701,8 +737,8 @@ render = function()
         ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 2, tooltip = "Open the notes window", onClick = function() openMain() end }),
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
-        ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
-        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Close", onClick = function() panel.close() end }),
+        ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
+        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 5, tooltip = "Close", onClick = function() panel.close() end }),
       }),
     }
     local bar = colorBar()
@@ -870,7 +906,9 @@ local function onKey(chord)
       idx = idx == 0 and (step == 1 and 1 or #list) or math.max(1, math.min(#list, idx + step))
       cursorId = list[idx] and list[idx].id or nil
     elseif step == -1 then
-      if zone == "list" and dots > 0 then
+      if zone == "list" and selecting and not pinned then
+        zone = "sel"
+      elseif (zone == "list" or zone == "sel") and dots > 0 then
         zone = "dots"
         dotCursor = math.max(1, math.min(dots, dotCursor))
       elseif pinned then
@@ -881,13 +919,17 @@ local function onKey(chord)
       if zone == "list" then
         cursorId = cursorId or (list[1] and list[1].id)
       end
-    elseif zone == "dots" then
+    elseif zone == "dots" and selecting and not pinned then
+      zone = "sel"
+    elseif zone == "dots" or zone == "sel" then
       zone = "list"
       cursorId = cursorId or (list[1] and list[1].id)
     end
   elseif chord == "alt+left" or chord == "alt+right" then
-    if zone == "top" then
-      topCursor = (topCursor - 1 + step) % 4 + 1
+    if zone == "sel" then
+      selCursor = math.max(1, math.min(7, selCursor + step))
+    elseif zone == "top" then
+      topCursor = (topCursor - 1 + step) % 5 + 1
     elseif zone == "side" then
       if step == -1 then
         return
@@ -928,12 +970,15 @@ local function onKey(chord)
     focusSearch = true
   elseif chord == "alt+enter" then
     if zone == "top" then
-      local actions = { function() openMain("new") end, function() openMain() end, reload, function() panel.close() end }
+      local actions = { function() openMain("new") end, function() openMain() end, reload, function() pinSide.swap("notes", pinned) end, function() panel.close() end }
       actions[topCursor]()
       return
     elseif zone == "side" then
       local actions = { createNote, toggleSelect, reload, pinWindow }
       actions[sideCursor]()
+      return
+    elseif zone == "sel" then
+      selectActions()[selCursor]()
       return
     elseif zone == "dots" then
       local c = dotColors()[dotCursor]
