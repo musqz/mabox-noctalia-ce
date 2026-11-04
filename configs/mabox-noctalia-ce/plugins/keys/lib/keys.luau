@@ -9,6 +9,8 @@ return function(wide)
   local keyWidth = wide and 190 or 150
   local binds = {}
   local mode = "basics"
+  local profiles = {}
+  local profile = ""
   local query = ""
   local failed = false
   local searchNonce = 0
@@ -53,6 +55,50 @@ return function(wide)
     render()
   end
 
+  local function profilePath()
+    local dir = noctalia.pluginDataDir()
+    return dir and dir .. "/profile" or nil
+  end
+
+  local function loadProfile()
+    local path = profilePath()
+    profile = path and noctalia.string.trim(noctalia.readFile(path) or "") or ""
+  end
+
+  local function setProfile(name)
+    profile = name
+    query = ""
+    local path = profilePath()
+    if path then
+      noctalia.mkdirAll(noctalia.pluginDataDir())
+      noctalia.writeFile(path, name .. "\n")
+    end
+    render()
+  end
+
+  local function parseProfiles(text)
+    profiles = {}
+    for line in string.gmatch(text, "[^\n]+") do
+      local name, kind, source = string.match(line, "^(.-)\t(.-)\t(.*)$")
+      if name and kind == "groups" then
+        local set = {}
+        for g in string.gmatch(source, "[^+]+") do
+          set[g] = true
+        end
+        table.insert(profiles, { name = name, groups = set })
+      end
+    end
+  end
+
+  local function activeGroups()
+    for _, p in ipairs(profiles) do
+      if p.name == profile then
+        return p.groups
+      end
+    end
+    return nil
+  end
+
   local function parse(text)
     binds = {}
     for line in string.gmatch(text, "[^\n]+") do
@@ -78,12 +124,13 @@ return function(wide)
   local function visible()
     local q = string.lower(noctalia.string.trim(query))
     local groups, order = {}, {}
+    local only = activeGroups()
     for _, b in ipairs(binds) do
       local show
       if q ~= "" then
         show = matches(b, q)
       else
-        show = mode == "all" or b.basic
+        show = (mode == "all" or b.basic) and (only == nil or only[b.group] == true)
       end
       if show then
         if not groups[b.group] then
@@ -186,9 +233,26 @@ return function(wide)
     noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/keys:" .. (wide and "keys" or "keys-wide") })
   end
 
+  local function chipRow(searching)
+    local function chip(label, name, x)
+      local id = "p" .. label
+      kbd.stop(id, 0, x, function() setProfile(name) end)
+      return ui.row({ key = id, radius = 4, border = kbd.sel(id) and "primary" or "outline", borderWidth = kbd.sel(id) and 2 or 0 }, {
+        ui.button({ text = label, variant = (not searching and (profile == name or (name == "" and not known))) and "primary" or "ghost", controlSize = "sm", onClick = function() setProfile(name) end }),
+      })
+    end
+    local known = activeGroups() ~= nil
+    local items = { chip("All binds", "", 1) }
+    for i, p in ipairs(profiles) do
+      table.insert(items, chip(p.name, p.name, i + 1))
+    end
+    return ui.row({ gap = 4, align = "center" }, items)
+  end
+
   render = function()
     kbd.begin()
     local searching = noctalia.string.trim(query) ~= ""
+    local chipsRow = #profiles > 0 and chipRow(searching) or nil
     local content = body() -- registers the stops that reveal() and the input focus check
     panel.render(ui.column({ gap = 8, padding = 12, height = 560 }, {
       ui.row({ gap = 6, align = "center" }, {
@@ -209,6 +273,7 @@ return function(wide)
         ui.button({ glyph = wide and "arrows-minimize" or "arrows-maximize", variant = "ghost", controlSize = "sm", tooltip = wide and "Compact" or "Full width", onClick = swap }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
+      chipsRow or ui.spacer({ height = 0 }),
       ui.scroll({ flexGrow = 1, key = "list", revealKey = kbd.reveal() }, content),
     }))
   end
@@ -230,11 +295,18 @@ return function(wide)
       return
     end
     loadMode()
+    loadProfile()
     kbd.clear()
     query = ""
     failed = false
     binds = {}
     render()
+    noctalia.runAsync({ "mb-keys", "profiles", "--tsv" }, function(result)
+      if result.exitCode == 0 then
+        parseProfiles(result.stdout or "")
+        render()
+      end
+    end)
     noctalia.runAsync({ "mb-keys", "list", "--tsv" }, function(result)
       if result.exitCode ~= 0 then
         failed = true
