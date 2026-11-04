@@ -4,12 +4,14 @@
   mb-keys list [--tsv] [--rc FILE]
   mb-keys profiles --tsv
   mb-keys app NAME --tsv
+  mb-keys focused
 
 Descriptions: keys.csv (key,group,basic,description), else the comment above
 a lone keybind, else the command.
 """
 import csv
 import os
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
@@ -130,7 +132,7 @@ def profiles():
         if os.path.isfile(path):
             with open(path, newline="", encoding="utf-8") as f:
                 rows = csv.reader(row for row in f if row.strip() and not row.startswith("#"))
-                return [r[:3] for r in rows if len(r) >= 3]
+                return [r for r in rows if len(r) >= 3]
     return []
 
 
@@ -258,7 +260,19 @@ def collect(rc):
 def main(argv):
     if argv and argv[0] == "profiles":
         for r in profiles():
-            print("\t".join(r))
+            print("\t".join(r[:3]))
+        return 0
+    if argv and argv[0] == "focused":
+        for r in profiles():
+            for app_id in (r[3].split("+") if len(r) > 3 else []):
+                try:
+                    found = subprocess.run(["wlrctl", "toplevel", "find", "app_id:" + app_id, "state:focused"],
+                                           capture_output=True).returncode == 0
+                except OSError:
+                    return 0
+                if found:
+                    print(r[0])
+                    return 0
         return 0
     if len(argv) >= 2 and argv[0] == "app":
         for section, keys, desc in app_binds(argv[1]):

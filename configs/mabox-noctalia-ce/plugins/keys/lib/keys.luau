@@ -12,6 +12,7 @@ return function(wide)
   local profiles = {}
   local profile = ""
   local appBinds = {}
+  local focused = ""
   local query = ""
   local failed = false
   local searchNonce = 0
@@ -274,16 +275,22 @@ return function(wide)
 
   local function chipRow(searching)
     local known = activeGroups() ~= nil
-    local function chip(label, name, x)
+    local function chip(label, name, x, plain)
       local id = "p" .. label
       kbd.stop(id, 0, x, function() setProfile(name) end)
       return ui.row({ key = id, radius = 4, border = kbd.sel(id) and "primary" or "outline", borderWidth = kbd.sel(id) and 2 or 0 }, {
-        ui.button({ text = label, variant = (not searching and (profile == name or (name == "" and not known))) and "primary" or "ghost", controlSize = "sm", onClick = function() setProfile(name) end }),
+        ui.button({ text = label, variant = (not searching and not plain and (profile == name or (name == "" and not known))) and "primary" or "ghost", controlSize = "sm", onClick = function() setProfile(name) end }),
       })
     end
     local items = { chip("All binds", "", 1) }
-    for i, p in ipairs(profiles) do
-      table.insert(items, chip(p.name, p.name, i + 1))
+    local x = 2
+    if focused ~= "" then
+      table.insert(items, chip("Focused: " .. focused, focused, x, true))
+      x += 1
+    end
+    for _, p in ipairs(profiles) do
+      table.insert(items, chip(p.name, p.name, x))
+      x += 1
     end
     return ui.row({ gap = 4, align = "center" }, items)
   end
@@ -340,6 +347,7 @@ return function(wide)
     failed = false
     binds = {}
     appBinds = {}
+    focused = ""
     render()
     noctalia.runAsync({ "mb-keys", "profiles", "--tsv" }, function(result)
       if result.exitCode == 0 then
@@ -347,6 +355,10 @@ return function(wide)
         render()
         loadApp()
       end
+    end)
+    noctalia.runAsync({ "mb-keys", "focused" }, function(result)
+      focused = noctalia.string.trim(result.stdout or "")
+      render()
     end)
     noctalia.runAsync({ "mb-keys", "list", "--tsv" }, function(result)
       if result.exitCode ~= 0 then
