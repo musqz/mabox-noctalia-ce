@@ -65,7 +65,7 @@ case ${1:-} in
         echo "Config restored from $tag-$pick. Log out and back in to apply it all."
         exit 0 ;;
     --uninstall)
-        for id in music colors notes status system sysinfo; do noctalia msg plugins disable "mabox/$id" >/dev/null 2>&1 || true; done
+        for id in music colors notes status system sysinfo keys insert capture; do noctalia msg plugins disable "mabox/$id" >/dev/null 2>&1 || true; done
         noctalia msg plugins source remove mabox >/dev/null 2>&1 \
             || echo "Noctalia not running: run 'noctalia msg plugins source remove mabox' in the session." >&2
         [[ -s $state ]] || { echo "Nothing recorded in $state"; exit 0; }
