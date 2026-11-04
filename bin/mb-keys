@@ -11,6 +11,7 @@ a lone keybind, else the command.
 """
 import csv
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -32,6 +33,7 @@ APPKEY_DIRS = (
 )
 GEANY_CONF = os.path.join(os.environ["HOME"], ".config", "geany", "keybindings.conf")
 YAZI_KEYMAP = os.path.join(os.environ["HOME"], ".config", "yazi", "keymap.toml")
+DOUBLECMD_KEYS = os.path.join(os.environ["HOME"], ".config", "doublecmd", "shortcuts.scf")
 KITTY_CONF = os.path.join(os.environ["HOME"], ".config", "kitty", "kitty.conf")
 APP_MODS = {"primary": "Ctrl", "control": "Ctrl", "ctrl": "Ctrl", "shift": "Shift", "alt": "Alt",
             "super": "Super", "mod1": "Alt", "mod4": "Super", "cmd": "Super"}
@@ -220,6 +222,25 @@ def yazi_binds():
     return out
 
 
+def doublecmd_binds():
+    try:
+        root = ET.parse(DOUBLECMD_KEYS).getroot()
+    except (OSError, ET.ParseError):
+        return []
+    out = []
+    for form in root.iter("Form"):
+        if form.get("Name") != "Main":
+            continue
+        for hk in form.findall("Hotkey"):
+            keys, cmd = hk.findtext("Shortcut"), hk.findtext("Command")
+            if keys and cmd:
+                words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", cmd.removeprefix("cm_")).lower()
+                section = "Ctrl+Shift" if keys.startswith("Ctrl+Shift+") else next(
+                    (m for m in ("Ctrl", "Alt", "Shift") if keys.startswith(m + "+")), "Other")
+                out.append((section, keys, words.capitalize()))
+    return out
+
+
 def app_binds(name):
     rows = []
     for d in APPKEY_DIRS:
@@ -228,7 +249,7 @@ def app_binds(name):
             with open(path, newline="", encoding="utf-8") as f:
                 rows = [tuple(r[:3]) for r in csv.reader(x for x in f if x.strip() and not x.startswith("#")) if len(r) >= 3]
             break
-    live = {"geany": geany_binds, "kitty": kitty_binds, "yazi": yazi_binds}.get(name, lambda: [])()
+    live = {"geany": geany_binds, "kitty": kitty_binds, "yazi": yazi_binds, "doublecmd": doublecmd_binds}.get(name, lambda: [])()
     taken = {r[1] for r in live}
     return live + [r for r in rows if r[1] not in taken]
 
