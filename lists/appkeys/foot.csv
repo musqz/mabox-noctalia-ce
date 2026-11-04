@@ -1,0 +1,15 @@
+# section,keys,description  (defaults)
+Text,Ctrl+Shift+C,Copy
+Text,Ctrl+Shift+V,Paste
+Text,Shift+Insert,Paste selection
+Text,Ctrl+Plus,Bigger font
+Text,Ctrl+Minus,Smaller font
+Text,Ctrl+0,Reset font size
+Scroll,Shift+PgUp,Scroll back a page
+Scroll,Shift+PgDn,Scroll forward a page
+Scroll,Ctrl+Shift+Z,Previous prompt
+Scroll,Ctrl+Shift+X,Next prompt
+Search,Ctrl+Shift+R,Search scrollback
+Other,Ctrl+Shift+N,New terminal
+Other,Ctrl+Shift+O,Show URLs
+Other,Ctrl+Shift+U,Unicode input

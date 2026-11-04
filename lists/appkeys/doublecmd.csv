@@ -1,0 +1,33 @@
+# section,keys,description  (defaults)
+Files,F3,View
+Files,F4,Edit
+Files,F5,Copy
+Files,F6,Move
+Files,Shift+F6,Rename
+Files,F7,New folder
+Files,F8,Delete
+Files,Shift+F5,Copy in same folder
+Files,Alt+Enter,Properties
+Files,Insert,Select and move down
+Files,Space,Select and calculate size
+Files,Ctrl+A,Select all
+Files,Ctrl+R,Refresh
+Panels,Tab,Switch panel
+Panels,Ctrl+U,Swap panels
+Panels,Ctrl+Left,Show current folder in left panel
+Panels,Ctrl+Right,Show current folder in right panel
+Panels,Backspace,Parent folder
+Panels,Ctrl+\,Root folder
+Panels,Alt+Left,Back
+Panels,Alt+Right,Forward
+Panels,Ctrl+D,Directory hotlist
+Panels,"Ctrl+.",Show hidden files
+Tabs,Ctrl+T,New tab
+Tabs,Ctrl+W,Close tab
+Tabs,Ctrl+Tab,Next tab
+Tabs,Ctrl+Shift+Tab,Previous tab
+Search,Alt+F7,Find files
+Search,Ctrl+S,Quick search
+Search,Ctrl+F,Quick filter
+Other,Ctrl+P,Copy path to command line
+Other,Alt+X,Quit

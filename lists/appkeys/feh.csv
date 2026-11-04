@@ -1,0 +1,33 @@
+# section,keys,description  (defaults)
+Navigate,n,Next image
+Navigate,Right,Next image
+Navigate,Space,Next image
+Navigate,p,Previous image
+Navigate,Left,Previous image
+Navigate,Backspace,Previous image
+Navigate,Home,First image
+Navigate,End,Last image
+Navigate,z,Random image
+Navigate,PgUp,Jump back
+Navigate,PgDn,Jump forward
+View,f,Toggle fullscreen
+View,+,Zoom in
+View,-,Zoom out
+View,*,Zoom to 100%
+View,/,Zoom to fit
+View,w,Size window to image
+View,d,Toggle filename
+View,i,Toggle info
+View,r,Reload image
+View,<,Rotate left
+View,>,Rotate right
+View,|,Flip horizontal
+View,_,Flip vertical
+Slideshow,h,Pause slideshow
+Slideshow,o,Toggle mouse pointer
+Files,Delete,Remove from list
+Files,Ctrl+Delete,Delete file
+Files,s,Save image
+Files,m,Menu
+Files,q,Quit
+Files,Escape,Quit
