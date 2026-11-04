@@ -123,7 +123,7 @@ end
 -- (not for recordings, they would end up in the video).
 local function launch(argv, reopen)
   pinSide.close("capture", pinned)
-  local sh = 'sleep 0.2; "$@"'
+  local sh = 'sleep 0.4; "$@"'
   if reopen and pinned then
     sh = sh .. "; " .. pinSide.reopenCmd("capture")
   end
