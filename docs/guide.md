@@ -88,7 +88,7 @@ The bar is noctalia's. Extra buttons:
 | Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), check now | check now |
 | Screen recording | start / stop | |
 
-Click the updates button again to close the menu. The snap entry is hidden while `snapd` is stopped.
+Click the updates button again to close the panel. Flatpak, Snap, npm and pipx entries show only when they have updates.
 
 The RAM button is a noctalia `sysmon` widget: it shows memory use and has no click action.
 
