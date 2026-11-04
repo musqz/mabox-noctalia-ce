@@ -7,15 +7,8 @@ set -euo pipefail
 file=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/pinned-side
 
 plugins=(colors notes status configs capture)
-layered=(status)   # pinned window is a layer, driven through the plugin's pin service
-
-is_layered() { [[ " ${layered[*]} " == *" $1 "* ]]; }
-close_pinned() {
-    if is_layered "$1"; then noctalia msg plugin "mabox/$1:pin" all hide >/dev/null 2>&1 || true
-    else noctalia msg panel-close "mabox/$1:pinned-$2" >/dev/null 2>&1 || true; fi
-}
-
 side() { grep -qxs "$1=right" "$file" && echo right || echo left; }
+close_pinned() { noctalia msg plugin "mabox/$1:pin" all hide >/dev/null 2>&1 || true; }
 
 case ${1:-} in
     "" | -h | --help) sed -n '2,4p' "$0" | sed 's/^# \?//' ;;
@@ -35,6 +28,5 @@ case ${1:-} in
         for o in "${plugins[@]}"; do
             if [[ $o != "$1" && $(side "$o") == "$s" ]]; then close_pinned "$o" "$s"; fi
         done
-        if is_layered "$1"; then exec noctalia msg plugin "mabox/$1:pin" all toggle; fi
-        exec noctalia msg panel-toggle "mabox/$1:pinned-$s" ;;
+        exec noctalia msg plugin "mabox/$1:pin" all toggle ;;
 esac

@@ -122,10 +122,10 @@ end
 -- Run a command with the panel out of the way. Pinned panels come back afterwards
 -- (not for recordings, they would end up in the video).
 local function launch(argv, reopen)
-  panel.close()
+  pinSide.close("capture", pinned)
   local sh = 'sleep 0.2; "$@"'
   if reopen and pinned then
-    sh = sh .. "; noctalia msg panel-open mabox/capture:pinned-" .. pinned
+    sh = sh .. "; " .. pinSide.reopenCmd("capture")
   end
   local cmd = { "setsid", "-f", "sh", "-c", sh, "sh" }
   for _, a in ipairs(argv) do
@@ -313,9 +313,10 @@ render = function()
   kr = 1
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = recording and "Capture  (recording)" or "Capture", flexGrow = 1 }),
+    pinned and pinSide.dockButton("capture", pinned, render) or ui.spacer({ width = 0 }),
     pinned and kbtn("swap", 1, 1, { glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
     kbtn("pin", 1, 2, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
-      panel.close()
+      pinSide.close("capture", pinned)
       if not pinned then
         pinSide.toggle("capture")
       end
@@ -323,7 +324,7 @@ render = function()
   })
   local body = ui.column({ gap = 8 }, { shotBlock(), intervalBlock(), recBlock(), recentBlock() })
   if pinned then
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
   else
     panel.render(ui.column({ gap = 8, padding = 12 }, { top, body }))
   end
