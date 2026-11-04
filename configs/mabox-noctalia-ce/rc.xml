@@ -75,6 +75,8 @@
 
     <!-- Caffeine -->
     <keybind key="W-S-c"><action name="Execute" command="noctalia msg caffeine-toggle"/></keybind>
+    <!-- Desktop widgets -->
+    <keybind key="W-A-d"><action name="Execute" command="noctalia msg desktop-widgets-toggle"/></keybind>
 
     <!-- Mabox keys -->
     <keybind key="W-t"><action name="Execute"><command>exo-open --launch TerminalEmulator</command></action></keybind>
