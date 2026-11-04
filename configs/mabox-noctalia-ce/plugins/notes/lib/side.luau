@@ -3,6 +3,9 @@
 -- ~/.config/mabox-noctalia-ce/pinned-side. Keep this file identical in every plugin's lib/.
 local M = {}
 
+-- Width of a pinned window in px, also the space a docked one reserves.
+M.ZONE = 330
+
 local function path()
   return noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce/pinned-side"
 end

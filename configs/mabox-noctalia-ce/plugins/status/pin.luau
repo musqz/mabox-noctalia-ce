@@ -1,7 +1,6 @@
 --!nonstrict
 -- Shows and hides the pinned window (a layer) on its saved side; mb-pinned and the window itself send the events.
 local side = require("./lib/side.luau")
-local ZONE = 330
 local shown = false
 
 local function hide()
@@ -13,7 +12,7 @@ end
 local function show()
   hide()
   local s = side.get("status")
-  noctalia.layer.configure("pinned-" .. s, { exclusiveZone = side.docked("status") and ZONE or 0 })
+  noctalia.layer.configure("pinned-" .. s, { exclusiveZone = side.docked("status") and side.ZONE or 0 })
   noctalia.layer.show("pinned-" .. s)
   shown = true
 end

@@ -649,7 +649,7 @@ render = function()
   end
   local function toggleDock()
     pinSide.setDocked("status", not pinSide.docked("status"))
-    noctalia.layer.configure("pinned-" .. pinned, { exclusiveZone = pinSide.docked("status") and 330 or 0 })
+    noctalia.layer.configure("pinned-" .. pinned, { exclusiveZone = pinSide.docked("status") and pinSide.ZONE or 0 })
     render()
   end
   stop("t-view", 1, 1, switchView)
