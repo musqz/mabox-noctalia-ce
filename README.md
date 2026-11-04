@@ -144,5 +144,6 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 | Insert: `/hist` types a shell history line, `/es` an Espanso snippet into the previous window; panel to add and edit snippets | `W-A-h`, `W-A-e` | [docs/guide.md](docs/guide.md#keys) |
 | Notes panel: notes with colors | `W-n`, pinned window `W-A-n` | `~/.local/state/noctalia/plugins/data/mabox/notes/path`: one line, folder to sync (optional) |
 | Status panel: system info, discs, cleanup rows; bar button turns warning-colored when a disc is full (`mb-status-warn`, left click opens it, right click pins it) | `W-A-s`, pinned window `W-S-s` | settings (gear button) in `~/.local/state/noctalia/plugins/data/mabox/status/settings` |
+| Sysinfo desktop widget: clock, system info, CPU/RAM graphs, top processes, discs, updates | `noctalia msg desktop-widgets-toggle-edit`, then add *Sysinfo* | needs `[desktop_widgets] enabled = true` |
 | `mpv-play-stream` play URL | `C-S-1` | [docs/music.md](docs/music.md) |
 | Media keys | `XF86Audio*` | [docs/music.md](docs/music.md) |

@@ -47,6 +47,7 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `W-=` | wallpaper panel |
 | `C-A-a` | random wallpaper |
 | `W-S-c` | caffeine (no idle) |
+| `W-A-d` | show or hide desktop widgets |
 | `W-t` | terminal |
 | `F12` | quake terminal |
 | `W-h` | btop |
