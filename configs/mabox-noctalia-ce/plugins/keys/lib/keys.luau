@@ -11,10 +11,11 @@ return function(wide)
   local mode = "basics"
   local profiles = {}
   local profile = ""
+  local appBinds = {}
   local query = ""
   local failed = false
   local searchNonce = 0
-  local render
+  local render, loadApp, parseLines
 
   local function statePath()
     local dir = noctalia.pluginDataDir()
@@ -74,6 +75,7 @@ return function(wide)
       noctalia.writeFile(path, name .. "\n")
     end
     render()
+    loadApp()
   end
 
   local function parseProfiles(text)
@@ -86,21 +88,41 @@ return function(wide)
           set[g] = true
         end
         table.insert(profiles, { name = name, groups = set })
+      elseif name and kind == "app" then
+        table.insert(profiles, { name = name, app = source })
       end
     end
   end
 
-  local function activeGroups()
+  local function activeProfile()
     for _, p in ipairs(profiles) do
       if p.name == profile then
-        return p.groups
+        return p
       end
     end
     return nil
   end
 
-  local function parse(text)
-    binds = {}
+  local function activeGroups()
+    local p = activeProfile()
+    return p and p.groups
+  end
+
+  -- App lists are read once per open; render() runs again when they arrive.
+  loadApp = function()
+    local p = activeProfile()
+    if not p or not p.app or appBinds[p.app] then
+      return
+    end
+    local app = p.app
+    noctalia.runAsync({ "mb-keys", "app", app, "--tsv" }, function(result)
+      appBinds[app] = result.exitCode == 0 and parseLines(result.stdout or "") or {}
+      render()
+    end)
+  end
+
+  parseLines = function(text)
+    local list = {}
     for line in string.gmatch(text, "[^\n]+") do
       local f = {}
       for part in string.gmatch(line .. "\t", "(.-)\t") do
@@ -111,9 +133,14 @@ return function(wide)
         for m in string.gmatch(f[2], "[^+]+") do
           table.insert(mods, m)
         end
-        table.insert(binds, { spec = f[1], mods = mods, key = f[3], group = f[4], basic = f[5] == "1", desc = f[6], command = f[7], run = f[8] == "1" })
+        table.insert(list, { spec = f[1], mods = mods, key = f[3], group = f[4], basic = f[5] == "1", desc = f[6], command = f[7], run = f[8] == "1" })
       end
     end
+    return list
+  end
+
+  local function parse(text)
+    binds = parseLines(text)
   end
 
   local function matches(b, q)
@@ -125,10 +152,17 @@ return function(wide)
     local q = string.lower(noctalia.string.trim(query))
     local groups, order = {}, {}
     local only = activeGroups()
-    for _, b in ipairs(binds) do
+    local source = binds
+    local p = activeProfile()
+    if p and p.app then
+      source = appBinds[p.app] or {}
+    end
+    for _, b in ipairs(source) do
       local show
       if q ~= "" then
         show = matches(b, q)
+      elseif p and p.app then
+        show = true
       else
         show = (mode == "all" or b.basic) and (only == nil or only[b.group] == true)
       end
@@ -172,7 +206,7 @@ return function(wide)
   end
 
   local function twoLines(b)
-    return (mode == "all" or noctalia.string.trim(query) ~= "") and b.command ~= b.desc
+    return (mode == "all" or noctalia.string.trim(query) ~= "") and b.command ~= "" and b.command ~= b.desc
   end
 
   local function bindRow(b, id, y, x)
@@ -193,7 +227,12 @@ return function(wide)
 
   local function body()
     local groups, order = visible()
-    if #binds == 0 then
+    local p = activeProfile()
+    local appView = p ~= nil and p.app ~= nil
+    if appView and not appBinds[p.app] then
+      return { ui.label({ text = "Loading", color = "on_surface_variant" }) }
+    end
+    if #binds == 0 and not appView then
       return { ui.label({ text = failed and "Could not read rc.xml" or "No keybinds found", color = "on_surface_variant" }) }
     end
     if #order == 0 then
@@ -300,11 +339,13 @@ return function(wide)
     query = ""
     failed = false
     binds = {}
+    appBinds = {}
     render()
     noctalia.runAsync({ "mb-keys", "profiles", "--tsv" }, function(result)
       if result.exitCode == 0 then
         parseProfiles(result.stdout or "")
         render()
+        loadApp()
       end
     end)
     noctalia.runAsync({ "mb-keys", "list", "--tsv" }, function(result)

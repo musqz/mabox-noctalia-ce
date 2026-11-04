@@ -1,0 +1,3 @@
+# section,keys,description  (the live keybindings.conf is merged on top)
+Editor,Ctrl+Space,Complete word
+Editor,Ctrl+Shift+Space,Show calltip

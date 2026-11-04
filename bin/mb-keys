@@ -3,6 +3,7 @@
 
   mb-keys list [--tsv] [--rc FILE]
   mb-keys profiles --tsv
+  mb-keys app NAME --tsv
 
 Descriptions: keys.csv (key,group,basic,description), else the comment above
 a lone keybind, else the command.
@@ -21,6 +22,17 @@ PROFILE_PATHS = (
     "/usr/share/mabox-noctalia-ce/keys-profiles.csv",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "keys-profiles.csv"),
 )
+APPKEY_DIRS = (
+    "/usr/share/mabox-noctalia-ce/appkeys",
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "appkeys"),
+)
+GEANY_CONF = os.path.join(os.environ["HOME"], ".config", "geany", "keybindings.conf")
+KITTY_CONF = os.path.join(os.environ["HOME"], ".config", "kitty", "kitty.conf")
+APP_MODS = {"primary": "Ctrl", "control": "Ctrl", "ctrl": "Ctrl", "shift": "Shift", "alt": "Alt",
+            "super": "Super", "mod1": "Alt", "mod4": "Super", "cmd": "Super"}
+APP_KEYS = {"page_up": "PgUp", "page_down": "PgDn", "prior": "PgUp", "next": "PgDn",
+            "return": "Enter", "escape": "Esc", "space": "Space", "plus": "+", "minus": "-",
+            "equal": "=", "comma": ",", "period": ".", "slash": "/", "backslash": "\\"}
 # Several actions on one bind: show the first one found in this order.
 PREFERRED = ("Execute", "ShowMenu", "MoveResizeTo", "SnapToEdge",
              "GrowToEdge", "SendToDesktop", "GoToDesktop")
@@ -122,6 +134,66 @@ def profiles():
     return []
 
 
+def app_key(parts):
+    """Normalize modifier and key names (['primary', 'shift', 'page_up']) to 'Ctrl+Shift+PgUp'."""
+    mods = {APP_MODS[p.lower()] for p in parts[:-1] if p.lower() in APP_MODS}
+    mods = [m for m in ("Ctrl", "Alt", "Shift", "Super") if m in mods]
+    key = parts[-1]
+    key = APP_KEYS.get(key.lower(), key.upper() if len(key) == 1 else key.capitalize())
+    return "+".join(mods + [key])
+
+
+def geany_binds():
+    out = []
+    try:
+        with open(GEANY_CONF, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return out
+    for line in lines:
+        name, sep, value = line.partition("=")
+        value = value.split("|")[0].strip()
+        if not sep or not value or name.startswith("["):
+            continue
+        parts = value.replace("<", " ").replace(">", " ").split()
+        if not parts or parts[-1].lower() in APP_MODS:
+            continue
+        section, _, rest = name.partition("_")
+        out.append((section.capitalize() if rest else "Config", app_key(parts), (rest or name).replace("_", " ").capitalize()))
+    return out
+
+
+def kitty_binds():
+    out = []
+    try:
+        with open(KITTY_CONF, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return out
+    kitty_mod = "ctrl+shift"
+    for line in lines:
+        w = line.split(None, 2)
+        if len(w) == 2 and w[0] == "kitty_mod":
+            kitty_mod = w[1]
+        elif len(w) == 3 and w[0] == "map" and ">" not in w[1] and w[2] not in ("no_op", "discard_event"):
+            keys = w[1].replace("kitty_mod", kitty_mod)
+            out.append(("Config", app_key(keys.split("+")), w[2].replace("_", " ")))
+    return out
+
+
+def app_binds(name):
+    rows = []
+    for d in APPKEY_DIRS:
+        path = os.path.join(d, name + ".csv")
+        if os.path.isfile(path):
+            with open(path, newline="", encoding="utf-8") as f:
+                rows = [tuple(r[:3]) for r in csv.reader(x for x in f if x.strip() and not x.startswith("#")) if len(r) >= 3]
+            break
+    live = {"geany": geany_binds, "kitty": kitty_binds}.get(name, lambda: [])()
+    taken = {r[1] for r in live}
+    return live + [r for r in rows if r[1] not in taken]
+
+
 def comment_labels(keyboard):
     """Comment text for a keybind that is the only one below its comment."""
     labels, pending, group = {}, None, []
@@ -187,6 +259,13 @@ def main(argv):
     if argv and argv[0] == "profiles":
         for r in profiles():
             print("\t".join(r))
+        return 0
+    if len(argv) >= 2 and argv[0] == "app":
+        for section, keys, desc in app_binds(argv[1]):
+            parts = keys.split("+")
+            if keys.endswith("++"):
+                parts = keys[:-2].split("+") + ["+"]
+            print("\t".join([keys, "+".join(parts[:-1]), parts[-1], section, "1", desc, "", "0"]))
         return 0
     if not argv or argv[0] != "list":
         print(__doc__.strip(), file=sys.stderr)

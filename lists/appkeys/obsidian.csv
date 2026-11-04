@@ -1,0 +1,24 @@
+# section,keys,description
+Notes,Ctrl+N,New note
+Notes,Ctrl+O,Quick switcher
+Notes,Ctrl+Shift+F,Search in all notes
+Notes,Ctrl+P,Command palette
+Notes,Ctrl+E,Toggle edit / preview
+Notes,Ctrl+Alt+Left,Navigate back
+Notes,Ctrl+Alt+Right,Navigate forward
+Notes,Ctrl+G,Open graph view
+Notes,"Ctrl+,",Settings
+Editing,Ctrl+B,Bold
+Editing,Ctrl+I,Italic
+Editing,Ctrl+K,Insert link
+Editing,Ctrl+],Indent
+Editing,Ctrl+[,Unindent
+Editing,Ctrl+Enter,Toggle checkbox
+Editing,Ctrl+/,Toggle comment
+Editing,Ctrl+F,Find in note
+Editing,Ctrl+H,Replace in note
+Panes,Ctrl+\,Split right
+Panes,Ctrl+W,Close tab
+Panes,Ctrl+T,New tab
+Panes,Ctrl+Tab,Next tab
+Panes,Ctrl+Shift+Tab,Previous tab
