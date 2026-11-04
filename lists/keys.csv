@@ -83,7 +83,7 @@ C-A-a,Desktop,0,Random wallpaper
 W-l,Desktop,1,Lock screen
 W-S-c,Desktop,0,Caffeine: keep the screen awake
 S-C-r,Desktop,0,Reload the labwc config
-C-S-a,Capture,1,Screenshot of the whole screen
+C-S-a,Capture,1,Screenshot of an area
 S-W-r,Capture,0,Start / stop screen recording
 W-S-x,Capture,0,Stop recording and interval screenshots
 C-Insert,Capture,0,Show the last screenshot

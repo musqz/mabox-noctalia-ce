@@ -12,6 +12,7 @@ local HOME = noctalia.getenv("HOME")
 local DEFAULTS = {
   shot_delay = "0",
   shot_format = "png",
+  shot_output = "focus",
   rec_container = "mp4",
   rec_fps = "30",
   rec_audio = "none",
@@ -28,6 +29,7 @@ local PROBE = [[
 p=${XDG_RUNTIME_DIR:-/tmp}/mb-shots-interval.pid
 pgrep -x wl-screenrec >/dev/null && echo rec=1 || echo rec=0
 { [ -f "$p" ] && kill -0 "$(cat "$p")" 2>/dev/null; } && echo iv=1 || echo iv=0
+wlr-randr 2>/dev/null | sed -n 's/^\([^ ][^ ]*\) .*/out=\1/p'
 echo n=$(mb-shots-interval -n 2>/dev/null || echo 0)
 find "$HOME/Pictures/screenshots" "$HOME/Videos/Recordings" "$HOME/Pictures/Mabox-Animations" -maxdepth 1 -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -5 | cut -d' ' -f2-
 ]]
@@ -35,6 +37,7 @@ find "$HOME/Pictures/screenshots" "$HOME/Videos/Recordings" "$HOME/Pictures/Mabo
 local recording = false
 local intervalOn = false
 local recent = {}
+local outputs = { "focus" }
 local ivCount = 0
 local armed = false
 local armedAt = 0
@@ -74,7 +77,7 @@ local function loadSettings()
   local raw = path and noctalia.readFile(path)
   for l in string.gmatch(raw or "", "[^\n]+") do
     local k, v = string.match(l, "^([%w_]+)=(.*)$")
-    if k and DEFAULTS[k] and string.match(v, "^[%w]+$") then
+    if k and DEFAULTS[k] and string.match(v, "^[%w-]+$") then
       S[k] = v
     end
   end
@@ -102,9 +105,13 @@ local function refresh()
   lastRun = ticks
   noctalia.runAsync({ "sh", "-c", PROBE }, function(result)
     local files = {}
+    local outs = { "focus" }
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
       local k, v = string.match(l, "^(%w+)=(%d+)$")
-      if k == "rec" then
+      local o = string.match(l, "^out=(.+)$")
+      if o then
+        table.insert(outs, o)
+      elseif k == "rec" then
         recording = v == "1"
       elseif k == "iv" then
         intervalOn = v == "1"
@@ -115,6 +122,7 @@ local function refresh()
       end
     end
     recent = files
+    outputs = outs
     render()
   end)
 end
@@ -150,6 +158,9 @@ local function shot(mode, annotate)
   end
   for _, a in ipairs(mode) do
     table.insert(argv, a)
+  end
+  if #mode == 1 and mode[1] == "screenshot-fullscreen" and S.shot_output ~= "focus" then
+    table.insert(argv, S.shot_output)
   end
   setSetting("shot_delay", "0")
   launch(argv, true)
@@ -206,7 +217,7 @@ end
 local function shotBlock()
   block = "shot-"
   local head = headingWithFolder("Screenshot", HOME .. "/Pictures/screenshots")
-  local r1, r2, r3 = nextRow(), nextRow(), nextRow()
+  local r1, r2, r3, r4 = nextRow(), nextRow(), nextRow(), nextRow()
   return card({
     head,
     ui.row({ gap = 4 }, {
@@ -221,6 +232,9 @@ local function shotBlock()
     ui.row({ gap = 4 }, {
       cycle(r3, 1, "Delay", "shot_delay", { "0", "3", "5", "10", "30" }, "s", nil, "Delay for the next screenshot only"),
       cycle(r3, 2, "Format", "shot_format", { "png", "jpg", "webp", "avif" }),
+    }),
+    ui.row({ gap = 4 }, {
+      cycle(r4, 1, "Screen", "shot_output", outputs, nil, { focus = "focused" }, "Monitor for the Screen button"),
     }),
   })
 end
