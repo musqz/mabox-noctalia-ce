@@ -225,7 +225,11 @@ local function shot(mode, annotate)
     table.insert(argv, a)
   end
   if #mode == 1 and mode[1] == "screenshot-fullscreen" and S.shot_output ~= "focus" then
-    table.insert(argv, S.shot_output)
+    for _, o in ipairs(outputs) do
+      if o == S.shot_output then
+        table.insert(argv, o)
+      end
+    end
   end
   setSetting("shot_delay", "0")
   launch(argv, true)
@@ -437,6 +441,7 @@ end
 
 local function open()
   kbd.clear()
+  hovered = nil
   armed = false
   loadSettings()
   ticks = 0
