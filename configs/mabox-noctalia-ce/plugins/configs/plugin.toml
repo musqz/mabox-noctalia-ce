@@ -25,7 +25,7 @@ entry = "pin.luau"
 [[layer]]
 id = "pinned-left"
 entry = "pinned-left.luau"
-layer = "top"
+layer = "overlay"
 anchors = ["left", "top", "bottom"]
 width = 330
 keyboard = "on_demand"
@@ -34,7 +34,7 @@ output = "focused"
 [[layer]]
 id = "pinned-right"
 entry = "pinned-right.luau"
-layer = "top"
+layer = "overlay"
 anchors = ["right", "top", "bottom"]
 width = 330
 keyboard = "on_demand"
