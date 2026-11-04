@@ -1,8 +1,6 @@
 # name,kind,source[,app ids of the Focused chip joined with +]  (groups: rc.xml groups joined with +; app: lists/appkeys/NAME.csv)
 Panels,groups,Panels+Capture
-Mabox tools,groups,Helpers+Capture+Desktop
 Windows,groups,Windows+Workspaces+Jump
-Apps,groups,Apps
 Firefox,app,firefox,firefox+waterfox+firedragon+librewolf
 Geany,app,geany,geany
 Obsidian,app,obsidian,obsidian
