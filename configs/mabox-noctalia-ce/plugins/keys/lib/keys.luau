@@ -268,15 +268,20 @@ return function(wide)
         entry("g" .. p.name, p.name, current == p, function() setProfile(p.name) end)
       end
     end
-    local label = false
+    local apps = {}
     for _, p in ipairs(profiles) do
       if p.app then
-        if not label then
-          table.insert(items, ui.label({ text = "Applications", fontSize = 11, color = "on_surface_variant" }))
-          label = true
-        end
-        entry("a" .. p.name, p.name, current == p, function() setProfile(p.name) end)
+        table.insert(apps, p)
       end
+    end
+    table.sort(apps, function(a, b)
+      return string.lower(a.name) < string.lower(b.name)
+    end)
+    if #apps > 0 then
+      table.insert(items, ui.label({ text = "Applications", fontSize = 11, color = "on_surface_variant" }))
+    end
+    for _, p in ipairs(apps) do
+      entry("a" .. p.name, p.name, current == p, function() setProfile(p.name) end)
     end
     return ui.column({ width = 170, height = 470, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = kbd.reveal() }, { ui.column({ gap = 2 }, items) }) })
   end
