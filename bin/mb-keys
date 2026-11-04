@@ -2,6 +2,7 @@
 """mb-keys - list the labwc keybinds of rc.xml for the mabox/keys plugin.
 
   mb-keys list [--tsv] [--rc FILE]
+  mb-keys profiles --tsv
 
 Descriptions: keys.csv (key,group,basic,description), else the comment above
 a lone keybind, else the command.
@@ -15,6 +16,10 @@ CFG = os.path.join(os.environ["HOME"], ".config", "mabox-noctalia-ce", "rc.xml")
 CSV_PATHS = (
     "/usr/share/mabox-noctalia-ce/keys.csv",
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "keys.csv"),
+)
+PROFILE_PATHS = (
+    "/usr/share/mabox-noctalia-ce/keys-profiles.csv",
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "keys-profiles.csv"),
 )
 # Several actions on one bind: show the first one found in this order.
 PREFERRED = ("Execute", "ShowMenu", "MoveResizeTo", "SnapToEdge",
@@ -108,6 +113,15 @@ def read_csv():
     return {}
 
 
+def profiles():
+    for path in PROFILE_PATHS:
+        if os.path.isfile(path):
+            with open(path, newline="", encoding="utf-8") as f:
+                rows = csv.reader(row for row in f if row.strip() and not row.startswith("#"))
+                return [r[:3] for r in rows if len(r) >= 3]
+    return []
+
+
 def comment_labels(keyboard):
     """Comment text for a keybind that is the only one below its comment."""
     labels, pending, group = {}, None, []
@@ -170,6 +184,10 @@ def collect(rc):
 
 
 def main(argv):
+    if argv and argv[0] == "profiles":
+        for r in profiles():
+            print("\t".join(r))
+        return 0
     if not argv or argv[0] != "list":
         print(__doc__.strip(), file=sys.stderr)
         return 2
