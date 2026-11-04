@@ -38,7 +38,7 @@ pipx_outdated() {
 }
 
 check() {
-    local args=() rc=0 repo aur=0 flat=0 snp=0 npmn=0 pipxn=0 n offline=0 tip
+    local args=() rc=0 err repo aur=0 flat=0 snp=0 npmn=0 pipxn=0 n offline=0 tip
     [[ ${1:-} == offline && -d /tmp/checkup-db-$UID ]] && offline=1
     (( offline )) && args=(--nosync)
     mkdir -p "$dir"
@@ -57,7 +57,10 @@ check() {
 
     touch "$dir/aur"
     if (( ! offline )) && helper=$(command -v yay || command -v paru); then
-        if "$helper" -Qua 2>/dev/null > "$dir/aur.new"; then
+        # exit 1 with no error output means no AUR updates, not a failed check
+        rc=0
+        err=$("$helper" -Qua 2>&1 > "$dir/aur.new") || rc=$?
+        if (( rc == 0 )) || { (( rc == 1 )) && [[ -z $err ]]; }; then
             mv "$dir/aur.new" "$dir/aur"
         else
             rm -f "$dir/aur.new"

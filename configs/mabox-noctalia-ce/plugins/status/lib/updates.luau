@@ -4,6 +4,7 @@ local SOURCES = { { "repo", "Repo" }, { "aur", "AUR" }, { "flatpak", "Flatpak" }
 local counts = {}
 local orphans = 0
 local checking = false
+local view = "main"
 local render
 
 local function dir()
@@ -21,6 +22,51 @@ local function load()
   end
 end
 
+local function lines(name)
+  local out = {}
+  for l in string.gmatch(noctalia.readFile(dir() .. name) or "", "[^\n]+") do
+    table.insert(out, l)
+  end
+  return out
+end
+
+-- "name old -> new" (pacman, yay) splits into a name and a version change; other lines stay as they are.
+local function split(line)
+  local name, old, new = string.match(line, "^(%S+)%s+(%S+)%s+%->%s+(%S+)")
+  if name then
+    return name, old .. " -> " .. new
+  end
+  return line, nil
+end
+
+local function listView()
+  local rows = {}
+  for _, s in ipairs(SOURCES) do
+    local items = lines(s[1])
+    if #items > 0 then
+      table.insert(rows, ui.label({ text = s[2] .. " (" .. #items .. ")", fontSize = 12, color = "primary" }))
+      for _, line in ipairs(items) do
+        local name, detail = split(line)
+        local entry = { ui.label({ text = name, fontSize = 12 }) }
+        if detail then
+          table.insert(entry, ui.label({ text = detail, fontSize = 10, color = "on_surface_variant" }))
+        end
+        table.insert(rows, ui.column({ gap = 0 }, entry))
+      end
+    end
+  end
+  if #rows == 0 then
+    table.insert(rows, ui.label({ text = "Nothing to update", color = "on_surface_variant" }))
+  end
+  panel.render(ui.column({ gap = 8, padding = 12, height = 460 }, {
+    ui.row({ gap = 6, align = "center" }, {
+      ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function() view = "main" render() end }),
+      ui.label({ text = "Pending updates", fontSize = 14 }),
+    }),
+    ui.scroll({ flexGrow = 1, gap = 6, key = "list" }, rows),
+  }))
+end
+
 local function start(argv)
   panel.close()
   local cmd = { "setsid", "-f", "mb-updates-ce" }
@@ -35,6 +81,10 @@ local function action(text, glyph, argv, variant)
 end
 
 render = function()
+  if view == "list" then
+    listView()
+    return
+  end
   local total, parts = 0, {}
   for _, s in ipairs(SOURCES) do
     total += counts[s[1]] or 0
@@ -47,6 +97,9 @@ render = function()
   }
   if #parts > 0 then
     table.insert(items, ui.label({ text = table.concat(parts, "  "), color = "on_surface_variant", fontSize = 11 }))
+  end
+  if total > 0 then
+    table.insert(items, ui.button({ text = "View updates (" .. total .. ")", glyph = "list", variant = "ghost", contentAlign = "start", onClick = function() view = "list" render() end }))
   end
   table.insert(items, action("Update all", "download", { "upgrade", "all" }, "primary"))
   table.insert(items, action("Repo + AUR (yay)", "package", { "upgrade", "aur" }))
@@ -79,6 +132,7 @@ end
 
 return function()
   checking = false
+  view = "main"
   load()
   render()
   noctalia.runAsync({ "sh", "-c", "pacman -Qtdq 2>/dev/null | grep -c . || true" }, function(result)
