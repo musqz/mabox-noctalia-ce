@@ -2,6 +2,8 @@
 -- Keys: binds from `mb-keys list --tsv`, grouped in cards; Basics, All or a search over everything.
 local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Capture", "Media", "Jump", "labwc defaults", "Helpers", "Other" }
 
+local kbd = require("./kbd.luau")
+
 return function(wide)
   local columns = wide and 3 or 2
   local keyWidth = wide and 190 or 150
@@ -9,6 +11,7 @@ return function(wide)
   local mode = "basics"
   local query = ""
   local failed = false
+  local searchNonce = 0
   local render
 
   local function statePath()
@@ -121,17 +124,20 @@ return function(wide)
     return ui.row({ gap = 3, align = "center", width = keyWidth }, items)
   end
 
-  local function bindRow(b)
+  local function twoLines(b)
+    return (mode == "all" or noctalia.string.trim(query) ~= "") and b.command ~= b.desc
+  end
+
+  local function bindRow(b, id, y, x)
+    kbd.stop(id, y, x, b.run and function() run(b) end or nil)
     local line = { ui.label({ text = b.desc, flexGrow = 1, fontSize = 12 }) }
-    if mode == "all" or noctalia.string.trim(query) ~= "" then
-      if b.command ~= b.desc then
-        line = { ui.column({ gap = 0, flexGrow = 1 }, {
-          ui.label({ text = b.desc, fontSize = 12 }),
-          ui.label({ text = b.command, fontSize = 10, color = "on_surface_variant" }),
-        }) }
-      end
+    if twoLines(b) then
+      line = { ui.column({ gap = 0, flexGrow = 1 }, {
+        ui.label({ text = b.desc, fontSize = 12 }),
+        ui.label({ text = b.command, fontSize = 10, color = "on_surface_variant" }),
+      }) }
     end
-    return ui.row({ gap = 8, align = "center" }, {
+    return ui.row({ key = id, gap = 8, align = "center", radius = 4, border = kbd.sel(id) and "primary" or "outline", borderWidth = kbd.sel(id) and 2 or 0 }, {
       chips(b),
       line[1],
       b.run and ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = b.command, onClick = function() run(b) end }) or ui.spacer({ width = 0 }),
@@ -152,18 +158,20 @@ return function(wide)
       cols[i], heights[i] = {}, 0
     end
     for _, g in ipairs(order) do
-      local rows = { ui.label({ text = g, fontSize = 13 }) }
-      for _, b in ipairs(groups[g]) do
-        table.insert(rows, bindRow(b))
-      end
       local at = 1
       for i = 2, columns do
         if heights[i] < heights[at] then
           at = i
         end
       end
+      local rows = { ui.label({ text = g, fontSize = 13 }) }
+      local y = heights[at] + 1
+      for _, b in ipairs(groups[g]) do
+        table.insert(rows, bindRow(b, "b" .. g .. b.spec .. b.command, y, at))
+        y = y + (twoLines(b) and 1.7 or 1)
+      end
       table.insert(cols[at], ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows))
-      heights[at] = heights[at] + #groups[g] + 2
+      heights[at] = y + 1
     end
     local out = {}
     for i = 1, columns do
@@ -179,13 +187,15 @@ return function(wide)
   end
 
   render = function()
+    kbd.begin()
     local searching = noctalia.string.trim(query) ~= ""
+    local content = body() -- registers the stops that reveal() and the input focus check
     panel.render(ui.column({ gap = 8, padding = 12, height = 560 }, {
       ui.row({ gap = 6, align = "center" }, {
         ui.input({
-          key = "search",
+          key = "search" .. searchNonce,
           value = query,
-          focus = true,
+          focus = kbd.reveal() == nil,
           placeholder = "search key, action or command",
           controlSize = "sm",
           flexGrow = 1,
@@ -199,8 +209,18 @@ return function(wide)
         ui.button({ glyph = wide and "arrows-minimize" or "arrows-maximize", variant = "ghost", controlSize = "sm", tooltip = wide and "Compact" or "Full width", onClick = swap }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
-      ui.scroll({ flexGrow = 1, key = "list" }, body()),
+      ui.scroll({ flexGrow = 1, key = "list", revealKey = kbd.reveal() }, content),
     }))
+  end
+
+  local function onKey(chord)
+    if chord == "alt+s" then
+      kbd.clear()
+      searchNonce += 1
+      render()
+    elseif kbd.key(chord) == "moved" then
+      render()
+    end
   end
 
   return function()
@@ -210,6 +230,7 @@ return function(wide)
       return
     end
     loadMode()
+    kbd.clear()
     query = ""
     failed = false
     binds = {}
@@ -222,5 +243,5 @@ return function(wide)
       end
       render()
     end)
-  end
+  end, onKey
 end
