@@ -136,7 +136,7 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 |---|---|---|
 | `/music` launcher player | `W-m` | [docs/music.md](docs/music.md) |
 | Music: add track | `C-S-2` | [docs/music.md](docs/music.md) |
-| `mb-updates-ce` bar update indicator | left: update menu, right: recheck | autostart |
+| `mb-updates-ce` bar update indicator | left: update panel (Status plugin), right: recheck | autostart |
 | `mb-calendar-setup` local calendar (radicale) | run once in a terminal | Thunderbird + Noctalia Settings > Calendar > Local (vdir) |
 | `mb-colorpick` + Colors bar panel | bar button: pick from screen, recent colors, palettes | `~/.config/colormenu/*.clr` |
 | Keys panel: hotkey list with search, Basics and All; `/keys` in the launcher runs a bind | `W-k` | [docs/guide.md](docs/guide.md#keys) |
