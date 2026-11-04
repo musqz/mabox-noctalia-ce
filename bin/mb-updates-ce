@@ -166,6 +166,22 @@ orphans() {
         echo; read -rp "Done. Press Enter to close. " _' || true
 }
 
+# jgmenu runs under XWayland and lays out on the whole X screen: keep the menu 290 px left of the
+# right edge of the first output that has a bar, not of the rightmost output.
+menu_rc() {
+    local rc=$1 name x w total=0 pick="" px=0 pw=0
+    while read -r name x w; do
+        (( x + w > total )) && total=$((x + w))
+        if [[ -z $pick && $(noctalia msg config-get "bar.default.monitor.$name.enabled" 2>&1) != false ]]; then
+            pick=1 px=$x pw=$w
+        fi
+    done < <(wlr-randr 2>/dev/null | awk '/^[^ ]/{n=$1} /current/{split($1,a,"x"); w[n]=a[1]} /Position:/{split($2,p,","); x[n]=p[1]} END{for(n in w) print n, x[n], w[n]}' | sort)
+    [[ -n $pick ]] || { echo "$rc"; return; }
+    mkdir -p "$dir"
+    sed "s/^menu_margin_x.*/menu_margin_x        = $((total - px - pw + 290))/" "$rc" > "$dir/jgmenurc"
+    echo "$dir/jgmenurc"
+}
+
 menu() {
     local self rc="${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/jgmenurc"
     self=$(readlink -f "$0")
@@ -188,7 +204,7 @@ menu() {
         echo "Check now,$self check"
         echo "^sep()"
         echo "✕ Close,true"
-    } | jgmenu --simple --config-file="$rc"
+    } | jgmenu --simple --config-file="$(menu_rc "$rc")"
 }
 
 case ${1:-check} in
