@@ -1,0 +1,13 @@
+id = "mabox/sysinfo"
+name = "Sysinfo"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "chart-line"
+description = "Desktop widget with clock, system info, CPU and RAM graphs, top processes and disc usage."
+tags = ["desktop", "system"]
+
+[[desktop_widget]]
+id = "sysinfo"
+entry = "widget.luau"
