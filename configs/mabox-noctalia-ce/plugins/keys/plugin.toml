@@ -17,6 +17,7 @@ max_height = 620
 placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
 
 [[panel]]
 id = "keys-wide"
@@ -27,6 +28,7 @@ max_height = 620
 placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
 
 [[launcher_provider]]
 id = "finder"
