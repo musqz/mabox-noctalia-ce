@@ -234,6 +234,7 @@ return function(wide)
   end
 
   local function chipRow(searching)
+    local known = activeGroups() ~= nil
     local function chip(label, name, x)
       local id = "p" .. label
       kbd.stop(id, 0, x, function() setProfile(name) end)
@@ -241,7 +242,6 @@ return function(wide)
         ui.button({ text = label, variant = (not searching and (profile == name or (name == "" and not known))) and "primary" or "ghost", controlSize = "sm", onClick = function() setProfile(name) end }),
       })
     end
-    local known = activeGroups() ~= nil
     local items = { chip("All binds", "", 1) }
     for i, p in ipairs(profiles) do
       table.insert(items, chip(p.name, p.name, i + 1))
