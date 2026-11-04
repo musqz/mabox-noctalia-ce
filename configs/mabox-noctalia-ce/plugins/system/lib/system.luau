@@ -123,13 +123,15 @@ return function()
   -- Via a file: a whole report is bigger than one argv entry may be (128 KB).
   local function copy(text, what)
     local dir = noctalia.pluginDataDir()
-    local file = dir and dir .. "/copy.txt"
-    if file then
-      noctalia.mkdirAll(dir)
-      noctalia.writeFile(file, text)
+    if not dir then
+      noctalia.copyToClipboard(text, "text/plain")
+      return
     end
+    noctalia.mkdirAll(dir)
+    local file = dir .. "/copy.txt"
+    noctalia.writeFile(file, text)
     -- wl-copy sets the live selection; copyToClipboard only reaches the history.
-    noctalia.runAsync({ "sh", "-c", 'wl-copy < "$1"; rc=$?; rm -f "$1"; exit $rc', "sh", file or "/dev/null" }, function(result)
+    noctalia.runAsync({ "sh", "-c", 'wl-copy < "$1"; rc=$?; rm -f "$1"; exit $rc', "sh", file }, function(result)
       if result.exitCode ~= 0 then
         noctalia.copyToClipboard(text, "text/plain")
       end

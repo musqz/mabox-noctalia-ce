@@ -139,6 +139,7 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 | `mb-updates-ce` bar update indicator | left: update panel (Status plugin), right: recheck | autostart |
 | `mb-calendar-setup` local calendar (radicale) | run once in a terminal | Thunderbird + Noctalia Settings > Calendar > Local (vdir) |
 | `mb-colorpick` + Colors bar panel | bar button: pick from screen, recent colors, palettes | `~/.config/colormenu/*.clr` |
+| System panel: overview, hardware, logs, and a report without personal data to copy or save for the forum | `W-A-i` | [docs/guide.md](docs/guide.md#system-info) |
 | Keys panel: hotkey list with search, Basics and All; `/keys` in the launcher runs a bind | `W-k` | [docs/guide.md](docs/guide.md#keys) |
 | Insert: `/hist` types a shell history line, `/es` an Espanso snippet into the previous window; panel to add and edit snippets | `W-A-h`, `W-A-e` | [docs/guide.md](docs/guide.md#keys) |
 | Notes panel: notes with colors | `W-n`, pinned window `W-A-n` | `~/.local/state/noctalia/plugins/data/mabox/notes/path`: one line, folder to sync (optional) |
