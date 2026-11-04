@@ -27,6 +27,21 @@ local function stop(id, row, col, action)
   end
 end
 
+-- Cursor marker: a thick high-contrast frame around the element; border props are always sent (retained widgets).
+local function ring(id, child, props)
+  if pinned then
+    return child
+  end
+  props = props or {}
+  props.key = "k-" .. id
+  props.padding = 3
+  props.radius = 8
+  props.border = "on_surface"
+  props.borderWidth = kbd.sel(id) and 3 or 0
+  return ui.column(props, { child })
+end
+local rightRow = 2
+
 local profile = "Recent"
 local files = {}
 local fileIndex = 1
@@ -145,15 +160,19 @@ end
 local render
 
 -- Persistent panels cannot host ui.select, so the pinned window cycles with < > buttons.
-local function chooser(key, options, index, width, onPick)
-  if not pinned then
-    return ui.select({ key = key, options = options, selectedIndex = index - 1, width = width, placeholder = "Add to palette", onChange = function(idx) onPick(tonumber(idx) + 1) end })
-  end
+-- Attached: row/col make the dropdown a keyboard stop; alt+enter picks the next option.
+local function chooser(key, options, index, width, onPick, row, col)
   local n = #options
   local function step(d)
     if n > 0 then
       onPick((index - 1 + d) % n + 1)
     end
+  end
+  if not pinned then
+    if row then
+      stop(key, row, col, function() step(1) end)
+    end
+    return ring(key, ui.select({ key = key, options = options, selectedIndex = index - 1, width = width, placeholder = "Add to palette", onChange = function(idx) onPick(tonumber(idx) + 1) end }))
   end
   return ui.row({ key = key, gap = 4, align = "center", width = width }, {
     ui.button({ glyph = "chevron-left", variant = "ghost", controlSize = "sm", onClick = function() step(-1) end }),
@@ -341,9 +360,9 @@ local function grid(colors)
             copy(hex)
           end
         end
-        stop(`c{position}`, 2 + (i - 1) // COLUMNS, 2 + c, pick)
-        table.insert(cells, ui.column({ gap = 2, flexGrow = 1, key = `c{position}` }, {
-          ui.box({ fill = hex, radius = 6, height = 44, border = "primary", borderWidth = kbd.sel(`c{position}`) and 3 or 0, tooltip = editMode and (profile == "My palettes" and "Remove" or "Add to palette") or format(hex), onClick = pick }),
+        stop(`c{position}`, rightRow + (i - 1) // COLUMNS, 2 + c, pick)
+        table.insert(cells, ui.column({ gap = 2, flexGrow = 1, key = `c{position}`, padding = 3, radius = 8, border = "on_surface", borderWidth = kbd.sel(`c{position}`) and 3 or 0 }, {
+          ui.box({ fill = hex, radius = 6, height = 44, tooltip = editMode and (profile == "My palettes" and "Remove" or "Add to palette") or format(hex), onClick = pick }),
           ui.label({ text = hex, fontSize = 11, color = "on_surface_variant", textAlign = "center" }),
         }))
       else
@@ -364,10 +383,9 @@ local function sideButton(id, props)
   sideRow += 1
   stop(id, sideRow, 1, props.onClick)
   props.key = id
-  props.selected = kbd.sel(id)
   props.variant = props.variant or "ghost"
   props.contentAlign = "start"
-  return ui.button(props)
+  return ring(id, ui.button(props))
 end
 
 render = function()
@@ -375,9 +393,10 @@ render = function()
     kbd.begin()
   end
   sideRow = 1
+  rightRow = 2
   stop("pick", 1, 1, pickFromScreen)
   stop("select", 1, 2, addFromSelector)
-  stop("pin", 1, 3, function()
+  stop("pin", 1, 5, function()
     panel.close()
     pinSide.toggle("colors")
   end)
@@ -427,10 +446,13 @@ render = function()
       table.insert(names, cleanName(f))
     end
     table.insert(right, chooser("files" .. profile, names, fileIndex, nil, function(i)
-      kbd.clear()
+      if not kbd.sel("files" .. profile) then
+        kbd.clear()
+      end
       fileIndex = i
       render()
-    end))
+    end, rightRow, 2))
+    rightRow += 1
   end
   if editMode and profile ~= "My palettes" then
     local mine = {}
@@ -440,9 +462,12 @@ render = function()
     table.insert(right, chooser("target", mine, targetIndex, nil, function(i)
       targetIndex = i
       render()
-    end))
+    end, rightRow, 2))
+    rightRow += 1
   end
-  table.insert(right, ui.scroll({ gap = 8, flexGrow = 1, key = "grid" .. profile .. fileIndex, revealKey = string.match(kbd.reveal() or "", "^c%d+$") }, grid(currentColors())))
+  -- Build the grid first: it registers the swatch stops that reveal() looks up.
+  local swatches = grid(currentColors())
+  table.insert(right, ui.scroll({ gap = 8, flexGrow = 1, key = "grid" .. profile .. fileIndex, revealKey = string.match(kbd.reveal() or "", "^c%d+$") }, swatches))
 
   if pinned then
     local profileIndex = 1
@@ -501,28 +526,28 @@ render = function()
 
   panel.render(ui.column({ gap = 10, padding = 12, height = 520 }, {
     ui.row({ gap = 8, align = "center" }, {
-      ui.button({ key = "pick", selected = kbd.sel("pick"), text = "Pick from screen", glyph = "color-picker", variant = "primary", onClick = pickFromScreen }),
-      ui.button({ key = "select", selected = kbd.sel("select"), text = "Add from selector", glyph = "palette", onClick = addFromSelector }),
+      ring("pick", ui.button({ text = "Pick from screen", glyph = "color-picker", variant = "primary", onClick = pickFromScreen })),
+      ring("select", ui.button({ text = "Add from selector", glyph = "palette", onClick = addFromSelector })),
       ui.spacer({ flexGrow = 1 }),
       chooser("action", ACTIONS, actionIndex, 120, function(i)
         actionIndex = i
         saveChoice("action", ACTIONS[actionIndex])
         render()
-      end),
+      end, 1, 3),
       ui.label({ text = "as", color = "on_surface_variant" }),
       chooser("format", FORMATS, formatIndex, 120, function(i)
         formatIndex = i
         saveChoice("format", FORMATS[formatIndex])
         render()
-      end),
+      end, 1, 4),
       pinned and ui.row({ gap = 2 }, {
         ui.button({ glyph = "arrows-left-right", variant = "ghost", tooltip = "Move to the other side", onClick = function() pinSide.swap("colors", pinned) end }),
         ui.button({ glyph = "x", variant = "ghost", tooltip = "Close", onClick = function() panel.close() end }),
       })
-        or ui.button({ key = "pin", selected = kbd.sel("pin"), glyph = "pin", variant = "ghost", tooltip = "Pin window", onClick = function()
+        or ring("pin", ui.button({ glyph = "pin", variant = "ghost", tooltip = "Pin window", onClick = function()
           panel.close()
           pinSide.toggle("colors")
-        end }),
+        end })),
     }),
     ui.row({ gap = 12, flexGrow = 1 }, {
       ui.column({ gap = 4, width = 160 }, profileButtons),
