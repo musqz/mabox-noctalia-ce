@@ -27,7 +27,8 @@ placement = "floating"
 position = "top_left"
 persistent = true
 dismiss_on_outside_click = false
-keyboard_focus = "none"
+keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
 layer = "overlay"
 
 [[panel]]
@@ -39,5 +40,6 @@ placement = "floating"
 position = "top_right"
 persistent = true
 dismiss_on_outside_click = false
-keyboard_focus = "none"
+keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
 layer = "overlay"

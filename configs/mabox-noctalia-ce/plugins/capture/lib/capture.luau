@@ -42,7 +42,7 @@ local ticks = 0
 local lastRun = 0
 local render
 
--- Keyboard cursor. Row 1 is the top bar; the pinned windows take no keys, so they register no stops.
+-- Keyboard cursor. Row 1 is the top bar.
 local kr = 1
 local function nextRow()
   kr += 1
@@ -51,9 +51,6 @@ end
 -- Button with a keyboard stop; ringProps carries layout growth for the frame around it.
 local block = ""
 local function kbtn(id, row, col, props, ringProps)
-  if pinned then
-    return ui.button(props)
-  end
   kbd.stop(id, row, col, props.onClick)
   ringProps = ringProps or {}
   ringProps.key = "k-" .. id
@@ -312,14 +309,12 @@ local function recentBlock()
 end
 
 render = function()
-  if not pinned then
-    kbd.begin()
-  end
+  kbd.begin()
   kr = 1
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = recording and "Capture  (recording)" or "Capture", flexGrow = 1 }),
-    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
-    kbtn("pin", 1, 1, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
+    pinned and kbtn("swap", 1, 1, { glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
+    kbtn("pin", 1, 2, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       panel.close()
       if not pinned then
         pinSide.toggle("capture")
@@ -328,7 +323,7 @@ render = function()
   })
   local body = ui.column({ gap = 8 }, { shotBlock(), intervalBlock(), recBlock(), recentBlock() })
   if pinned then
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, { body }) }))
+    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
   else
     panel.render(ui.column({ gap = 8, padding = 12 }, { top, body }))
   end
