@@ -1,0 +1,20 @@
+id = "mabox/system"
+name = "System"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "device-desktop-analytics"
+description = "System information from the Mabox Control Center: overview, hardware, logs and a sanitized report for the forum."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "system"
+entry = "panel.luau"
+width = 1000
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+q"]

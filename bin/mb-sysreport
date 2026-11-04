@@ -74,9 +74,6 @@ def known_names():
         name, _, typ = l.rpartition(":")
         if typ == "802-11-wireless":
             names["wifi"].add(name.replace("\\:", ":"))
-    out = run(["nmcli", "-t", "-f", "SSID", "device", "wifi"])
-    if not out.startswith(("(", "Error")):
-        names["wifi"].update(l.strip() for l in out.splitlines())
     names["wifi"].discard("--")
     names["user"] -= COMMON
     names["host"] -= COMMON
@@ -149,6 +146,8 @@ def install_date():
     try:
         t = int(run(["stat", "-c", "%W", "/"]))
     except ValueError:
+        return "unknown"
+    if t <= 0:
         return "unknown"
     return datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d")
 
