@@ -53,10 +53,10 @@ function M.move(dir)
   local best, bestScore
   for _, s in ipairs(stops) do
     local score
-    if dir == "down" and s.col == cur.col and s.row > cur.row then
-      score = s.row - cur.row
-    elseif dir == "up" and s.col == cur.col and s.row < cur.row then
-      score = cur.row - s.row
+    if dir == "down" and s.row > cur.row then
+      score = (s.row - cur.row) * 1000 + math.abs(s.col - cur.col)
+    elseif dir == "up" and s.row < cur.row then
+      score = (cur.row - s.row) * 1000 + math.abs(s.col - cur.col)
     elseif dir == "right" and s.col > cur.col then
       score = (s.col - cur.col) * 1000 + math.abs(s.row - goal)
     elseif dir == "left" and s.col < cur.col then

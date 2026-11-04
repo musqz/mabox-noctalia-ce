@@ -3,6 +3,7 @@
 local DEFAULT = require("./paths.luau")
 
 local pinSide = require("./side.luau")
+local kbd = require("./kbd.luau")
 
 return function(pinned)
 -- Prints group|name|path|state for every entry whose command (or path) exists.
@@ -48,6 +49,14 @@ local newName = ""
 local newPath = ""
 local render
 local refresh
+local row = 0
+
+-- The pinned windows take no keyboard input, so they register no stops.
+local function stop(id, col, action)
+  if not pinned then
+    kbd.stop(id, row, col, action)
+  end
+end
 
 local function localFile()
   return noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce/config-paths.local"
@@ -222,25 +231,39 @@ local function show(path)
 end
 
 local function entryRow(e)
+  row += 1
+  local uid = e.group .. "|" .. e.name .. "|" .. e.path
+  local function showIt() show(e.path) end
+  local function openIt() open(e.path) end
+  local function removeIt() removeCustom(e.name, e.path) end
+  stop("f" .. uid, 1, showIt)
+  stop("o" .. uid, 2, openIt)
   local items = {
     ui.label({ text = e.name, color = e.state == "ok" and "on_surface" or "on_surface_variant" }),
     ui.spacer({ flexGrow = 1 }),
-    ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = function() show(e.path) end }),
+    ui.button({ key = "f" .. uid, glyph = "folder", selected = kbd.sel("f" .. uid), variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = showIt }),
     ui.button({
+      key = "o" .. uid,
+      selected = kbd.sel("o" .. uid),
       glyph = "pencil",
       variant = "ghost",
       controlSize = "sm",
       tooltip = e.state == "ok" and e.path or e.path .. " (missing)",
-      onClick = function() open(e.path) end,
+      onClick = openIt,
     }),
   }
   if e.group == "Custom" then
-    table.insert(items, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove from the list", onClick = function() removeCustom(e.name, e.path) end }))
+    stop("x" .. uid, 3, removeIt)
+    table.insert(items, ui.button({ key = "x" .. uid, selected = kbd.sel("x" .. uid), glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove from the list", onClick = removeIt }))
   end
   return ui.row({ gap = 6, align = "center" }, items)
 end
 
 render = function()
+  if not pinned then
+    kbd.begin()
+  end
+  row = 0
   local cards = {}
   local order = {}
   local groups = {}
@@ -258,20 +281,149 @@ render = function()
     end
   end
   table.insert(order, "Custom")
+
+  local function toggle(name)
+    expanded[name] = not expanded[name] or nil
+    saveExpanded()
+    render()
+  end
+
+  local function pinOrClose()
+    panel.close()
+    if not pinned then
+      pinSide.toggle("configs")
+    end
+  end
+  local function moveSide()
+    pinSide.swap("configs", pinned)
+  end
+  local function runLabwc()
+    noctalia.runAsync({ "labwc", "--reconfigure" })
+  end
+  local function runFitts()
+    panel.close()
+    noctalia.runAsync({ "mb-fitts" })
+  end
+  local function runNoctalia()
+    noctalia.runAsync({ "noctalia", "msg", "config-reload" })
+  end
+  local function reloadAll()
+    reloadPlugins(plugins)
+  end
+
+  row += 1
+  stop("refresh", 1, refresh)
+  stop("pin", 2, pinOrClose)
+  local top = ui.row({ gap = 6, align = "center" }, {
+    ui.label({ text = "Configs", flexGrow = 1 }),
+    ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
+    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
+    ui.button({ key = "pin", selected = kbd.sel("pin"), glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose }),
+  })
+
+  row += 1
+  stop("labwc", 1, runLabwc)
+  stop("fitts", 2, runFitts)
+  stop("noctalia", 3, runNoctalia)
+  local reload = ui.row({ gap = 6 }, {
+    ui.button({ key = "labwc", selected = kbd.sel("labwc"), text = "labwc", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to rc.xml, menu.xml and themerc without logging out", onClick = runLabwc }),
+    ui.button({ key = "fitts", selected = kbd.sel("fitts"), glyph = "mouse", variant = "ghost", controlSize = "sm", tooltip = "Show what the screen edges and corners do (fittsmon)", onClick = runFitts }),
+    ui.button({ key = "noctalia", selected = kbd.sel("noctalia"), text = "Noctalia", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to the bar, widget tooltips and click actions", onClick = runNoctalia }),
+  })
+
+  local sideOpen = expanded["Pinned windows"]
+  row += 1
+  stop("h-side", 1, function() toggle("Pinned windows") end)
+  local sideRows = {
+    ui.button({
+      key = "h-side",
+      selected = kbd.sel("h-side"),
+      text = "Pinned windows",
+      glyph = sideOpen and "chevron-down" or "chevron-right",
+      variant = "ghost",
+      controlSize = "sm",
+      contentAlign = "start",
+      onClick = function() toggle("Pinned windows") end,
+    }),
+  }
+  if sideOpen then
+    for _, pl in ipairs(PINNED_PLUGINS) do
+      row += 1
+      local current = pinSide.get(pl[1])
+      local function sideButton(value, text, col)
+        local function pick()
+          pinSide.set(pl[1], value)
+          render()
+        end
+        local id = "p-" .. pl[1] .. value
+        stop(id, col, pick)
+        return ui.button({
+          key = id,
+          selected = kbd.sel(id),
+          text = text,
+          variant = current == value and "primary" or "ghost",
+          controlSize = "sm",
+          tooltip = "An open window moves after you close and reopen it",
+          onClick = pick,
+        })
+      end
+      table.insert(sideRows, ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = pl[2] }),
+        ui.spacer({ flexGrow = 1 }),
+        sideButton("left", "Left", 1),
+        sideButton("right", "Right", 2),
+      }))
+    end
+  end
+  table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
+
+  local plugOpen = expanded["Plugins"]
+  row += 1
+  stop("h-plug", 1, function() toggle("Plugins") end)
+  stop("reload-all", 2, reloadAll)
+  local plugRows = {
+    ui.row({ gap = 6, align = "center" }, {
+      ui.button({
+        key = "h-plug",
+        selected = kbd.sel("h-plug"),
+        text = "Plugins",
+        flexGrow = 1,
+        glyph = plugOpen and "chevron-down" or "chevron-right",
+        variant = "ghost",
+        controlSize = "sm",
+        contentAlign = "start",
+        tooltip = "Click a plugin to restart it after editing its plugin.toml or Lua files",
+        onClick = function() toggle("Plugins") end,
+      }),
+      ui.button({ key = "reload-all", selected = kbd.sel("reload-all"), text = "Reload all", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Restart every enabled plugin; failed ones turn red", onClick = reloadAll }),
+    }),
+  }
+  if plugOpen then
+    for _, id in ipairs(plugins) do
+      row += 1
+      local function reloadOne()
+        reloadPlugins({ id })
+      end
+      stop("pl-" .. id, 1, reloadOne)
+      table.insert(plugRows, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = id, glyph = failed[id] and "alert-circle" or "refresh", variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; click to retry" or nil, onClick = reloadOne }))
+    end
+  end
+  table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, plugRows))
+
   for _, g in ipairs(order) do
     local closed = not expanded[g]
+    row += 1
+    stop("g-" .. g, 1, function() toggle(g) end)
     local rows = {
       ui.button({
+        key = "g-" .. g,
+        selected = kbd.sel("g-" .. g),
         text = g,
         glyph = closed and "chevron-right" or "chevron-down",
         variant = "ghost",
         controlSize = "sm",
         contentAlign = "start",
-        onClick = function()
-          expanded[g] = closed or nil
-          saveExpanded()
-          render()
-        end,
+        onClick = function() toggle(g) end,
       }),
     }
     if not closed then
@@ -288,6 +440,16 @@ render = function()
       end
     end
     if g == "Custom" and not closed and not pinned then
+      row += 1
+      local function files()
+        show(noctalia.getenv("HOME") .. "/.config")
+      end
+      local function paste()
+        pastePath(false)
+      end
+      stop("c-files", 1, files)
+      stop("c-paste", 2, paste)
+      stop("c-add", 3, addCustom)
       table.insert(rows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, {
         ui.label({ text = "Add a file", fontSize = 12 }),
         ui.label({ text = "Name (optional)", fontSize = 11, color = "on_surface_variant" }),
@@ -295,9 +457,9 @@ render = function()
         ui.label({ text = "Path (~ allowed)", fontSize = 11, color = "on_surface_variant" }),
         ui.input({ key = "newPath", value = newPath, onChange = function(t) newPath = t end }),
         ui.row({ gap = 4 }, {
-          ui.button({ text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = function() show(noctalia.getenv("HOME") .. "/.config") end }),
-          ui.button({ text = "Paste", glyph = "clipboard", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Use the copied file", onClick = function() pastePath(false) end }),
-          ui.button({ text = "Add", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, onClick = addCustom }),
+          ui.button({ key = "c-files", selected = kbd.sel("c-files"), text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = files }),
+          ui.button({ key = "c-paste", selected = kbd.sel("c-paste"), text = "Paste", glyph = "clipboard", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Use the copied file", onClick = paste }),
+          ui.button({ key = "c-add", selected = kbd.sel("c-add"), text = "Add", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, onClick = addCustom }),
         }),
       }))
     end
@@ -310,92 +472,22 @@ render = function()
     end
     table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows))
   end
-  local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = "Configs", flexGrow = 1 }),
-    ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
-    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("configs", pinned) end }) or ui.spacer({ width = 0 }),
-    ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
-      panel.close()
-      if not pinned then
-        pinSide.toggle("configs")
-      end
-    end }),
-  })
-  local reload = ui.row({ gap = 6 }, {
-    ui.button({ text = "labwc", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to rc.xml, menu.xml and themerc without logging out", onClick = function() noctalia.runAsync({ "labwc", "--reconfigure" }) end }),
-    ui.button({ glyph = "mouse", variant = "ghost", controlSize = "sm", tooltip = "Show what the screen edges and corners do (fittsmon)", onClick = function() panel.close(); noctalia.runAsync({ "mb-fitts" }) end }),
-    ui.button({ text = "Noctalia", glyph = "refresh", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Apply changes to the bar, widget tooltips and click actions", onClick = function() noctalia.runAsync({ "noctalia", "msg", "config-reload" }) end }),
-  })
-  local sideOpen = expanded["Pinned windows"]
-  local sideRows = {
-    ui.button({
-      text = "Pinned windows",
-      glyph = sideOpen and "chevron-down" or "chevron-right",
-      variant = "ghost",
-      controlSize = "sm",
-      contentAlign = "start",
-      onClick = function()
-        expanded["Pinned windows"] = not sideOpen or nil
-        saveExpanded()
-        render()
-      end,
-    }),
-  }
-  if sideOpen then
-    for _, pl in ipairs(PINNED_PLUGINS) do
-      local current = pinSide.get(pl[1])
-      local function sideButton(value, text)
-        return ui.button({
-          text = text,
-          variant = current == value and "primary" or "ghost",
-          controlSize = "sm",
-          tooltip = "An open window moves after you close and reopen it",
-          onClick = function()
-            pinSide.set(pl[1], value)
-            render()
-          end,
-        })
-      end
-      table.insert(sideRows, ui.row({ gap = 6, align = "center" }, {
-        ui.label({ text = pl[2] }),
-        ui.spacer({ flexGrow = 1 }),
-        sideButton("left", "Left"),
-        sideButton("right", "Right"),
-      }))
-    end
-  end
-  table.insert(cards, 1, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
-  local plugOpen = expanded["Plugins"]
-  local plugRows = {}
-  local plugHead = {
-    ui.button({
-      text = "Plugins",
-      flexGrow = 1,
-      glyph = plugOpen and "chevron-down" or "chevron-right",
-      variant = "ghost",
-      controlSize = "sm",
-      contentAlign = "start",
-      tooltip = "Click a plugin to restart it after editing its plugin.toml or Lua files",
-      onClick = function()
-        expanded["Plugins"] = not plugOpen or nil
-        saveExpanded()
-        render()
-      end,
-    }),
-    ui.button({ text = "Reload all", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Restart every enabled plugin; failed ones turn red", onClick = function() reloadPlugins(plugins) end }),
-  }
-  table.insert(plugRows, ui.row({ gap = 6, align = "center" }, plugHead))
-  if plugOpen then
-    for _, id in ipairs(plugins) do
-      table.insert(plugRows, ui.button({ text = id, glyph = failed[id] and "alert-circle" or "refresh", variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; click to retry" or nil, onClick = function() reloadPlugins({ id }) end }))
-    end
-  end
-  table.insert(cards, 2, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, plugRows))
-  local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards)
+
+  local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() }, cards)
   if pinned then
     panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, reload, list }))
   else
     panel.render(ui.column({ gap = 8, padding = 12, height = 520 }, { top, reload, list }))
+  end
+end
+
+-- alt+s drops the cursor so the Add form's fields can be clicked and typed in.
+local function handleKey(chord)
+  if chord == "alt+s" then
+    kbd.clear()
+    render()
+  elseif kbd.key(chord) == "moved" then
+    render()
   end
 end
 
@@ -405,5 +497,5 @@ local function start()
   refresh()
 end
 
-return start
+return start, handleKey
 end
