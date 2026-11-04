@@ -3,6 +3,7 @@
 -- Choices live in <plugin data dir>/settings.
 
 local pinSide = require("./side.luau")
+local kbd = require("./kbd.luau")
 
 return function(pinned)
 local REFRESH = 2
@@ -40,6 +41,29 @@ local armedAt = 0
 local ticks = 0
 local lastRun = 0
 local render
+
+-- Keyboard cursor. Row 1 is the top bar; the pinned windows take no keys, so they register no stops.
+local kr = 1
+local function nextRow()
+  kr += 1
+  return kr
+end
+-- Button with a keyboard stop; ringProps carries layout growth for the frame around it.
+local block = ""
+local function kbtn(id, row, col, props, ringProps)
+  if pinned then
+    return ui.button(props)
+  end
+  kbd.stop(id, row, col, props.onClick)
+  ringProps = ringProps or {}
+  ringProps.key = "k-" .. id
+  ringProps.align = "stretch"
+  ringProps.padding = 3
+  ringProps.radius = 8
+  ringProps.border = "on_surface"
+  ringProps.borderWidth = kbd.sel(id) and 3 or 0
+  return ui.column(ringProps, { ui.button(props) })
+end
 
 -- Settings
 
@@ -157,14 +181,14 @@ end
 local function headingWithFolder(text, path)
   return ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = string.upper(text), fontSize = 11, color = "primary", flexGrow = 1 }),
-    ui.button({ text = "Folder", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function()
+    kbtn(block .. "folder", nextRow(), 1, { text = "Folder", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function()
       noctalia.runAsync({ "xdg-open", path })
     end }),
   })
 end
 
 -- Setting shown as one small button; a click moves to the next value.
-local function cycle(label, key, values, suffix, names, hint)
+local function cycle(row, col, label, key, values, suffix, names, hint)
   local at = 0
   for n, v in ipairs(values) do
     if v == S[key] then
@@ -172,60 +196,67 @@ local function cycle(label, key, values, suffix, names, hint)
     end
   end
   local shown = names and names[S[key]] or S[key] .. (suffix or "")
-  return ui.button({ text = label and (label .. " " .. shown) or shown, variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = (hint or label or key) .. ": click for the next value", onClick = function()
+  return kbtn("y-" .. key, row, col, { text = label and (label .. " " .. shown) or shown, variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = (hint or label or key) .. ": click for the next value", onClick = function()
     setSetting(key, values[at % #values + 1])
     render()
-  end })
+  end }, { flexGrow = 1 })
 end
 
-local function action(text, glyph, onClick, variant)
-  return ui.button({ text = text, glyph = glyph, variant = variant or "primary", flexGrow = 1, onClick = onClick })
+local function action(row, col, text, glyph, onClick, variant)
+  return kbtn(block .. text, row, col, { text = text, glyph = glyph, variant = variant or "primary", flexGrow = 1, onClick = onClick }, { flexGrow = 1 })
 end
 
 local function shotBlock()
+  block = "shot-"
+  local head = headingWithFolder("Screenshot", HOME .. "/Pictures/screenshots")
+  local r1, r2, r3 = nextRow(), nextRow(), nextRow()
   return card({
-    headingWithFolder("Screenshot", HOME .. "/Pictures/screenshots"),
+    head,
     ui.row({ gap = 4 }, {
-      action("Screen", "device-desktop", function() shot({ "screenshot-fullscreen" }) end),
-      action("All", "layout-grid", function() shot({ "screenshot-fullscreen", "all" }) end),
-      action("Window", "app-window", function() shot({ "screenshot-window" }) end),
+      action(r1, 1, "Screen", "device-desktop", function() shot({ "screenshot-fullscreen" }) end),
+      action(r1, 2, "All", "layout-grid", function() shot({ "screenshot-fullscreen", "all" }) end),
+      action(r1, 3, "Window", "app-window", function() shot({ "screenshot-window" }) end),
     }),
     ui.row({ gap = 4 }, {
-      action("Area", "crop", function() shot({ "screenshot-region" }) end),
-      action("Annotate", "pencil", function() shot(nil, true) end),
+      action(r2, 1, "Area", "crop", function() shot({ "screenshot-region" }) end),
+      action(r2, 2, "Annotate", "pencil", function() shot(nil, true) end),
     }),
     ui.row({ gap = 4 }, {
-      cycle("Delay", "shot_delay", { "0", "3", "5", "10", "30" }, "s", nil, "Delay for the next screenshot only"),
-      cycle("Format", "shot_format", { "png", "jpg", "webp", "avif" }),
+      cycle(r3, 1, "Delay", "shot_delay", { "0", "3", "5", "10", "30" }, "s", nil, "Delay for the next screenshot only"),
+      cycle(r3, 2, "Format", "shot_format", { "png", "jpg", "webp", "avif" }),
     }),
   })
 end
 
 local function recBlock()
+  block = "rec-"
   local rows = { headingWithFolder(recording and "Recording" or "Record", HOME .. "/Videos/Recordings") }
   if recording then
-    table.insert(rows, action("Stop recording", "player-stop", function()
+    table.insert(rows, action(nextRow(), 1, "Stop recording", "player-stop", function()
       launch({ "pkill", "-INT", "-x", "wl-screenrec" }, false)
     end, "destructive"))
   else
+    local r1, r2 = nextRow(), nextRow()
     table.insert(rows, ui.row({ gap = 4 }, {
-      action("Screen", "device-desktop", function() record(false) end),
-      action("Area", "crop", function() record(true) end),
+      action(r1, 1, "Screen", "device-desktop", function() record(false) end),
+      action(r1, 2, "Area", "crop", function() record(true) end),
     }))
     table.insert(rows, ui.row({ gap = 4 }, {
-      cycle(nil, "rec_container", { "mp4", "mkv" }, nil, nil, "Container"),
-      cycle(nil, "rec_fps", { "15", "30", "60" }, " fps", nil, "Frame rate"),
-      cycle("Audio", "rec_audio", { "none", "system", "mic" }),
+      cycle(r2, 1, nil, "rec_container", { "mp4", "mkv" }, nil, nil, "Container"),
+      cycle(r2, 2, nil, "rec_fps", { "15", "30", "60" }, " fps", nil, "Frame rate"),
+      cycle(r2, 3, "Audio", "rec_audio", { "none", "system", "mic" }),
     }))
   end
   return card(rows)
 end
 
 local function intervalBlock()
+  block = "iv-"
   local title = (intervalOn and "Interval (running)" or "Interval") .. (ivCount > 0 and ("  " .. ivCount .. " images") or "")
   local rows = { headingWithFolder(title, HOME .. "/Pictures/shot_interval") }
+  local r1 = nextRow()
   table.insert(rows, ui.row({ gap = 4 }, {
-    action(intervalOn and "Stop" or "Start", intervalOn and "player-stop" or "player-play", function()
+    action(r1, 1, intervalOn and "Stop" or "Start", intervalOn and "player-stop" or "player-play", function()
       if intervalOn then
         launch({ "mb-shots-interval", "-s" }, false)
       elseif S.iv_mode == "area" then
@@ -234,14 +265,15 @@ local function intervalBlock()
         launch({ "mb-shots-interval", "-o", "auto", S.interval }, false)
       end
     end, intervalOn and "destructive" or "primary"),
-    action("GIF", "gif", function() launch({ "mb-gifmaker", "-s", S.gif_size }, true) end),
+    action(r1, 2, "GIF", "gif", function() launch({ "mb-gifmaker", "-s", S.gif_size }, true) end),
   }))
   if not intervalOn and ivCount > 0 then
+    local r2 = nextRow()
     table.insert(rows, ui.row({ gap = 4 }, {
-      ui.button({ text = "Backup", glyph = "archive", variant = "outline", controlSize = "sm", flexGrow = 1, tooltip = "Move the images to backup/DATE", onClick = function()
+      kbtn("iv-backup", r2, 1, { text = "Backup", glyph = "archive", variant = "outline", controlSize = "sm", flexGrow = 1, tooltip = "Move the images to backup/DATE", onClick = function()
         noctalia.runAsync({ "mb-shots-interval", "-b" }, function() refresh() end)
-      end }),
-      ui.button({ text = armed and "Click again to delete" or "Delete all", glyph = "trash", variant = armed and "destructive" or "outline", controlSize = "sm", flexGrow = 1, onClick = function()
+      end }, { flexGrow = 1 }),
+      kbtn("iv-delete", r2, 2, { text = armed and "Click again to delete" or "Delete all", glyph = "trash", variant = armed and "destructive" or "outline", controlSize = "sm", flexGrow = 1, onClick = function()
         if armed then
           armed = false
           noctalia.runAsync({ "mb-shots-interval", "-x" }, function() refresh() end)
@@ -250,27 +282,29 @@ local function intervalBlock()
           armedAt = ticks
           render()
         end
-      end }),
+      end }, { flexGrow = 1 }),
     }))
   end
   local opts = {}
+  local r3 = nextRow()
   if not intervalOn then
-    table.insert(opts, cycle("Every", "interval", { "2", "5", "10", "30", "60" }, "s"))
-    table.insert(opts, cycle(nil, "iv_mode", { "screen", "area" }, nil, nil, "Capture"))
+    table.insert(opts, cycle(r3, 1, "Every", "interval", { "2", "5", "10", "30", "60" }, "s"))
+    table.insert(opts, cycle(r3, 2, nil, "iv_mode", { "screen", "area" }, nil, nil, "Capture"))
   end
-  table.insert(opts, cycle("GIF", "gif_size", { "480", "800", "1280", "1920", "0" }, nil, { ["0"] = "original" }, "GIF size (longest side)"))
+  table.insert(opts, cycle(r3, 3, "GIF", "gif_size", { "480", "800", "1280", "1920", "0" }, nil, { ["0"] = "original" }, "GIF size (longest side)"))
   table.insert(rows, ui.row({ gap = 4 }, opts))
   return card(rows)
 end
 
 local function recentBlock()
+  block = "recent-"
   local rows = { heading("Recent") }
   if #recent == 0 then
     table.insert(rows, ui.label({ text = "Nothing yet", color = "on_surface_variant" }))
   end
   for _, path in ipairs(recent) do
     local name = string.match(path, "([^/]+)$") or path
-    table.insert(rows, ui.button({ text = name, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function()
+    table.insert(rows, kbtn("rc-" .. path, nextRow(), 1, { text = name, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function()
       noctalia.runAsync({ "xdg-open", path })
     end }))
   end
@@ -278,10 +312,14 @@ local function recentBlock()
 end
 
 render = function()
+  if not pinned then
+    kbd.begin()
+  end
+  kr = 1
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = recording and "Capture  (recording)" or "Capture", flexGrow = 1 }),
     pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
-    ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
+    kbtn("pin", 1, 1, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       panel.close()
       if not pinned then
         pinSide.toggle("capture")
@@ -296,7 +334,17 @@ render = function()
   end
 end
 
+local function handleKey(chord)
+  if chord == "alt+s" then
+    kbd.clear()
+    render()
+  elseif kbd.key(chord) == "moved" then
+    render()
+  end
+end
+
 local function open()
+  kbd.clear()
   armed = false
   loadSettings()
   ticks = 0
@@ -315,5 +363,5 @@ local function tick()
   end
 end
 
-return open, tick
+return open, tick, handleKey
 end
