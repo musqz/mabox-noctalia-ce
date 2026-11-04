@@ -5,7 +5,7 @@ local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Cap
 local kbd = require("./kbd.luau")
 
 return function(wide)
-  local columns = 3
+  local columns = 2
   local keyWidth = 190
   local binds = {}
   local mode = "basics"

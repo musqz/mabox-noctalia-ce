@@ -22,7 +22,7 @@ capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "
 [[panel]]
 id = "keys-wide"
 entry = "wide.luau"
-width = "fill"
+width = 1200
 height = "content"
 max_height = 620
 placement = "floating"
