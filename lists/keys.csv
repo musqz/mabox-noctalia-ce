@@ -10,6 +10,8 @@ W-n,Panels,1,Notes
 W-A-n,Panels,0,Notes as pinned window
 W-A-c,Panels,0,Color picker
 W-A-s,Panels,0,Status panel
+W-A-r,Panels,0,Capture panel (screenshot, recording)
+W-A-d,Desktop,0,Show or hide the desktop widgets
 W-A-i,Panels,0,System info and report
 W-A-k,Panels,0,Fittsmon zone commands on each monitor
 W-S-s,Panels,0,Status as pinned window
