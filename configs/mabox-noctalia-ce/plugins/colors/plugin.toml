@@ -29,6 +29,7 @@ entry = "pinned-left.luau"
 layer = "overlay"
 anchors = ["left", "top", "bottom"]
 width = 330
+margins = { top = 20, bottom = 20 }
 keyboard = "on_demand"
 output = "focused"
 
@@ -38,5 +39,6 @@ entry = "pinned-right.luau"
 layer = "overlay"
 anchors = ["right", "top", "bottom"]
 width = 330
+margins = { top = 20, bottom = 20 }
 keyboard = "on_demand"
 output = "focused"
