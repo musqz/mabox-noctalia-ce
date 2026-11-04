@@ -6,6 +6,13 @@ local armed = nil
 local diff = nil
 local note = nil
 local render
+local kbd = require("./lib/kbd.luau")
+
+-- Keyboard cursor: button with a stop and a thick frame; border props are always sent (retained widgets).
+local function kbtn(id, row, col, props)
+  kbd.stop(id, row, col, props.onClick)
+  return ui.column({ key = "k-" .. id, align = "stretch", padding = 3, radius = 8, border = "on_surface", borderWidth = kbd.sel(id) and 3 or 0 }, { ui.button(props) })
+end
 
 local function refresh(after)
   armed = nil
@@ -55,12 +62,12 @@ local function reset(name)
   end)
 end
 
-local function itemRow(it)
+local function itemRow(it, row)
   local actions = {}
   if it.state == "differs" then
-    table.insert(actions, ui.button({ glyph = "git-compare", variant = "ghost", controlSize = "sm", tooltip = "Compare", onClick = function() compare(it.name) end }))
+    table.insert(actions, kbtn("c-" .. it.name, row, 1, { glyph = "git-compare", variant = "ghost", controlSize = "sm", tooltip = "Compare", onClick = function() compare(it.name) end }))
     local sure = armed == it.name
-    table.insert(actions, ui.button({
+    table.insert(actions, kbtn("r-" .. it.name, row, 2, {
       text = sure and "Confirm" or nil,
       glyph = sure and nil or "restore",
       variant = sure and "primary" or "ghost",
@@ -84,21 +91,25 @@ local function itemRow(it)
 end
 
 render = function()
+  kbd.begin()
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = diff and ("Diff: " .. diff.name) or "Reset configs", flexGrow = 1 }),
-    ui.button({ glyph = diff and "arrow-left" or "refresh", variant = "ghost", controlSize = "sm", tooltip = diff and "Back" or "Refresh", onClick = function()
+    kbtn("back", 1, 1, { glyph = diff and "arrow-left" or "refresh", variant = "ghost", controlSize = "sm", tooltip = diff and "Back" or "Refresh", onClick = function()
+      if diff then
+        kbd.clear()
+      end
       diff = nil
       refresh()
     end }),
-    ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
+    kbtn("close", 1, 2, { glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
   })
   local body
   if diff then
     body = ui.scroll({ flexGrow = 1, key = "diff" }, { ui.label({ text = diff.text, fontSize = 11 }) })
   else
     local rows = {}
-    for _, it in ipairs(items) do
-      table.insert(rows, itemRow(it))
+    for i, it in ipairs(items) do
+      table.insert(rows, itemRow(it, i + 1))
     end
     if #rows == 0 then
       table.insert(rows, ui.label({ text = "Reading configs", color = "on_surface_variant" }))
@@ -112,7 +123,22 @@ render = function()
 end
 
 function onOpen()
+  kbd.clear()
   armed, diff, note = nil, nil, nil
   render()
   refresh()
+end
+
+-- alt+s drops the cursor.
+function onKey(chord, pressed)
+  if not pressed then
+    return
+  end
+  if chord == "alt+s" then
+    kbd.clear()
+    render()
+  elseif kbd.key(chord) == "moved" then
+    armed = nil
+    render()
+  end
 end
