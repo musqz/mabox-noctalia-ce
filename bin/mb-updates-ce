@@ -137,22 +137,22 @@ upgrade() {
     case $what in
         all|repo|aur)
             if [[ $what == repo ]] || ! command -v yay >/dev/null; then
-                cmd='sudo pacman -Syu; '
+                cmd='echo "==> Repo update (pacman)"; sudo pacman -Syu; '
             else
-                cmd='yay -Syu; '
+                cmd='echo "==> Repo + AUR update (yay)"; yay -Syu; '
             fi ;;
     esac
     case $what in
-        all|flatpak) command -v flatpak >/dev/null && cmd+='flatpak update; ' ;;
+        all|flatpak) command -v flatpak >/dev/null && cmd+='echo; echo "==> Flatpak update"; flatpak update; ' ;;
     esac
     case $what in
-        all|npm) has_npm && cmd+='npm update -g; ' ;;
+        all|npm) has_npm && cmd+='echo; echo "==> npm update"; npm update -g; ' ;;
     esac
     case $what in
-        all|pipx) has_pipx && cmd+='pipx upgrade-all; ' ;;
+        all|pipx) has_pipx && cmd+='echo; echo "==> pipx update"; pipx upgrade-all; ' ;;
     esac
     case $what in
-        all|snap) (( has_snap )) && cmd+='sudo snap refresh; ' ;;
+        all|snap) (( has_snap )) && cmd+='echo; echo "==> Snap update"; sudo snap refresh; ' ;;
     esac
     [[ -n $cmd ]] || { echo "nothing to update for '$what'" >&2; return 1; }
     foot -T "system update" bash -c 'eval "$1"; echo; read -rp "Done. Press Enter to close. " _' _ "$cmd" || true
