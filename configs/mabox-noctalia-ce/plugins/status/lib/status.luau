@@ -59,23 +59,18 @@ local dirty = false
 local expanded = nil
 local render
 
--- Keyboard cursor. Row 1 is the top bar; the pinned windows take no keys, so they register no stops.
+-- Keyboard cursor. Row 1 is the top bar.
 local kr = 1
-local TOP_IDS = { ["t-view"] = true, ["t-refresh"] = true, ["t-pin"] = true }
+local TOP_IDS = { ["t-view"] = true, ["t-refresh"] = true, ["t-swap"] = true, ["t-pin"] = true }
 local function nextRow()
   kr += 1
   return kr
 end
 local function stop(id, row, col, action)
-  if not pinned then
-    kbd.stop(id, row, col, action)
-  end
+  kbd.stop(id, row, col, action)
 end
 -- Cursor marker: a thick frame; border props are always sent (retained widgets).
 local function ring(id, child, props)
-  if pinned then
-    return child
-  end
   props = props or {}
   props.key = "k-" .. id
   props.align = "stretch"
@@ -628,9 +623,7 @@ local function settingsCards()
 end
 
 render = function()
-  if not pinned then
-    kbd.begin()
-  end
+  kbd.begin()
   kr = 1
   local settingsView = view == "settings"
   local function switchView()
@@ -654,12 +647,15 @@ render = function()
   end
   stop("t-view", 1, 1, switchView)
   stop("t-refresh", 1, 2, doRefresh)
-  stop("t-pin", 1, 3, pinOrClose)
+  if pinned then
+    stop("t-swap", 1, 3, function() pinSide.swap("status", pinned) end)
+  end
+  stop("t-pin", 1, 4, pinOrClose)
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = settingsView and "Status settings" or (running and "Status  (updating)" or "Status"), flexGrow = 1 }),
     ring("t-view", ui.button({ glyph = settingsView and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settingsView and "Back" or "Settings", onClick = switchView })),
     ring("t-refresh", ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = doRefresh })),
-    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end }) or ui.spacer({ width = 0 }),
+    pinned and ring("t-swap", ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end })) or ui.spacer({ width = 0 }),
     ring("t-pin", ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose })),
   })
   local rows = {}

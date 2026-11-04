@@ -22,16 +22,11 @@ local MAX_RECENT = 50
 -- Sidebar buttons and swatches sit side by side, so each counts its own rows from the top bar.
 local sideRow = 1
 local function stop(id, row, col, action)
-  if not pinned then
-    kbd.stop(id, row, col, action)
-  end
+  kbd.stop(id, row, col, action)
 end
 
 -- Cursor marker: a thick high-contrast frame around the element; border props are always sent (retained widgets).
 local function ring(id, child, props)
-  if pinned then
-    return child
-  end
   props = props or {}
   props.key = "k-" .. id
   props.padding = 3
@@ -174,10 +169,14 @@ local function chooser(key, options, index, width, onPick, row, col)
     end
     return ring(key, ui.select({ key = key, options = options, selectedIndex = index - 1, width = width, placeholder = "Add to palette", onChange = function(idx) onPick(tonumber(idx) + 1) end }))
   end
+  local function prev() step(-1) end
+  local function next() step(1) end
+  stop(key .. "<", row, col, prev)
+  stop(key .. ">", row, col + 1, next)
   return ui.row({ key = key, gap = 4, align = "center", width = width }, {
-    ui.button({ glyph = "chevron-left", variant = "ghost", controlSize = "sm", onClick = function() step(-1) end }),
+    ring(key .. "<", ui.button({ glyph = "chevron-left", variant = "ghost", controlSize = "sm", onClick = prev })),
     ui.label({ text = options[index] or "-", maxLines = 1, flexGrow = 1, textAlign = "center" }),
-    ui.button({ glyph = "chevron-right", variant = "ghost", controlSize = "sm", onClick = function() step(1) end }),
+    ring(key .. ">", ui.button({ glyph = "chevron-right", variant = "ghost", controlSize = "sm", onClick = next })),
   })
 end
 
@@ -190,10 +189,10 @@ local function copy(hex)
   local text = format(hex)
   noctalia.copyToClipboard(text, "text/plain")
   if pasting() then
-    if not pinned then
-      panel.close()
-    end
-    noctalia.runAsync({ "sh", "-c", 'sleep 0.3; exec wtype -- "$1"', "sh", text })
+    -- A clicked pinned window holds keyboard focus too: close it for the typing and reopen it.
+    panel.close()
+    local reopen = pinned and ("mabox/colors:pinned-" .. pinned) or ""
+    noctalia.runAsync({ "sh", "-c", 'sleep 0.3; wtype -- "$1"; [ -z "$2" ] || sleep 0.2; [ -z "$2" ] || noctalia msg panel-open "$2"', "sh", text, reopen })
   else
     noctalia.notify("Color copied", text)
   end
@@ -381,7 +380,9 @@ end
 -- Side button: registers the stop and carries the cursor highlight.
 local function sideButton(id, props)
   sideRow += 1
-  stop(id, sideRow, 1, props.onClick)
+  if not pinned then
+    stop(id, sideRow, 1, props.onClick)
+  end
   props.key = id
   props.variant = props.variant or "ghost"
   props.contentAlign = "start"
@@ -389,17 +390,20 @@ local function sideButton(id, props)
 end
 
 render = function()
-  if not pinned then
-    kbd.begin()
-  end
+  kbd.begin()
   sideRow = 1
-  rightRow = 2
+  -- Pinned: rows 1-3 are the top bar, action/format and profile; the choosers and grid follow.
+  rightRow = pinned and 4 or 2
   stop("pick", 1, 1, pickFromScreen)
   stop("select", 1, 2, addFromSelector)
-  stop("pin", 1, 5, function()
-    panel.close()
-    pinSide.toggle("colors")
-  end)
+  if pinned then
+    stop("close", 1, 3, function() panel.close() end)
+  else
+    stop("pin", 1, 5, function()
+      panel.close()
+      pinSide.toggle("colors")
+    end)
+  end
   local profileButtons = {}
   for _, name in ipairs(PROFILES) do
     table.insert(profileButtons, sideButton("p" .. name, {
@@ -446,7 +450,7 @@ render = function()
       table.insert(names, cleanName(f))
     end
     table.insert(right, chooser("files" .. profile, names, fileIndex, nil, function(i)
-      if not kbd.sel("files" .. profile) then
+      if not kbd.sel("files" .. profile) and not kbd.sel("files" .. profile .. "<") and not kbd.sel("files" .. profile .. ">") then
         kbd.clear()
       end
       fileIndex = i
@@ -476,8 +480,16 @@ render = function()
         profileIndex = i
       end
     end
+    -- Rows after the grid; the grid has at least one row.
+    local toolsRow = rightRow + math.max(1, math.ceil(#currentColors() / COLUMNS))
+    local toolCol = 0
+    local function tool(id, props)
+      toolCol += 1
+      stop(id, toolsRow, toolCol, props.onClick)
+      return ring(id, ui.button(props))
+    end
     local tools = {
-      ui.button({
+      tool("edit", {
         glyph = "edit",
         text = "Edit",
         variant = editMode and "primary" or "ghost",
@@ -489,32 +501,32 @@ render = function()
       }),
     }
     if profile == "Recent" then
-      table.insert(tools, ui.button({ glyph = "device-floppy", text = "Save", tooltip = "Save recent as palette", variant = "ghost", controlSize = "sm", onClick = function() createPalette(parseClr(RECENT)) end }))
-      table.insert(tools, ui.button({ glyph = "trash", text = "Clear", tooltip = "Clear recent", variant = "ghost", controlSize = "sm", onClick = clearRecent }))
+      table.insert(tools, tool("save", { glyph = "device-floppy", text = "Save", tooltip = "Save recent as palette", variant = "ghost", controlSize = "sm", onClick = function() createPalette(parseClr(RECENT)) end }))
+      table.insert(tools, tool("clear", { glyph = "trash", text = "Clear", tooltip = "Clear recent", variant = "ghost", controlSize = "sm", onClick = clearRecent }))
     elseif profile == "My palettes" then
-      table.insert(tools, ui.button({ glyph = "plus", text = "New", tooltip = "New palette", variant = "ghost", controlSize = "sm", onClick = function() createPalette({}) end }))
-      table.insert(tools, ui.button({ glyph = "trash", text = "Delete", tooltip = "Delete palette", variant = "ghost", controlSize = "sm", onClick = deletePalette }))
+      table.insert(tools, tool("new", { glyph = "plus", text = "New", tooltip = "New palette", variant = "ghost", controlSize = "sm", onClick = function() createPalette({}) end }))
+      table.insert(tools, tool("delete", { glyph = "trash", text = "Delete", tooltip = "Delete palette", variant = "ghost", controlSize = "sm", onClick = deletePalette }))
     end
     local body = {
       ui.row({ gap = 6, align = "center" }, {
-        ui.button({ glyph = "color-picker", text = "Pick", variant = "primary", controlSize = "sm", tooltip = "Pick from screen", onClick = pickFromScreen }),
-        ui.button({ glyph = "palette", text = "Select", variant = "ghost", controlSize = "sm", tooltip = "Add from selector", onClick = addFromSelector }),
+        ring("pick", ui.button({ glyph = "color-picker", text = "Pick", variant = "primary", controlSize = "sm", tooltip = "Pick from screen", onClick = pickFromScreen })),
+        ring("select", ui.button({ glyph = "palette", text = "Select", variant = "ghost", controlSize = "sm", tooltip = "Add from selector", onClick = addFromSelector })),
         ui.spacer({ flexGrow = 1 }),
-        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
+        ring("close", ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end })),
       }),
       ui.row({ gap = 6, align = "center" }, {
         chooser("action", ACTIONS, actionIndex, 130, function(i)
           actionIndex = i
           saveChoice("action", ACTIONS[actionIndex])
           render()
-        end),
+        end, 2, 1),
         chooser("format", FORMATS, formatIndex, 130, function(i)
           formatIndex = i
           saveChoice("format", FORMATS[formatIndex])
           render()
-        end),
+        end, 2, 3),
       }),
-      chooser("profile", PROFILES, profileIndex, nil, function(i) setProfile(PROFILES[i]) end),
+      chooser("profile", PROFILES, profileIndex, nil, function(i) setProfile(PROFILES[i]) end, 3, 1),
     }
     for _, node in ipairs(right) do
       table.insert(body, node)

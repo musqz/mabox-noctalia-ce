@@ -51,11 +51,8 @@ local render
 local refresh
 local row = 0
 
--- The pinned windows take no keyboard input, so they register no stops.
 local function stop(id, col, action)
-  if not pinned then
-    kbd.stop(id, row, col, action)
-  end
+  kbd.stop(id, row, col, action)
 end
 
 local function localFile()
@@ -260,9 +257,7 @@ local function entryRow(e)
 end
 
 render = function()
-  if not pinned then
-    kbd.begin()
-  end
+  kbd.begin()
   row = 0
   local cards = {}
   local order = {}
@@ -313,11 +308,14 @@ render = function()
 
   row += 1
   stop("refresh", 1, refresh)
-  stop("pin", 2, pinOrClose)
+  if pinned then
+    stop("swap", 2, moveSide)
+  end
+  stop("pin", 3, pinOrClose)
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Configs", flexGrow = 1 }),
     ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
-    pinned and ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
+    pinned and ui.button({ key = "swap", selected = kbd.sel("swap"), glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
     ui.button({ key = "pin", selected = kbd.sel("pin"), glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose }),
   })
 
@@ -463,11 +461,20 @@ render = function()
         }),
       }))
     end
-    -- The pinned window takes no keyboard input: no fields, the copied file is added at once.
+    -- The pinned window has no fields: the copied file is added at once.
     if g == "Custom" and not closed and pinned then
+      row += 1
+      local function files()
+        show(noctalia.getenv("HOME") .. "/.config")
+      end
+      local function addCopied()
+        pastePath(true)
+      end
+      stop("c-files", 1, files)
+      stop("c-copied", 2, addCopied)
       table.insert(rows, ui.row({ gap = 4 }, {
-        ui.button({ text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = function() show(noctalia.getenv("HOME") .. "/.config") end }),
-        ui.button({ text = "Add copied", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, tooltip = "Add the file you copied in the file manager", onClick = function() pastePath(true) end }),
+        ui.button({ key = "c-files", selected = kbd.sel("c-files"), text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = files }),
+        ui.button({ key = "c-copied", selected = kbd.sel("c-copied"), text = "Add copied", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, tooltip = "Add the file you copied in the file manager", onClick = addCopied }),
       }))
     end
     table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows))

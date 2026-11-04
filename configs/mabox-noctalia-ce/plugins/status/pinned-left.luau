@@ -1,9 +1,14 @@
 --!nonstrict
-local open, tick = require("./lib/status.luau")("left")
+local open, tick, handleKey = require("./lib/status.luau")("left")
 function onOpen()
   open()
   panel.setWantsSecondTicks(true)
 end
 function update()
   tick()
+end
+function onKey(chord, pressed)
+  if pressed then
+    handleKey(chord)
+  end
 end
