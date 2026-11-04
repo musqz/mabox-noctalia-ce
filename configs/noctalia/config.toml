@@ -76,5 +76,5 @@ color = "on_surface"
 tooltip = "checking updates"
 
 [widget.updates.actions]
-left = "exec mb-updates-ce menu"
+left = "exec noctalia msg panel-toggle mabox/status:updates"
 right = "exec mb-updates-ce check"

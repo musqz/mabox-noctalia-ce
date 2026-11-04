@@ -85,7 +85,7 @@ The bar is noctalia's. Extra buttons:
 
 | Button | Left click | Right click |
 |---|---|---|
-| Updates | menu: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), check now | check now |
+| Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), check now | check now |
 | Screen recording | start / stop | |
 
 Click the updates button again to close the menu. The snap entry is hidden while `snapd` is stopped.

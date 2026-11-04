@@ -18,6 +18,15 @@ placement = "attached"
 open_near_click = true
 capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
 
+[[panel]]
+id = "updates"
+entry = "updates.luau"
+width = 300
+height = "content"
+max_height = 480
+placement = "attached"
+open_near_click = true
+
 [[service]]
 id = "pin"
 entry = "pin.luau"
