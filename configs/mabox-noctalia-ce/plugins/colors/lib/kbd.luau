@@ -76,8 +76,12 @@ function M.move(dir)
   return true
 end
 
--- Handles the arrow and enter chords; returns "moved", "ran" or nil for anything else.
+-- Handles the arrow, enter and close (alt+q) chords; returns "moved", "ran" or nil for anything else.
 function M.key(chord)
+  if chord == "alt+q" then
+    panel.close()
+    return "ran"
+  end
   local jump = string.match(chord, "^alt%+shift%+(%a+)$")
   if jump == "up" or jump == "down" then
     local moved = false

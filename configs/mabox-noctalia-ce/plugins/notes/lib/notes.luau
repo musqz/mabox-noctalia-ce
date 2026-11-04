@@ -788,6 +788,10 @@ end
 
 -- Alt chords only: plain arrows and letters belong to the text boxes.
 local function onKey(chord)
+  if chord == "alt+q" then
+    panel.close()
+    return
+  end
   if current then
     local rows = { "head", "title", "body" }
     local at = 3

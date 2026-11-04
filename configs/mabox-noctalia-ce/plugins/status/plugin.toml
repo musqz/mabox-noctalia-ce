@@ -16,7 +16,7 @@ height = "content"
 max_height = 640
 placement = "attached"
 open_near_click = true
-capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
 
 [[panel]]
 id = "pinned-left"
@@ -28,7 +28,7 @@ position = "top_left"
 persistent = true
 dismiss_on_outside_click = false
 keyboard_focus = "on_demand"
-capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
 layer = "overlay"
 
 [[panel]]
@@ -41,5 +41,5 @@ position = "top_right"
 persistent = true
 dismiss_on_outside_click = false
 keyboard_focus = "on_demand"
-capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s"]
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
 layer = "overlay"
