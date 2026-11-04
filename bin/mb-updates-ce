@@ -63,6 +63,16 @@ check() {
             rm -f "$dir/aur.new"
         fi
     fi
+    # Without network the AUR list is not refreshed: drop what was upgraded since.
+    if (( offline )) && [[ -s $dir/aur ]]; then
+        local line name inst new
+        while IFS= read -r line; do
+            read -r name _ _ new _ <<< "$line"
+            inst=$(pacman -Q "$name" 2>/dev/null | cut -d' ' -f2) || true
+            [[ -n $inst && $(vercmp "$inst" "$new") -ge 0 ]] || echo "$line"
+        done < "$dir/aur" > "$dir/aur.new"
+        mv "$dir/aur.new" "$dir/aur"
+    fi
     aur=$(count_file "$dir/aur")
 
     touch "$dir/flatpak" "$dir/snap"
