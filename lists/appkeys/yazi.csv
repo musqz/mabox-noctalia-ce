@@ -1,0 +1,44 @@
+# section,keys,description  (defaults)
+Navigate,j,Down
+Navigate,k,Up
+Navigate,h,Parent folder
+Navigate,l,Open or enter folder
+Navigate,Enter,Open
+Navigate,gg,Top
+Navigate,G,Bottom
+Navigate,g h,Go to home
+Navigate,g c,Go to config
+Navigate,g d,Go to downloads
+Navigate,g Space,Go to (interactive)
+Navigate,z,Jump with zoxide
+Navigate,Z,Jump with fzf
+Select,Space,Toggle selection
+Select,v,Visual mode
+Select,Ctrl+a,Select all
+Select,Ctrl+r,Invert selection
+Files,y,Yank (copy)
+Files,x,Cut
+Files,p,Paste
+Files,d,Trash
+Files,D,Delete permanently
+Files,a,Create
+Files,r,Rename
+Files,c c,Copy file path
+Files,c d,Copy folder path
+Files,c f,Copy file name
+Files,.,Toggle hidden files
+Files,",",Sort menu
+Search,/,Find
+Search,n,Next match
+Search,N,Previous match
+Search,f,Filter
+Search,s,Search by name
+Search,S,Search by content
+Tabs,t,New tab
+Tabs,1..9,Go to tab
+Tabs,[,Previous tab
+Tabs,],Next tab
+Other,;,Run shell command
+Other,w,Task manager
+Other,~,Help
+Other,q,Quit
