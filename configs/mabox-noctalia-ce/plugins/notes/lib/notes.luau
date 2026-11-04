@@ -737,8 +737,9 @@ render = function()
         ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 2, tooltip = "Open the notes window", onClick = function() openMain() end }),
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
+        pinSide.dockButton("notes", pinned, render),
         ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
-        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 5, tooltip = "Close", onClick = function() panel.close() end }),
+        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 5, tooltip = "Close", onClick = function() pinSide.close("notes", pinned) end }),
       }),
     }
     local bar = colorBar()
@@ -746,7 +747,7 @@ render = function()
       table.insert(children, bar)
     end
     table.insert(children, ui.scroll({ gap = 0, flexGrow = 1, key = "list", revealKey = cursorId and ("n" .. cursorId) or nil }, noteRows()))
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, children))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, children))
     return
   end
 

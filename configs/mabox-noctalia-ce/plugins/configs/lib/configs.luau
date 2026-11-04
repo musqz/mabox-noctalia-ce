@@ -38,7 +38,7 @@ c=${c#file://}
 printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 ]]
 
--- Plugins with pinned-left and pinned-right panels.
+-- Plugins with a pinned window.
 local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
 
 local entries = {}
@@ -146,7 +146,7 @@ for id in "$@"; do
   grep -vxF "$id" "$ERR" >"$ERR.$$"; mv "$ERR.$$" "$ERR"
   case "$out" in error*) echo "$id" >>"$ERR" ;; esac
 done
-if [ -n "$pin" ]; then sleep 0.5; noctalia msg panel-open "$pin"; fi
+if [ -n "$pin" ]; then sleep 0.5; noctalia msg plugin "$pin" all show; fi
 ]]
 
 -- Reloading configs itself ends this script's panel: it goes last and a pinned window is reopened.
@@ -162,7 +162,7 @@ local function reloadPlugins(ids)
   if self then
     table.insert(list, "mabox/configs")
   end
-  local pin = pinned and ("mabox/configs:pinned-" .. pinSide.get("configs")) or ""
+  local pin = pinned and "mabox/configs:pin" or ""
   noctalia.runAsync({ "setsid", "-f", "sh", "-c", RELOAD, "sh", pin, table.unpack(list) }, function()
     refresh()
   end)
@@ -284,7 +284,7 @@ render = function()
   end
 
   local function pinOrClose()
-    panel.close()
+    pinSide.close("configs", pinned)
     if not pinned then
       pinSide.toggle("configs")
     end
@@ -296,7 +296,7 @@ render = function()
     noctalia.runAsync({ "labwc", "--reconfigure" })
   end
   local function runFitts()
-    panel.close()
+    pinSide.close("configs", pinned)
     noctalia.runAsync({ "mb-fitts" })
   end
   local function runNoctalia()
@@ -315,6 +315,7 @@ render = function()
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Configs", flexGrow = 1 }),
     ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
+    pinned and pinSide.dockButton("configs", pinned, render) or ui.spacer({ width = 0 }),
     pinned and ui.button({ key = "swap", selected = kbd.sel("swap"), glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
     ui.button({ key = "pin", selected = kbd.sel("pin"), glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose }),
   })
@@ -482,7 +483,7 @@ render = function()
 
   local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() }, cards)
   if pinned then
-    panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, reload, list }))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, reload, list }))
   else
     panel.render(ui.column({ gap = 8, padding = 12, height = 520 }, { top, reload, list }))
   end

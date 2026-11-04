@@ -190,9 +190,9 @@ local function copy(hex)
   noctalia.copyToClipboard(text, "text/plain")
   if pasting() then
     -- A clicked pinned window holds keyboard focus too: close it for the typing and reopen it.
-    panel.close()
-    local reopen = pinned and ("mabox/colors:pinned-" .. pinned) or ""
-    noctalia.runAsync({ "sh", "-c", 'sleep 0.3; wtype -- "$1"; [ -z "$2" ] || sleep 0.2; [ -z "$2" ] || noctalia msg panel-open "$2"', "sh", text, reopen })
+    pinSide.close("colors", pinned)
+    local reopen = pinned and pinSide.reopenCmd("colors") or ""
+    noctalia.runAsync({ "sh", "-c", 'sleep 0.3; wtype -- "$1"; [ -z "$2" ] || sleep 0.2; [ -z "$2" ] || sh -c "$2"', "sh", text, reopen })
   else
     noctalia.notify("Color copied", text)
   end
@@ -397,7 +397,7 @@ render = function()
   stop("pick", 1, 1, pickFromScreen)
   stop("select", 1, 2, addFromSelector)
   if pinned then
-    stop("close", 1, 3, function() panel.close() end)
+    stop("close", 1, 3, function() pinSide.close("colors", pinned) end)
   else
     stop("pin", 1, 5, function()
       panel.close()
@@ -512,7 +512,8 @@ render = function()
         ring("pick", ui.button({ glyph = "color-picker", text = "Pick", variant = "primary", controlSize = "sm", tooltip = "Pick from screen", onClick = pickFromScreen })),
         ring("select", ui.button({ glyph = "palette", text = "Select", variant = "ghost", controlSize = "sm", tooltip = "Add from selector", onClick = addFromSelector })),
         ui.spacer({ flexGrow = 1 }),
-        ring("close", ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end })),
+        pinSide.dockButton("colors", pinned, render),
+        ring("close", ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() pinSide.close("colors", pinned) end })),
       }),
       ui.row({ gap = 6, align = "center" }, {
         chooser("action", ACTIONS, actionIndex, 130, function(i)
@@ -532,7 +533,7 @@ render = function()
       table.insert(body, node)
     end
     table.insert(body, ui.row({ gap = 4 }, tools))
-    panel.render(ui.column({ gap = 8, padding = 10 }, body))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10 }, body))
     return
   end
 

@@ -124,7 +124,7 @@ mb-pinned notes
 mb-pinned --side notes right
 ```
 
-Pinned windows are the panels `pinned-left` and `pinned-right`; in `mabox/status` they are layers, shown and hidden by its `pin` service. `mb-pinned <plugin>` opens the one on the saved side. Each plugin has its own side, one `plugin=side` line in `~/.config/mabox-noctalia-ce/pinned-side`. Change it with the arrows button in a pinned window or in the Configs panel under Pinned windows.
+Pinned windows are the layers `pinned-left` and `pinned-right`, shown and hidden by the `pin` service of each plugin. `mb-pinned <plugin>` opens the one on the saved side. Each plugin has its own side, one `plugin=side` line in `~/.config/mabox-noctalia-ce/pinned-side`. Change it with the arrows button in a pinned window or in the Configs panel under Pinned windows.
 
 ## Services
 

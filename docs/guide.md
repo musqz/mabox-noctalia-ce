@@ -69,7 +69,7 @@ Windows:
 | `W-grave` | tabdock find |
 | `W-A-r` | capture |
 
-Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; also the pinned windows, except the pinned Status window). Click the panel once first.
+Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; not in the pinned windows). Click the panel once first.
 
 | Key | Action |
 |---|---|
@@ -141,7 +141,7 @@ Converter: pick a preset, then files; output lands next to the source and never 
 - `screenrec-toggle -o auto` records a whole monitor instead of an area.
 - While recording, a red stop button appears next to the `screenrec` bar button; click it to stop.
 - Capture pinned window: `mb-pinned capture`; the side is set like for the other plugins.
-- Pinned Status window: the layout-sidebar button docks it (other windows make room); press it again to float. Saved in `~/.config/mabox-noctalia-ce/pinned-dock`.
+- Pinned windows: the layout-sidebar button docks one (other windows make room); press it again to float. Saved per plugin in `~/.config/mabox-noctalia-ce/pinned-dock`.
 
 ## Wallpaper directory
 

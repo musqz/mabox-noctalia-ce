@@ -19,28 +19,24 @@ placement = "attached"
 open_near_click = true
 capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
 
-[[panel]]
+[[service]]
+id = "pin"
+entry = "pin.luau"
+
+[[layer]]
 id = "pinned-left"
 entry = "pinned-left.luau"
-width = 420
-height = "fill"
-placement = "floating"
-position = "top_left"
-persistent = true
-dismiss_on_outside_click = false
-keyboard_focus = "on_demand"
-capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
-layer = "overlay"
+layer = "top"
+anchors = ["left", "top", "bottom"]
+width = 330
+keyboard = "on_demand"
+output = "focused"
 
-[[panel]]
+[[layer]]
 id = "pinned-right"
 entry = "pinned-right.luau"
-width = 420
-height = "fill"
-placement = "floating"
-position = "top_right"
-persistent = true
-dismiss_on_outside_click = false
-keyboard_focus = "on_demand"
-capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
-layer = "overlay"
+layer = "top"
+anchors = ["right", "top", "bottom"]
+width = 330
+keyboard = "on_demand"
+output = "focused"

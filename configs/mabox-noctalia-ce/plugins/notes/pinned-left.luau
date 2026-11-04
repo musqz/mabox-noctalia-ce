@@ -1,14 +1,6 @@
 --!nonstrict
-local open, tick, _, key = require("./lib/notes.luau")("left")
-function onOpen()
-  open()
-  panel.setWantsSecondTicks(true)
-end
+local open, tick = require("./lib/notes.luau")("left")
+open()
 function update()
   tick()
-end
-function onKey(chord, pressed)
-  if pressed then
-    key(chord)
-  end
 end
