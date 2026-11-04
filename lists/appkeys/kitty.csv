@@ -1,0 +1,9 @@
+# section,keys,description  (map lines of kitty.conf are merged on top)
+Defaults,Ctrl+Shift+Up,Scroll line up
+Defaults,Ctrl+Shift+Down,Scroll line down
+Defaults,Ctrl+Shift+PgUp,Scroll page up
+Defaults,Ctrl+Shift+PgDn,Scroll page down
+Defaults,Ctrl+Shift+Equal,Bigger font
+Defaults,Ctrl+Shift+Minus,Smaller font
+Defaults,Ctrl+Shift+Backspace,Reset font size
+Defaults,Ctrl+Shift+F5,Reload config

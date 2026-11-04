@@ -1,5 +1,9 @@
-# name,kind,source  (kind groups: rc.xml groups joined with +)
+# name,kind,source  (groups: rc.xml groups joined with +; app: lists/appkeys/NAME.csv)
 Panels,groups,Panels+Capture
 Mabox tools,groups,Helpers+Capture+Desktop
 Windows,groups,Windows+Workspaces+Jump
 Apps,groups,Apps
+Firefox,app,firefox
+Geany,app,geany
+Obsidian,app,obsidian
+Kitty,app,kitty

@@ -1,0 +1,31 @@
+# section,keys,description
+Tabs,Ctrl+T,New tab
+Tabs,Ctrl+W,Close tab
+Tabs,Ctrl+Shift+T,Reopen closed tab
+Tabs,Ctrl+Tab,Next tab
+Tabs,Ctrl+Shift+Tab,Previous tab
+Tabs,Ctrl+1..8,Go to tab 1-8
+Tabs,Ctrl+9,Go to last tab
+Tabs,Ctrl+Shift+PgUp,Move tab left
+Tabs,Ctrl+Shift+PgDn,Move tab right
+Navigate,Ctrl+L,Focus the address bar
+Navigate,Alt+Left,Back
+Navigate,Alt+Right,Forward
+Navigate,F5,Reload
+Navigate,Ctrl+Shift+R,Reload without cache
+Navigate,Alt+Home,Home page
+Page,Ctrl+F,Find in page
+Page,Ctrl+G,Find next
+Page,Ctrl++,Zoom in
+Page,Ctrl+-,Zoom out
+Page,Ctrl+0,Reset zoom
+Page,F11,Fullscreen
+Page,F7,Caret browsing
+Tools,Ctrl+D,Bookmark page
+Tools,Ctrl+Shift+O,Bookmarks library
+Tools,Ctrl+H,History sidebar
+Tools,Ctrl+Shift+Delete,Clear recent history
+Tools,Ctrl+Shift+P,Private window
+Tools,Ctrl+Shift+A,Add-ons
+Tools,F12,Developer tools
+Tools,Ctrl+U,View page source
