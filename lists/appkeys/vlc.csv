@@ -1,0 +1,37 @@
+# section,keys,description  (defaults)
+Playback,Space,Play or pause
+Playback,S,Stop
+Playback,N,Next
+Playback,P,Previous
+Playback,Ctrl+Left,Seek back 1 min
+Playback,Ctrl+Right,Seek forward 1 min
+Playback,Alt+Left,Seek back 10 s
+Playback,Alt+Right,Seek forward 10 s
+Playback,Shift+Left,Seek back 3 s
+Playback,Shift+Right,Seek forward 3 s
+Playback,[,Slower
+Playback,],Faster
+Playback,=,Normal speed
+Playback,E,Next frame
+Playback,L,Loop
+Playback,R,Random
+Audio,Ctrl+Up,Volume up
+Audio,Ctrl+Down,Volume down
+Audio,M,Mute
+Audio,B,Next audio track
+Video,F,Fullscreen
+Video,Esc,Leave fullscreen
+Video,Shift+S,Snapshot
+Video,A,Aspect ratio
+Video,C,Crop
+Video,Z,Zoom
+Video,V,Next subtitle track
+Video,G,Subtitle delay down
+Video,H,Subtitle delay up
+Window,Ctrl+H,Hide controls
+Window,Ctrl+L,Playlist
+Window,Ctrl+E,Effects and filters
+Window,Ctrl+P,Preferences
+Window,Ctrl+Q,Quit
+Window,Ctrl+O,Open file
+Window,Ctrl+N,Open network stream

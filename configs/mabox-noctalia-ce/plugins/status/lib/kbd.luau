@@ -53,7 +53,10 @@ function M.move(dir)
   local best, bestScore
   for _, s in ipairs(stops) do
     local score
-    if dir == "down" and s.row > cur.row then
+    -- Negative columns are a side list; up/down stay inside the list or inside the grid.
+    if (dir == "up" or dir == "down") and (s.col < 0) ~= (cur.col < 0) then
+      score = nil
+    elseif dir == "down" and s.row > cur.row then
       score = (s.row - cur.row) * 1000 + math.abs(s.col - cur.col)
     elseif dir == "up" and s.row < cur.row then
       score = (cur.row - s.row) * 1000 + math.abs(s.col - cur.col)

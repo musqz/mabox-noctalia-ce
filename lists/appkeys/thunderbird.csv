@@ -1,0 +1,30 @@
+# section,keys,description  (defaults)
+Mail,Ctrl+N,New message
+Mail,Ctrl+R,Reply
+Mail,Ctrl+Shift+R,Reply all
+Mail,Ctrl+L,Forward
+Mail,Ctrl+Enter,Send
+Mail,Ctrl+Shift+K,Show address book
+Mail,Ctrl+Shift+A,Add-ons and themes
+Mail,F5,Get new messages
+Mail,Ctrl+Shift+T,Get all messages
+Mail,Delete,Delete message
+Mail,Shift+Delete,Delete permanently
+Mail,J,Mark as junk
+Mail,M,Mark read or unread
+Mail,A,Archive
+Navigate,F,Next message
+Navigate,B,Previous message
+Navigate,N,Next unread
+Navigate,P,Previous unread
+Find,Ctrl+K,Search all messages
+Find,Ctrl+F,Find in message
+Find,Ctrl+Shift+F,Global search
+View,Ctrl+B,Toggle message pane
+View,F8,Toggle message pane
+View,F7,Caret browsing
+Tabs,Ctrl+T,New tab
+Tabs,Ctrl+W,Close tab
+Tabs,Ctrl+Tab,Next tab
+Tabs,Ctrl+Shift+Tab,Previous tab
+Tabs,Alt+1..9,Go to tab 1-9

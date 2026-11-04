@@ -1,0 +1,35 @@
+# section,keys,description  (defaults)
+Playback,Space,Pause
+Playback,Left,Seek back 5 s
+Playback,Right,Seek forward 5 s
+Playback,Down,Seek back 1 min
+Playback,Up,Seek forward 1 min
+Playback,",",Previous frame
+Playback,.,Next frame
+Playback,[,Slower
+Playback,],Faster
+Playback,Backspace,Reset speed
+Playback,<,Previous in playlist
+Playback,>,Next in playlist
+Playback,q,Quit
+Playback,Q,Quit and save position
+Audio,9,Volume down
+Audio,0,Volume up
+Audio,m,Mute
+Audio,#,Next audio track
+Video,f,Fullscreen
+Video,s,Screenshot
+Video,S,Screenshot without subtitles
+Video,T,Stay on top
+Video,1,Contrast down
+Video,3,Brightness down
+Video,5,Saturation down
+Video,d,Toggle deinterlace
+Subtitles,v,Toggle subtitles
+Subtitles,j,Next subtitle track
+Subtitles,z,Subtitle delay down
+Subtitles,x,Subtitle delay up
+Info,i,Stats
+Info,o,Show progress
+Info,l,Loop A-B
+Info,L,Loop file

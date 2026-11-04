@@ -1,0 +1,42 @@
+# section,keys,description  (defaults)
+Modes,i,Insert before cursor
+Modes,a,Append after cursor
+Modes,o,Open line below
+Modes,O,Open line above
+Modes,v,Visual mode
+Modes,V,Visual line mode
+Modes,Ctrl+v,Visual block mode
+Modes,Esc,Normal mode
+Move,h j k l,Left down up right
+Move,w,Next word
+Move,b,Previous word
+Move,0,Line start
+Move,$,Line end
+Move,gg,File start
+Move,G,File end
+Move,Ctrl+f,Page down
+Move,Ctrl+b,Page up
+Move,%,Matching bracket
+Edit,x,Delete character
+Edit,dd,Delete line
+Edit,yy,Yank line
+Edit,p,Paste after
+Edit,P,Paste before
+Edit,u,Undo
+Edit,Ctrl+r,Redo
+Edit,.,Repeat last change
+Edit,>>,Indent line
+Edit,<<,Unindent line
+Search,/,Search forward
+Search,?,Search backward
+Search,n,Next match
+Search,N,Previous match
+Search,*,Search word under cursor
+Ex,:w,Save
+Ex,:q,Quit
+Ex,:wq,Save and quit
+Ex,:q!,Quit without saving
+Ex,":%s/a/b/g",Replace all
+Windows,Ctrl+w s,Split horizontally
+Windows,Ctrl+w v,Split vertically
+Windows,Ctrl+w w,Next window

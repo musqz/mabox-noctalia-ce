@@ -1,0 +1,36 @@
+# section,keys,description  (Terminator defaults)
+Tabs,Ctrl+Shift+T,New tab
+Tabs,Ctrl+PgDn,Next tab
+Tabs,Ctrl+PgUp,Previous tab
+Tabs,Ctrl+Shift+PgDn,Move tab right
+Tabs,Ctrl+Shift+PgUp,Move tab left
+Windows,Ctrl+Shift+I,New window
+Windows,Ctrl+Shift+Q,Quit
+Windows,F11,Fullscreen
+Splits,Ctrl+Shift+O,Split horizontally
+Splits,Ctrl+Shift+E,Split vertically
+Splits,Ctrl+Shift+W,Close terminal
+Splits,Ctrl+Shift+N,Next terminal
+Splits,Ctrl+Shift+P,Previous terminal
+Splits,Alt+Left,Focus terminal left
+Splits,Alt+Right,Focus terminal right
+Splits,Alt+Up,Focus terminal up
+Splits,Alt+Down,Focus terminal down
+Splits,Ctrl+Shift+Left,Resize terminal left
+Splits,Ctrl+Shift+Right,Resize terminal right
+Splits,Ctrl+Shift+Up,Resize terminal up
+Splits,Ctrl+Shift+Down,Resize terminal down
+Splits,Ctrl+Shift+X,Zoom terminal
+Splits,Ctrl+Shift+Z,Maximize terminal
+Text,Ctrl+Shift+C,Copy
+Text,Ctrl+Shift+V,Paste
+Text,Ctrl+Shift+F,Search
+Text,Ctrl+Shift+S,Toggle scrollbar
+Text,Ctrl+Shift+R,Reset terminal
+Text,Ctrl+Shift+G,Reset and clear terminal
+Text,Ctrl+Plus,Increase font size
+Text,Ctrl+Minus,Decrease font size
+Text,Ctrl+0,Original font size
+Groups,Alt+A,Broadcast to all terminals
+Groups,Alt+G,Broadcast to group
+Groups,Alt+O,Broadcast off

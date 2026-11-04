@@ -1,0 +1,9 @@
+# section,keys,description  (xterm defaults)
+Scroll,Shift+PgUp,Scroll back
+Scroll,Shift+PgDn,Scroll forward
+Text,Shift+Insert,Paste selection
+Text,Shift+KP_Add,Bigger font
+Text,Shift+KP_Subtract,Smaller font
+Menus,Ctrl+Left click,Main options menu
+Menus,Ctrl+Middle click,VT options menu
+Menus,Ctrl+Right click,VT fonts menu

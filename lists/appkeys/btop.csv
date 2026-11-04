@@ -1,0 +1,26 @@
+# section,keys,description  (defaults)
+Menu,Esc,Menu
+Menu,m,Menu
+Menu,q,Quit
+Menu,F2,Options
+Menu,h,Help
+Boxes,1,Toggle cpu box
+Boxes,2,Toggle mem box
+Boxes,3,Toggle net box
+Boxes,4,Toggle proc box
+Processes,Up,Select process up
+Processes,Down,Select process down
+Processes,Enter,Process info
+Processes,f,Filter
+Processes,r,Reverse sort
+Processes,e,Tree view
+Processes,k,Kill
+Processes,s,Signal
+Processes,t,Terminate
+Processes,Left,Previous sort
+Processes,Right,Next sort
+Processes,c,Per-core cpu
+Display,+,Increase update interval
+Display,-,Decrease update interval
+Display,p,Next preset
+Display,P,Previous preset

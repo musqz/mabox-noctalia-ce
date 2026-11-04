@@ -1,0 +1,42 @@
+# section,keys,description  (defaults)
+Tools,R,Rectangle select
+Tools,E,Ellipse select
+Tools,F,Free select
+Tools,U,Fuzzy select
+Tools,B,Paths
+Tools,P,Paintbrush
+Tools,N,Pencil
+Tools,Shift+E,Eraser
+Tools,Shift+B,Bucket fill
+Tools,T,Text
+Tools,M,Move
+Tools,C,Crop
+Tools,Shift+R,Rotate
+Tools,Shift+S,Scale
+Tools,O,Color picker
+Tools,Z,Zoom
+View,Ctrl+Shift+J,Fit image in window
+View,Shift+Ctrl+E,Zoom to fit
+View,1,Zoom 1:1
+View,Tab,Hide docks
+View,F11,Fullscreen
+View,Ctrl+Shift+T,Dot for dot
+Edit,Ctrl+Z,Undo
+Edit,Ctrl+Y,Redo
+Edit,Ctrl+C,Copy
+Edit,Ctrl+V,Paste
+Edit,Ctrl+Shift+V,Paste as new image
+Edit,Ctrl+A,Select all
+Edit,Ctrl+Shift+A,Select none
+Edit,Ctrl+I,Invert selection
+Edit,Ctrl+X,Cut
+File,Ctrl+N,New image
+File,Ctrl+O,Open
+File,Ctrl+S,Save
+File,Ctrl+E,Export
+File,Ctrl+Shift+E,Export as
+File,Ctrl+Q,Quit
+Layer,Ctrl+Shift+N,New layer
+Layer,Ctrl+Shift+D,Duplicate layer
+Layer,Ctrl+H,Anchor layer
+Layer,Ctrl+M,Merge down

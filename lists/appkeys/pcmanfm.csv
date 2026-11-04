@@ -1,0 +1,32 @@
+# section,keys,description  (defaults)
+Navigate,Alt+Left,Back
+Navigate,Alt+Right,Forward
+Navigate,Alt+Up,Parent folder
+Navigate,Alt+Home,Home folder
+Navigate,Ctrl+L,Edit location
+Navigate,F9,Toggle side pane
+Navigate,Ctrl+B,Bookmarks
+Navigate,F5,Reload
+Tabs,Ctrl+T,New tab
+Tabs,Ctrl+W,Close tab
+Tabs,Ctrl+PgDn,Next tab
+Tabs,Ctrl+PgUp,Previous tab
+Tabs,Alt+1..9,Go to tab 1-9
+Windows,Ctrl+N,New window
+Windows,Ctrl+Q,Quit
+Files,F2,Rename
+Files,Ctrl+X,Cut
+Files,Ctrl+C,Copy
+Files,Ctrl+V,Paste
+Files,Delete,Move to trash
+Files,Shift+Delete,Delete permanently
+Files,Ctrl+Shift+N,New folder
+Files,Alt+Enter,Properties
+Files,Ctrl+A,Select all
+Files,Ctrl+I,Invert selection
+View,Ctrl+H,Show hidden files
+View,Ctrl+1,Icon view
+View,Ctrl+2,Compact view
+View,Ctrl+3,Thumbnail view
+View,Ctrl+4,List view
+View,F11,Fullscreen
