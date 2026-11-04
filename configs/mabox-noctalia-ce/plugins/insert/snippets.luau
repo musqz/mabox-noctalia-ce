@@ -182,6 +182,8 @@ function onKey(chord, pressed)
   if editing then
     if chord == "alt+enter" then
       commit()
+    elseif chord == "alt+q" then
+      panel.close()
     elseif chord == "alt+s" then
       field = field == "trigger" and "replace" or "trigger"
       nonce += 1
