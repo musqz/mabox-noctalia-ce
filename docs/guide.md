@@ -19,6 +19,10 @@ Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
 `W-k` opens the hotkey list: search, Basics or All, arrow button for full width, play button runs a bind's command. `/keys` in the launcher searches the binds and runs the one you pick.
 
+Chips under the search filter the list: *Panels*, *Mabox tools*, *Windows*, *Apps*, and the hotkeys of Firefox, Geany, Obsidian and Kitty. *Focused: Name* shows when the window you opened the panel from has a list.
+
+Edit `lists/keys-profiles.csv` (`name,kind,source`) to add or reorder chips. App lists are `lists/appkeys/NAME.csv` (`section,keys,description`); Geany and Kitty also read their own config.
+
 `W-A-h` opens `/hist` and `W-A-e` opens `/es` in the launcher. Enter types the shell history line or the Espanso replacement text into the previous window (no Enter key). Snippets with variables (`{{...}}`) are listed only.
 
 The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete snippets. They are saved in `~/.config/espanso/match/mabox.yml` (backup: `mabox.yml.bak`); other Espanso files are not touched.
