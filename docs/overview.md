@@ -117,6 +117,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` (`noctalia msg panel-toggle mabox/keys:keys`) | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/`; `wlrctl` for the Focused entry |
 | `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
 | `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
+| `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, `/wp` launcher | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh

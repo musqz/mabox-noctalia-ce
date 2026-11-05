@@ -14,8 +14,12 @@ fi
 
 val=${d//\\/\\\\}
 val=${val//\"/\\\"}
-if ! noctalia msg config-set wallpaper.directory "\"$val\"" >/dev/null; then
-    notify-send -u critical -i error "Wallpaper dir" "noctalia rejected the change." || true
-    exit 1
-fi
+# directory_dark/directory_light override directory for the active theme mode.
+for key in directory directory_dark directory_light; do
+    if ! noctalia msg config-set "wallpaper.$key" "\"$val\"" >/dev/null; then
+        notify-send -u critical -i error "Wallpaper dir" "noctalia rejected the change." || true
+        exit 1
+    fi
+done
+noctalia msg wallpaper-random >/dev/null || true
 notify-send -i preferences-desktop-wallpaper "Wallpaper dir" "Set to: $d" || true
