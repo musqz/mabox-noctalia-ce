@@ -18,6 +18,17 @@ replace() {
 }
 
 migrate_1() { replace 'exec mb-updates-ce menu' 'exec noctalia msg panel-toggle mabox/status:updates'; }
+migrate_2() {
+    local f=${files[0]}
+    [[ -f $f ]] || return 0
+    grep -q '^\[theme\.templates\.user\.mabox-logo\]' "$f" && return 0
+    cat >> "$f" <<'TOML'
+
+[theme.templates.user.mabox-logo]
+input_path = "~/.config/noctalia/templates/mabox-logo.svg"
+output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"
+TOML
+}
 
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)

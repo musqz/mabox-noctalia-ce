@@ -22,6 +22,10 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
 input_path = "~/.config/noctalia/templates/jgmenu.conf"
 output_path = "~/.config/mabox-noctalia-ce/jgmenurc"
 
+[theme.templates.user.mabox-logo]
+input_path = "~/.config/noctalia/templates/mabox-logo.svg"
+output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"
+
 [system.monitor]
 enabled = true
 
