@@ -9,7 +9,6 @@ local ticks = 0
 local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Capture", "Media", "Jump", "labwc defaults", "Helpers", "Other" }
 
 local groups, order = {}, {}
-local version = ""
 
 local function parse(text)
   local g, o = {}, {}
@@ -18,7 +17,7 @@ local function parse(text)
     for part in string.gmatch(line .. "\t", "(.-)\t") do
       table.insert(f, part)
     end
-    if #f >= 8 and f[5] == "1" then
+    if #f >= 8 and f[5] == "1" and f[1] ~= "W-k" then
       if not g[f[4]] then
         g[f[4]] = {}
         table.insert(o, f[4])
@@ -47,13 +46,6 @@ local function load()
   end)
 end
 
-local function loadVersion()
-  noctalia.runAsync("pacman -Q mabox-noctalia-ce 2>/dev/null | cut -d' ' -f2", function(r)
-    version = string.gsub(r.stdout or "", "%s+$", "")
-    render()
-  end)
-end
-
 render = function()
   local body = {
     ui.row({ align = "center", gap = 8 }, {
@@ -61,7 +53,7 @@ render = function()
       ui.label({ text = "Mabox CE", fontSize = 18, color = "primary", flexGrow = 1 }),
     }),
     ui.label({
-      text = "An experiment on Noctalia and labwc, based on the work of napcok." .. (version ~= "" and ("  v" .. version) or ""),
+      text = "An experiment on Noctalia and labwc, based on the work of napcok.",
       fontSize = 10,
       color = "on_surface_variant",
     }),
@@ -104,4 +96,3 @@ noctalia.setUpdateInterval(TICK_MS)
 desktopWidget.setWantsSecondTicks(false)
 render()
 load()
-loadVersion()
