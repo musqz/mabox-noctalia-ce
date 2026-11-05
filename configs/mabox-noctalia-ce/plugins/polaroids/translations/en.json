@@ -2,7 +2,7 @@
   "settings": {
     "count": {
       "label": "Polaroids",
-      "description": "How many of the last wallpapers to show."
+      "description": "How many previous wallpapers to show."
     }
   }
 }
