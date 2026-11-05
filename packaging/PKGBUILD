@@ -1,6 +1,6 @@
 # Maintainer: musqz
 pkgname=mabox-noctalia-ce
-pkgver=0.4.1
+pkgver=0.4.2
 pkgrel=1
 pkgdesc='Mabox labwc + Noctalia session and default configs (CE)'
 arch=('any')
@@ -30,7 +30,7 @@ optdepends=('radicale: local calendar (mb-calendar-setup)'
             'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('6f771bef6a1b8fcf24b64136627f16e83b2d75cf369cc4fa6584897ca203c551')
+sha256sums=('SKIP')
 
 package() {
   local root="$srcdir/$pkgname-$pkgver"
