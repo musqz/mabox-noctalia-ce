@@ -1,11 +1,11 @@
-id = "mabox/desk"
-name = "Desk"
+id = "mabox/info"
+name = "Info"
 version = "0.1.0"
 plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "info-circle"
-description = "Desktop widgets: info card with the basic hotkeys and an About line."
+description = "Desktop widget with the Mabox logo, an About line and the basic hotkeys."
 tags = ["desktop"]
 
 [[desktop_widget]]

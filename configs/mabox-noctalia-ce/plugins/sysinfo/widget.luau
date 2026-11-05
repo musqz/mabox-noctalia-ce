@@ -217,7 +217,6 @@ local function render()
         ui.label({ text = os.date("%A", now), fontSize = 13, color = "primary" }),
         ui.label({ text = tostring(tonumber(os.date("%d", now))) .. os.date(" %B", now), fontSize = 12, color = "on_surface_variant" }),
       }),
-      ui.label({ text = os.date("%H:%M", now), fontSize = 26, color = "secondary" }),
       ui.image({ path = logo(), width = 48, height = 48, fit = "contain" }),
     }),
     ui.separator({ color = "outline_variant" }),
