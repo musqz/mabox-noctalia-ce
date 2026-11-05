@@ -216,6 +216,9 @@ report() {
             printf '%s\n' "${out[@]}"
         else echo "[done] config matches the package default"; fi
     fi
+    if command -v mb-reset-wl >/dev/null && mb-reset-wl 2>/dev/null | grep -Eq '^noctalia[[:space:]]+differs'; then
+        echo "[todo] bar and theme differ from the new defaults: mb-reset-wl -c noctalia to compare, mb-reset-wl noctalia to reset, then log out and in"
+    fi
     pl=$conf/mabox/mb-music/yt_music_list.csv src=$dir/configs/mabox/mb-music/yt_music_list.csv
     if [[ ! -e $pl ]]; then echo "[todo] default /music playlist: mkdir -p ${pl%/*} && cp -n $src $pl"
     elif ! cmp -s "$src" "$pl"; then echo "[todo] /music playlist differs from the default: meld $src $pl"; fi
