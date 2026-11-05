@@ -21,6 +21,11 @@ command -v mb-status-warn >/dev/null && systemctl --user --no-block start mb-sta
 noctalia &
 (sleep 3 && noctalia msg plugins source add mabox path /usr/share/mabox-noctalia-ce/plugins) >/dev/null 2>&1 &
 
+# First login only: stock wallpaper. The marker is written first so a failed call never overrides a later choice.
+wp=/usr/share/backgrounds/photo-1500964757637-c85e8a162699.jpg
+wpmark=~/.local/state/mabox-noctalia-ce/wallpaper-set
+[ -f "$wp" ] && [ ! -e "$wpmark" ] && { mkdir -p "${wpmark%/*}"; touch "$wpmark"; (for _ in 1 2 3 4 5 6 7 8; do sleep 3; noctalia msg wallpaper-set "$wp" && break; done) >/dev/null 2>&1 & }
+
 # Set background color.
 #swaybg -c '#113344' >/dev/null 2>&1 &
 
