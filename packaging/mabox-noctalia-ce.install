@@ -2,3 +2,7 @@ post_install() {
   echo "Existing users: cp -rn /etc/skel/.config/mabox-noctalia-ce ~/.config/"
 }
 
+
+post_upgrade() {
+  echo "Config defaults may have changed: run mb-reset-wl to list them, mb-reset-wl <item> to reset one, then log out and in."
+}
