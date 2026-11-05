@@ -1,0 +1,27 @@
+id = "mabox/wallpaper-dirs"
+name = "Wallpaper dirs"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "photo"
+description = "Saved wallpaper folders: click one to make it the wallpaper directory. Panel, bar button and /wp launcher."
+dependencies = ["yad"]
+tags = ["launcher", "utility"]
+
+[[launcher_provider]]
+id = "wp"
+entry = "wp.luau"
+prefix = "wp"
+glyph = "photo"
+include_in_global_search = false
+
+[[panel]]
+id = "dirs"
+entry = "panel.luau"
+width = 460
+height = "content"
+max_height = 520
+placement = "attached"
+open_near_click = true
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]

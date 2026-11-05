@@ -73,6 +73,15 @@ tooltip = "color picker"
 [widget.colors.actions]
 left = "exec noctalia msg panel-toggle mabox/colors:picker"
 
+[widget.wallpaper_dirs]
+type = "custom_button"
+glyph = "photo"
+color = "on_surface"
+tooltip = "wallpaper folders"
+
+[widget.wallpaper_dirs.actions]
+left = "exec noctalia msg panel-toggle mabox/wallpaper-dirs:dirs"
+
 [widget.updates]
 type = "custom_button"
 glyph = "circle-check"
@@ -211,7 +220,7 @@ resume_command = "wlopm --on '*'"
 
 [bar.default]
 center = []
-end = ["audio_visualizer", "media", "cpu", "network_rx", "updates", "screenrec", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "clock", "control-center", "session"]
+end = ["audio_visualizer", "media", "cpu", "network_rx", "updates", "screenrec", "wallpaper_dirs", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "clock", "control-center", "session"]
 border = "primary"
 border_width = 1.0
 color = "primary"

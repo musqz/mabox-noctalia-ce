@@ -143,6 +143,7 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 | System panel: overview, hardware, logs, and a report without personal data to copy or save for the forum | `W-A-i` | [docs/guide.md](docs/guide.md#system-info) |
 | Keys panel: hotkey list with search, Basics and All; `/keys` in the launcher runs a bind | `W-k` | [docs/guide.md](docs/guide.md#keys) |
 | Insert: `/hist` types a shell history line, `/es` an Espanso snippet into the previous window; panel to add and edit snippets | `W-A-h`, `W-A-e` | [docs/guide.md](docs/guide.md#keys) |
+| Wallpaper folders: saved list, click to switch the wallpaper directory; `/wp` in the launcher | `W-A-w` | [docs/guide.md](docs/guide.md#wallpaper-directory) |
 | Notes panel: notes with colors | `W-n`, pinned window `W-A-n` | `~/.local/state/noctalia/plugins/data/mabox/notes/path`: one line, folder to sync (optional) |
 | Status panel: system info, discs, cleanup rows; bar button turns warning-colored when a disc is full (`mb-status-warn`, left click opens it, right click pins it) | `W-A-s`, pinned window `W-S-s` | settings (gear button) in `~/.local/state/noctalia/plugins/data/mabox/status/settings` |
 | Sysinfo desktop widget: clock, system info, CPU/RAM graphs, top processes, discs, updates | `noctalia msg desktop-widgets-toggle-edit`, then add *Sysinfo* | needs `[desktop_widgets] enabled = true` |

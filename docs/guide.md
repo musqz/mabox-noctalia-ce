@@ -156,6 +156,8 @@ Converter: pick a preset, then files; output lands next to the source and never 
 
 Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallpaper-dir <dir>`.
 
+Saved folders: `W-A-w`, the bar photo button or `/wp` in the launcher. *Add folder* opens a chooser; select a circle to switch. The current folder is listed automatically.
+
 ## Monitors
 
 - `kanshi` sets positions per profile: `~/.config/kanshi/config`.
