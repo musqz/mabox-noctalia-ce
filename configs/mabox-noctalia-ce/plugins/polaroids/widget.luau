@@ -1,10 +1,11 @@
 --!nonstrict
--- Polaroids desktop widget: the last wallpapers as polaroid thumbnails.
+-- Polaroids desktop widget: the previous wallpapers as polaroid thumbnails.
 -- History is recorded by polling `noctalia msg wallpaper-get` while the widget is placed.
 
 local TICK_MS = 5000
 local KEEP = 20
 local SIZE = 170
+local PAPER = "#f4f1ea"
 
 local dir = noctalia.pluginDataDir()
 local histFile = dir .. "/history"
@@ -29,7 +30,7 @@ local function thumbName(path)
   for i = 1, #path do
     h = (h * 33 + string.byte(path, i)) % 4294967296
   end
-  return string.format("%08x-%d.png", h, #path)
+  return string.format("%08x-%d-q.png", h, #path)
 end
 
 local render
@@ -51,9 +52,11 @@ local function makeThumb(path, out)
   end
   busy[out] = true
   noctalia.mkdirAll(thumbDir)
+  -- square photo in an off-white frame with a deeper bottom edge; tilt and shadow come with the pile
   noctalia.runAsync({
-    "magick", path .. "[0]", "-thumbnail", SIZE .. "x" .. SIZE,
-    "-bordercolor", "snow", "-background", "gray20", "+polaroid", out,
+    "magick", path .. "[0]", "-thumbnail", SIZE .. "x" .. SIZE .. "^", "-gravity", "center", "-extent", SIZE .. "x" .. SIZE,
+    "-bordercolor", PAPER, "-border", "9", "-gravity", "south", "-background", PAPER, "-splice", "0x30",
+    out,
   }, function(r)
     done(out, r)
   end)
@@ -79,19 +82,32 @@ local function poll()
   end)
 end
 
--- The thumbnails are composed into one pile image: a loose grid with a random shift per cell, so
--- neighbours overlap by at most about a third. Cached per set of thumbnails.
-local THUMB_W, THUMB_H = 215, 160
-local STEP_X, STEP_Y = 165, 120
-local JITTER = 22
+-- The thumbnails are composed into one pile image: a loose cluster, one polaroid lying apart from it, one
+-- turned about upside down, the rest tilted a little. Layout and angles are drawn again for every new pile.
+-- Room around every centre for a tilted polaroid with its shadow: at most 30 degrees off square is about
+-- 136 px from the centre, plus the shadow.
+local PAD = 155
+local STEP_X, STEP_Y = 150, 170
+local JITTER = 35
+local APART = 260 -- from the cluster's nearest centre to the polaroid lying apart
+local APART_DY = 50 -- how far above or below the middle the polaroid lying apart can sit
 local pileFile, pileW, pileH = nil, 0, 0
 local pileNameFile = dir .. "/pile"
 local stalePile = string.match(noctalia.readFile(pileNameFile) or "", "[^\n]+")
 
+local function clusterGrid(n)
+  local m = n - 1 -- one lies apart
+  local cols = math.max(1, math.ceil(math.sqrt(m)))
+  return cols, math.max(1, math.ceil(m / cols))
+end
+
 local function pileSize(n)
-  local cols = math.ceil(math.sqrt(n))
-  local rows = math.ceil(n / cols)
-  return (cols - 1) * STEP_X + THUMB_W + 2 * JITTER, (rows - 1) * STEP_Y + THUMB_H + 2 * JITTER, cols
+  if n == 1 then
+    return 2 * PAD, 2 * PAD
+  end
+  local cols, rows = clusterGrid(n)
+  local reach = math.max(JITTER, APART_DY) -- how far a centre can stray vertically from the middle row
+  return (cols - 1) * STEP_X + 2 * JITTER + APART + 2 * PAD, (rows - 1) * STEP_Y + 2 * reach + 2 * PAD
 end
 
 local function buildPile(list, out)
@@ -99,25 +115,50 @@ local function buildPile(list, out)
     return
   end
   busy[out] = true
-  local w, h, cols = pileSize(#list)
+  local n = #list
+  local w, h = pileSize(n)
+  local cols, rows = clusterGrid(n)
+  local apartLeft = math.random(2) == 1
+  local clusterX = PAD + JITTER + ((cols - 1) * STEP_X) / 2 + (apartLeft and APART or 0)
+  local apart, upside = math.random(1, n), math.random(1, n)
   local cells = {}
-  for k = 0, #list - 1 do
+  for k = 0, cols * rows - 1 do
     table.insert(cells, k)
   end
   for k = #cells, 2, -1 do
     local m = math.random(1, k)
     cells[k], cells[m] = cells[m], cells[k]
   end
+  local spots = {}
+  local used = 0
+  for i = 1, n do
+    local x, y
+    if n == 1 then
+      x, y = PAD, PAD
+    elseif i == apart then
+      x = apartLeft and PAD or (PAD + 2 * JITTER + (cols - 1) * STEP_X + APART)
+      y = h / 2 + math.random(-APART_DY, APART_DY)
+    else
+      used = used + 1
+      local cell = cells[used]
+      x = clusterX + ((cell % cols) - (cols - 1) / 2) * STEP_X + math.random(-JITTER, JITTER)
+      y = h / 2 + ((cell // cols) - (rows - 1) / 2) * STEP_Y + math.random(-JITTER, JITTER)
+    end
+    local angle = i == upside and (180 + math.random(-30, 30)) or math.random(-18, 18)
+    spots[i] = { x = math.floor(x - w / 2), y = math.floor(y - h / 2), angle = angle }
+  end
   local args = { "magick", "-size", w .. "x" .. h, "xc:none" }
   -- oldest first so the newest ends up on top
   for i = #list, 1, -1 do
-    local cell = cells[i]
-    local x = (cell % cols) * STEP_X + JITTER + math.random(-JITTER, JITTER)
-    local y = (cell // cols) * STEP_Y + JITTER + math.random(-JITTER, JITTER)
-    table.insert(args, list[i])
-    table.insert(args, "-geometry")
-    table.insert(args, string.format("%+d%+d", x, y))
-    table.insert(args, "-composite")
+    local sp = spots[i]
+    for _, a in ipairs({
+      "(", list[i], "-background", "none", "-rotate", tostring(sp.angle),
+      "(", "+clone", "-background", "black", "-shadow", "55x5+3+4", ")", "+swap",
+      "-background", "none", "-layers", "merge", "+repage", ")",
+      "-gravity", "center", "-geometry", string.format("%+d%+d", sp.x, sp.y), "-composite",
+    }) do
+      table.insert(args, a)
+    end
   end
   table.insert(args, out)
   noctalia.runAsync(args, function(r)
