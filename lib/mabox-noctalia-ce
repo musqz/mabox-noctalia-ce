@@ -3,6 +3,7 @@ cfg="$HOME/.config/mabox-noctalia-ce"
 mkdir -p "$HOME/.config"
 [[ -d $cfg ]] || cp -rn /etc/skel/.config/mabox-noctalia-ce "$HOME/.config/"
 cp -rn /usr/share/mabox-noctalia-ce/noctalia "$HOME/.config/"
+command -v mb-migrate >/dev/null && mb-migrate
 mkdir -p "$HOME/.local/share/themes/noctalia/openbox-3"
 conf="$HOME/.config/qt6ct/qt6ct.conf"
 [[ -e $conf ]] || { mkdir -p "${conf%/*}"; printf '[Appearance]\ncolor_scheme_path=%s/.config/qt6ct/colors/noctalia.conf\ncustom_palette=true\nstyle=Fusion\n' "$HOME" > "$conf"; }
