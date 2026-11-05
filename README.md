@@ -149,6 +149,6 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 | Sysinfo desktop widget: date, system info, CPU/RAM graphs, top processes, discs, updates | `noctalia msg desktop-widgets-toggle-edit`, then add *Sysinfo* | needs `[desktop_widgets] enabled = true` |
 | Info desktop widget: logo, About line, basic hotkeys | `noctalia msg desktop-widgets-toggle-edit`, then add *Info* | same setting as Sysinfo |
 | Quoter desktop widget: random quote, new one every 10 minutes | `noctalia msg desktop-widgets-toggle-edit`, then add *Quoter* | other quotes file: path on one line in `~/.config/quoter/quoter.conf` |
-| Polaroids desktop widget: the last wallpapers as polaroid thumbnails | `noctalia msg desktop-widgets-toggle-edit`, then add *Polaroids* | number of polaroids in the widget settings; needs `magick` |
+| Polaroids desktop widget: the previous wallpapers as polaroid thumbnails | `noctalia msg desktop-widgets-toggle-edit`, then add *Polaroids* | number of polaroids in the widget settings; needs `magick` |
 | `mpv-play-stream` play URL | `C-S-1` | [docs/music.md](docs/music.md) |
 | Media keys | `XF86Audio*` | [docs/music.md](docs/music.md) |

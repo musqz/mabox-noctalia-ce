@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "photo"
-description = "Desktop widget with the last wallpapers as polaroids."
+description = "Desktop widget with the previous wallpapers as polaroids."
 tags = ["desktop", "wallpaper"]
 
 [[desktop_widget]]
