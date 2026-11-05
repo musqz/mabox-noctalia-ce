@@ -12,6 +12,7 @@ local HOME = noctalia.getenv("HOME")
 local DEFAULTS = {
   shot_delay = "0",
   shot_format = "png",
+  shot_output = "focus",
   rec_container = "mp4",
   rec_fps = "30",
   rec_audio = "none",
@@ -28,6 +29,7 @@ local PROBE = [[
 p=${XDG_RUNTIME_DIR:-/tmp}/mb-shots-interval.pid
 pgrep -x wl-screenrec >/dev/null && echo rec=1 || echo rec=0
 { [ -f "$p" ] && kill -0 "$(cat "$p")" 2>/dev/null; } && echo iv=1 || echo iv=0
+wlr-randr 2>/dev/null | sed -n 's/^\([^ ][^ ]*\) .*/out=\1/p'
 echo n=$(mb-shots-interval -n 2>/dev/null || echo 0)
 find "$HOME/Pictures/screenshots" "$HOME/Videos/Recordings" "$HOME/Pictures/Mabox-Animations" -maxdepth 1 -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -5 | cut -d' ' -f2-
 ]]
@@ -35,6 +37,11 @@ find "$HOME/Pictures/screenshots" "$HOME/Videos/Recordings" "$HOME/Pictures/Mabo
 local recording = false
 local intervalOn = false
 local recent = {}
+local outputs = { "focus" }
+local THUMBS = (noctalia.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/mb-capture-thumbs"
+local thumbs = {} -- path -> thumbnail file, "pending" or "failed"
+local hovered = nil
+local recentSig = ""
 local ivCount = 0
 local armed = false
 local armedAt = 0
@@ -74,7 +81,7 @@ local function loadSettings()
   local raw = path and noctalia.readFile(path)
   for l in string.gmatch(raw or "", "[^\n]+") do
     local k, v = string.match(l, "^([%w_]+)=(.*)$")
-    if k and DEFAULTS[k] and string.match(v, "^[%w]+$") then
+    if k and DEFAULTS[k] and string.match(v, "^[%w-]+$") then
       S[k] = v
     end
   end
@@ -96,15 +103,79 @@ local function setSetting(k, v)
   noctalia.writeFile(settingsPath(), table.concat(out, "\n") .. "\n")
 end
 
+-- Thumbnails: made on first hover into the runtime dir; pruned to the files in Recent.
+
+local THUMB_CMD = [[
+mkdir -p "$1" || exit 1
+case "$2" in
+  *.mp4|*.mkv|*.webm) ffmpeg -loglevel error -y -ss 0.5 -i "$2" -frames:v 1 -vf scale=320:-2 "$3" ;;
+  *) magick "$2[0]" -thumbnail 320x "$3" ;;
+esac
+]]
+
+local PRUNE_CMD = [[
+cd "$1" 2>/dev/null || exit 0
+shift
+for f in *; do
+  [ -e "$f" ] || continue
+  keep=0
+  for k; do [ "$f" = "$k" ] && keep=1; done
+  [ "$keep" = 1 ] || rm -f -- "$f"
+done
+]]
+
+local function thumbName(path)
+  return (string.gsub(string.match(path, "([^/]+)$") or path, "[^%w._-]", "_")) .. ".png"
+end
+
+local function ensureThumb(path)
+  if thumbs[path] then
+    return
+  end
+  thumbs[path] = "pending"
+  local out = THUMBS .. "/" .. thumbName(path)
+  noctalia.runAsync({ "sh", "-c", THUMB_CMD, "sh", THUMBS, path, out }, function(result)
+    thumbs[path] = result.exitCode == 0 and out or "failed"
+    render()
+  end)
+end
+
+local function pruneThumbs(files)
+  local names, sig = {}, table.concat(files, "\n")
+  if sig == recentSig then
+    return
+  end
+  recentSig = sig
+  local keep = {}
+  for _, f in ipairs(files) do
+    table.insert(names, thumbName(f))
+    keep[f] = true
+  end
+  for path in pairs(thumbs) do
+    if not keep[path] then
+      thumbs[path] = nil
+    end
+  end
+  local argv = { "sh", "-c", PRUNE_CMD, "sh", THUMBS }
+  for _, n in ipairs(names) do
+    table.insert(argv, n)
+  end
+  noctalia.runAsync(argv)
+end
+
 -- Probe
 
 local function refresh()
   lastRun = ticks
   noctalia.runAsync({ "sh", "-c", PROBE }, function(result)
     local files = {}
+    local outs = { "focus" }
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
       local k, v = string.match(l, "^(%w+)=(%d+)$")
-      if k == "rec" then
+      local o = string.match(l, "^out=(.+)$")
+      if o then
+        table.insert(outs, o)
+      elseif k == "rec" then
         recording = v == "1"
       elseif k == "iv" then
         intervalOn = v == "1"
@@ -115,6 +186,8 @@ local function refresh()
       end
     end
     recent = files
+    outputs = outs
+    pruneThumbs(files)
     render()
   end)
 end
@@ -150,6 +223,13 @@ local function shot(mode, annotate)
   end
   for _, a in ipairs(mode) do
     table.insert(argv, a)
+  end
+  if #mode == 1 and mode[1] == "screenshot-fullscreen" and S.shot_output ~= "focus" then
+    for _, o in ipairs(outputs) do
+      if o == S.shot_output then
+        table.insert(argv, o)
+      end
+    end
   end
   setSetting("shot_delay", "0")
   launch(argv, true)
@@ -206,7 +286,7 @@ end
 local function shotBlock()
   block = "shot-"
   local head = headingWithFolder("Screenshot", HOME .. "/Pictures/screenshots")
-  local r1, r2, r3 = nextRow(), nextRow(), nextRow()
+  local r1, r2, r3, r4 = nextRow(), nextRow(), nextRow(), nextRow()
   return card({
     head,
     ui.row({ gap = 4 }, {
@@ -221,6 +301,9 @@ local function shotBlock()
     ui.row({ gap = 4 }, {
       cycle(r3, 1, "Delay", "shot_delay", { "0", "3", "5", "10", "30" }, "s", nil, "Delay for the next screenshot only"),
       cycle(r3, 2, "Format", "shot_format", { "png", "jpg", "webp", "avif" }),
+    }),
+    ui.row({ gap = 4 }, {
+      cycle(r4, 1, "Screen", "shot_output", outputs, nil, { focus = "focused" }, "Monitor for the Screen button"),
     }),
   })
 end
@@ -299,11 +382,28 @@ local function recentBlock()
   if #recent == 0 then
     table.insert(rows, ui.label({ text = "Nothing yet", color = "on_surface_variant" }))
   end
+  local preview = hovered
   for _, path in ipairs(recent) do
     local name = string.match(path, "([^/]+)$") or path
-    table.insert(rows, kbtn("rc-" .. path, nextRow(), 1, { text = name, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function()
+    if not hovered and kbd.sel("rc-" .. path) then
+      preview = path
+    end
+    table.insert(rows, kbtn("rc-" .. path, nextRow(), 1, { text = name, variant = "ghost", controlSize = "sm", contentAlign = "start", onHover = function(state)
+      hovered = state == "true" and path or nil
+      if hovered then
+        ensureThumb(path)
+      end
+      render()
+    end, onClick = function()
       noctalia.runAsync({ "xdg-open", path })
     end }))
+  end
+  if preview then
+    ensureThumb(preview)
+    local t = thumbs[preview]
+    if t and t ~= "failed" and t ~= "pending" then
+      table.insert(rows, ui.image({ path = t, width = 300, height = 170, fit = "contain", radius = 6 }))
+    end
   end
   return card(rows)
 end
@@ -341,6 +441,7 @@ end
 
 local function open()
   kbd.clear()
+  hovered = nil
   armed = false
   loadSettings()
   ticks = 0

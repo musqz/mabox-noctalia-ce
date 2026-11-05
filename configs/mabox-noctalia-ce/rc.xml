@@ -65,7 +65,7 @@
     <keybind key="W-1"><action name="Execute" command="noctalia msg workspace-switch prev"/></keybind>
     <keybind key="C-A-a"><action name="Execute" command="noctalia msg wallpaper-random"/></keybind>
     <keybind key="W-="><action name="Execute"><command>noctalia msg panel-toggle wallpaper</command></action></keybind>
-    <keybind key="C-S-a"><action name="Execute" command="mb-screenshot screenshot-fullscreen"/></keybind>
+    <keybind key="C-S-a"><action name="Execute" command="mb-screenshot screenshot-region"/></keybind>
 
     <!-- NUMLOCK -->
     <numlock>on</numlock>
