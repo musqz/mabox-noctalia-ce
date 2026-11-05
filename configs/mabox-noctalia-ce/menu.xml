@@ -99,6 +99,9 @@
     <item label="Status pinned" icon="utilities-system-monitor">
       <action name="Execute" command="mb-pinned status" />
     </item>
+    <item label="Keys" icon="input-keyboard">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
+    </item>
     <item label="System info" icon="computer">
       <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
     </item>
