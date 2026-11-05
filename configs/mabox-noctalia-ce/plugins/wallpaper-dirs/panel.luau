@@ -43,8 +43,13 @@ local function pick(p)
   end)
 end
 
+local function addFolder()
+  dirs.browse(current ~= "" and current or noctalia.getenv("HOME"))
+end
+
 function render()
   kbd.begin()
+  kbd.stop("add", 0, 1, addFolder)
   local rows = {}
   for i, p in ipairs(items) do
     kbd.stop("p" .. i, i, 1, function() pick(p) end)
@@ -59,7 +64,7 @@ function render()
     table.insert(rows, ui.label({ text = "No saved folders", color = "on_surface_variant" }))
   end
   panel.render(ui.column({ gap = 8, padding = 12 }, {
-    ui.button({ glyph = "folder-open", text = "Add folder", variant = "ghost", onClick = function() dirs.browse(current ~= "" and current or noctalia.getenv("HOME")) end }),
+    ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", selected = kbd.sel("add"), onClick = addFolder }),
     err and ui.label({ text = err, color = "error" }) or note and ui.label({ text = note, color = "primary" }) or ui.box({ height = 0 }),
     ui.scroll({ key = "list", gap = 0, height = 300, revealKey = kbd.reveal() }, rows),
   }))
