@@ -63,6 +63,9 @@
     <item label="Wallpaper" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle wallpaper" />
     </item>
+    <item label="Wallpaper folders" icon="preferences-desktop-wallpaper">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/wallpaper-dirs:dirs" />
+    </item>
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>
