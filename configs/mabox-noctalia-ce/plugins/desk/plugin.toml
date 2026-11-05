@@ -1,0 +1,13 @@
+id = "mabox/desk"
+name = "Desk"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "info-circle"
+description = "Desktop widgets: info card with the basic hotkeys and an About line."
+tags = ["desktop"]
+
+[[desktop_widget]]
+id = "info"
+entry = "info.luau"

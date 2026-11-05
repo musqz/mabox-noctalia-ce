@@ -13,7 +13,7 @@ W-A-s,Panels,0,Status panel
 W-A-w,Panels,0,Wallpaper folders
 W-A-r,Panels,0,Capture panel (screenshot, recording)
 W-A-d,Desktop,0,Show or hide the desktop widgets
-W-A-i,Panels,0,System info and report
+W-A-i,Panels,1,System info and report
 W-A-k,Panels,0,Fittsmon zone commands on each monitor
 W-S-s,Panels,0,Status as pinned window
 W-=,Panels,0,Wallpaper picker
