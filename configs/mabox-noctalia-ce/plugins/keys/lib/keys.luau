@@ -174,6 +174,18 @@ return function(wide)
     noctalia.runAsync({ "setsid", "-f", "sh", "-c", b.command })
   end
 
+  local function copyCommand(b)
+    -- wl-copy sets the live selection; copyToClipboard only reaches the history.
+    noctalia.runAsync({ "wl-copy", "--", b.command }, function(result)
+      if result.exitCode == 0 then
+        noctalia.notify("Command copied", b.command)
+      else
+        noctalia.copyToClipboard(b.command, "text/plain")
+        noctalia.notify("Command added to clipboard history", "Install wl-clipboard to paste it directly")
+      end
+    end)
+  end
+
   local function chips(b)
     local items = {}
     local parts = {}
@@ -203,7 +215,8 @@ return function(wide)
     return ui.row({ key = id, gap = 8, align = "center", padding = 3, radius = 8, border = "primary", borderWidth = kbd.sel(id) and 3 or 0 }, {
       chips(b),
       line[1],
-      b.run and ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = b.command, onClick = function() run(b) end }) or ui.spacer({ width = 0 }),
+      b.command ~= "" and ui.button({ glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy command", onClick = function() copyCommand(b) end }) or ui.spacer({ width = 32 }),
+      b.run and ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = b.command, onClick = function() run(b) end }) or ui.spacer({ width = 32 }),
     })
   end
 
