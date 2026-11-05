@@ -210,6 +210,7 @@ command = "wlopm --off '*'"
 resume_command = "wlopm --on '*'"
 
 [bar.default]
+center = []
 end = ["audio_visualizer", "media", "cpu", "network_rx", "updates", "screenrec", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "clock", "control-center", "session"]
 border = "primary"
 border_width = 1.0
