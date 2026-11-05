@@ -45,12 +45,12 @@ stat = "ram"
 type = "custom_button"
 glyph = "player-record"
 color = "on_surface"
-tooltip = "L:Screenshot M:menu R:Recorder"
+tooltip = "L:Area shot M:Stop R:Record"
 capsule = false
 
 [widget.screenrec.actions]
-left = "exec mb-screenshot screenshot-fullscreen"
-middle = "exec noctalia msg panel-toggle mabox/capture:main"
+left = "exec mb-screenshot screenshot-region"
+middle = "exec capture-stop"
 right = "exec screenrec-toggle"
 
 [widget.status]
