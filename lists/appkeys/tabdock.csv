@@ -1,0 +1,28 @@
+# section,keys,description  (the find window, `tabdock --find`; the browser keys are for the extension)
+Find window,Down,Highlight the next tab
+Find window,Up,Highlight the previous tab
+Find window,PgDn,Ten down
+Find window,PgUp,Ten up
+Find window,Home,First row
+Find window,End,Last row
+Find window,Enter,Open the tab (a folder: fold or unfold)
+Find window,Esc,Close
+Find window,Delete,Close the highlighted tab
+Find window,Ctrl+K,Pin or unpin the tab
+Find window,Ctrl+T,New tab in its container
+Find window,Ctrl+Shift+T,Reopen the closed tab
+View,Ctrl+1,Search the tabs
+View,Ctrl+2,Search the bookmarks
+View,Ctrl+3,Search the history
+View,Left,Previous view (nothing typed)
+View,Right,Next view (nothing typed)
+Panel,Ctrl+P,Pin or unpin the panel
+Panel,Ctrl+I,Show or hide the icons
+Panel,Ctrl+L,Switch the side
+Panel,Ctrl+A,Switch auto and all
+Workspaces,Ctrl+N,New workspace
+Workspaces,Ctrl+Left,Previous workspace
+Workspaces,Ctrl+Right,Next workspace
+Workspaces,Ctrl+Alt+PgDn,Next workspace (in the browser)
+Workspaces,Ctrl+Alt+PgUp,Previous workspace (in the browser)
+Workspaces,Ctrl+Alt+1..9,Go to workspace 1-9 (in the browser)

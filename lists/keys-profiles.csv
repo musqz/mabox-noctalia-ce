@@ -1,15 +1,15 @@
-# name,kind,source[,app ids of the Focused chip joined with +]  (groups: rc.xml groups joined with +; app: lists/appkeys/NAME.csv)
+# name,kind,source[,app ids that make the panel open on the app, joined with + (title:PREFIX matches the start of the window title)]  (groups: rc.xml groups joined with +; app: lists/appkeys/NAME.csv)
 Panels,groups,Panels+Capture
 Windows,groups,Windows+Workspaces+Jump
 Firefox,app,firefox,firefox+waterfox+firedragon+librewolf
 Geany,app,geany,geany
-Obsidian,app,obsidian,obsidian
+Obsidian,app,obsidian,obsidian+md.obsidian.Obsidian
 Kitty,app,kitty,kitty
 Terminator,app,terminator,terminator
 Xterm,app,xterm,xterm
 GIMP,app,gimp,gimp
-Inkscape,app,inkscape,inkscape
-LibreOffice,app,libreoffice,libreoffice+soffice
+Inkscape,app,inkscape,inkscape+org.inkscape.Inkscape
+LibreOffice,app,libreoffice,libreoffice+soffice+libreoffice-*
 VLC,app,vlc,vlc
 mpv,app,mpv,mpv
 Thunderbird,app,thunderbird,thunderbird
@@ -22,4 +22,11 @@ Nano,app,nano
 Foot,app,foot,foot
 Feh,app,feh,feh
 Doublecmd,app,doublecmd,doublecmd
-Yazi,app,yazi
+Yazi,app,yazi,title:Yazi:
+PyRadio,app,pyradio,pyradio+title:PyRadio:
+Audacious,app,audacious,audacious
+Tabdock,app,tabdock,tabdock
+Meld,app,meld,meld+org.gnome.Meld
+qutebrowser,app,qutebrowser,qutebrowser+org.qutebrowser.qutebrowser
+Forum Scout,app,forum-scout,forum-scout+org.musqz.forum-scout
+Clementine,app,clementine,clementine+org.clementine_player.Clementine

@@ -1,0 +1,42 @@
+# section,keys,description  (defaults of the Qt interface, from its menus)
+Playback,Ctrl+Enter,Play
+Playback,"Ctrl+,",Pause
+Playback,Ctrl+.,Stop
+Playback,Alt+Up,Previous
+Playback,Alt+Down,Next
+Playback,Shift+Enter,Play or resume the selected song
+Playback,Ctrl+N,No playlist advance
+Playback,Ctrl+1,Set repeat point A
+Playback,Ctrl+2,Set repeat point B
+Playback,Ctrl+3,Clear the repeat points
+Playback,Alt+I,Song info
+Playback,Ctrl+H,Playback history
+Volume,Ctrl+Plus,Volume up
+Volume,Ctrl+Minus,Volume down
+Volume,Ctrl+E,Equalizer
+Volume,Ctrl+D,Effects
+Files,Ctrl+O,Open files
+Files,Ctrl+K,Open a folder
+Files,Ctrl+L,Open a URL
+Files,Ctrl+Shift+O,Add files
+Files,Ctrl+Shift+K,Add a folder
+Files,Ctrl+Shift+L,Add a URL
+Files,Ctrl+Q,Quit
+Playlist,Ctrl+T,New playlist
+Playlist,F2,Rename the playlist
+Playlist,Ctrl+W,Remove the playlist
+Playlist,Ctrl+P,Playlist manager
+Playlist,Ctrl+U,Queue manager
+Playlist,Alt+Q,Queue or unqueue the song
+Playlist,Ctrl+F,Find in the playlist
+Playlist,Ctrl+Y,Search the library
+Playlist,F5,Refresh
+Playlist,F6,Refresh the selection
+Edit,Ctrl+A,Select all
+Edit,Ctrl+X,Cut
+Edit,Ctrl+C,Copy
+Edit,Ctrl+Shift+V,Paste at the end
+View,Ctrl+Shift+M,Show the menu bar
+View,Ctrl+Shift+I,Show the info bar
+View,Ctrl+Shift+S,Show the status bar
+View,Ctrl+Shift+R,Show the remaining time

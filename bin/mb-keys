@@ -10,6 +10,7 @@ Descriptions: keys.csv (key,group,basic,description), else the comment above
 a lone keybind, else the command.
 """
 import csv
+import fnmatch
 import os
 import re
 import shutil
@@ -19,18 +20,13 @@ import tomllib
 import xml.etree.ElementTree as ET
 
 CFG = os.path.join(os.environ["HOME"], ".config", "mabox-noctalia-ce", "rc.xml")
-CSV_PATHS = (
-    "/usr/share/mabox-noctalia-ce/keys.csv",
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "keys.csv"),
-)
-PROFILE_PATHS = (
-    "/usr/share/mabox-noctalia-ce/keys-profiles.csv",
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "keys-profiles.csv"),
-)
-APPKEY_DIRS = (
-    "/usr/share/mabox-noctalia-ce/appkeys",
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lists", "appkeys"),
-)
+HERE = os.path.dirname(os.path.realpath(__file__))
+SHARE = "/usr/share/mabox-noctalia-ce"
+# a checkout's lists win over the installed ones; the installed script has no ../lists
+CSV_PATHS = (os.path.join(HERE, "..", "lists", "keys.csv"), SHARE + "/keys.csv")
+PROFILE_PATHS = (os.path.join(HERE, "..", "lists", "keys-profiles.csv"), SHARE + "/keys-profiles.csv")
+APPKEY_DIRS = (os.path.join(HERE, "..", "lists", "appkeys"), SHARE + "/appkeys")
+TERMINALS = ("Terminator", "Kitty", "Xterm", "Foot")  # profiles of terminals, see "focused"
 GEANY_CONF = os.path.join(os.environ["HOME"], ".config", "geany", "keybindings.conf")
 YAZI_KEYMAP = os.path.join(os.environ["HOME"], ".config", "yazi", "keymap.toml")
 DOUBLECMD_KEYS = os.path.join(os.environ["HOME"], ".config", "doublecmd", "shortcuts.scf")
@@ -135,7 +131,7 @@ def read_csv():
 def installed(row):
     """An app profile shows only when its source or one of its app ids is a command on PATH."""
     names = [row[2]] + (row[3].split("+") if len(row) > 3 else [])
-    return any(shutil.which(n) for n in names)
+    return any(shutil.which(n) for n in names if not n.startswith("title:") and not any(c in n for c in "*."))
 
 
 def profiles():
@@ -321,16 +317,28 @@ def main(argv):
             print("\t".join(r[:3]))
         return 0
     if argv and argv[0] == "focused":
-        for r in profiles():
-            for app_id in (r[3].split("+") if len(r) > 3 else []):
-                try:
-                    found = subprocess.run(["wlrctl", "toplevel", "find", "app_id:" + app_id, "state:focused"],
-                                           capture_output=True).returncode == 0
-                except OSError:
+        try:
+            out = subprocess.run(["wlrctl", "toplevel", "list", "state:focused"],
+                                 capture_output=True, text=True).stdout
+        except OSError:
+            return 0
+        # "app_id: title"; a terminal program has its terminal's app id, so "title:PREFIX" matches the title start
+        app_id, _, title = (out.splitlines() or [""])[0].partition(": ")
+        rows = [(r[0], w) for r in profiles() for w in (r[3].split("+") if len(r) > 3 else [])]
+
+        def has_id(want):  # an app id, case does not matter, "*" is a wildcard
+            return fnmatch.fnmatchcase(app_id.lower(), want.lower())
+
+        # a terminal program has its terminal's app id; "title:PREFIX" matches the title start, in a terminal only
+        if any(has_id(w) for n, w in rows if n in TERMINALS):
+            for name, want in rows:
+                if want.startswith("title:") and title.lower().startswith(want[6:].lower()):
+                    print(name)
                     return 0
-                if found:
-                    print(r[0])
-                    return 0
+        for name, want in rows:
+            if not want.startswith("title:") and has_id(want):
+                print(name)
+                return 0
         return 0
     if len(argv) >= 2 and argv[0] == "app":
         for section, keys, desc in app_binds(argv[1]):

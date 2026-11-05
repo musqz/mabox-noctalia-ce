@@ -1,0 +1,14 @@
+# section,keys,description  (the `?` help of Forum Scout)
+Search,Ctrl+L,Focus the search bar
+Search,F5,Re-run the last search
+Search,Esc,Clear the search
+Search,Ctrl+F,Toggle the forums bar
+Search,F6,Focus the table (tab-aware)
+Results,Enter,Open the selected result (all if several)
+Results,Ctrl+Enter,Open the selected results in the browser
+Results,Ctrl+B,Bookmark or un-bookmark the selected results
+Bookmarks,Delete,Delete the selected bookmarks
+Bookmarks,Ctrl+Z,Undo the last bookmark delete
+Bookmarks,Ctrl+R,Refresh the bookmark activity
+Window,Ctrl+Tab,Switch tabs
+Window,?,Show the help

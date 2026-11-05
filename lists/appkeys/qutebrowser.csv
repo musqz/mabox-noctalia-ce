@@ -1,0 +1,107 @@
+# section,keys,description  (defaults; ":bind" and config.py change them)
+Open,o,Open a URL
+Open,O,Open a URL in a new tab
+Open,go,Edit the current URL
+Open,gO,Edit the current URL in a new tab
+Open,wo,Open a URL in a new window
+Open,ga,New tab
+Open,Ctrl+T,New tab
+Open,Ctrl+N,New window
+Open,Ctrl+Shift+N,New private window
+Tabs,d,Close the tab
+Tabs,Ctrl+W,Close the tab
+Tabs,D,Close the tab and select the next one instead of the previous
+Tabs,co,Close all other tabs
+Tabs,u,Undo closing a tab
+Tabs,U,Undo closing a window
+Tabs,Ctrl+Shift+T,Undo closing a tab
+Tabs,J,Next tab
+Tabs,K,Previous tab
+Tabs,Ctrl+PgDn,Next tab
+Tabs,Ctrl+PgUp,Previous tab
+Tabs,gt,Select a tab by name
+Tabs,T,Go to a tab by index
+Tabs,Ctrl+Tab,Last tab
+Tabs,Alt+1..8,Go to tab 1-8
+Tabs,Alt+9,Go to the last tab
+Tabs,gJ,Move the tab right
+Tabs,gK,Move the tab left
+Tabs,gm,Move the tab
+Tabs,gC,Clone the tab
+Tabs,gD,Give the tab to a window
+Tabs,Ctrl+p,Pin the tab
+Tabs,Alt+m,Mute the tab
+Navigate,H,Back
+Navigate,L,Forward
+Navigate,th,Back in a new tab
+Navigate,tl,Forward in a new tab
+Navigate,r,Reload
+Navigate,R,Reload and skip the cache
+Navigate,Ctrl+s,Stop loading
+Navigate,Ctrl+h,Home page
+Navigate,gu,Up one level in the URL
+Navigate,[[,Previous page
+Navigate,]],Next page
+Navigate,Ctrl+A,Increment the number in the URL
+Navigate,Ctrl+X,Decrement the number in the URL
+Scroll,h j k l,Left down up right
+Scroll,gg,Top of the page
+Scroll,G,Bottom of the page
+Scroll,Ctrl+D,Half a page down
+Scroll,Ctrl+U,Half a page up
+Scroll,Ctrl+F,Page down
+Scroll,Ctrl+B,Page up
+Search,/,Search the page
+Search,?,Search backwards
+Search,n,Next match
+Search,N,Previous match
+Hints,f,Follow a link with hints
+Hints,F,Follow a link in a new tab
+Hints,wf,Follow a link in a new window
+Hints,;b,Open a hint in a background tab
+Hints,;i,Open an image
+Hints,;y,Yank a link URL
+Hints,;d,Download a link
+Hints,;t,Focus an input field
+Hints,gi,Focus the first input field
+Hints,;r,Rapid hints in background tabs
+Yank and paste,yy,Yank the URL
+Yank and paste,yt,Yank the title
+Yank and paste,yd,Yank the domain
+Yank and paste,yp,Yank the pretty URL
+Yank and paste,ym,Yank a markdown link
+Yank and paste,pp,Open the clipboard URL
+Yank and paste,Pp,Open the clipboard URL in a new tab
+Yank and paste,wp,Open the clipboard URL in a new window
+Marks,m,Save a quickmark
+Marks,b,Load a quickmark
+Marks,B,Load a quickmark in a new tab
+Marks,M,Add a bookmark
+Marks,gb,Load a bookmark
+Marks,gB,Load a bookmark in a new tab
+Marks,Sb,Bookmarks list
+Marks,Sh,History
+Zoom,+,Zoom in
+Zoom,-,Zoom out
+Zoom,=,Reset the zoom
+Modes,i,Insert mode
+Modes,v,Caret mode
+Modes,V,Caret mode with the line selected
+Modes,Ctrl+v,Passthrough mode
+Modes,Esc,Back to normal mode
+Other,:,Command mode
+Other,.,Repeat the last command
+Other,wi,Developer tools
+Other,gf,View the page source
+Other,gd,Download the page
+Other,F11,Fullscreen
+Other,sf,Save the config
+Other,ss,Change a setting
+Other,sk,Change a key binding
+Other,Ctrl+Alt+p,Print
+Other,q,Record a macro
+Other,@,Run a macro
+Other,tsh,Toggle JavaScript on this host
+Other,ZZ,Quit and save the session
+Other,ZQ,Quit
+Other,Ctrl+Q,Quit

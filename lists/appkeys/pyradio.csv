@@ -1,0 +1,77 @@
+# section,keys,description  (defaults of pyradio 0.9.3, `?` shows them in the player)
+Playback,Enter,Play the station
+Playback,Space,Stop playback (pause while recording)
+Playback,r,Play a random station
+Playback,Ctrl+N,Play the next station
+Playback,Ctrl+P,Play the previous station
+Playback,>,Play the next history item
+Playback,<,Play the previous history item
+Playback,P,Go to the playing station
+Playback,|,Toggle recording
+Playback,i,Station info
+Playback,*,Add the station to the favorites
+Playback,z,Toggle forcing https
+Volume,+,Volume up
+Volume,.,Volume up
+Volume,=,Volume up
+Volume,",",Volume down
+Volume,-,Volume down
+Volume,m,Mute
+Volume,v,Save the volume
+Move,j,Down
+Move,k,Up
+Move,h,Left
+Move,l,Right
+Move,g,Top of the list
+Move,G,End of the list
+Move,H,Top of the screen
+Move,M,Middle of the screen
+Move,L,Bottom of the screen
+Find,/,Search
+Find,n,Search down
+Find,N,Search up
+Find,f,Fuzzy search
+Stations,a,Add a station
+Stations,A,Append a station
+Stations,e,Edit the station
+Stations,x,Delete the station
+Stations,Ctrl+U,Move the station up
+Stations,Ctrl+D,Move the station down
+Stations,y,Add the station to a register
+Stations,',Open the registers
+Stations,J,Create a jump tag
+Stations,w,Tag the title
+Stations,W,Toggle title tagging
+Lists,o,Open the playlists
+Lists,O,Open online services (Radio Browser)
+Lists,R,Reload the playlist
+Lists,Ctrl+G,Open the groups
+Lists,Ctrl+E,Next group
+Lists,Ctrl+Y,Previous group
+Windows,c,Config
+Windows,t,Themes
+Windows,T,Toggle transparency
+Windows,E,Encodings
+Windows,Z,Player extra parameters
+Windows,\,Extra commands
+Windows,?,Help
+Windows,#,Repaint the screen
+Windows,q,Exit or cancel
+Extra commands (after \),n,New playlist
+Extra commands (after \),r,Rename the playlist
+Extra commands (after \),s,Remote control
+Extra commands (after \),o,Open the folders in the file manager
+Extra commands (after \),m,Change the media player
+Extra commands (after \),b,Toggle buffering
+Extra commands (after \),B,Buffering window
+Extra commands (after \),t,Toggle the time display
+Extra commands (after \),l,Toggle opening the last playlist
+Extra commands (after \),v,Save the station volume
+Extra commands (after \),V,Toggle the station volume
+Radio Browser,V,Vote for the station
+Radio Browser,I,Database info
+Radio Browser,C,Choose the server
+Radio Browser,S,Sort the results
+Radio Browser,[,Previous results page
+Radio Browser,],Next results page
+Radio Browser,{,First results page
