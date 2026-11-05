@@ -1,0 +1,50 @@
+# section,keys,description  (defaults, from meld/accelerators.py)
+Window,Ctrl+N,New comparison
+Window,Ctrl+W,Close the tab
+Window,F10,Menu
+Window,F11,Fullscreen
+Window,F1,Help
+Window,"Ctrl+,",Preferences
+Window,Ctrl+Q,Quit
+Window,Esc,Stop the comparison
+Files,Ctrl+S,Save
+Files,Ctrl+Shift+S,Save as
+Files,Ctrl+Shift+L,Save all
+Files,Ctrl+Z,Undo
+Files,Ctrl+Shift+Z,Redo
+Files,Ctrl+R,Refresh
+Files,F5,Refresh
+Files,Ctrl+Shift+O,Open in the external editor
+Files,F9,Show the overview map
+Files,F8,Filter menu
+Find,Ctrl+F,Find
+Find,Ctrl+G,Find next
+Find,F3,Find next
+Find,Ctrl+Shift+G,Find previous
+Find,Shift+F3,Find previous
+Find,Ctrl+H,Find and replace
+Find,Ctrl+I,Go to line
+Changes,Alt+Down,Next change
+Changes,Ctrl+D,Next change
+Changes,Alt+Up,Previous change
+Changes,Ctrl+E,Previous change
+Changes,Alt+PgDn,Next pane
+Changes,Alt+PgUp,Previous pane
+Changes,Ctrl+K,Next conflict
+Changes,Ctrl+J,Previous conflict
+Changes,Alt+\,Swap the two panes
+Merge,Alt+Left,Push the change to the left
+Merge,Alt+Right,Push the change to the right
+Merge,Alt+Shift+Right,Pull the change from the left
+Merge,Alt+Shift+Left,Pull the change from the right
+Merge,Alt+[,Copy up to the left
+Merge,Alt+],Copy up to the right
+Merge,Alt+;,Copy down to the left
+Merge,Alt+',Copy down to the right
+Merge,Alt+Delete,Delete the change
+Folders,Enter,Compare the selected files
+Folders,Alt+Left,Copy to the left
+Folders,Alt+Right,Copy to the right
+Folders,Delete,Delete the selected
+Version control,Ctrl+M,Commit
+Version control,F9,Show the console

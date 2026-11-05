@@ -1,0 +1,24 @@
+# section,keys,description  (defaults, from the main window of Clementine)
+Playback,F5,Previous track
+Playback,F6,Play or pause
+Playback,F7,Stop
+Playback,F8,Next track
+Playback,F9,Next album
+Playback,Ctrl+Alt+V,Stop after this track
+Playback,Ctrl+M,Mute
+Playback,Ctrl+L,Love the track
+Playlist,Ctrl+N,New playlist
+Playlist,Ctrl+S,Save the playlist
+Playlist,Ctrl+Shift+O,Load a playlist
+Playlist,Ctrl+K,Clear the playlist
+Playlist,Ctrl+H,Shuffle the playlist
+Playlist,Ctrl+J,Jump to the playing track
+Add,Ctrl+Shift+A,Add a file
+Add,Ctrl+O,Add a stream
+Tracks,Ctrl+E,Edit the track information
+Tracks,F2,Edit the tag
+Tracks,Ctrl+T,Complete the tags automatically
+Tracks,Ctrl+Shift+T,Add the files to the transcoder
+Window,Ctrl+P,Preferences
+Window,F1,About
+Window,Ctrl+Q,Quit
