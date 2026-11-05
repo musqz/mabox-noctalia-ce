@@ -1,0 +1,13 @@
+id = "mabox/quoter"
+name = "Quoter"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "quote"
+description = "Desktop widget with a random quote."
+tags = ["desktop"]
+
+[[desktop_widget]]
+id = "quoter"
+entry = "widget.luau"

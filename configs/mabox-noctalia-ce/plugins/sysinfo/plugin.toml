@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "chart-line"
-description = "Desktop widget with clock, system info, CPU and RAM graphs, top processes and disc usage."
+description = "Desktop widget with date, system info, CPU and RAM graphs, top processes and disc usage."
 tags = ["desktop", "system"]
 
 [[desktop_widget]]
