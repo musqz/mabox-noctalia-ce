@@ -120,6 +120,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
 | `mabox/info` | `info` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `mb-keys`; `[desktop_widgets] enabled = true` |
 | `mabox/quoter` | `quoter` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `/usr/share/mabox/quotes.txt`; `[desktop_widgets] enabled = true` |
+| `mabox/polaroids` | `polaroids` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh

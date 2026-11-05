@@ -1,0 +1,22 @@
+id = "mabox/polaroids"
+name = "Polaroids"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "photo"
+description = "Desktop widget with the last wallpapers as polaroids."
+tags = ["desktop", "wallpaper"]
+
+[[desktop_widget]]
+id = "polaroids"
+entry = "widget.luau"
+
+  [[desktop_widget.setting]]
+  key = "count"
+  type = "int"
+  label_key = "settings.count.label"
+  description_key = "settings.count.description"
+  default = 3
+  min = 1
+  max = 8
