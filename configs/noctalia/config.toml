@@ -1,6 +1,14 @@
 [hooks]
 colors_changed = "labwc -r"
 
+[theme]
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "faithful"
+
+[theme.templates]
+builtin_ids = ["btop", "gtk3", "gtk4", "qt"]
+
 [theme.templates.user.pyradio]
 input_path = "~/.config/noctalia/PyRadio/mbcolors.pyradio-theme"
 output_path = "~/.config/pyradio/themes/mbcolors.pyradio-theme"
@@ -33,26 +41,17 @@ enabled = true
 type = "sysmon"
 stat = "ram"
 
-[shell.panel]
-floating_layer = "overlay"
-
-[idle.behavior.screen_off]
-  action = "custom"
-  timeout = 450
-  command = "wlopm --off '*'"
-  resume_command = "wlopm --on '*'"
-
-[bar.default]
-end = ['media', 'sysmon-ram', 'updates', 'status', 'colors', 'screenrec', 'tray', 'notifications', 'clipboard', 'network', 'bluetooth', 'volume', 'brightness', 'battery', 'control-center', 'session']
-
 [widget.screenrec]
 type = "custom_button"
 glyph = "player-record"
 color = "on_surface"
-tooltip = "start recording"
+tooltip = "L:Screenshot M:menu R:Recorder"
+capsule = false
 
 [widget.screenrec.actions]
-left = "exec screenrec-toggle"
+left = "exec mb-screenshot screenshot-fullscreen"
+middle = "exec noctalia msg panel-toggle mabox/capture:main"
+right = "exec screenrec-toggle"
 
 [widget.status]
 type = "custom_button"
@@ -62,7 +61,8 @@ tooltip = "system status"
 
 [widget.status.actions]
 left = "exec noctalia msg panel-toggle mabox/status:main"
-right = "exec mb-pinned status"
+right = "exec noctalia msg panel-toggle mabox/status:pinned-left"
+middle = "none"
 
 [widget.colors]
 type = "custom_button"
@@ -78,7 +78,164 @@ type = "custom_button"
 glyph = "circle-check"
 color = "on_surface"
 tooltip = "checking updates"
+capsule = false
 
 [widget.updates.actions]
 left = "exec noctalia msg panel-toggle mabox/status:updates"
-right = "exec mb-updates-ce check"
+right = "exec noctalia msg panel-toggle mabox/status:updates"
+middle = "exec noctalia msg panel-toggle mabox/status:updates"
+
+[widget.active_window]
+colorize_icons = true
+
+[widget.audio_visualizer]
+bands = 49
+capsule = false
+centered = false
+width = 163
+
+[widget.bluetooth]
+capsule = false
+
+[widget.brightness]
+capsule = false
+
+[widget.clipboard]
+capsule = false
+
+[widget.clock]
+anchor = true
+capsule = true
+capsule_radius = 3
+color = "primary"
+font_scale = 1.65
+font_weight = 400
+icon_color = "primary"
+scale = 1.05
+tooltip_format = "{:+%A %B %d}"
+
+[widget.control-center]
+capsule = false
+
+[widget.cpu]
+capsule = false
+label_show_units = false
+show_value = false
+
+[widget.launcher]
+show_tooltip = false
+
+[widget.media]
+artist_first = true
+capsule = true
+capsule_foreground = "primary"
+capsule_radius = 3
+hide_album_art = true
+hide_when_idle = true
+hide_when_no_media = true
+max_length = 544
+show_progress = true
+show_tooltip = false
+
+[widget.network]
+capsule = false
+show_label = false
+vpn_status = "hidden"
+
+[widget.network_rx]
+capsule = false
+network_speed_compact = true
+show_value = false
+
+[widget.session]
+capsule = false
+
+[widget.taskbar]
+colorize_icons = true
+
+[widget.tray]
+capsule = true
+capsule_fill = "on_primary"
+capsule_padding = 0
+capsule_radius = 3
+colorize_icons = true
+detached_panel = true
+font_scale = 0.96
+icon_type = "symbolic"
+match_adjacent_spacing = true
+scale = 1.1
+show_tooltip = true
+
+[widget.volume]
+capsule = false
+
+[widget.wallpaper]
+capsule = false
+
+[widget.workspaces]
+capsule = false
+colorize_icons = true
+empty_color = "primary"
+focused_output_only = true
+font_scale = 1.19
+hide_when_empty = true
+occupied_color = "primary"
+scale = 1.2
+show_icons = false
+show_labels = false
+show_tooltip = false
+style = "focus_hint"
+
+[shell]
+app_icon_color = "primary"
+panel_anchor_bar = "default"
+polkit_colorize_icons = true
+popup_shadows = false
+screen_time_colorize_icons = true
+
+[shell.panel]
+floating_layer = "overlay"
+border_color = "primary"
+border_width = 0.0
+borders = false
+shadow = false
+
+[shell.window_switcher]
+colorize_icons = true
+
+[idle.behavior.screen_off]
+action = "custom"
+timeout = 450
+command = "wlopm --off '*'"
+resume_command = "wlopm --on '*'"
+
+[bar.default]
+end = ["audio_visualizer", "media", "cpu", "network_rx", "updates", "screenrec", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "clock", "control-center", "session"]
+border = "primary"
+border_width = 1.0
+color = "primary"
+concave_edge_corners = false
+icon_color = "primary"
+margin_edge = 4
+padding = 16
+radius = 4
+shadow = false
+thickness = 45
+widget_spacing = 7
+
+[desktop_widgets]
+enabled = true
+
+[dock]
+border = "primary"
+colorize_icons = true
+launcher_position = "start"
+magnification = false
+show_dots = true
+smart_auto_hide = true
+
+[notification]
+colorize_icons = true
+
+[wallpaper]
+directory = "/usr/share/backgrounds"
