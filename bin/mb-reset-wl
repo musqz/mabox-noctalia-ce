@@ -3,15 +3,19 @@
 #   mb-reset-wl                  list items and their state
 #   mb-reset-wl -c <item>        show the difference (meld if installed, else diff)
 #   mb-reset-wl <item>...        overwrite with the default (backup: <file>.bak-DATE)
-#   mb-reset-wl all              reset every item
-# Items: rc menu autostart environment themerc shutdown
+#   mb-reset-wl all              reset every item except noctalia
+# Items: rc menu autostart environment themerc shutdown noctalia
+# noctalia = bar, dock, widgets and theme: config.toml and the matching state overrides.
 # Never touched: autostart.local, themerc-override, noctalia.conf (yours or generated).
 set -euo pipefail
 
 skel=/etc/skel/.config/mabox-noctalia-ce
 live=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce
+nconf=${XDG_CONFIG_HOME:-$HOME/.config}/noctalia
+nstate=${XDG_STATE_HOME:-$HOME/.local/state}/noctalia
 
-items=(rc menu autostart environment themerc shutdown)
+items=(rc menu autostart environment themerc shutdown noctalia)
+state_tables='^[[:space:]]*\[(bar|dock|widget|theme|shell\.panel)[].]'
 
 # sets $src and $dst for an item name
 resolve() {
@@ -19,6 +23,7 @@ resolve() {
         rc)      src=$skel/rc.xml;       dst=$live/rc.xml ;;
         menu)    src=$skel/menu.xml;     dst=$live/menu.xml ;;
         autostart|environment|themerc|shutdown) src=$skel/$1; dst=$live/$1 ;;
+        noctalia) src=/usr/share/mabox-noctalia-ce/noctalia/config.toml; dst=$nconf/config.toml ;;
         *) echo "unknown item: $1 (items: ${items[*]})" >&2; exit 2 ;;
     esac
 }
@@ -26,8 +31,9 @@ resolve() {
 state() {
     if [[ ! -f $src ]]; then echo no-default
     elif [[ ! -f $dst ]]; then echo missing
-    elif cmp -s "$src" "$dst"; then echo same
-    else echo differs; fi
+    elif ! cmp -s "$src" "$dst"; then echo differs
+    elif [[ $dst == "$nconf/config.toml" ]] && grep -Eq "$state_tables" "$nstate/settings.toml" 2>/dev/null; then echo differs
+    else echo same; fi
 }
 
 list() {
@@ -57,16 +63,31 @@ reset() {
     echo "$1: reset ($dst)"
 }
 
+# The state file overrides config.toml, so drop its bar, dock, widget, theme and shell.panel tables.
+strip_state() {
+    local f=$nstate/settings.toml
+    [[ -f $f ]] || return 0
+    awk '/^[[:space:]]*\[+[A-Za-z0-9_."-]+\][[:space:]]*(#.*)?$/ { n = $0; sub(/^[[:space:]]*\[+/, "", n); sub(/\].*$/, "", n); skip = (n ~ /^(bar|dock|widget|theme|shell\.panel)(\.|$)/) }
+         !skip' "$f" > "$f.new"
+    if cmp -s "$f" "$f.new"; then rm -f "$f.new"; return; fi
+    cp -a "$f" "$f.bak-$(date +%Y%m%d-%H%M%S)"
+    mv "$f.new" "$f"
+    echo "noctalia: dropped bar, dock, widget, theme and shell.panel overrides from $f"
+}
+
 case ${1:-} in
     "")  list ;;
-    -h|--help) sed -n '2,8p' "$0" | sed 's/^# \?//' ;;
+    -h|--help) sed -n '2,9p' "$0" | sed 's/^# \?//' ;;
     -c)  [[ -n ${2:-} ]] || { echo "usage: mb-reset-wl -c <item>" >&2; exit 2; }; compare "$2" ;;
     *)
         targets=()
         for t in "$@"; do
-            if [[ $t == all ]]; then targets+=("${items[@]}"); else resolve "$t"; targets+=("$t"); fi
+            if [[ $t == all ]]; then for i in "${items[@]}"; do [[ $i == noctalia ]] || targets+=("$i"); done; else resolve "$t"; targets+=("$t"); fi
         done
-        for t in "${targets[@]}"; do reset "$t"; done
-        echo "Apply: labwc --reconfigure for rc, menu, themerc. autostart, environment, shutdown need a re-login."
+        for t in "${targets[@]}"; do
+            reset "$t"
+            if [[ $t == noctalia ]]; then strip_state; fi
+        done
+        echo "Apply: labwc --reconfigure for rc, menu, themerc. autostart, environment, shutdown, noctalia need a re-login."
         ;;
 esac
