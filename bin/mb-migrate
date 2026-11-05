@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# One-time fixes for config files that were copied from an older release.
+# Add a migrate_N function per change; the last applied N is kept in the state dir.
+set -euo pipefail
+
+state_home=${XDG_STATE_HOME:-$HOME/.local/state}
+stamp=$state_home/mabox-noctalia-ce/config-version
+files=("${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/config.toml" "$state_home/noctalia/settings.toml")
+
+# Exact-string replace: a value the user changed no longer matches and stays.
+replace() {
+    local f c
+    for f in "${files[@]}"; do
+        [[ -f $f ]] || continue
+        c=$(<"$f")
+        printf '%s\n' "${c//"$1"/"$2"}" > "$f"
+    done
+}
+
+migrate_1() { replace 'exec mb-updates-ce menu' 'exec noctalia msg panel-toggle mabox/status:updates'; }
+
+applied=$(cat "$stamp" 2>/dev/null || echo 0)
+last=$(compgen -A function migrate_ | wc -l)
+for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
+mkdir -p "${stamp%/*}"
+echo "$last" > "$stamp"
