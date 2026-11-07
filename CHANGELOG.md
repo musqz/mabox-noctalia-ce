@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove the Refresh button from the Snapshot panel.
 - Add a Snapshot plugin (mabox/snapshot) with profiles to build an ISO with mabox-snapshot; Explain shows the plan, Build opens a terminal.
 - List the newest ISOs in the Snapshot panel and write one to a USB stick with mabox-persistence-usb.
 - Add an encrypt on/off switch to the Personal snapshot card in the Snapshot panel.

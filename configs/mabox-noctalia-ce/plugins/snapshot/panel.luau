@@ -404,19 +404,23 @@ render = function()
     }))
     return
   end
-  local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = explain and ("Explain: " .. explain.name) or (settings and "Snapshot settings" or "Snapshot"), flexGrow = 1 }),
-    explain and ui.label({ text = "" }) or ui.button({ glyph = settings and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settings and "Back" or "Settings", onClick = function()
+  local nav
+  if explain then
+    nav = ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function()
+      explain = nil
+      armed = nil
+      render()
+    end })
+  else
+    nav = ui.button({ glyph = settings and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settings and "Back" or "Settings", onClick = function()
       settings = not settings
       saved = nil
       render()
-    end }),
-    ui.button({ glyph = explain and "arrow-left" or "refresh", variant = "ghost", controlSize = "sm", tooltip = explain and "Back" or "Refresh", onClick = function()
-      explain = nil
-      armed = nil
-      probe()
-      render()
-    end }),
+    end })
+  end
+  local top = ui.row({ gap = 6, align = "center" }, {
+    ui.label({ text = explain and ("Explain: " .. explain.name) or (settings and "Snapshot settings" or "Snapshot"), flexGrow = 1 }),
+    nav,
     ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
   })
   local body
