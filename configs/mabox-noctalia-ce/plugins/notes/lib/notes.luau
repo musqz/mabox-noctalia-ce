@@ -34,6 +34,8 @@ local focusSearch = false
 local editField = "body"
 local editNonce = 0
 local editHead = 1
+local colorIdx = 1
+local lastColor = nil
 local topCursor = 1
 local sideCursor = 1
 local selCursor = 1
@@ -42,11 +44,17 @@ local expanded = {}
 local selecting = false
 local selected = {}
 local confirming = false
-local armedDelete = nil
 local lastSnapshot = {}
-local armedFresh = false
 local NOTES = nil
 local render
+
+-- Click on a note: edit it ("editor") or show the text in the list ("list"); kept in the plugin data dir.
+local openMode = "editor"
+
+local function modePath()
+  local dir = noctalia.pluginDataDir()
+  return dir and (dir .. "/mode")
+end
 
 local function root()
   local dir = noctalia.pluginDataDir()
@@ -344,8 +352,30 @@ local function resetControl()
   itemIdx = selecting and 2 or 1
 end
 
+local function toggleMode()
+  openMode = openMode == "editor" and "list" or "editor"
+  local path = modePath()
+  if path then
+    noctalia.writeFile(path, openMode .. "\n")
+  end
+  expanded = {}
+  render()
+end
+
+local function openMain(context)
+  noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/notes:main", context or "list" })
+end
+
 local function toggleOpen(n)
-  expanded[n.id] = not expanded[n.id] or nil
+  if pinned then
+    openMain("edit:" .. n.id)
+    return
+  end
+  if openMode == "list" then
+    expanded[n.id] = not expanded[n.id] or nil
+  else
+    current = n
+  end
   render()
 end
 
@@ -357,24 +387,14 @@ end
 
 local function setColor(n, name)
   n.color = n.color ~= name and name or nil
+  if n.color then
+    lastColor = n.color
+  end
   saveNote(n)
   render()
 end
 
-local function pressDelete(n)
-  if armedDelete == n.id then
-    removeNote(n.id)
-    loadNotes()
-    cursorId = nil
-    resetControl()
-  else
-    armedDelete = n.id
-    armedFresh = true
-  end
-  render()
-end
-
--- Keyboard stops of a note: row 1 is the header buttons, row 2 the colors, Edit and Delete of an open note.
+-- Keyboard stops of a note: the header buttons.
 local function noteControls(n)
   local head = {}
   if selecting then
@@ -386,15 +406,7 @@ local function noteControls(n)
     table.insert(head, "up")
     table.insert(head, "down")
   end
-  local acts = {}
-  if expanded[n.id] and not pinned and not selecting then
-    for _, c in ipairs(COLORS) do
-      table.insert(acts, "color:" .. c.name)
-    end
-    table.insert(acts, "edit")
-    table.insert(acts, "delete")
-  end
-  return head, acts
+  return head, {}
 end
 
 local function currentControl(n)
@@ -405,7 +417,7 @@ end
 
 -- Click the title to show or hide the full text; right click or the copy button copies it.
 local function noteItem(key, n, detail)
-  local open = expanded[n.id]
+  local open = not pinned and openMode == "list" and expanded[n.id]
   local onCursor = zone == "list" and cursorId == n.id
   local cur = onCursor and currentControl(n) or nil
   local head = {}
@@ -424,7 +436,7 @@ local function noteItem(key, n, detail)
       contentAlign = "start",
       flexGrow = 1,
       selected = cur == "title",
-      tooltip = "Click: show text, right click: copy",
+      tooltip = (not pinned and openMode == "list") and "Click: show text, right click: copy" or "Click: edit, right click: copy",
       onClick = function() toggleOpen(n) end,
       onRightClick = function() copyNote(n) end,
     }),
@@ -437,44 +449,31 @@ local function noteItem(key, n, detail)
     table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", selected = cur == "up", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
     table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", selected = cur == "down", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
   end
-  local items = {
-    ui.row({ gap = 4, align = "center" }, head),
-    ui.label({ text = detail, fontSize = 11, color = "on_surface_variant", maxLines = 1 }),
-  }
+  local items = { ui.row({ gap = 4, align = "center" }, head) }
+  if not pinned then
+    table.insert(items, ui.label({ text = detail, fontSize = 11, color = "on_surface_variant", maxLines = 1 }))
+  end
   if open then
     -- One text area that scrolls itself; the row estimate only sizes it, wrapping is the host's.
-    local cols = pinned and 30 or 80
+    local cols = 80
     local rows = 0
     for line in string.gmatch(n.body .. "\n", "([^\n]*)\n") do
       rows += math.max(1, math.ceil(#line / cols))
     end
-    local height = math.min(pinned and 420 or 260, math.max(80, rows * 20 + 16))
+    local height = math.min(260, math.max(80, rows * 20 + 16))
     table.insert(items, ui.column({ fill = "surface", radius = 4, padding = 6 }, {
       ui.input({ key = "x" .. n.id, value = n.body, multiline = true, frameVisible = false, height = height, onChange = function(text)
-        if not pinned then
-          n.body = text
-          saveNote(n)
-        end
+        n.body = text
+        saveNote(n)
       end }),
     }))
-    if not pinned and not selecting then
-      local armed = armedDelete == n.id
-      local cells = {}
-      for _, c in ipairs(COLORS) do
-        local on = n.color == c.name
-        local ring = cur == "color:" .. c.name
-        local size = ring and 24 or 18
-        local dot = { key = "c" .. key .. c.name, width = size, height = size, radius = size // 2, fill = c.hex, border = "on_surface", borderWidth = ring and 3 or (on and 2 or 0), tooltip = on and ("Clear " .. c.name) or c.name, onClick = function() setColor(n, c.name) end }
-        table.insert(cells, ui.box(dot))
-      end
-      table.insert(cells, ui.spacer({ flexGrow = 1 }))
-      table.insert(cells, ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", selected = cur == "edit", onClick = function()
+    table.insert(items, ui.row({ gap = 6, align = "center" }, {
+      ui.spacer({ flexGrow = 1 }),
+      ui.button({ glyph = "pencil", text = "Edit", variant = "ghost", controlSize = "sm", onClick = function()
         current = n
         render()
-      end }))
-      table.insert(cells, ui.button({ glyph = "trash", text = armed and "Click again to delete" or "Delete", variant = armed and "destructive" or "ghost", controlSize = "sm", selected = cur == "delete", onClick = function() pressDelete(n) end }))
-      table.insert(items, ui.row({ gap = 6, align = "center" }, cells))
-    end
+      end }),
+    }))
   end
   return ui.column({ key = key, gap = 4, padding = 8, radius = 6, fill = "surface_container", border = "primary", borderWidth = onCursor and 2 or 0 }, items)
 end
@@ -493,7 +492,7 @@ local function noteRows()
       detail = detail .. "  " .. hashtags(n.tags)
     end
     table.insert(rows, noteItem("n" .. n.id, n, detail))
-    table.insert(rows, ui.spacer({ height = 6 }))
+    table.insert(rows, ui.spacer({ height = pinned and 2 or 6 }))
   end
   if #list == 0 then
     table.insert(rows, ui.label({ text = "No notes", color = "on_surface_variant" }))
@@ -561,9 +560,26 @@ local function searchBox()
   })
 end
 
+local function titleShown(n)
+  return editField == "title" or noctalia.string.trim(n.name or "") ~= ""
+end
+
+-- alt+1..9 pick a color in the same order, alt+0 clears it.
+local function editorDots(n)
+  local cells = {}
+  for i, c in ipairs(COLORS) do
+    local on = n.color == c.name
+    local ring = editField == "colors" and colorIdx == i
+    local size = ring and 28 or (on and 24 or 18)
+    local dim = n.color and not on and not ring
+    table.insert(cells, ui.box({ key = "ec" .. c.name, width = size, height = size, radius = size // 2, fill = c.hex, opacity = dim and 0.45 or 1, border = ring and "primary" or "on_surface", borderWidth = (ring or on) and 3 or 0, tooltip = (on and "Clear " or "") .. c.name .. " (alt+" .. i .. ")", onClick = function() setColor(n, c.name) end }))
+  end
+  return cells
+end
+
 local function editor()
   local n = current
-  return ui.column({ gap = 8, flexGrow = 1 }, {
+  local items = {
     ui.row({ gap = 6, align = "center" }, {
       ui.button({ glyph = "arrow-left", text = "Back", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 1, onClick = function()
         finishEdit()
@@ -571,21 +587,30 @@ local function editor()
       end }),
       ui.label({ text = prettyDate(n.id), color = "on_surface_variant" }),
       ui.spacer({ flexGrow = 1 }),
+      not titleShown(n) and ui.button({ text = "Title", variant = "ghost", controlSize = "sm", tooltip = "Add a title (alt+s)", onClick = function()
+        editField = "title"
+        editNonce += 1
+        render()
+      end }) or ui.spacer({ width = 0 }),
       ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 2, onClick = function() copyNote({ body = n.body, title = displayTitle(n) }) end }),
       ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 3, onClick = deleteNote }),
     }),
-    ui.row({ gap = 6, align = "center" }, {
+    ui.row({ gap = 6, align = "center" }, editorDots(n)),
+  }
+  if titleShown(n) then
+    table.insert(items, ui.row({ gap = 6, align = "center" }, {
       ui.label({ text = "Title", color = "on_surface_variant", width = 40 }),
       ui.input({ key = "title" .. n.id .. editNonce, focus = editField == "title", value = n.name or "", placeholder = "default: first line", controlSize = "sm", flexGrow = 1, onChange = function(text)
         n.name = text
         saveNote(n)
       end }),
-    }),
-    ui.input({ key = "body" .. n.id .. editNonce, value = n.body, placeholder = "Write a note", multiline = true, focus = editField == "body", flexGrow = 1, onChange = function(text)
+    }))
+  end
+  table.insert(items, ui.input({ key = "body" .. n.id .. editNonce, value = n.body, placeholder = "Write a note", multiline = true, focus = editField == "body", flexGrow = 1, onChange = function(text)
       n.body = text
       saveNote(n)
-    end }),
-  })
+    end }))
+  return ui.column({ gap = 8, flexGrow = 1 }, items)
 end
 
 local function countSelected()
@@ -678,10 +703,6 @@ local function selectBar()
   })
 end
 
-local function openMain(context)
-  noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/notes:main", context or "list" })
-end
-
 -- File times of all notes; the two windows notice each other's writes by comparing them.
 local function snapshot()
   local map = {}
@@ -725,11 +746,6 @@ local function pinWindow()
 end
 
 render = function()
-  if armedFresh then
-    armedFresh = false
-  else
-    armedDelete = nil
-  end
   if pinned then
     local children = {
       ui.row({ gap = 6, align = "center" }, {
@@ -755,9 +771,10 @@ render = function()
   local side = {}
   table.insert(side, ui.button({ text = "New note", glyph = "plus", variant = "ghost", contentAlign = "start", selected = onSide(1), onClick = createNote }))
   table.insert(side, ui.button({ text = "Select", glyph = "square-check", variant = selecting and "primary" or "ghost", contentAlign = "start", selected = onSide(2), onClick = toggleSelect }))
+  table.insert(side, ui.button({ text = openMode == "editor" and "Open: editor" or "Open: list", glyph = openMode == "editor" and "pencil" or "list", variant = "ghost", contentAlign = "start", selected = onSide(3), tooltip = "Click on a note: edit it or show its text in the list", onClick = toggleMode }))
   table.insert(side, ui.spacer({ flexGrow = 1 }))
-  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", selected = onSide(3), tooltip = "Re-read notes from disk", onClick = reload }))
-  table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", selected = onSide(4), onClick = pinWindow }))
+  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", selected = onSide(4), tooltip = "Re-read notes from disk", onClick = reload }))
+  table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", selected = onSide(5), onClick = pinWindow }))
 
   local right
   if current then
@@ -786,6 +803,8 @@ local ticks = 0
 
 local function open(context)
   NOTES = root()
+  local mode = modePath() and noctalia.readFile(modePath())
+  openMode = mode and string.match(mode, "^list") and "list" or "editor"
   if not NOTES then
     noctalia.notify("Notes", "No plugin data directory")
     return
@@ -802,12 +821,19 @@ local function open(context)
   dotCursor = 0
   resetControl()
   zone = "list"
-  armedDelete = nil
-  armedFresh = false
   reload()
   lastSnapshot = snapshot()
-  if context == "new" and not pinned then
+  if context == "new" and not pinned and openMode == "editor" then
     createNote()
+  elseif context and string.sub(context, 1, 5) == "edit:" and not pinned then
+    local id = string.sub(context, 6)
+    for _, n in ipairs(notes) do
+      if n.id == id then
+        current = n
+        render()
+        break
+      end
+    end
   end
 end
 
@@ -829,9 +855,28 @@ local function onKey(chord)
     panel.close()
     return
   end
+  if chord == "escape" and not current then
+    panel.close()
+    return
+  end
   if current then
-    local rows = { "head", "title", "body" }
-    local at = 3
+    if chord == "escape" then
+      finishEdit()
+      render()
+      return
+    end
+    local digit = string.match(chord, "^alt%+(%d)$")
+    if digit then
+      local c = COLORS[tonumber(digit)]
+      if c then
+        setColor(current, c.name)
+      elseif digit == "0" and current.color then
+        setColor(current, current.color)
+      end
+      return
+    end
+    local rows = titleShown(current) and { "head", "colors", "title", "body" } or { "head", "colors", "body" }
+    local at = #rows
     for i, r in ipairs(rows) do
       if r == editField then
         at = i
@@ -841,14 +886,28 @@ local function onKey(chord)
       editField = editField == "body" and "title" or "body"
       editNonce += 1
     elseif chord == "alt+up" or chord == "alt+down" then
-      local to = rows[math.max(1, math.min(3, at + (chord == "alt+down" and 1 or -1)))]
+      local to = rows[math.max(1, math.min(#rows, at + (chord == "alt+down" and 1 or -1)))]
       if to == editField then
         return
       end
       editField = to
-      if to ~= "head" then
-        editNonce += 1
+      if to == "colors" then
+        -- Start on the note's color, else the one used last.
+        local want = current.color or lastColor
+        colorIdx = 1
+        for i, c in ipairs(COLORS) do
+          if c.name == want then
+            colorIdx = i
+          end
+        end
       end
+      -- A new input key drops the focus, which stops the text cursor blinking.
+      editNonce += 1
+    elseif (chord == "alt+left" or chord == "alt+right") and editField == "colors" then
+      colorIdx = math.max(1, math.min(#COLORS, colorIdx + (chord == "alt+right" and 1 or -1)))
+    elseif chord == "alt+enter" and editField == "colors" then
+      setColor(current, COLORS[colorIdx].name)
+      return
     elseif (chord == "alt+left" or chord == "alt+right") and editField == "head" then
       editHead = (editHead - 1 + (chord == "alt+right" and 1 or -1)) % 3 + 1
     elseif chord == "alt+enter" and editField == "head" then
@@ -894,7 +953,7 @@ local function onKey(chord)
       acts = a
     end
     if zone == "side" then
-      sideCursor = math.max(1, math.min(4, sideCursor + step))
+      sideCursor = math.max(1, math.min(5, sideCursor + step))
     elseif #acts > 0 and ((step == 1 and itemRow == 1) or (step == -1 and itemRow == 2)) then
       if step == 1 then
         itemRow = 2
@@ -975,7 +1034,7 @@ local function onKey(chord)
       actions[topCursor]()
       return
     elseif zone == "side" then
-      local actions = { createNote, toggleSelect, reload, pinWindow }
+      local actions = { createNote, toggleSelect, toggleMode, reload, pinWindow }
       actions[sideCursor]()
       return
     elseif zone == "sel" then
@@ -996,13 +1055,6 @@ local function onKey(chord)
         copyNote(cursorNote)
       elseif ctl == "up" or ctl == "down" then
         moveNotes({ [cursorNote.id] = true }, ctl)
-      elseif ctl == "edit" then
-        current = cursorNote
-        render()
-      elseif ctl == "delete" then
-        pressDelete(cursorNote)
-      elseif ctl and string.sub(ctl, 1, 6) == "color:" then
-        setColor(cursorNote, string.sub(ctl, 7))
       else
         toggleOpen(cursorNote)
       end

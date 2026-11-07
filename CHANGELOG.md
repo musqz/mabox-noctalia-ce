@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Open a note straight in the editor with autosave; Esc saves and returns to the list.
+- Pick a note color in the editor: alt+Up to the color row, alt+Left/Right, alt+Enter; alt+1..9 and alt+0 as shortcuts.
+- Make W-n start a new note in the editor.
+- Add an Open: editor/list switch to the Notes side bar.
+- Open a note from the pinned Notes window in the editor; show one compact line per note.
 - Open the Keys panel on the application it was called from, and scroll the side list to it.
 - Add hotkey lists for PyRadio, Audacious, Tabdock, qutebrowser, Meld, Forum Scout and Clementine.
 - Remove the Focused entry from the Keys side list.
