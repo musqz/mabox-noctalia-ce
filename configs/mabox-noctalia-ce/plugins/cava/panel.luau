@@ -6,6 +6,7 @@ local function card(key)
 end
 
 local cfg = {}
+local LAYER_FILE = '"${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/cava-layer"'
 local running = false
 local loaded = false
 local armed = false
@@ -25,7 +26,7 @@ local function parse(text)
 end
 
 local function load()
-  noctalia.runAsync({ "sh", "-c", 'cat "$HOME/.config/cava/config" 2>/dev/null; echo; echo "cavactl=$(command -v cavactl)"; echo "running=$(wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 && echo 1)"' }, function(result)
+  noctalia.runAsync({ "sh", "-c", 'cat "$HOME/.config/cava/config" 2>/dev/null; echo; echo "cavactl=$(command -v cavactl)"; echo "running=$(wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 && echo 1)"; echo "layer=$(cat ' .. LAYER_FILE .. ' 2>/dev/null)"' }, function(result)
     cfg = parse(result.stdout or "")
     running = cfg.running == "1"
     loaded = true
@@ -82,8 +83,46 @@ local function choices(title, key, values, command)
   return ui.column({ key = "ch-" .. key, gap = 6 }, children)
 end
 
+local LAYERS = { { "normal", "Normal" }, { "top", "Always on top" }, { "below", "Always below" } }
+
+-- The layer is read by mb-cava when it opens the window, so a running window is restarted.
+local function setLayer(value)
+  if busy then
+    return
+  end
+  busy = true
+  armed = false
+  noctalia.runAsync({ "sh", "-c", 'mkdir -p "$(dirname ' .. LAYER_FILE .. ')" && echo ' .. value .. ' > ' .. LAYER_FILE }, function()
+    if running then
+      -- Wait until the old window is gone, or a second one would open next to it.
+      noctalia.runAsync({ "sh", "-c", 'wlrctl toplevel close app_id:cava-transparent; for i in 1 2 3 4 5 6 7 8 9 10; do wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 || break; sleep 0.3; done' }, function()
+        noctalia.runAsync({ "setsid", "-f", "mb-cava" })
+        noctalia.runAsync({ "sleep", "1.5" }, function()
+          busy = false
+          load()
+        end)
+      end)
+    else
+      busy = false
+      load()
+    end
+  end)
+  render()
+end
+
 local function windowCard()
   local label = busy and "Please wait..." or (running and "Stop cava" or "Start cava")
+  local current = cfg.layer or ""
+  if current ~= "top" and current ~= "below" then
+    current = "normal"
+  end
+  local layerBtns = {}
+  for _, l in ipairs(LAYERS) do
+    local on = current == l[1]
+    table.insert(layerBtns, ui.button({ key = "layer-" .. l[1], text = (on and "✓ " or "") .. l[2], variant = on and "primary" or "outline", controlSize = "sm", onClick = function()
+      setLayer(l[1])
+    end }))
+  end
   return ui.column(card("window"), {
     ui.label({ text = "Window", fontWeight = "bold", fontSize = 14 }),
     ui.label({ text = "Frameless transparent cava, bottom centre.", fontSize = 11, color = "on_surface_variant" }),
@@ -101,6 +140,8 @@ local function windowCard()
       end)
       render()
     end }),
+    ui.label({ text = "Layer", fontSize = 12 }),
+    ui.row({ key = "layer-row", gap = 6, align = "center" }, layerBtns),
   })
 end
 
