@@ -8,7 +8,8 @@ url='https://github.com/musqz/mabox-noctalia-ce'
 license=('GPL')
 depends=('python' 'python-gobject' 'python-cairo' 'gtk3' 'gtk-layer-shell' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlr-randr' 'wlopm' 'wtype' 'wlrctl' 'grim' 'slurp' 'yad'
          'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'gmrun' 'qt6ct' 'nwg-look' 'jq')
-optdepends=('mabox-colorizer: cavactl for the Cava panel'
+optdepends=('pastel: wallpaper colors for the Cava panel (mb-cava-theme)'
+            'mabox-colorizer: cavactl for the Cava panel'
             'cava: audio visualizer for the C-A-v key (mb-cava)'
             'mabox-snapshot: build an ISO from the Snapshot panel'
             'mabox-persistence-usb: write an ISO to a USB stick from the Snapshot panel'

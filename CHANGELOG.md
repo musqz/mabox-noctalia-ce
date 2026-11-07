@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Follow wallpaper colors to the Cava panel: 2 to 8 bar colors spread over the Noctalia palette (mb-cava-theme), updated when the wallpaper changes.
 - Add a Cava panel (mabox/cava): start and stop the transparent cava, change bar color or a gradient of 2 to 8 colors, bar width and spacing, framerate and noise reduction.
 - Add Ctrl+Alt+V to show or hide a transparent cava (mb-cava): foot without frame, 60% of the screen width, bottom centre.
 - Install fittsmon, fittsmon-wl-gui, skippy-wl, tabdock, mabox-snapshot and mabox-persistence-usb from the maboxlinux repo with pacman; the GitHub builds are disabled.
