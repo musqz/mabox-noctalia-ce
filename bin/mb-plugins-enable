@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Enable the Mabox plugins that this user has not seen yet, once each. A plugin you disable afterwards stays off.
+# On an existing install (some mabox plugin already enabled) the first run only records what is there.
+set -euo pipefail
+
+# Noctalia and the plugin source may not be ready yet on a first login.
+ids=()
+for _ in 1 2 3 4 5 6 7 8; do
+    list=$(noctalia msg plugins list 2>/dev/null) || list=
+    mapfile -t ids < <(awk '$1 ~ /^mabox\// { print $1 }' <<<"$list")
+    ((${#ids[@]})) && break
+    sleep 3
+done
+((${#ids[@]})) || exit 0
+
+seen=${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/plugins-seen
+mkdir -p "$(dirname "$seen")"
+
+if [[ ! -f $seen ]] && grep -Eq '^mabox/[^ ]+ .* enabled' <<<"$list"; then
+    printf '%s\n' "${ids[@]}" > "$seen"
+    exit 0
+fi
+
+touch "$seen"
+for id in "${ids[@]}"; do
+    grep -qxF "$id" "$seen" && continue
+    noctalia msg plugins enable "$id" >/dev/null 2>&1 && echo "$id" >> "$seen"
+done
+exit 0

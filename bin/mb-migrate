@@ -63,6 +63,14 @@ migrate_5() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# New Mabox plugins are enabled once by mb-plugins-enable, which the autostart runs after the plugin source is added.
+migrate_6() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/autostart
+    [[ -f $f ]] && ! grep -q mb-plugins-enable "$f" || return 0
+    grep -q "plugins source add mabox path" "$f" || return 0
+    sed -i '/plugins source add mabox path/a command -v mb-plugins-enable >/dev/null \&\& (sleep 6 \&\& mb-plugins-enable) >/dev/null 2>\&1 \&' "$f"
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
