@@ -22,3 +22,9 @@ wireplumber
 wl-clipboard
 qt6ct
 nwg-look
+mabox-snapshot
+mabox-persistence-usb
+fittsmon
+fittsmon-wl-gui
+skippy-wl
+tabdock
