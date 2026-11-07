@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Ctrl+Alt+V to show or hide a transparent cava (mb-cava): foot without frame, 60% of the screen width, bottom centre.
 - Install fittsmon, fittsmon-wl-gui, skippy-wl, tabdock, mabox-snapshot and mabox-persistence-usb from the maboxlinux repo with pacman; the GitHub builds are disabled.
 - Make All in the Snapshot kernel row a switch: a second click keeps only the running kernel; wrap the kernel buttons over rows of three.
 - Remove the Refresh button from the Snapshot panel.
