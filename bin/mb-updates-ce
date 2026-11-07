@@ -4,7 +4,6 @@
 #   mb-updates-ce offline    same without network (reuses the last synced db and AUR list)
 #   mb-updates-ce upgrade [all|aur|repo|flatpak|snap|npm|pipx]   upgrade in a terminal, then recount
 #   mb-updates-ce orphans    list orphaned packages in a terminal and remove them after confirmation
-#   mb-updates-ce menu       pick the upgrade scope from a popup menu
 set -euo pipefail
 
 dir="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
@@ -169,35 +168,9 @@ orphans() {
         echo; read -rp "Done. Press Enter to close. " _' || true
 }
 
-menu() {
-    local self rc="${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/jgmenurc"
-    self=$(readlink -f "$0")
-    if ! command -v jgmenu >/dev/null || [[ ! -f $rc ]]; then
-        upgrade all
-        return
-    fi
-    pkill -x jgmenu && return 0
-    local orph
-    orph=$(pacman -Qtdq 2>/dev/null | grep -c . || true)
-    {
-        echo "Update all,$self upgrade all"
-        echo "Update repo + AUR (yay),$self upgrade aur"
-        echo "Update repo only (pacman),$self upgrade repo"
-        command -v flatpak >/dev/null && echo "Update flatpak,$self upgrade flatpak"
-        systemctl is-active --quiet snapd.socket snapd.service && echo "Update snap,$self upgrade snap"
-        has_npm && echo "Update npm,$self upgrade npm"
-        has_pipx && echo "Update pipx,$self upgrade pipx"
-        (( orph )) && echo "Remove orphans ($orph),$self orphans"
-        echo "Check now,$self check"
-        echo "^sep()"
-        echo "✕ Close,true"
-    } | jgmenu --simple --config-file="$rc"
-}
-
 case ${1:-check} in
     check|offline) check "${1:-check}" ;;
     upgrade) upgrade "${2:-all}" ;;
     orphans) orphans ;;
-    menu) menu ;;
-    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|menu]" >&2; exit 2 ;;
+    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans]" >&2; exit 2 ;;
 esac

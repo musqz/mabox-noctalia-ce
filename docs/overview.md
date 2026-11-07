@@ -35,7 +35,7 @@ mabox-noctalia-ce/
 │   │   └── plugins/            Noctalia plugins: colors, music, notes, status (installed to `/usr/share/mabox-noctalia-ce/plugins`)
 │   ├── noctalia/               Noctalia config and templates → /usr/share/mabox-noctalia-ce/noctalia/
 │   │   ├── config.toml         bar, widgets, hooks
-│   │   ├── templates/          jgmenu.conf, labwc.conf
+│   │   ├── templates/          labwc.conf
 │   │   ├── Geany/, PyRadio/, Pywalfox/   theme templates
 │   │   └── palettes/           color palette JSON
 │   └── file-manager/actions/   file manager action → /usr/share/file-manager/actions/
