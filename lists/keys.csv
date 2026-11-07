@@ -12,6 +12,7 @@ W-A-c,Panels,0,Color picker
 W-A-s,Panels,0,Status panel
 W-A-w,Panels,0,Wallpaper folders
 W-A-r,Panels,0,Capture panel (screenshot, recording)
+W-A-v,Panels,0,Cava settings
 W-A-d,Desktop,0,Show or hide the desktop widgets
 W-A-i,Panels,1,System info and report
 W-A-k,Panels,0,Fittsmon zone commands on each monitor
