@@ -327,7 +327,7 @@ local function profileCard(p)
     ui.row({ gap = 6, align = "center" }, {
       ui.button({ text = "Explain", variant = "outline", controlSize = "sm", tooltip = "Show what the build will do", onClick = function() runExplain(p) end }),
       ui.button({
-        text = sure and "Confirm" or "Build",
+        text = sure and "Confirm build" or "Build",
         variant = sure and "destructive" or "outline",
         controlSize = "sm",
         tooltip = "Build the ISO in a terminal",
@@ -394,8 +394,8 @@ render = function()
     end
     body = ui.column({ gap = 10 }, rows)
   end
-  -- A scroll in a content-height panel collapses; a fixed height on the column lets it scroll.
-  panel.render(ui.column({ gap = 8, padding = 12, height = explain and 780 or nil }, { top, body }))
+  -- A scroll in a content-height panel collapses; a fixed height on the column lets it scroll. The key keeps the fixed height from sticking to the list view.
+  panel.render(ui.column({ key = explain and "root-explain" or "root", gap = 8, padding = 12, height = explain and 780 or nil }, { top, body }))
 end
 
 function onOpen()
