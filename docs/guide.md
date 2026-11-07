@@ -142,8 +142,9 @@ The ISO carries what is installed on the build host, not the repo. To build a re
 
 1. `git pull` in `mabox-noctalia-ce`.
 2. `./install.sh`. It builds the working tree and installs it.
-3. Build the snapshot: `mabox-snapshot create reset`, or use the Snapshot panel.
-4. Check it: `tests/iso-check.sh <workdir>/iso/mabox/x86_64/rootfs.sfs`. It lists every checked file that is missing or differs in the image.
+3. Check the install: `tests/iso-check.sh --host`. Build only when it prints `ok:`; exit code 2 means a tool is missing, not a wrong install.
+4. Build the snapshot: `mabox-snapshot create reset`, or use the Snapshot panel.
+5. Check the image: `tests/iso-check.sh <workdir>/iso/mabox/x86_64/rootfs.sfs`. It lists every checked file that is missing or differs in the image.
 
 `mb-plugins-enable` enables each Mabox plugin once for a user, on login. The plugins it has handled are in `~/.local/state/mabox-noctalia-ce/plugins-seen`: delete a line to get that plugin enabled again.
 
