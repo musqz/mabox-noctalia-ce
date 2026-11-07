@@ -26,6 +26,7 @@ local render
 
 local cfg = {}
 local kernels = {}
+local running = nil
 local kernSel = nil
 local note = nil
 local encrypt = false
@@ -117,8 +118,8 @@ end
 
 local runExplain
 local function probe()
-  noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-persistence-usb >/dev/null && echo usb=1; echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
-    local out = result.stdout or ""
+  noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-persistence-usb >/dev/null && echo usb=1; echo run=$(uname -r); echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
+    local out = "\n" .. (result.stdout or "")
     version = string.match(out, "mabox%-snapshot (%d+%.%d+%.%d+)")
     cfg = { folders = {} }
     for k, v in string.gmatch(out, "\n([%w_]+) = ([^\n]*)") do
@@ -132,8 +133,10 @@ local function probe()
         end
       end
     end
+    local major, minor = string.match(out, "\nrun=(%d+)%.(%d+)")
+    running = major and ("linux" .. major .. minor) or nil
     kernels = {}
-    for k in string.gmatch(out, "k=([%w_%-]+)") do
+    for k in string.gmatch(out, "\nk=([%w_%-]+)") do
       table.insert(kernels, k)
     end
     -- linux612 = 6.12, linux72 = 7.2: compare major digit, then minor.
@@ -346,18 +349,37 @@ local function kernelRow()
       render()
     end }))
   end
-  table.insert(btns, ui.button({ key = "k-all", text = "All", variant = "ghost", controlSize = "sm", tooltip = "Every installed kernel", onClick = function()
-    for _, k in ipairs(kernels) do
-      kernSel[k] = true
+  local picked = 0
+  for _, k in ipairs(kernels) do
+    if kernSel and kernSel[k] then
+      picked = picked + 1
     end
-    armed = nil
-    note = nil
-    render()
-  end }))
-  return ui.column(card("kernels"), {
-    ui.label({ text = "Kernel in the ISO", fontSize = 11, color = "on_surface_variant" }),
-    ui.row({ gap = 6, align = "center" }, btns),
-  })
+  end
+  local all = #kernels > 0 and picked == #kernels
+  local only = running
+  local known = false
+  for _, k in ipairs(kernels) do
+    known = known or k == only
+  end
+  if not known then
+    only = kernels[#kernels]
+  end
+  if #kernels > 1 then
+    table.insert(btns, ui.button({ key = "k-all", text = all and "✓ All" or "All", variant = all and "outline" or "ghost", controlSize = "sm", tooltip = all and (known and "Keep only the running kernel" or "Keep only the newest kernel") or "Every installed kernel", onClick = function()
+      for _, k in ipairs(kernels) do
+        kernSel[k] = (not all) or k == only or nil
+      end
+      armed = nil
+      note = nil
+      render()
+    end }))
+  end
+  -- Three buttons per row: the panel is 420 px wide and a row does not wrap.
+  local children = { ui.label({ text = "Kernel in the ISO", fontSize = 11, color = "on_surface_variant" }) }
+  for i = 1, #btns, 3 do
+    table.insert(children, ui.row({ key = "kr-" .. i, gap = 6, align = "center" }, { table.unpack(btns, i, math.min(i + 2, #btns)) }))
+  end
+  return ui.column(card("kernels"), children)
 end
 
 local function profileCard(p)

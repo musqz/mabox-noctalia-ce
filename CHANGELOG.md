@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Make All in the Snapshot kernel row a switch: a second click keeps only the running kernel; wrap the kernel buttons over rows of three.
 - Remove the Refresh button from the Snapshot panel.
 - Add a Snapshot plugin (mabox/snapshot) with profiles to build an ISO with mabox-snapshot; Explain shows the plan, Build opens a terminal.
 - List the newest ISOs in the Snapshot panel and write one to a USB stick with mabox-persistence-usb.
