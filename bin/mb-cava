@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # cava in a frameless transparent foot window: 60% of one output's width, bottom centre.
-# Toggle: jumpapp -m -c cava-transparent mb-cava
+# mb-cava toggle: close the window when it is open, start it otherwise.
+# Key: jumpapp -m -c cava-transparent mb-cava (minimizes when focused)
 # MB_CAVA_OUTPUT: part of the output make/model (default: first output); MB_CAVA_HEIGHT: pixels (default 200).
 set -euo pipefail
 
 die() { notify-send -a cava -u critical "cava" "$1"; echo "mb-cava: $1" >&2; exit 1; }
+
+if [[ ${1:-} == toggle ]] && wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1; then
+    exec wlrctl toplevel close app_id:cava-transparent
+fi
 
 command -v cava >/dev/null || die "cava is not installed (pacman -S cava)"
 
@@ -20,5 +25,5 @@ width=$(wlr-randr --json | jq -r --arg m "$match" '
     | ($w / .scale * 0.6 | floor)') || true
 [[ $width =~ ^[0-9]+$ ]] || die "no enabled output found"
 
-exec foot -a cava-transparent -T cavatransparent --window-size-pixels="${width}x${height}" \
+setsid -f foot -a cava-transparent -T cavatransparent --window-size-pixels="${width}x${height}" \
     -o colors-dark.alpha=0.0 -o colors-light.alpha=0.0 -o pad=0x0 -o font=monospace:size=2 -o csd.preferred=none cava
