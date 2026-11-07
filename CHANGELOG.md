@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a Screen button to the Cava panel colors to pick a color from the screen with mb-colorpick; select a gradient color before Pick or Screen.
 - Add a Layer switch (normal, always on top, always below) to the Cava panel; the window rules are added to rc.xml by mb-migrate.
 - Add Follow wallpaper colors to the Cava panel: 2 bar colors from the Noctalia palette (mb-cava-theme), updated when the wallpaper changes.
 - Add Cava (mb-cava toggle: start or stop) and Cava settings to the Tools menu and the /mb launcher.

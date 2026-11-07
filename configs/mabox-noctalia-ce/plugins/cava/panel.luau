@@ -34,11 +34,21 @@ local function load()
   end)
 end
 
+local afterWrite = nil
+local function finishWrite()
+  load()
+  if afterWrite then
+    local f = afterWrite
+    afterWrite = nil
+    f()
+  end
+end
+
 local function ctl(...)
   armed = false
   local argv = { "cavactl", ... }
   noctalia.runAsync(argv, function()
-    load()
+    finishWrite()
   end)
 end
 
@@ -48,6 +58,32 @@ local function color(key)
     return c
   end
   return nil
+end
+
+-- Click a pixel on the screen with mb-colorpick. The panel closes meanwhile so it does not cover what you pick from.
+-- apply() starts the config write and returns true; the panel reopens once that write has finished.
+local colorNote = nil
+local function pickFromScreen(apply)
+  panel.close()
+  colorNote = nil
+  local function reopen()
+    noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/cava:main" })
+  end
+  noctalia.runAsync({ "mb-colorpick" }, function(result)
+    if result.exitCode == 127 then
+      colorNote = "mb-colorpick is not installed."
+    end
+    local hex = result.exitCode == 0 and string.match(result.stdout or "", "#%x%x%x%x%x%x") or nil
+    if hex then
+      afterWrite = reopen
+      if not apply(string.lower(hex)) then
+        afterWrite = nil
+        reopen()
+      end
+    else
+      reopen()
+    end
+  end)
 end
 
 local function swatch(label, key, command)
@@ -61,6 +97,12 @@ local function swatch(label, key, command)
         if picked ~= nil and string.match(picked, "^#%x%x%x%x%x%x$") then
           ctl(command, string.lower(picked))
         end
+      end)
+    end }),
+    ui.button({ text = "Screen", variant = "outline", controlSize = "sm", tooltip = "Pick a color from the screen", onClick = function()
+      pickFromScreen(function(picked)
+        ctl(command, picked)
+        return true
       end)
     end }),
   })
@@ -162,7 +204,7 @@ end
 local writing = false
 local function writeGradient(colors)
   if writing then
-    return
+    return false
   end
   writing = true
   armed = false
@@ -174,33 +216,54 @@ local function writeGradient(colors)
   local cmd = 'sed -i -E --follow-symlinks ' .. table.concat(exprs, " ") .. ' "$HOME/.config/cava/config"; pkill -x -USR1 cava; true'
   noctalia.runAsync({ "sh", "-c", cmd }, function()
     writing = false
-    load()
+    finishWrite()
   end)
+  return true
 end
+
+local selected = 1
 
 local function gradientEditor()
   local colors = gradientColors()
+  if selected > #colors then
+    selected = #colors
+  end
   local boxes = {}
   for i, c in ipairs(colors) do
-    table.insert(boxes, ui.box({ key = "gc-" .. i, fill = c, radius = 6, width = 44, height = 32, border = "on_surface_variant", borderWidth = 1, tooltip = i .. "  " .. c, onClick = function()
-      noctalia.openColorPicker(c, function(picked)
-        if picked ~= nil and string.match(picked, "^#%x%x%x%x%x%x$") then
-          local new = { table.unpack(colors) }
-          new[i] = string.lower(picked)
-          writeGradient(new)
-        end
-      end)
+    local on = i == selected
+    table.insert(boxes, ui.box({ key = "gc-" .. i, fill = c, radius = 6, width = 44, height = 32, border = on and "primary" or "on_surface_variant", borderWidth = on and 3 or 1, tooltip = i .. "  " .. c, onClick = function()
+      selected = i
+      render()
     end }))
   end
-  local rows = { ui.label({ text = "Click a color to change it. " .. #colors .. " of " .. MAX_COLORS .. " colors, bottom to top.", fontSize = 12 }) }
+  local rows = { ui.label({ text = "Select a color, then Pick or Screen. " .. #colors .. " of " .. MAX_COLORS .. " colors, bottom to top.", fontSize = 12 }) }
   for i = 1, #boxes, 4 do
     table.insert(rows, ui.row({ key = "gr-" .. i, gap = 6, align = "center" }, { table.unpack(boxes, i, math.min(i + 3, #boxes)) }))
   end
+  local function setSelected(hex)
+    local cur = gradientColors()
+    cur[math.min(selected, #cur)] = hex
+    return writeGradient(cur)
+  end
+  table.insert(rows, ui.row({ key = "g-sel", gap = 6, align = "center" }, {
+    ui.label({ text = "Color " .. selected .. "  " .. colors[selected], flexGrow = 1 }),
+    ui.button({ key = "g-pick", text = "Pick", variant = "outline", controlSize = "sm", onClick = function()
+      noctalia.openColorPicker(colors[selected], function(picked)
+        if picked ~= nil and string.match(picked, "^#%x%x%x%x%x%x$") then
+          setSelected(string.lower(picked))
+        end
+      end)
+    end }),
+    ui.button({ key = "g-screen", text = "Screen", variant = "outline", controlSize = "sm", tooltip = "Pick a color from the screen", onClick = function()
+      pickFromScreen(setSelected)
+    end }),
+  }))
   local btns = {}
   if #colors < MAX_COLORS then
     table.insert(btns, ui.button({ key = "g-add", text = "+ Add", variant = "outline", controlSize = "sm", onClick = function()
       local new = { table.unpack(colors) }
       table.insert(new, colors[#colors])
+      selected = #new
       writeGradient(new)
     end }))
   end
@@ -215,6 +278,7 @@ local function gradientEditor()
     for i = #colors, 1, -1 do
       table.insert(new, colors[i])
     end
+    selected = #colors + 1 - selected
     writeGradient(new)
   end }))
   table.insert(rows, ui.row({ key = "g-btns", gap = 6, align = "center" }, btns))
@@ -268,8 +332,8 @@ local function colorCard()
       setFollow(not following)
     end }),
   }
-  if followError then
-    table.insert(rows, ui.label({ text = followError, fontSize = 11, color = "primary" }))
+  if followError or colorNote then
+    table.insert(rows, ui.label({ text = followError or colorNote, fontSize = 11, color = "primary" }))
   end
   if following then
     table.insert(rows, ui.label({ text = "The bars use 2 colors from the Noctalia palette and change with the wallpaper.", fontSize = 11, color = "on_surface_variant" }))
