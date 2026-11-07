@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Write the cava theme "noctalia": gradient_count colors spread over the Noctalia palette.
+# Write the cava theme "noctalia": two colors from the Noctalia palette.
 # Noctalia renders the palette (templates/cava-palette) and runs this as its hook.
 # --force builds the theme even when the cava config does not use it yet.
 set -euo pipefail
@@ -11,41 +11,29 @@ theme=${XDG_CONFIG_HOME:-$HOME/.config}/cava/themes/noctalia
 # Runs on every wallpaper change; do nothing unless cava follows the theme.
 [[ ${1:-} == --force ]] || grep -q "^theme *= *'noctalia'" "$cfg" 2>/dev/null || exit 0
 
-[[ -f $palette ]] || { echo "mb-cava-theme: $palette not found" >&2; exit 1; }
-command -v pastel >/dev/null || { echo "mb-cava-theme: pastel is not installed" >&2; exit 1; }
+die() { echo "mb-cava-theme: $1" >&2; exit 1; }
 
-n=$(sed -n -E 's/^gradient_count *= *([0-9]+).*/\1/p' "$cfg" 2>/dev/null | head -n1)
-n=${n:-3}
-((n < 2)) && n=2
-((n > 8)) && n=8
+[[ -f $palette ]] || die "$palette not found"
+command -v pastel >/dev/null || die "pastel is not installed"
 
 mapfile -t base < <(grep -E '^#[0-9a-fA-F]{6}$' "$palette")
-((${#base[@]} >= 2)) || { echo "mb-cava-theme: no colors in $palette" >&2; exit 1; }
+((${#base[@]} >= 2)) || die "no colors in $palette"
+
+# The palette colors are close pastels. A saturation boost and different lightness keep the two colors apart.
+# The last two palette lines are used, so an older three-line template still gives primary and tertiary.
+bottom=$(pastel color "${base[-2]}" | pastel saturate 0.3 | pastel set hsl-lightness 0.55 | pastel format hex) || die "pastel failed"
+top=$(pastel color "${base[-1]}" | pastel saturate 0.3 | pastel set hsl-lightness 0.75 | pastel format hex) || die "pastel failed"
+[[ $bottom =~ ^#[0-9a-fA-F]{6}$ && $top =~ ^#[0-9a-fA-F]{6}$ ]] || die "pastel failed"
 
 mkdir -p "$(dirname "$theme")"
-raw=$(pastel gradient -n "$n" "${base[@]}" | pastel format hex)
-[[ $(wc -w <<<"$raw") -eq $n ]] || { echo "mb-cava-theme: pastel did not return $n colors" >&2; exit 1; }
-
-# The palette colors are close pastels. A saturation boost and a lightness ramp (darker at the bottom) keep the steps visible.
-colors=
-i=0
-for c in $raw; do
-    l=$(awk -v i="$i" -v n="$n" 'BEGIN { printf "%.3f", 0.55 + 0.2 * i / (n - 1) }')
-    colors+="$(pastel color "$c" | pastel saturate 0.3 | pastel set hsl-lightness "$l" | pastel format hex) "
-    i=$((i + 1))
-done
-
 tmp=$(mktemp "$theme.XXXXXX")
-{
-    echo "[color]"
-    echo "gradient = 1"
-    echo "gradient_count = $n"
-    i=1
-    for c in $colors; do
-        echo "gradient_color_$i = '$c'"
-        i=$((i + 1))
-    done
-} > "$tmp"
+cat > "$tmp" <<THEME
+[color]
+gradient = 1
+gradient_count = 2
+gradient_color_1 = '$bottom'
+gradient_color_2 = '$top'
+THEME
 chmod 644 "$tmp"
 mv "$tmp" "$theme"
 
