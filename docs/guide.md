@@ -9,7 +9,6 @@ What the Noctalia CE session adds on top of Mabox, and how to use it.
 | `~/.config/mabox-noctalia-ce/` | labwc config: `rc.xml`, `menu.xml`, `autostart`, `environment`, plugins |
 | `~/.config/noctalia/` | noctalia config, theme templates, palettes |
 | `~/.local/state/noctalia/settings.toml` | settings saved by the noctalia GUI and `config-set`; overrides `config.toml` |
-| `~/.config/mabox-noctalia-ce/jgmenurc` | generated; do not edit |
 
 The repo copy under `configs/` is only the default. Edit the live files under `~/.config/`, or copy the repo version over by hand.
 
@@ -125,7 +124,6 @@ One palette drives everything. Change it in noctalia settings or with the wallpa
 | Target | Output |
 |---|---|
 | labwc window borders and titlebars | `~/.local/share/themes/noctalia/openbox-3/themerc` |
-| update menu | `jgmenurc` |
 | Geany | `colorschemes/noctalia.conf` |
 | PyRadio | `themes/mbcolors.pyradio-theme` |
 | Firefox (Pywalfox) | `~/.cache/wal/colors.json` |
