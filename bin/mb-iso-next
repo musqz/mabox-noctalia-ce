@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Menu for a finished ISO: write it to a USB stick or boot it in a VM with quickbox.
+# mb-iso-next [iso|dir]: a directory means its newest *.iso.
+set -euo pipefail
+
+die() { notify-send -a mb-iso-next -u critical "ISO" "$1" || true; echo "mb-iso-next: $1" >&2; exit 1; }
+
+target=${1:-.}
+if [[ -d $target ]]; then
+    iso=$(find "$target" -maxdepth 1 -name '*.iso' -printf '%T@ %p\n' | sort -rn | head -n1 | cut -d' ' -f2-)
+    [[ -n $iso ]] || die "no .iso in $target"
+else
+    iso=$target
+fi
+[[ -f $iso ]] || die "not a file: $iso"
+
+# --iso needs quickbox-qt 1.4; an older build would open the GUI instead
+has_vm=false
+v=$(pacman -Q quickbox-qt 2>/dev/null | cut -d' ' -f2) || true
+[[ -n $v && $(vercmp "$v" 1.4) -ge 0 ]] && has_vm=true
+
+echo
+echo "ISO: $iso"
+echo "  1) Write to USB"
+$has_vm && echo "  2) Start in a VM"
+echo "  3) Done"
+read -rp "Choice [3]: " choice || choice=3
+case ${choice:-3} in
+    1) sudo mabox-persistence-usb write "$iso" ;;
+    2) $has_vm || die "quickbox is not installed"; quickbox --iso "$iso" ;;
+    *) ;;
+esac
