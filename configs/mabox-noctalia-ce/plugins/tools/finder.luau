@@ -8,6 +8,7 @@ local TOOLS = {
   { id = "configs", title = "Config files", glyph = "file-settings", cmd = { "noctalia", "msg", "panel-toggle", "mabox/configs:main" }, pinned = "configs" },
   { id = "wallpaper", title = "Wallpaper folders", glyph = "photo", cmd = { "noctalia", "msg", "panel-toggle", "mabox/wallpaper-dirs:dirs" } },
   { id = "system", title = "System info", glyph = "device-desktop-analytics", cmd = { "noctalia", "msg", "panel-toggle", "mabox/system:system" } },
+  { id = "snapshot", title = "Mabox snapshot", glyph = "disc", cmd = { "noctalia", "msg", "panel-open", "mabox/snapshot:main" } },
   { id = "reset", title = "Reset configs", glyph = "restore", cmd = { "noctalia", "msg", "panel-toggle", "mabox/reset:main" } },
 }
 

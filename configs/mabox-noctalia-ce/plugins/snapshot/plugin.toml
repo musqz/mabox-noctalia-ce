@@ -1,0 +1,18 @@
+id = "mabox/snapshot"
+name = "Mabox snapshot"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "disc"
+description = "Build a bootable ISO of this system with mabox-snapshot: share a clean copy, move to a new PC or keep an encrypted backup."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 1000
+placement = "attached"
+open_near_click = true

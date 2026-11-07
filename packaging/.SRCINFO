@@ -31,6 +31,7 @@ pkgbase = mabox-noctalia-ce
 	depends = gmrun
 	depends = qt6ct
 	depends = nwg-look
+	optdepends = mabox-snapshot: build an ISO from the Snapshot panel
 	optdepends = radicale: local calendar (mb-calendar-setup)
 	optdepends = inxi: hardware tab of the System panel
 	optdepends = fastfetch: system summary button in the System panel

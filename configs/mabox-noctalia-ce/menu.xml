@@ -62,6 +62,9 @@
     <item label="Add/Remove software" icon="system-software-install">
       <action name="Execute" command="neoarch" />
     </item>
+    <item label="Mabox snapshot" icon="media-optical">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/snapshot:main" />
+    </item>
     <separator />
     <item label="Wallpaper" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle wallpaper" />
