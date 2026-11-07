@@ -65,7 +65,7 @@ case ${1:-} in
         echo "Config restored from $tag-$pick. Log out and back in to apply it all."
         exit 0 ;;
     --uninstall)
-        for id in music colors notes status configs reset tools system sysinfo keys insert capture wallpaper-dirs info quoter desk polaroids snapshot; do noctalia msg plugins disable "mabox/$id" >/dev/null 2>&1 || true; done
+        for id in music colors notes status configs reset tools system sysinfo keys insert capture wallpaper-dirs info quoter desk polaroids snapshot cava; do noctalia msg plugins disable "mabox/$id" >/dev/null 2>&1 || true; done
         noctalia msg plugins source remove mabox >/dev/null 2>&1 \
             || echo "Noctalia not running: run 'noctalia msg plugins source remove mabox' in the session." >&2
         [[ -s $state ]] || { echo "Nothing recorded in $state"; exit 0; }
@@ -155,7 +155,7 @@ pdata="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data"
 noctalia msg plugins source remove musqz-local >/dev/null 2>&1 || true
 rm -rf "$data/plugins"
 if noctalia msg plugins source add mabox path "$plugins" >/dev/null 2>&1 \
-    && { noctalia msg plugins enable mabox/music; noctalia msg plugins enable mabox/colors; noctalia msg plugins enable mabox/notes; noctalia msg plugins enable mabox/status; noctalia msg plugins enable mabox/configs; noctalia msg plugins enable mabox/reset; noctalia msg plugins enable mabox/tools; noctalia msg plugins enable mabox/capture; noctalia msg plugins enable mabox/keys; noctalia msg plugins enable mabox/insert; noctalia msg plugins enable mabox/system; noctalia msg plugins enable mabox/sysinfo; noctalia msg plugins enable mabox/wallpaper-dirs; noctalia msg plugins enable mabox/info; noctalia msg plugins enable mabox/quoter; noctalia msg plugins enable mabox/polaroids; noctalia msg plugins enable mabox/snapshot; } >/dev/null 2>&1; then
+    && { noctalia msg plugins enable mabox/music; noctalia msg plugins enable mabox/colors; noctalia msg plugins enable mabox/notes; noctalia msg plugins enable mabox/status; noctalia msg plugins enable mabox/configs; noctalia msg plugins enable mabox/reset; noctalia msg plugins enable mabox/tools; noctalia msg plugins enable mabox/capture; noctalia msg plugins enable mabox/keys; noctalia msg plugins enable mabox/insert; noctalia msg plugins enable mabox/system; noctalia msg plugins enable mabox/sysinfo; noctalia msg plugins enable mabox/wallpaper-dirs; noctalia msg plugins enable mabox/info; noctalia msg plugins enable mabox/quoter; noctalia msg plugins enable mabox/polaroids; noctalia msg plugins enable mabox/snapshot; noctalia msg plugins enable mabox/cava; } >/dev/null 2>&1; then
     plugins_on=1
 else
     plugins_on=0
@@ -176,7 +176,7 @@ report() {
     echo "[done] mabox-noctalia-ce package built and installed"
     [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
     echo "[done] plugin source mabox: $plugins"
-    if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors, mabox/notes, mabox/status, mabox/configs, mabox/reset, mabox/tools, mabox/capture, mabox/keys, mabox/insert, mabox/system, mabox/sysinfo, mabox/wallpaper-dirs, mabox/info, mabox/quoter, mabox/polaroids and mabox/snapshot enabled"
+    if (( plugins_on )); then echo "[done] plugins mabox/music, mabox/colors, mabox/notes, mabox/status, mabox/configs, mabox/reset, mabox/tools, mabox/capture, mabox/keys, mabox/insert, mabox/system, mabox/sysinfo, mabox/wallpaper-dirs, mabox/info, mabox/quoter, mabox/polaroids, mabox/snapshot and mabox/cava enabled"
     else echo "[skip] plugins not enabled: noctalia not running or the source call failed"; fi
 
     echo; echo "To do by hand"

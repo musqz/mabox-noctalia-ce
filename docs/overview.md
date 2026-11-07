@@ -122,6 +122,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/quoter` | `quoter` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `/usr/share/mabox/quotes.txt`; `[desktop_widgets] enabled = true` |
 | `mabox/polaroids` | `polaroids` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
 | `mabox/snapshot` | `main` panel, root menu (Mabox noctalia ce), `/mb snapshot` | | `mabox-snapshot`; Explain runs in the panel, Build in a `foot` terminal with sudo |
+| `mabox/cava` | `main` panel, root menu (Tools), `/mb cava` | | `cavactl`, `mb-cava`; edits `~/.config/cava/config` |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh

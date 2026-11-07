@@ -1,0 +1,18 @@
+id = "mabox/cava"
+name = "Cava"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "chart-bar"
+description = "Start and stop the transparent cava and change its colors, bars and framerate with cavactl."
+tags = ["utility", "audio"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 900
+placement = "attached"
+open_near_click = true

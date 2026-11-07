@@ -118,6 +118,9 @@
     <item label="Keys" icon="input-keyboard">
       <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
     </item>
+    <item label="Cava" icon="audio-x-generic">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/cava:main" />
+    </item>
     <item label="System info" icon="computer">
       <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
     </item>
