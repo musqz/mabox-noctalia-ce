@@ -25,6 +25,16 @@ local kernels = {}
 local kernSel = nil
 local note = nil
 local encrypt = false
+local function encPath()
+  local dir = noctalia.pluginDataDir()
+  return dir and (dir .. "/encrypt") or nil
+end
+
+-- Read synchronously so the first render already knows the saved choice.
+local function loadEncrypt()
+  local path = encPath()
+  return path ~= nil and string.match(noctalia.readFile(path) or "", "^on") ~= nil
+end
 local hasUsb = false
 local probed = false
 
@@ -217,6 +227,17 @@ local function build(p)
   panel.close()
 end
 
+local function setEncrypt(on)
+  encrypt = on
+  armed = nil
+  local path = encPath()
+  if path then
+    noctalia.mkdirAll(noctalia.pluginDataDir())
+    noctalia.writeFile(path, on and "on\n" or "off\n")
+  end
+  render()
+end
+
 local function save()
   local cmd, changed = "", false
   for _, key in ipairs({ "workdir", "output_dir" }) do
@@ -252,6 +273,12 @@ local function settingsView()
   return ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 8 }, {
     field("Work folder (scratch space, needs about the size of the system)", "workdir"),
     field("ISO folder (where the finished .iso is written)", "output_dir"),
+    ui.column({ key = "f-encrypt", gap = 2 }, {
+      ui.label({ text = "Encrypt personal snapshots with a passphrase (LUKS2, asked in the terminal). Applies at once, no Save needed.", fontSize = 11, color = "on_surface_variant" }),
+      ui.button({ key = "set-encrypt", text = encrypt and "Encrypted (LUKS2): on" or "Encrypted (LUKS2): off", variant = encrypt and "primary" or "outline", controlSize = "md", onClick = function()
+        setEncrypt(not encrypt)
+      end }),
+    }),
     ui.row({ gap = 6, align = "center" }, {
       ui.button({ text = "Save", variant = "primary", controlSize = "sm", onClick = save }),
       ui.label({ text = saved or "", fontSize = 11, color = "on_surface_variant" }),
@@ -290,9 +317,7 @@ local function profileCard(p)
     ui.label({ text = p.name, fontWeight = "bold", fontSize = 14 }),
     ui.label({ text = p.blurb, fontSize = 11, color = "on_surface_variant" }),
     p.encrypt and ui.button({ key = "enc-" .. p.id, text = encrypt and "Encrypted (LUKS2): on" or "Encrypted (LUKS2): off", variant = encrypt and "primary" or "ghost", controlSize = "sm", tooltip = "Lock the ISO with a passphrase; you type it in the terminal", onClick = function()
-      encrypt = not encrypt
-      armed = nil
-      render()
+      setEncrypt(not encrypt)
     end }) or ui.label({ key = "enc-" .. p.id, text = "", fontSize = 1 }),
     sure and ui.label({ key = "cmd-" .. p.id, text = "sudo " .. cmdline(p), fontSize = 10, color = "on_surface_variant" }) or ui.label({ key = "cmd-" .. p.id, text = "", fontSize = 1 }),
     ui.row({ gap = 6, align = "center" }, {
@@ -371,6 +396,7 @@ render = function()
 end
 
 function onOpen()
+  encrypt = loadEncrypt()
   armed, explain, busy, settings, saved, note = nil, nil, false, false, nil, nil
   render()
   probe()

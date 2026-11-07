@@ -4,6 +4,7 @@
 
 - Add a Mabox snapshot plugin (mabox/snapshot) with profiles to build an ISO with mabox-snapshot; Explain shows the plan, Build opens a terminal.
 - Add a Write an ISO to USB button to the Mabox snapshot panel when mabox-preserving-usb is installed.
+- Add an encrypt on/off switch to the Mabox snapshot settings.
 - Remove Preferred applications from the root menu.
 - Open a note straight in the editor with autosave; Esc saves and returns to the list.
 - Pick a note color in the editor: alt+Up to the color row, alt+Left/Right, alt+Enter; alt+1..9 and alt+0 as shortcuts.
