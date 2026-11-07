@@ -16,7 +16,7 @@ height = "content"
 max_height = 600
 placement = "attached"
 open_near_click = true
-capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+enter", "alt+c", "alt+e", "alt+s", "alt+q"]
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+enter", "alt+c", "alt+e", "alt+s", "alt+q", "escape", "alt+0", "alt+1", "alt+2", "alt+3", "alt+4", "alt+5", "alt+6", "alt+7", "alt+8", "alt+9"]
 
 [[service]]
 id = "pin"
