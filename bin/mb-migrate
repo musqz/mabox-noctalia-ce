@@ -71,6 +71,15 @@ migrate_6() {
     sed -i '/plugins source add mabox path/a command -v mb-plugins-enable >/dev/null \&\& (sleep 6 \&\& mb-plugins-enable) >/dev/null 2>\&1 \&' "$f"
 }
 
+# W-A-v opens the Cava panel; a key the user already bound stays as it is.
+migrate_7() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && ! grep -q 'key="W-A-v"' "$f" || return 0
+    grep -q "</keyboard>" "$f" || return 0
+    sed -i 's#</keyboard>#    <keybind key="W-A-v" name.action="Execute" command.action="noctalia msg panel-open mabox/cava:main"/>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
