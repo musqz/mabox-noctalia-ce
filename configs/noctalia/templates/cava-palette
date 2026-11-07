@@ -1,3 +1,2 @@
-{{ colors.secondary.default.hex }}
 {{ colors.primary.default.hex }}
 {{ colors.tertiary.default.hex }}

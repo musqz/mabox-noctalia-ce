@@ -181,41 +181,34 @@ local function gradientEditor()
 end
 
 -- A Noctalia template writes ~/.config/cava/themes/noctalia from the wallpaper colors; theme = 'noctalia' makes cava use it.
+local followError = nil
+
 local function setFollow(on)
   if writing then
     return
   end
   writing = true
   armed = false
+  followError = nil
+  render()
   local cfgFile = '"$HOME/.config/cava/config"'
   local palette = '"$HOME/.cache/mabox-noctalia-ce/cava-palette"'
   local cmd
   if on then
-    -- Noctalia writes the palette asynchronously: wait for a newer file, then build the theme before cava is pointed at it.
-    cmd = 'before=$(stat -c %Y ' .. palette .. ' 2>/dev/null || echo 0); noctalia msg templates-apply; '
-      .. 'for i in 1 2 3 4 5 6; do [ "$(stat -c %Y ' .. palette .. ' 2>/dev/null || echo 0)" != "$before" ] && break; sleep 0.5; done; '
-      .. 'mb-cava-theme --force && sed -i -E --follow-symlinks "s|^[ ;]*theme = .*|theme = \'noctalia\'|" ' .. cfgFile .. ' && mb-cava-theme; true'
+    -- Noctalia renders the palette on every wallpaper change, so it normally exists; only wait for it on a first run.
+    cmd = '[ -f ' .. palette .. ' ] || { noctalia msg templates-apply; for i in 1 2 3 4 5 6; do [ -f ' .. palette .. ' ] && break; sleep 0.5; done; }; '
+      .. 'mb-cava-theme --force && sed -i -E --follow-symlinks "s|^[ ;]*theme = .*|theme = \'noctalia\'|" ' .. cfgFile .. ' && mb-cava-theme'
   else
-    -- Back to the manual gradient: the count must match the colors that are defined.
+    -- Back to the manual gradient: gradient_count must match the colors that are defined.
     cmd = 'sed -i -E --follow-symlinks "s|^[ ;]*theme = .*|; theme = \'none\'|" ' .. cfgFile .. '; '
       .. 'n=$(grep -oE "^gradient_color_[1-8] " ' .. cfgFile .. ' | sort -u | wc -l); [ "$n" -ge 2 ] && sed -i -E --follow-symlinks "s|^[ ;]*gradient_count .*|gradient_count = $n|" ' .. cfgFile .. '; '
-      .. "pkill -x -USR1 cava; true"
+      .. 'pkill -x -USR1 cava; true'
   end
-  noctalia.runAsync({ "sh", "-c", cmd }, function()
+  noctalia.runAsync({ "sh", "-c", cmd }, function(result)
     writing = false
-    load()
-  end)
-end
-
-local function setFollowCount(n)
-  if writing then
-    return
-  end
-  writing = true
-  armed = false
-  local cmd = 'sed -i -E --follow-symlinks "s|^[ ;]*gradient_count .*|gradient_count = ' .. n .. '|" "$HOME/.config/cava/config"; mb-cava-theme; true'
-  noctalia.runAsync({ "sh", "-c", cmd }, function()
-    writing = false
+    if on and result.exitCode ~= 0 then
+      followError = "Could not build the colors. Is pastel installed?"
+    end
     load()
   end)
 end
@@ -230,22 +223,15 @@ local function colorCard()
   local following = cfg.theme == "noctalia"
   local rows = {
     ui.label({ text = "Color", fontWeight = "bold", fontSize = 14 }),
-    ui.button({ key = "follow", text = (following and "✓ " or "") .. "Follow wallpaper colors", variant = following and "primary" or "outline", controlSize = "sm", onClick = function()
+    ui.button({ key = "follow", text = writing and "Please wait..." or ((following and "✓ " or "") .. "Follow wallpaper colors"), variant = following and "primary" or "outline", controlSize = "sm", onClick = function()
       setFollow(not following)
     end }),
   }
+  if followError then
+    table.insert(rows, ui.label({ text = followError, fontSize = 11, color = "primary" }))
+  end
   if following then
-    table.insert(rows, ui.label({ text = "The bars use colors from the Noctalia palette and change with the wallpaper.", fontSize = 11, color = "on_surface_variant" }))
-    local count = tonumber(cfg.gradient_count) or 3
-    local btns = {}
-    for n = 2, MAX_COLORS do
-      local on = n == count
-      table.insert(btns, ui.button({ key = "fc-" .. n, text = (on and "✓ " or "") .. n, variant = on and "primary" or "outline", controlSize = "sm", onClick = function()
-        setFollowCount(n)
-      end }))
-    end
-    table.insert(rows, ui.label({ text = "Number of colors   " .. count, fontSize = 12 }))
-    table.insert(rows, ui.row({ key = "fc-row", gap = 6, align = "center" }, btns))
+    table.insert(rows, ui.label({ text = "The bars use 2 colors from the Noctalia palette and change with the wallpaper.", fontSize = 11, color = "on_surface_variant" }))
     return ui.column(card("color"), rows)
   end
   table.insert(rows, ui.row({ gap = 6, align = "center" }, { mode("Solid", not gradient, "solid"), mode("Gradient", gradient, "gradient") }))
