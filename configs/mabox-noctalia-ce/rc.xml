@@ -176,6 +176,7 @@
     <keybind key="F12">
      <action name="Execute" command="q-term-toggle"/>
     </keybind>
+    <keybind key="C-KP_0"><action name="Execute" command="jumpapp -m /usr/bin/scrcpy" /></keybind>
 
     <!-- jumpapp -->
     <keybind key="C-KP_1"><action name="Execute" command="jumpapp -m /usr/bin/waterfox" /></keybind>
@@ -204,6 +205,8 @@
     <keybind key="W-A-C-0"><action name="SendToDesktop" to="right" wrap="yes"/></keybind>
     <keybind key="W-A-C-1"><action name="SendToDesktop" to="Workspace 1" follow="no"/></keybind>
     <keybind key="W-A-C-2"><action name="SendToDesktop" to="Workspace 2" follow="no"/></keybind>
+    <keybind key="C-A-Right"><action name="SendToDesktop" to="right" wrap="yes"/></keybind>
+    <keybind key="C-A-Left"><action name="SendToDesktop" to="left" wrap="yes"/></keybind>
 
 
     <keybind key="W-A-1"><action name="SnapToEdge" direction="left"/></keybind>
