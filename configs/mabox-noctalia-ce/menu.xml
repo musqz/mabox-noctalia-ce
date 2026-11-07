@@ -119,6 +119,9 @@
       <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
     </item>
     <item label="Cava" icon="audio-x-generic">
+      <action name="Execute" command="mb-cava toggle" />
+    </item>
+    <item label="Cava settings" icon="preferences-other">
       <action name="Execute" command="noctalia msg panel-toggle mabox/cava:main" />
     </item>
     <item label="System info" icon="computer">

@@ -93,11 +93,7 @@ local function windowCard()
       end
       busy = true
       armed = false
-      if running then
-        noctalia.runAsync({ "wlrctl", "toplevel", "close", "app_id:cava-transparent" })
-      else
-        noctalia.runAsync({ "setsid", "-f", "mb-cava" })
-      end
+      noctalia.runAsync({ "setsid", "-f", "mb-cava", "toggle" })
       -- The window opens and closes a moment after the command returns.
       noctalia.runAsync({ "sleep", "1.5" }, function()
         busy = false
