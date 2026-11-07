@@ -12,3 +12,5 @@
 - Add Edit autostart and Edit user autostart to the settings menu.
 - Add Ctrl+Keypad0 to launch scrcpy.
 - Add Ctrl+Alt+Left and Ctrl+Alt+Right to send a window to the previous or next workspace.
+- List Ctrl+Keypad0, Ctrl+Alt+Left and Ctrl+Alt+Right in the Keys panel.
+- Add neoarch as an optional dependency.
