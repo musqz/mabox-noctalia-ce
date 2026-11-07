@@ -139,13 +139,15 @@ for c in labwc noctalia; do
 done
 echo "Building mabox-noctalia-ce"
 new=; pacman -Qq mabox-noctalia-ce >/dev/null 2>&1 || new=1
-# Build the working tree: makepkg reuses a tarball found in SRCDEST.
+# Build the working tree in a temp folder: packaging/ can hold an old tarball and an old src/, and makepkg prefers both.
 pkgver=$(sed -n 's/^pkgver=//p' "$dir/packaging/PKGBUILD")
+[[ $pkgver =~ ^[0-9A-Za-z._+-]+$ ]] || { echo "cannot read pkgver from packaging/PKGBUILD" >&2; exit 1; }
 tmp=$(mktemp -d)
 (cd "$dir" && git ls-files -z --cached --others --exclude-standard \
     | while IFS= read -r -d '' f; do [[ -e $f ]] && printf '%s\0' "$f"; done \
     | tar --null -T - --transform "s,^,mabox-noctalia-ce-$pkgver/," -czf "$tmp/mabox-noctalia-ce-$pkgver.tar.gz")
-(cd "$dir/packaging" && SRCDEST=$tmp makepkg -fsi --skipchecksums)
+cp "$dir"/packaging/PKGBUILD "$dir"/packaging/*.install "$tmp/"
+(cd "$tmp" && makepkg -fsi --skipchecksums)
 [[ -z $new ]] || record mabox-noctalia-ce
 # Existing installs: disable the old musqz/* ids and keep their data under mabox/*.
 for id in music colors notes; do noctalia msg plugins disable "musqz/$id" >/dev/null 2>&1 || true; done
