@@ -1,6 +1,10 @@
 --!nonstrict
 -- Snapshot: front end for mabox-snapshot. Explain runs in the panel; the build runs in a terminal (sudo, passphrase).
 
+local function card(key)
+  return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "primary", borderWidth = 1 }
+end
+
 local PROFILES = {
   { id = "share", name = "Share with others", blurb = "Clean copy without your files or passwords. Login demo/demo.", args = { "reset" } },
   { id = "private", name = "Personal snapshot", blurb = "Full clone of this system with your files and passwords, for new hardware or backup. Keep it private.", args = { "preserving" }, encrypt = true },
@@ -270,12 +274,12 @@ local function settingsView()
       ui.input({ key = "in-" .. key, value = draft[key], onChange = function(text) draft[key] = text end }),
     })
   end
-  return ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 8 }, {
+  return ui.column(card("settings"), {
     field("Work folder (scratch space, needs about the size of the system)", "workdir"),
     field("ISO folder (where the finished .iso is written)", "output_dir"),
     ui.column({ key = "f-encrypt", gap = 2 }, {
       ui.label({ text = "Encrypt personal snapshots with a passphrase (LUKS2, asked in the terminal). Applies at once, no Save needed.", fontSize = 11, color = "on_surface_variant" }),
-      ui.button({ key = "set-encrypt", text = encrypt and "Encrypted (LUKS2): on" or "Encrypted (LUKS2): off", variant = encrypt and "primary" or "outline", controlSize = "md", onClick = function()
+      ui.button({ key = "set-encrypt", text = encrypt and "✓ Encrypted (LUKS2)" or "Encrypted (LUKS2): off", variant = encrypt and "outline" or "ghost", controlSize = "sm", onClick = function()
         setEncrypt(not encrypt)
       end }),
     }),
@@ -290,7 +294,7 @@ local function kernelRow()
   local btns = {}
   for _, k in ipairs(kernels) do
     local on = kernSel and kernSel[k] or false
-    table.insert(btns, ui.button({ key = "k-" .. k, text = k, variant = on and "primary" or "ghost", controlSize = "sm", tooltip = "Kernel in the ISO", onClick = function()
+    table.insert(btns, ui.button({ key = "k-" .. k, text = (on and "✓ " or "") .. k, variant = on and "outline" or "ghost", controlSize = "sm", tooltip = "Kernel in the ISO", onClick = function()
       kernSel[k] = not on or nil
       armed = nil
       note = nil
@@ -305,7 +309,7 @@ local function kernelRow()
     note = nil
     render()
   end }))
-  return ui.column({ key = "kernels", fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "on_surface_variant", borderWidth = 1 }, {
+  return ui.column(card("kernels"), {
     ui.label({ text = "Kernel in the ISO", fontSize = 11, color = "on_surface_variant" }),
     ui.row({ gap = 6, align = "center" }, btns),
   })
@@ -313,20 +317,19 @@ end
 
 local function profileCard(p)
   local sure = armed == p.id
-  return ui.column({ key = "p-" .. p.id, fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "on_surface_variant", borderWidth = 1 }, {
+  return ui.column(card("p-" .. p.id), {
     ui.label({ text = p.name, fontWeight = "bold", fontSize = 14 }),
     ui.label({ text = p.blurb, fontSize = 11, color = "on_surface_variant" }),
-    p.encrypt and ui.button({ key = "enc-" .. p.id, text = encrypt and "Encrypted (LUKS2): on" or "Encrypted (LUKS2): off", variant = encrypt and "primary" or "ghost", controlSize = "sm", tooltip = "Lock the ISO with a passphrase; you type it in the terminal", onClick = function()
+    p.encrypt and ui.button({ key = "enc-" .. p.id, text = encrypt and "✓ Encrypted (LUKS2)" or "Encrypted (LUKS2): off", variant = encrypt and "outline" or "ghost", controlSize = "sm", tooltip = "Lock the ISO with a passphrase; you type it in the terminal", onClick = function()
       setEncrypt(not encrypt)
     end }) or ui.label({ key = "enc-" .. p.id, text = "", fontSize = 1 }),
     sure and ui.label({ key = "cmd-" .. p.id, text = "sudo " .. cmdline(p), fontSize = 10, color = "on_surface_variant" }) or ui.label({ key = "cmd-" .. p.id, text = "", fontSize = 1 }),
     ui.row({ gap = 6, align = "center" }, {
-      ui.button({ text = "Explain", variant = "outline", controlSize = "md", tooltip = "Show what the build will do", onClick = function() runExplain(p) end }),
+      ui.button({ text = "Explain", variant = "outline", controlSize = "sm", tooltip = "Show what the build will do", onClick = function() runExplain(p) end }),
       ui.button({
-        text = sure and "Confirm: open terminal" or ("Build  " .. p.name),
-        variant = sure and "destructive" or "primary",
-        controlSize = "md",
-        flexGrow = 1,
+        text = sure and "Confirm build" or "Build",
+        variant = sure and "destructive" or "outline",
+        controlSize = "sm",
         tooltip = "Build the ISO in a terminal",
         onClick = function()
           if sure then
@@ -378,10 +381,10 @@ render = function()
         table.insert(rows, profileCard(p))
       end
       if hasUsb then
-        table.insert(rows, ui.column({ key = "usb-card", fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "on_surface_variant", borderWidth = 1 }, {
+        table.insert(rows, ui.column(card("usb-card"), {
           ui.label({ text = "USB stick", fontWeight = "bold", fontSize = 14 }),
           ui.label({ text = "Writes an ISO to a USB stick with a persistence partition (mabox-persistence-usb). The stick is erased. More options: run mabox-persistence-usb write --help in a terminal.", fontSize = 11, color = "on_surface_variant" }),
-          ui.button({ key = "usb", text = "Write an ISO to USB", variant = "outline", controlSize = "md", flexGrow = 1, tooltip = "Pick one of the last 8 ISOs and a USB stick (mabox-preserving-usb)", onClick = function()
+          ui.button({ key = "usb", text = "Write an ISO to USB", variant = "outline", controlSize = "sm", tooltip = "Pick one of the last 8 ISOs and a USB stick (mabox-preserving-usb)", onClick = function()
             noctalia.runAsync({ "setsid", "-f", "foot", "-T", "Mabox preserving USB", "sh", "-c", "mabox-preserving-usb; printf 'Press Enter to close. '; read _" })
             panel.close()
           end }),
@@ -391,8 +394,8 @@ render = function()
     end
     body = ui.column({ gap = 10 }, rows)
   end
-  -- A scroll in a content-height panel collapses; a fixed height on the column lets it scroll.
-  panel.render(ui.column({ gap = 8, padding = 12, height = explain and 780 or nil }, { top, body }))
+  -- A scroll in a content-height panel collapses; a fixed height on the column lets it scroll. The key keeps the fixed height from sticking to the list view.
+  panel.render(ui.column({ key = explain and "root-explain" or "root", gap = 8, padding = 12, height = explain and 780 or nil }, { top, body }))
 end
 
 function onOpen()
