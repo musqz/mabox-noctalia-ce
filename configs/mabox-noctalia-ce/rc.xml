@@ -85,6 +85,7 @@
     <keybind key="F1" name.action="Execute" command.action="jumpapp -m firefox"/>
     <keybind key="F2" name.action="Execute" command.action="jumpapp -m doublecmd"/>
     <keybind key="F3" name.action="Execute" command.action="jumpapp -m geany"/>
+    <keybind key="C-A-v" name.action="Execute" command.action="jumpapp -m -c cava-transparent mb-cava"/>
     <keybind key="W-e" name.action="Execute" command.action="geany"/>
     <keybind key="W-f" name.action="Execute" command.action="pcmanfm"/>
     <keybind key="W-r" name.action="Execute" command.action="jumpapp -m -c pyradio kitty --class pyradio -e pyradio"/>
@@ -239,6 +240,11 @@
       <action name="SetDecorations" decorations="none"/>
       <action name="ResizeTo" width="2545" height="700"/>
       <action name="MoveTo" x="10" y="45"/>
+    </windowRule>
+    <windowRule identifier="cava-transparent">
+      <action name="SetDecorations" decorations="none"/>
+      <action name="AutoPlace" policy="center"/>
+      <action name="MoveToEdge" direction="down" snapWindows="no"/>
     </windowRule>
     <windowRule identifier="pyradio">
       <action name="ResizeTo" width="900" height="500"/>

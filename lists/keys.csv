@@ -34,6 +34,7 @@ A-F2,Apps,0,Run a command
 F1,Apps,0,Firefox: focus or start
 F2,Apps,0,Double Commander: focus or start
 F3,Apps,0,Geany: focus or start
+C-A-v,Apps,0,Cava: show or hide
 F12,Apps,1,Drop-down terminal
 C-S-1,Media,0,Play a stream from the clipboard
 XF86AudioRaiseVolume,Media,0,Volume up

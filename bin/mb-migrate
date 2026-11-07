@@ -30,6 +30,15 @@ output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"
 TOML
 }
 
+# Add the cava keybind and window rule; an existing one is the user's and stays.
+migrate_3() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && ! grep -q cava-transparent "$f" || return 0
+    grep -q "</keyboard>" "$f" && grep -q "</windowRules>" "$f" || return 0
+    sed -i 's#</keyboard>#    <keybind key="C-A-v" name.action="Execute" command.action="jumpapp -m -c cava-transparent mb-cava"/>\n  </keyboard>#' "$f"
+    sed -i 's#</windowRules>#    <windowRule identifier="cava-transparent">\n      <action name="SetDecorations" decorations="none"/>\n      <action name="AutoPlace" policy="center"/>\n      <action name="MoveToEdge" direction="down" snapWindows="no"/>\n    </windowRule>\n  </windowRules>#' "$f"
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
