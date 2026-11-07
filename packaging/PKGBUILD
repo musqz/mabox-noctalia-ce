@@ -8,7 +8,8 @@ url='https://github.com/musqz/mabox-noctalia-ce'
 license=('GPL')
 depends=('python' 'python-gobject' 'python-cairo' 'gtk3' 'gtk-layer-shell' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlr-randr' 'wlopm' 'wtype' 'wlrctl' 'grim' 'slurp' 'yad'
          'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'gmrun' 'qt6ct' 'nwg-look')
-optdepends=('mabox-snapshot: build an ISO from the Snapshot panel'
+optdepends=('mabox-snapshot: build an ISO from the Mabox snapshot panel'
+            'mabox-persistence-usb: write an ISO to a USB stick from the Mabox snapshot panel'
             'radicale: local calendar (mb-calendar-setup)'
             'inxi: hardware tab of the System panel'
             'fastfetch: system summary button in the System panel'
