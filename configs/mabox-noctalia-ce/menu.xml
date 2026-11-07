@@ -73,10 +73,6 @@
       <action name="Execute" command="nwg-look" />
     </item>
     <separator />
-    <item label="Preferred applications" icon="preferences-desktop-default-applications">
-      <action name="Execute" command="exo-preferred-applications" />
-    </item>
-    <separator />
     <item label="Config files" icon="document-properties">
       <action name="Execute" command="noctalia msg panel-toggle mabox/configs:main" />
     </item>
@@ -89,9 +85,6 @@
     <separator />
     <item label="Edit autostart" icon="edit">
       <action name="Execute" command="xdg-open ~/.config/mabox-noctalia-ce/autostart" />
-    </item>
-    <item label="Edit user autostart" icon="edit">
-      <action name="Execute" command="pcmanfm ~/.config/autostart" />
     </item>
     <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />
