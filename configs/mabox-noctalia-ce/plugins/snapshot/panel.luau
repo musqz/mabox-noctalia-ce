@@ -229,7 +229,7 @@ local function build(p)
   local script = "printf '\\033[1m$ %s\\033[0m\\n\\n' " .. q("sudo " .. cmdline(p)) .. "; sudo " .. cmdline(p)
     .. "; s=$?; echo; if [ $s -eq 0 ]; then echo Done.; else echo \"Failed (exit code $s).\"; fi; printf 'Press Enter to close. '; read _"
   -- setsid: the terminal would die with the panel when it loses focus.
-  noctalia.runAsync({ "sh", "-c", 'command -v foot >/dev/null || { notify-send -u critical "Mabox snapshot" "foot is not installed"; exit 1; }; setsid -f foot -T "Mabox Snapshot" sh -c "$1"', "sh", script })
+  noctalia.runAsync({ "sh", "-c", 'command -v foot >/dev/null || { notify-send -u critical "Snapshot" "foot is not installed"; exit 1; }; setsid -f foot -T "Mabox Snapshot" sh -c "$1"', "sh", script })
   panel.close()
 end
 
@@ -290,7 +290,7 @@ end
 
 -- The tool asks for the stick and a typed confirmation itself; setsid keeps the terminal alive when the panel closes.
 local function writeIso(path)
-  noctalia.runAsync({ "setsid", "-f", "foot", "-T", "Mabox USB", "sh", "-c", 'sudo mabox-persistence-usb write "$1"; printf "Press Enter to close. "; read _', "sh", path })
+  noctalia.runAsync({ "setsid", "-f", "foot", "-T", "Snapshot USB", "sh", "-c", 'sudo mabox-persistence-usb write "$1"; printf "Press Enter to close. "; read _', "sh", path })
   panel.close()
 end
 
@@ -405,7 +405,7 @@ render = function()
     return
   end
   local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = explain and ("Explain: " .. explain.name) or (settings and "Mabox snapshot settings" or "Mabox snapshot"), flexGrow = 1 }),
+    ui.label({ text = explain and ("Explain: " .. explain.name) or (settings and "Snapshot settings" or "Snapshot"), flexGrow = 1 }),
     explain and ui.label({ text = "" }) or ui.button({ glyph = settings and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settings and "Back" or "Settings", onClick = function()
       settings = not settings
       saved = nil

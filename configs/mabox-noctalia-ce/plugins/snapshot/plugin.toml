@@ -1,5 +1,5 @@
 id = "mabox/snapshot"
-name = "Mabox snapshot"
+name = "Snapshot"
 version = "0.1.0"
 plugin_api = 43
 author = "mabox"

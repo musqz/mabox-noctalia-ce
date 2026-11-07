@@ -146,7 +146,7 @@ Files, paths and tools: [docs/overview.md](docs/overview.md).
 | Wallpaper folders: saved list, click to switch the wallpaper directory; `/wp` in the launcher, root menu | `W-A-w` | [docs/guide.md](docs/guide.md#wallpaper-directory) |
 | Notes panel: notes with colors | `W-n`, pinned window `W-A-n` | `~/.local/state/noctalia/plugins/data/mabox/notes/path`: one line, folder to sync (optional) |
 | Status panel: system info, discs, cleanup rows; bar button turns warning-colored when a disc is full (`mb-status-warn`, left click opens it, right click pins it) | `W-A-s`, pinned window `W-S-s` | settings (gear button) in `~/.local/state/noctalia/plugins/data/mabox/status/settings` |
-| Mabox snapshot panel: profiles to build an ISO with `mabox-snapshot` (Explain in the panel, Build in a terminal with sudo) | root menu → Mabox noctalia ce → Mabox snapshot, `/mb snapshot` | `mabox-snapshot` |
+| Snapshot panel: profiles to build an ISO with `mabox-snapshot` (Explain in the panel, Build in a terminal with sudo) | root menu → Mabox noctalia ce → Snapshot, `/mb snapshot` | `mabox-snapshot` |
 | Sysinfo desktop widget: date, system info, CPU/RAM graphs, top processes, discs, updates | `noctalia msg desktop-widgets-toggle-edit`, then add *Sysinfo* | needs `[desktop_widgets] enabled = true` |
 | Info desktop widget: logo, About line, basic hotkeys | `noctalia msg desktop-widgets-toggle-edit`, then add *Info* | same setting as Sysinfo |
 | Quoter desktop widget: random quote, new one every 10 minutes | `noctalia msg desktop-widgets-toggle-edit`, then add *Quoter* | other quotes file: path on one line in `~/.config/quoter/quoter.conf` |
