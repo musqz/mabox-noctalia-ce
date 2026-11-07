@@ -11,7 +11,7 @@ tags = ["utility", "audio"]
 [[panel]]
 id = "main"
 entry = "panel.luau"
-width = 420
+width = 780
 height = "content"
 max_height = 900
 placement = "attached"

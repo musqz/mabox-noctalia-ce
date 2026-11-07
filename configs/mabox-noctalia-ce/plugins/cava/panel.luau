@@ -75,7 +75,7 @@ local function swatch(label, key, command)
   })
 end
 
--- Rows of five: the panel is 420 px wide and a row does not wrap.
+-- Rows of five: a column is about 373 px wide and a row does not wrap.
 local function choices(title, key, values, command)
   local current = cfg[key]
   local children = { ui.label({ text = title .. (current and ("   " .. current) or ""), fontSize = 12 }) }
@@ -328,7 +328,10 @@ end
 
 -- Still spectrum for the header: the bars use the width, spacing and colors of the cava settings, whether or not cava runs.
 local SPECTRUM_HEIGHT = 60
-local SPECTRUM_WIDTH = 396
+-- Panel width in plugin.toml (780) minus the 12 px padding on both sides.
+local SPECTRUM_WIDTH = 756
+-- Each of the two columns: (SPECTRUM_WIDTH - 10 px gap) / 2.
+local COLUMN_WIDTH = 373
 local SPECTRUM_UNIT = 3
 
 local function hexToRgb(hex)
@@ -382,7 +385,7 @@ local headerKey, headerNode = nil, nil
 local function spectrumHeader()
   local bw = math.max(1, tonumber(cfg.bar_width) or 2) * SPECTRUM_UNIT
   local bs = math.max(0, tonumber(cfg.bar_spacing) or 2) * SPECTRUM_UNIT
-  local count = math.max(1, math.min(80, math.floor((SPECTRUM_WIDTH + bs) / (bw + bs))))
+  local count = math.max(1, math.min(160, math.floor((SPECTRUM_WIDTH + bs) / (bw + bs))))
   local stops = spectrumStops()
   local key = bw .. "|" .. bs .. "|" .. table.concat(stops, ",")
   if key == headerKey then
@@ -415,7 +418,15 @@ render = function()
   elseif cfg.cavactl == nil or cfg.cavactl == "" then
     table.insert(rows, ui.label({ text = "cavactl is not installed (mabox-colorizer).", color = "primary" }))
   else
-    rows = { spectrumHeader(), windowCard(), colorCard(), barsCard(), generalCard(), configRow() }
+    -- Two columns: Window and Color on the left, Bars and General on the right; the spectrum and the config row span both.
+    rows = {
+      spectrumHeader(),
+      ui.row({ key = "columns", gap = 10, align = "start" }, {
+        ui.column({ key = "col-left", gap = 10, flexGrow = 1, minWidth = COLUMN_WIDTH }, { windowCard(), colorCard() }),
+        ui.column({ key = "col-right", gap = 10, flexGrow = 1, minWidth = COLUMN_WIDTH }, { barsCard(), generalCard() }),
+      }),
+      configRow(),
+    }
   end
   panel.render(ui.column({ gap = 10, padding = 12 }, {
     ui.row({ gap = 6, align = "center" }, {
