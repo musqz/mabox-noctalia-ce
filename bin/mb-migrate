@@ -39,6 +39,21 @@ migrate_3() {
     sed -i 's#</windowRules>#    <windowRule identifier="cava-transparent">\n      <action name="SetDecorations" decorations="none"/>\n      <action name="AutoPlace" policy="center"/>\n      <action name="MoveToEdge" direction="down" snapWindows="no"/>\n    </windowRule>\n  </windowRules>#' "$f"
 }
 
+# Cava follows the wallpaper colors through a Noctalia template (mb-cava-theme is its hook); add the config block once the template is in place.
+migrate_4() {
+    local f=${files[0]}
+    local tpl=${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/templates/cava-palette
+    [[ -f $f && -e $tpl ]] || return 0
+    grep -q '^\[theme\.templates\.user\.cava\]' "$f" && return 0
+    cat >> "$f" <<'TOML'
+
+[theme.templates.user.cava]
+input_path = "~/.config/noctalia/templates/cava-palette"
+output_path = "~/.cache/mabox-noctalia-ce/cava-palette"
+post_hook = "mb-cava-theme"
+TOML
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

@@ -32,6 +32,7 @@ pkgbase = mabox-noctalia-ce
 	depends = qt6ct
 	depends = nwg-look
 	depends = jq
+	optdepends = pastel: wallpaper colors for the Cava panel (mb-cava-theme)
 	optdepends = mabox-colorizer: cavactl for the Cava panel
 	optdepends = cava: audio visualizer for the C-A-v key (mb-cava)
 	optdepends = mabox-snapshot: build an ISO from the Snapshot panel

@@ -30,6 +30,11 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
 input_path = "~/.config/noctalia/templates/mabox-logo.svg"
 output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"
 
+[theme.templates.user.cava]
+input_path = "~/.config/noctalia/templates/cava-palette"
+output_path = "~/.cache/mabox-noctalia-ce/cava-palette"
+post_hook = "mb-cava-theme"
+
 [system.monitor]
 enabled = true
 
