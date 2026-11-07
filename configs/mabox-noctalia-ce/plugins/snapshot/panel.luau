@@ -42,6 +42,7 @@ local function loadEncrypt()
 end
 local hasUsb = false
 local usb = false
+local hasVm = false
 local isos = {}
 local probed = false
 
@@ -118,7 +119,7 @@ end
 
 local runExplain
 local function probe()
-  noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-persistence-usb >/dev/null && echo usb=1; echo run=$(uname -r); echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
+  noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-persistence-usb >/dev/null && echo usb=1; v=$(pacman -Q quickbox-qt 2>/dev/null | cut -d' ' -f2); [ -n \"$v\" ] && [ \"$(vercmp \"$v\" 1.4)\" -ge 0 ] && echo vm=1; echo run=$(uname -r); echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
     local out = "\n" .. (result.stdout or "")
     version = string.match(out, "mabox%-snapshot (%d+%.%d+%.%d+)")
     cfg = { folders = {} }
@@ -162,6 +163,7 @@ local function probe()
     draft.workdir, draft.output_dir = workdir or "", outdir or ""
     quoted = string.match(out, "q=1") ~= nil
     hasUsb = string.match(out, "usb=1") ~= nil
+    hasVm = string.match(out, "vm=1") ~= nil
     probed = true
     render()
   end)
@@ -230,7 +232,7 @@ local function build(p)
     return
   end
   local script = "printf '\\033[1m$ %s\\033[0m\\n\\n' " .. q("sudo " .. cmdline(p)) .. "; sudo " .. cmdline(p)
-    .. "; s=$?; echo; if [ $s -eq 0 ]; then echo Done.; else echo \"Failed (exit code $s).\"; fi; printf 'Press Enter to close. '; read _"
+    .. "; s=$?; echo; if [ $s -eq 0 ]; then echo Done.; " .. (outdir and ("command -v mb-iso-next >/dev/null && mb-iso-next " .. q(outdir) .. "; ") or "") .. "else echo \"Failed (exit code $s).\"; fi; printf 'Press Enter to close. '; read _"
   -- setsid: the terminal would die with the panel when it loses focus.
   noctalia.runAsync({ "sh", "-c", 'command -v foot >/dev/null || { notify-send -u critical "Snapshot" "foot is not installed"; exit 1; }; setsid -f foot -T "Mabox Snapshot" sh -c "$1"', "sh", script })
   panel.close()
@@ -291,6 +293,11 @@ local function loadIsos()
   end)
 end
 
+local function startVm(path)
+  noctalia.runAsync({ "setsid", "-f", "quickbox", "--iso", path })
+  panel.close()
+end
+
 -- The tool asks for the stick and a typed confirmation itself; setsid keeps the terminal alive when the panel closes.
 local function writeIso(path)
   noctalia.runAsync({ "setsid", "-f", "foot", "-T", "Snapshot USB", "sh", "-c", 'sudo mabox-persistence-usb write "$1"; printf "Press Enter to close. "; read _', "sh", path })
@@ -308,7 +315,8 @@ local function usbView()
         ui.label({ text = name, fontSize = 12, fontWeight = "bold" }),
         ui.label({ text = os.date("%Y-%m-%d %H:%M", iso.mtime) .. "  " .. string.format("%.1f GiB", iso.size / 1073741824), fontSize = 11, color = "on_surface_variant" }),
       }),
-      ui.button({ text = "Write", variant = "outline", controlSize = "sm", tooltip = "Write this ISO to a USB stick", onClick = function() writeIso(iso.path) end }),
+      hasUsb and ui.button({ text = "USB", variant = "outline", controlSize = "sm", tooltip = "Write this ISO to a USB stick", onClick = function() writeIso(iso.path) end }) or nil,
+      hasVm and ui.button({ text = "VM", variant = "outline", controlSize = "sm", tooltip = "Start this ISO in a VM with quickbox", onClick = function() startVm(iso.path) end }) or nil,
     }))
   end
   if loadingIsos then
@@ -465,10 +473,10 @@ render = function()
       for _, p in ipairs(PROFILES) do
         table.insert(rows, profileCard(p))
       end
-      if hasUsb then
+      if hasUsb or hasVm then
         table.insert(rows, ui.column(card("usb-card"), {
-          ui.label({ text = "USB stick", fontWeight = "bold", fontSize = 14 }),
-          ui.label({ text = "Write one of the newest ISOs to a USB stick with a persistence partition (mabox-persistence-usb). The stick is erased.", fontSize = 11, color = "on_surface_variant" }),
+          ui.label({ text = hasUsb and "USB stick or VM" or "VM", fontWeight = "bold", fontSize = 14 }),
+          ui.label({ text = "Write one of the newest ISOs to a USB stick (mabox-persistence-usb, the stick is erased) or start it in a VM.", fontSize = 11, color = "on_surface_variant" }),
           ui.button({ key = "usb", text = "Choose an ISO...", variant = "outline", controlSize = "sm", onClick = function()
             usb = true
             loadIsos()

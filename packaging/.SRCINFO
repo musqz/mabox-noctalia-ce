@@ -37,6 +37,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = cava: audio visualizer for the C-A-v key (mb-cava)
 	optdepends = mabox-snapshot: build an ISO from the Snapshot panel
 	optdepends = mabox-persistence-usb: write an ISO to a USB stick from the Snapshot panel
+	optdepends = quickbox-qt>=1.4: start an ISO in a VM from the Snapshot panel (mb-iso-next)
 	optdepends = radicale: local calendar (mb-calendar-setup)
 	optdepends = inxi: hardware tab of the System panel
 	optdepends = fastfetch: system summary button in the System panel
