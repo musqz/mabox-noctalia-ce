@@ -136,6 +136,17 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
 
+## Snapshot ISO with the latest changes
+
+The ISO carries what is installed on the build host, not the repo. To build a reset ISO with the newest menu, panels and tools:
+
+1. `git pull` in `mabox-noctalia-ce`.
+2. `./install.sh`. It builds the working tree and installs it.
+3. Build the snapshot: `mabox-snapshot create reset`, or use the Snapshot panel.
+4. Check it: `tests/iso-check.sh <workdir>/iso/mabox/x86_64/rootfs.sfs`. It lists every checked file that is missing or differs in the image.
+
+`mb-plugins-enable` enables each Mabox plugin once for a user, on login. The plugins it has handled are in `~/.local/state/mabox-noctalia-ce/plugins-seen`: delete a line to get that plugin enabled again.
+
 ## Interval screenshots and GIF
 
 - `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT` or the first), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.
