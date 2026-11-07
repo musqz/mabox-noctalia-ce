@@ -26,8 +26,17 @@ local function parse(text)
 end
 
 local function load()
-  noctalia.runAsync({ "sh", "-c", 'cat "$HOME/.config/cava/config" 2>/dev/null; echo; echo "cavactl=$(command -v cavactl)"; echo "running=$(wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 && echo 1)"; echo "layer=$(cat ' .. LAYER_FILE .. ' 2>/dev/null)"' }, function(result)
-    cfg = parse(result.stdout or "")
+  noctalia.runAsync({ "sh", "-c", 'cat "$HOME/.config/cava/config" 2>/dev/null; echo; echo "cavactl=$(command -v cavactl)"; echo "running=$(wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 && echo 1)"; echo "layer=$(cat ' .. LAYER_FILE .. ' 2>/dev/null)"; echo "--theme"; cat "$HOME/.config/cava/themes/noctalia" 2>/dev/null' }, function(result)
+    local out = result.stdout or ""
+    local cfgText, themeText = string.match(out, "^(.-)\n%-%-theme\n(.*)$")
+    cfg = parse(cfgText or out)
+    -- The colors of the followed theme, kept apart from the manual gradient (keys T_1, T_2, ...).
+    for k, v in pairs(parse(themeText or "")) do
+      local n = string.match(k, "^gradient_color_(%d)$")
+      if n then
+        cfg["T_" .. n] = v
+      end
+    end
     running = cfg.running == "1"
     loaded = true
     render()
@@ -317,6 +326,88 @@ local function configRow()
   })
 end
 
+-- Still spectrum for the header: the bars use the width, spacing and colors of the cava settings, whether or not cava runs.
+local SPECTRUM_HEIGHT = 60
+local SPECTRUM_WIDTH = 396
+local SPECTRUM_UNIT = 3
+
+local function hexToRgb(hex)
+  return tonumber(string.sub(hex, 2, 3), 16), tonumber(string.sub(hex, 4, 5), 16), tonumber(string.sub(hex, 6, 7), 16)
+end
+
+-- Colors from bottom to top: the followed theme, the manual gradient, or the single bar color.
+local function spectrumStops()
+  if cfg.theme == "noctalia" then
+    local stops = {}
+    for i = 1, MAX_COLORS do
+      local c = cfg["T_" .. i]
+      if c and string.match(c, "^#%x%x%x%x%x%x$") then
+        table.insert(stops, c)
+      end
+    end
+    if #stops >= 1 then
+      return stops
+    end
+  end
+  if cfg.gradient == "1" then
+    return gradientColors()
+  end
+  return { color("foreground") or "#59cc33" }
+end
+
+local function stopAt(stops, t)
+  if #stops == 1 then
+    return stops[1]
+  end
+  local pos = t * (#stops - 1)
+  local i = math.min(#stops - 2, math.floor(pos))
+  local f = pos - i
+  local r1, g1, b1 = hexToRgb(stops[i + 1])
+  local r2, g2, b2 = hexToRgb(stops[i + 2])
+  return string.format("#%02x%02x%02x", math.floor(r1 + (r2 - r1) * f + 0.5), math.floor(g1 + (g2 - g1) * f + 0.5), math.floor(b1 + (b2 - b1) * f + 0.5))
+end
+
+-- A fixed, spectrum-like shape: a few peaks over a low floor.
+local function spectrumHeight(i, n)
+  local x = (i - 1) / math.max(1, n - 1)
+  local function bump(center, width, height)
+    return height * math.exp(-((x - center) / width) ^ 2)
+  end
+  local wobble = 0.06 * math.abs(math.sin(i * 2.7))
+  return math.min(1, 0.1 + wobble + bump(0.18, 0.07, 0.55) + bump(0.4, 0.05, 0.95) + bump(0.62, 0.08, 0.5) + bump(0.85, 0.06, 0.4))
+end
+
+local headerKey, headerNode = nil, nil
+
+local function spectrumHeader()
+  local bw = math.max(1, tonumber(cfg.bar_width) or 2) * SPECTRUM_UNIT
+  local bs = math.max(0, tonumber(cfg.bar_spacing) or 2) * SPECTRUM_UNIT
+  local count = math.max(1, math.min(80, math.floor((SPECTRUM_WIDTH + bs) / (bw + bs))))
+  local stops = spectrumStops()
+  local key = bw .. "|" .. bs .. "|" .. table.concat(stops, ",")
+  if key == headerKey then
+    return headerNode
+  end
+  local bands = #stops == 1 and 1 or 6
+  local bandHeight = SPECTRUM_HEIGHT // bands
+  local bars = {}
+  for i = 1, count do
+    local px = math.floor(spectrumHeight(i, count) * SPECTRUM_HEIGHT + 0.5)
+    local segs = {}
+    for j = bands, 1, -1 do
+      local h = math.max(0, math.min(bandHeight, px - (j - 1) * bandHeight))
+      if h >= 1 then
+        local fill = stopAt(stops, bands == 1 and 0 or (j - 1) / (bands - 1))
+        table.insert(segs, ui.box({ key = "s-" .. i .. "-" .. j, fill = fill, width = bw, height = h }))
+      end
+    end
+    table.insert(bars, ui.column({ key = "b-" .. i, gap = 0, justify = "end", height = SPECTRUM_HEIGHT, width = bw }, segs))
+  end
+  headerKey = key
+  headerNode = ui.row({ key = "spectrum", gap = bs, align = "end", justify = "center", height = SPECTRUM_HEIGHT }, bars)
+  return headerNode
+end
+
 render = function()
   local rows = {}
   if not loaded then
@@ -324,7 +415,7 @@ render = function()
   elseif cfg.cavactl == nil or cfg.cavactl == "" then
     table.insert(rows, ui.label({ text = "cavactl is not installed (mabox-colorizer).", color = "primary" }))
   else
-    rows = { windowCard(), colorCard(), barsCard(), generalCard(), configRow() }
+    rows = { spectrumHeader(), windowCard(), colorCard(), barsCard(), generalCard(), configRow() }
   end
   panel.render(ui.column({ gap = 10, padding = 12 }, {
     ui.row({ gap = 6, align = "center" }, {
