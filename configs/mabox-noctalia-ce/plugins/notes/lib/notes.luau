@@ -387,7 +387,9 @@ end
 
 local function setColor(n, name)
   n.color = n.color ~= name and name or nil
-  lastColor = name
+  if n.color then
+    lastColor = n.color
+  end
   saveNote(n)
   render()
 end
@@ -585,6 +587,11 @@ local function editor()
       end }),
       ui.label({ text = prettyDate(n.id), color = "on_surface_variant" }),
       ui.spacer({ flexGrow = 1 }),
+      not titleShown(n) and ui.button({ text = "Title", variant = "ghost", controlSize = "sm", tooltip = "Add a title (alt+s)", onClick = function()
+        editField = "title"
+        editNonce += 1
+        render()
+      end }) or ui.spacer({ width = 0 }),
       ui.button({ glyph = "copy", text = "Copy", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 2, onClick = function() copyNote({ body = n.body, title = displayTitle(n) }) end }),
       ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 3, onClick = deleteNote }),
     }),
@@ -824,6 +831,7 @@ local function open(context)
       if n.id == id then
         current = n
         render()
+        break
       end
     end
   end
@@ -844,6 +852,10 @@ end
 -- Alt chords only: plain arrows and letters belong to the text boxes.
 local function onKey(chord)
   if chord == "alt+q" then
+    panel.close()
+    return
+  end
+  if chord == "escape" and not current then
     panel.close()
     return
   end
