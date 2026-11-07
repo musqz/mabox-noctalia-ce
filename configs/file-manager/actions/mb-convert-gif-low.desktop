@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=GIF low
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert gif-low %F
+Name=GIF low

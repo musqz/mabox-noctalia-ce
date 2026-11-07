@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=MP4 (H.264)
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert mp4 %F
+Name=MP4 (H.264)

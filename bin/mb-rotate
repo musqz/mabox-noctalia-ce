@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Rotate or flip images. Usage: mb-rotate <90|-90|180|flip> file...
+# Output goes next to the source, never overwriting.
+set -euo pipefail
+
+op=${1:-}
+[[ -n $op ]] && (($# > 1)) || { echo "usage: mb-rotate <90|-90|180|flip> file..." >&2; exit 2; }
+shift
+case $op in
+    90|-90|180) args=(-rotate "$op") ;;
+    flip)       args=(-flop) ;;
+    *) echo "unknown operation: $op" >&2; exit 2 ;;
+esac
+command -v magick >/dev/null || { notify-send -a Images -u critical "Images" "magick is not installed"; exit 1; }
+
+ok=0 fail=0
+for src in "$@"; do
+    dir=$(dirname "$src") base=$(basename "$src"); ext=png; [[ $base == *.* ]] && { ext=${base##*.}; base=${base%.*}; }
+    out="$dir/$base-rotated.$ext"
+    n=1
+    while [[ -e $out ]]; do out="$dir/$base-rotated-$n.$ext"; ((n++)); done
+    if err=$(magick "$src" -auto-orient "${args[@]}" "$out" 2>&1); then
+        ((ok++)) || true
+    else
+        ((fail++)) || true
+        rm -f "$out"
+        notify-send -a Images -u critical "Rotate failed" "$(basename "$src"): ${err##*$'\n'}"
+    fi
+done
+((ok == 0)) || notify-send -a Images "Rotated $ok image(s)" "saved next to the source"
+((fail == 0))

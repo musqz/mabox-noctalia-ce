@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=JPG
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-convert jpg %F
+Name=JPG

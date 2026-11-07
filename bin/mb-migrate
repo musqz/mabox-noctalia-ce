@@ -30,6 +30,15 @@ output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"
 TOML
 }
 
+# Copy missing pcmanfm actions; an existing file is the user's and stays.
+migrate_3() {
+    local src=/etc/skel/.local/share/file-manager/actions
+    local dst=${XDG_DATA_HOME:-$HOME/.local/share}/file-manager/actions
+    [[ -d $src ]] || return 0
+    mkdir -p "$dst"
+    cp -n "$src"/*.desktop "$dst/" 2>/dev/null || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

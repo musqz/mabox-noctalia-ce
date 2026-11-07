@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=WebP
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-convert webp %F
+Name=WebP

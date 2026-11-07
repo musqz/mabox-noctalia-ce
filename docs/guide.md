@@ -136,6 +136,8 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
 
+Right-click files in pcmanfm → *Convert*, *Rotate / flip* or *Resize image*. Command line: `mb-rotate <90|-90|180|flip> file...`, `mb-resize <50%|WIDTH> file...`.
+
 ## Interval screenshots and GIF
 
 - `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT` or the first), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.

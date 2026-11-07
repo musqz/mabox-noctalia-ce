@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=GIF medium
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert gif-medium %F
+Name=GIF medium

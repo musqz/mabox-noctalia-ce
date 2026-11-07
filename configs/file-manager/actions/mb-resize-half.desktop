@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=50%
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-resize 50%% %F
+Name=50%

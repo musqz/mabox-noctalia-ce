@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Video
+Icon=applications-multimedia
+ItemsList=mb-convert-mp4;mb-convert-hevc;mb-convert-webm;mb-convert-av1;mb-convert-mp4-remux;mb-convert-mkv-remux;

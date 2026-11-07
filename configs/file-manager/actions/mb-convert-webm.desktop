@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=WebM (VP9)
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert webm %F
+Name=WebM (VP9)

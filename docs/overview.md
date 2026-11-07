@@ -38,7 +38,7 @@ mabox-noctalia-ce/
 │   │   ├── templates/          labwc.conf
 │   │   ├── Geany/, PyRadio/, Pywalfox/   theme templates
 │   │   └── palettes/           color palette JSON
-│   └── file-manager/actions/   file manager action → /usr/share/file-manager/actions/
+│   └── file-manager/actions/   file manager actions → /etc/skel/.local/share/file-manager/actions/
 ├── systemd/user/               mb-updates-ce .service .timer .path → /usr/lib/systemd/user/
 ├── lists/                      pacman.txt, aur.txt, github.txt (what install.sh installs)
 ├── packaging/                  PKGBUILD, .SRCINFO, .install
@@ -54,7 +54,7 @@ mabox-noctalia-ce/
 | `configs/noctalia-ce.desktop` | `/usr/share/wayland-sessions/noctalia-ce.desktop` | package |
 | `configs/mabox-noctalia-ce/` (without `plugins/`) | `/etc/skel/.config/mabox-noctalia-ce/` | package |
 | `configs/noctalia/` | `/usr/share/mabox-noctalia-ce/noctalia/` | package |
-| `configs/file-manager/actions/*` | `/usr/share/file-manager/actions/` | package |
+| `configs/file-manager/actions/*` | `/etc/skel/.local/share/file-manager/actions/` | package (mb-migrate copies to existing users) |
 | `systemd/user/*` | `/usr/lib/systemd/user/` | package |
 | `configs/mabox-noctalia-ce/plugins/` | `/usr/share/mabox-noctalia-ce/plugins/` | package |
 | `configs/mabox-noctalia-ce/autostart.local` | `~/.config/mabox-noctalia-ce/autostart.local` (only if missing) | `install.sh` |

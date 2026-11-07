@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=WAV
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=audio/*;video/*
+Exec=mb-convert wav %F
+Name=WAV

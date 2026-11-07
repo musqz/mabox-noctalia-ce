@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Remux to MKV
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert mkv-remux %F
+Name=Remux to MKV

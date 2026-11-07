@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Remux to MP4
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert mp4-remux %F
+Name=Remux to MP4

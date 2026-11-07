@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a Convert menu (video, GIF, audio, image) to the pcmanfm right-click menu.
+- Add Rotate / flip and Resize image to the pcmanfm right-click menu for images.
+- Install the pcmanfm actions to the skel; mb-migrate copies missing ones to existing users.
 - Open a note straight in the editor with autosave; Esc saves and returns to the list.
 - Pick a note color in the editor: alt+Up to the color row, alt+Left/Right, alt+Enter; alt+1..9 and alt+0 as shortcuts.
 - Make W-n start a new note in the editor.

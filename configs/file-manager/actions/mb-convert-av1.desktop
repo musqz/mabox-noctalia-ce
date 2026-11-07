@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=AV1 (MKV)
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=video/*
+Exec=mb-convert av1 %F
+Name=AV1 (MKV)

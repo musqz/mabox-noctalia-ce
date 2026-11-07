@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Convert
+Icon=applications-multimedia
+ItemsList=mb-convert-video;mb-convert-gif;mb-convert-audio;mb-convert-image;

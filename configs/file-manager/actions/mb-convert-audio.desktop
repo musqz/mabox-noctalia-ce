@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Extract audio
+Icon=applications-multimedia
+ItemsList=mb-convert-mp3;mb-convert-opus;mb-convert-ogg;mb-convert-m4a;mb-convert-flac;mb-convert-wav;

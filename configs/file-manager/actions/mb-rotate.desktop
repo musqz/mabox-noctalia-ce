@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Rotate / flip
+Icon=object-rotate-right
+ItemsList=mb-rotate-right;mb-rotate-left;mb-rotate-180;mb-rotate-flip;

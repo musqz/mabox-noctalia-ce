@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=M4A (AAC)
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=audio/*;video/*
+Exec=mb-convert m4a %F
+Name=M4A (AAC)

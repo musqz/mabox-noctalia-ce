@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Rotate 180
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-rotate 180 %F
+Name=Rotate 180

@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Video to GIF
+Icon=applications-multimedia
+ItemsList=mb-convert-gif-low;mb-convert-gif-medium;mb-convert-gif-high;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Flip horizontal
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-rotate flip %F
+Name=Flip horizontal

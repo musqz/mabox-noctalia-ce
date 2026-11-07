@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=MP3
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=audio/*;video/*
+Exec=mb-convert mp3 %F
+Name=MP3

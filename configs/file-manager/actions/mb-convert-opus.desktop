@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Opus
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=audio/*;video/*
+Exec=mb-convert opus %F
+Name=Opus

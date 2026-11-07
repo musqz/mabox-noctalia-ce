@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Resize images. Usage: mb-resize <50%|WIDTH> file...
+# Output goes next to the source, never overwriting; never enlarges.
+set -euo pipefail
+
+size=${1:-}
+[[ -n $size ]] && (($# > 1)) || { echo "usage: mb-resize <50%|WIDTH> file..." >&2; exit 2; }
+shift
+case $size in
+    *%) [[ ${size%\%} =~ ^[1-9][0-9]?$|^100$ ]] || { echo "bad size: $size" >&2; exit 2; }; geom=$size ;;
+    *[!0-9]*) echo "bad size: $size" >&2; exit 2 ;;
+    *) geom="${size}x>" ;;
+esac
+command -v magick >/dev/null || { notify-send -a Images -u critical "Images" "magick is not installed"; exit 1; }
+
+ok=0 fail=0
+for src in "$@"; do
+    dir=$(dirname "$src") base=$(basename "$src"); ext=png; [[ $base == *.* ]] && { ext=${base##*.}; base=${base%.*}; }
+    out="$dir/$base-${size/\%/pct}.$ext"
+    n=1
+    while [[ -e $out ]]; do out="$dir/$base-${size/\%/pct}-$n.$ext"; ((n++)); done
+    if err=$(magick "$src" -auto-orient -resize "$geom" "$out" 2>&1); then
+        ((ok++)) || true
+    else
+        ((fail++)) || true
+        rm -f "$out"
+        notify-send -a Images -u critical "Resize failed" "$(basename "$src"): ${err##*$'\n'}"
+    fi
+done
+((ok == 0)) || notify-send -a Images "Resized $ok image(s) to $size" "saved next to the source"
+((fail == 0))

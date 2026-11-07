@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Image
+Icon=applications-multimedia
+ItemsList=mb-convert-png;mb-convert-jpg;mb-convert-webp;mb-convert-avif;

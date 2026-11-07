@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Rotate right
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-rotate 90 %F
+Name=Rotate right

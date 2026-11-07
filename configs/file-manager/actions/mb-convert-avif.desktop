@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=AVIF
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-convert avif %F
+Name=AVIF

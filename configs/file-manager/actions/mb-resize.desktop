@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Menu
+Name=Resize image
+Icon=transform-scale
+ItemsList=mb-resize-half;mb-resize-1920;mb-resize-1280;

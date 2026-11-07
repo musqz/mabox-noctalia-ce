@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Width 1280 px
+Profiles=p
+
+[X-Action-Profile p]
+MimeTypes=image/*
+Exec=mb-resize 1280 %F
+Name=Width 1280 px
