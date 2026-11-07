@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Install fittsmon, fittsmon-wl-gui, skippy-wl, tabdock, mabox-snapshot and mabox-persistence-usb from the maboxlinux repo with pacman; the GitHub builds are disabled.
 - Make All in the Snapshot kernel row a switch: a second click keeps only the running kernel; wrap the kernel buttons over rows of three.
 - Remove the Refresh button from the Snapshot panel.
 - Add a Snapshot plugin (mabox/snapshot) with profiles to build an ISO with mabox-snapshot; Explain shows the plan, Build opens a terminal.
