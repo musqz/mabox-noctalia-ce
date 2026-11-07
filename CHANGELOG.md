@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix install.sh installing an old build: it now builds the working tree in a temp folder.
 - Add tests/iso-check.sh --host to check the installed system against the repo before building a snapshot.
 - Add W-A-v to open the Cava settings panel.
 - Enable new Mabox plugins once on login with mb-plugins-enable, so a fresh user and a snapshot ISO get the panels; mb-migrate adds it to an existing autostart. An existing install keeps its choices.
