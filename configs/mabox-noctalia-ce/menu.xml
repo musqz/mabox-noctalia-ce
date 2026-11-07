@@ -47,25 +47,32 @@
   <item label="File Manager" icon="system-file-manager">
     <action name="Execute" command="pcmanfm" />
   </item>
-  <item label="Add/Remove software" icon="system-software-install">
-    <action name="Execute" command="pamac-manager" />
-  </item>
+  <separator />
   <item label="Launcher" icon="applications-all">
     <action name="Execute" command="noctalia msg panel-toggle launcher" />
   </item>
-  <menu id="settings-menu" label="Mabox Config" icon="preferences-system">
+  <separator />
+  <menu id="settings-menu" label="Mabox noctalia ce" icon="preferences-system">
     <item label="Noctalia settings" icon="preferences-system">
       <action name="Execute" command="noctalia msg settings-toggle" />
     </item>
     <item label="Control center" icon="preferences-desktop-display">
       <action name="Execute" command="noctalia msg panel-toggle control-center" />
     </item>
+    <item label="Add/Remove software" icon="system-software-install">
+      <action name="Execute" command="neoarch" />
+    </item>
+    <separator />
     <item label="Wallpaper" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle wallpaper" />
     </item>
     <item label="Wallpaper folders" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle mabox/wallpaper-dirs:dirs" />
     </item>
+    <item label="Look and Feel" icon="gtk-theme-config.svg">
+      <action name="Execute" command="nwg-look" />
+    </item>
+    <separator />
     <item label="Preferred applications" icon="preferences-desktop-default-applications">
       <action name="Execute" command="exo-preferred-applications" />
     </item>
@@ -79,35 +86,46 @@
     <item label="Reset configs" icon="edit-undo">
       <action name="Execute" command="noctalia msg panel-toggle mabox/reset:main" />
     </item>
+    <separator />
+    <item label="Edit autostart" icon="edit">
+      <action name="Execute" command="xdg-open ~/.config/mabox-noctalia-ce/autostart" />
+    </item>
+    <item label="Edit user autostart" icon="edit">
+      <action name="Execute" command="pcmanfm ~/.config/autostart" />
+    </item>
     <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />
     </item>
   </menu>
-  <menu id="tools-menu" label="Tools" icon="applications-utilities">
+  <menu id="tools-menu" label="Tools noctalia ce" icon="applications-utilities">
     <item label="Colors" icon="applications-graphics">
       <action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker" />
     </item>
     <item label="Colors pinned" icon="applications-graphics">
       <action name="Execute" command="mb-pinned colors" />
     </item>
+    <separator />
     <item label="Notes" icon="accessories-text-editor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
     </item>
     <item label="Notes pinned" icon="accessories-text-editor">
       <action name="Execute" command="mb-pinned notes" />
     </item>
+    <separator />
     <item label="Status" icon="utilities-system-monitor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
     </item>
     <item label="Status pinned" icon="utilities-system-monitor">
       <action name="Execute" command="mb-pinned status" />
     </item>
+    <separator />
     <item label="Keys" icon="input-keyboard">
       <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
     </item>
     <item label="System info" icon="computer">
       <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
     </item>
+    <separator />
     <item label="Music" icon="multimedia-audio-player">
       <action name="Execute" command="noctalia msg panel-open launcher /music" />
     </item>
@@ -220,6 +238,7 @@
       </item>
     </menu>
   </menu>
+  <separator />
   <item label="Lock screen" icon="system-lock-screen">
     <action name="Execute" command="noctalia msg session lock" />
   </item>

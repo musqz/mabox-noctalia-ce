@@ -6,3 +6,9 @@
 - Add hotkey lists for PyRadio, Audacious, Tabdock, qutebrowser, Meld, Forum Scout and Clementine.
 - Remove the Focused entry from the Keys side list.
 - Remove the unused jgmenu update menu.
+- Restore the separators in the root menu.
+- Add Look and Feel (nwg-look) to the settings menu.
+- Replace pamac-manager with neoarch for Add/Remove software, moved to the settings menu.
+- Add Edit autostart and Edit user autostart to the settings menu.
+- Add Ctrl+Keypad0 to launch scrcpy.
+- Add Ctrl+Alt+Left and Ctrl+Alt+Right to send a window to the previous or next workspace.
