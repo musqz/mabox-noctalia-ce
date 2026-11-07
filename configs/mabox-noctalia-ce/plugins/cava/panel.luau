@@ -108,6 +108,82 @@ local function windowCard()
   })
 end
 
+local MAX_COLORS = 8
+
+local function gradientColors()
+  local n = math.max(2, math.min(MAX_COLORS, tonumber(cfg.gradient_count) or 3))
+  local out, last = {}, "#59cc33"
+  for i = 1, n do
+    last = color("gradient_color_" .. i) or last
+    out[i] = last
+  end
+  return out
+end
+
+-- cavactl only knows three colors; this writes gradient_count and gradient_color_1..8 straight into the cava config.
+-- One sed call keeps it a single rewrite; clicks wait until the file is read back.
+local writing = false
+local function writeGradient(colors)
+  if writing then
+    return
+  end
+  writing = true
+  armed = false
+  local exprs = {}
+  for i, c in ipairs(colors) do
+    table.insert(exprs, string.format("-e \"s|^[ ;]*gradient_color_%d .*|gradient_color_%d = '%s'|\"", i, i, c))
+  end
+  table.insert(exprs, string.format("-e 's|^[ ;]*gradient_count .*|gradient_count = %d|'", #colors))
+  local cmd = 'sed -i -E --follow-symlinks ' .. table.concat(exprs, " ") .. ' "$HOME/.config/cava/config"; pkill -x -USR1 cava; true'
+  noctalia.runAsync({ "sh", "-c", cmd }, function()
+    writing = false
+    load()
+  end)
+end
+
+local function gradientEditor()
+  local colors = gradientColors()
+  local boxes = {}
+  for i, c in ipairs(colors) do
+    table.insert(boxes, ui.box({ key = "gc-" .. i, fill = c, radius = 6, width = 44, height = 32, border = "on_surface_variant", borderWidth = 1, tooltip = i .. "  " .. c, onClick = function()
+      noctalia.openColorPicker(c, function(picked)
+        if picked ~= nil and string.match(picked, "^#%x%x%x%x%x%x$") then
+          local new = { table.unpack(colors) }
+          new[i] = string.lower(picked)
+          writeGradient(new)
+        end
+      end)
+    end }))
+  end
+  local rows = { ui.label({ text = "Click a color to change it. " .. #colors .. " of " .. MAX_COLORS .. " colors, bottom to top.", fontSize = 12 }) }
+  for i = 1, #boxes, 4 do
+    table.insert(rows, ui.row({ key = "gr-" .. i, gap = 6, align = "center" }, { table.unpack(boxes, i, math.min(i + 3, #boxes)) }))
+  end
+  local btns = {}
+  if #colors < MAX_COLORS then
+    table.insert(btns, ui.button({ key = "g-add", text = "+ Add", variant = "outline", controlSize = "sm", onClick = function()
+      local new = { table.unpack(colors) }
+      table.insert(new, colors[#colors])
+      writeGradient(new)
+    end }))
+  end
+  if #colors > 2 then
+    table.insert(btns, ui.button({ key = "g-del", text = "- Remove", variant = "outline", controlSize = "sm", onClick = function()
+      local new = { table.unpack(colors, 1, #colors - 1) }
+      writeGradient(new)
+    end }))
+  end
+  table.insert(btns, ui.button({ key = "g-rev", text = "Reverse", variant = "outline", controlSize = "sm", onClick = function()
+    local new = {}
+    for i = #colors, 1, -1 do
+      table.insert(new, colors[i])
+    end
+    writeGradient(new)
+  end }))
+  table.insert(rows, ui.row({ key = "g-btns", gap = 6, align = "center" }, btns))
+  return ui.column({ key = "gradient-editor", gap = 8 }, rows)
+end
+
 local function colorCard()
   local gradient = cfg.gradient == "1"
   local function mode(name, on, value)
@@ -120,13 +196,7 @@ local function colorCard()
     ui.row({ gap = 6, align = "center" }, { mode("Solid", not gradient, "solid"), mode("Gradient", gradient, "gradient") }),
   }
   if gradient then
-    table.insert(rows, swatch("From", "gradient_color_1", "grad_from"))
-    table.insert(rows, swatch("To", "gradient_color_3", "grad_to"))
-    if color("gradient_color_1") and color("gradient_color_3") then
-      table.insert(rows, ui.button({ key = "reverse", text = "Reverse gradient", variant = "outline", controlSize = "sm", onClick = function()
-        ctl("gradient", color("gradient_color_3"), color("gradient_color_1"))
-      end }))
-    end
+    table.insert(rows, gradientEditor())
   else
     table.insert(rows, swatch("Bar color", "foreground", "foreground"))
   end
