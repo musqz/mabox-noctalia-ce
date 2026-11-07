@@ -40,6 +40,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = fittsmon: provides fittsmon-wl (github.com/musqz/fittsmon)
 	optdepends = fittsmon-wl-gui: fittsmon-wl config GUI (github.com/musqz/fittsmon-wl-gui)
 	optdepends = skippy-wl: window switcher keybinds (github.com/musqz/skippy-wl)
+	optdepends = neoarch: Add/Remove software in the root menu
 	optdepends = jumpapp-ng: app launch/focus keybinds (AUR)
 	optdepends = wl-screenrec: screen recording keybind (AUR)
 	optdepends = ffmpeg: converter menu

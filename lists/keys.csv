@@ -73,6 +73,8 @@ W-grave,Workspaces,0,Find a window (tabdock)
 C-W-A-Return,Workspaces,0,Find a window (tabdock)
 C-W-A-Right,Workspaces,0,Tabdock: next workspace
 C-W-A-Left,Workspaces,0,Tabdock: previous workspace
+C-A-Right,Workspaces,0,Send window to the next workspace
+C-A-Left,Workspaces,0,Send window to the previous workspace
 C-W-A-Down,Workspaces,0,Tabdock: next window
 C-W-A-Up,Workspaces,0,Tabdock: previous window
 C-W-A-z,Workspaces,0,Tabdock: show all windows
@@ -96,6 +98,7 @@ C-KP_5,Jump,0,Stremio: focus or start
 C-KP_6,Jump,0,Firefox: focus or start
 C-KP_8,Jump,0,Firedragon: focus or start
 C-KP_9,Jump,0,Floorp: focus or start
+C-KP_0,Jump,0,scrcpy: focus or start
 W-A-C-7,Helpers,0,Move window to HDMI-A-1 (used by scripts)
 W-A-C-9,Helpers,0,Move window to DP-1 (used by scripts)
 W-A-C-8,Helpers,0,Unsnap window (used by scripts)
