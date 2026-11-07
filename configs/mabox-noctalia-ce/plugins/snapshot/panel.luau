@@ -40,6 +40,8 @@ local function loadEncrypt()
   return path ~= nil and string.match(noctalia.readFile(path) or "", "^on") ~= nil
 end
 local hasUsb = false
+local usb = false
+local isos = {}
 local probed = false
 
 local function q(v)
@@ -115,7 +117,7 @@ end
 
 local runExplain
 local function probe()
-  noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-preserving-usb >/dev/null && echo usb=1; echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
+  noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-persistence-usb >/dev/null && echo usb=1; echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
     local out = result.stdout or ""
     version = string.match(out, "mabox%-snapshot (%d+%.%d+%.%d+)")
     cfg = { folders = {} }
@@ -267,6 +269,54 @@ local function save()
   end)
 end
 
+local loadingIsos = false
+
+-- Skips files touched in the last 2 minutes: a build that is still writing its ISO.
+local function loadIsos()
+  isos = {}
+  if not outdir then
+    return
+  end
+  loadingIsos = true
+  noctalia.runAsync({ "sh", "-c", 'find "$1" -maxdepth 1 -name "*.iso" -mmin +2 -printf "%T@ %s %p\\n" | sort -rn | head -n 8', "sh", outdir }, function(result)
+    loadingIsos = false
+    for mtime, size, path in string.gmatch((result.stdout or "") .. "\n", "(%d+)%.?%d* (%d+) ([^\n]+)\n") do
+      table.insert(isos, { size = tonumber(size), mtime = tonumber(mtime), path = path })
+    end
+    render()
+  end)
+end
+
+-- The tool asks for the stick and a typed confirmation itself; setsid keeps the terminal alive when the panel closes.
+local function writeIso(path)
+  noctalia.runAsync({ "setsid", "-f", "foot", "-T", "Mabox USB", "sh", "-c", 'sudo mabox-persistence-usb write "$1"; printf "Press Enter to close. "; read _', "sh", path })
+  panel.close()
+end
+
+local function usbView()
+  local rows = {
+    ui.label({ text = "Newest ISOs" .. (outdir and (" in " .. outdir) or "") .. ". The stick gets a persistence partition and is erased. More options: mabox-persistence-usb write --help in a terminal.", fontSize = 11, color = "on_surface_variant" }),
+  }
+  for i, iso in ipairs(isos) do
+    local name = string.match(iso.path, "([^/]+)$")
+    table.insert(rows, ui.row(card("iso-" .. i), {
+      ui.column({ gap = 2, flexGrow = 1 }, {
+        ui.label({ text = name, fontSize = 12, fontWeight = "bold" }),
+        ui.label({ text = os.date("%Y-%m-%d %H:%M", iso.mtime) .. "  " .. string.format("%.1f GiB", iso.size / 1073741824), fontSize = 11, color = "on_surface_variant" }),
+      }),
+      ui.button({ text = "Write", variant = "outline", controlSize = "sm", tooltip = "Write this ISO to a USB stick", onClick = function() writeIso(iso.path) end }),
+    }))
+  end
+  if loadingIsos then
+    table.insert(rows, ui.label({ text = "Reading ISOs...", color = "on_surface_variant" }))
+  elseif not outdir then
+    table.insert(rows, ui.label({ text = "No ISO folder set. Open the settings (gear) and set the ISO folder.", color = "primary" }))
+  elseif #isos == 0 then
+    table.insert(rows, ui.label({ text = "No finished ISO found.", color = "on_surface_variant" }))
+  end
+  return ui.column({ gap = 10 }, rows)
+end
+
 local function settingsView()
   local function field(label, key)
     return ui.column({ key = "f-" .. key, gap = 2 }, {
@@ -345,6 +395,20 @@ local function profileCard(p)
 end
 
 render = function()
+  if usb and not explain and not settings then
+    panel.render(ui.column({ key = "root-usb", gap = 8, padding = 12 }, {
+      ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = "Write an ISO to USB", flexGrow = 1 }),
+        ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function()
+          usb = false
+          render()
+        end }),
+        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
+      }),
+      usbView(),
+    }))
+    return
+  end
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = explain and ("Explain: " .. explain.name) or (settings and "Mabox snapshot settings" or "Mabox snapshot"), flexGrow = 1 }),
     explain and ui.label({ text = "" }) or ui.button({ glyph = settings and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settings and "Back" or "Settings", onClick = function()
@@ -383,10 +447,11 @@ render = function()
       if hasUsb then
         table.insert(rows, ui.column(card("usb-card"), {
           ui.label({ text = "USB stick", fontWeight = "bold", fontSize = 14 }),
-          ui.label({ text = "Writes an ISO to a USB stick with a persistence partition (mabox-persistence-usb). The stick is erased. More options: run mabox-persistence-usb write --help in a terminal.", fontSize = 11, color = "on_surface_variant" }),
-          ui.button({ key = "usb", text = "Write an ISO to USB", variant = "outline", controlSize = "sm", tooltip = "Pick one of the last 8 ISOs and a USB stick (mabox-preserving-usb)", onClick = function()
-            noctalia.runAsync({ "setsid", "-f", "foot", "-T", "Mabox preserving USB", "sh", "-c", "mabox-preserving-usb; printf 'Press Enter to close. '; read _" })
-            panel.close()
+          ui.label({ text = "Write one of the newest ISOs to a USB stick with a persistence partition (mabox-persistence-usb). The stick is erased.", fontSize = 11, color = "on_surface_variant" }),
+          ui.button({ key = "usb", text = "Choose an ISO...", variant = "outline", controlSize = "sm", onClick = function()
+            usb = true
+            loadIsos()
+            render()
           end }),
         }))
       end
@@ -400,7 +465,7 @@ end
 
 function onOpen()
   encrypt = loadEncrypt()
-  armed, explain, busy, settings, saved, note = nil, nil, false, false, nil, nil
+  armed, explain, busy, settings, saved, note, usb = nil, nil, false, false, nil, nil, false
   render()
   probe()
 end
