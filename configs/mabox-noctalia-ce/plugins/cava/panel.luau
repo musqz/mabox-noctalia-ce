@@ -326,13 +326,17 @@ local function configRow()
   })
 end
 
--- Still spectrum for the header: the bars use the width, spacing and colors of the cava settings, whether or not cava runs.
+-- Still spectrum for the header: bar width, spacing and colors follow the cava settings, whether or not cava runs.
 local SPECTRUM_HEIGHT = 60
--- Panel width in plugin.toml (780) minus the 12 px padding on both sides.
-local SPECTRUM_WIDTH = 756
--- Each of the two columns: (SPECTRUM_WIDTH - 10 px gap) / 2.
-local COLUMN_WIDTH = 373
+-- Usable width: plugin.toml width (780) minus the panel's own padding and ours (about 26 px on each side).
+local SPECTRUM_WIDTH = 728
+-- Each of the two columns, with a 10 px gap between them.
+local COLUMN_WIDTH = (SPECTRUM_WIDTH - 10) // 2
 local SPECTRUM_UNIT = 3
+-- Noctalia limits a callback to 25 ms of CPU, so the header has a bar limit and a few colored boxes per bar.
+-- Beyond MAX_BARS the bars are drawn wider than the settings say, to keep the full width.
+local MAX_BARS = 72
+local SPECTRUM_BANDS = 4
 
 local function hexToRgb(hex)
   return tonumber(string.sub(hex, 2, 3), 16), tonumber(string.sub(hex, 4, 5), 16), tonumber(string.sub(hex, 6, 7), 16)
@@ -383,31 +387,40 @@ end
 local headerKey, headerNode = nil, nil
 
 local function spectrumHeader()
-  local bw = math.max(1, tonumber(cfg.bar_width) or 2) * SPECTRUM_UNIT
-  local bs = math.max(0, tonumber(cfg.bar_spacing) or 2) * SPECTRUM_UNIT
-  local count = math.max(1, math.min(160, math.floor((SPECTRUM_WIDTH + bs) / (bw + bs))))
+  local bw = math.max(1, tonumber(cfg.bar_width) or 2)
+  local bs = math.max(0, tonumber(cfg.bar_spacing) or 2)
   local stops = spectrumStops()
   local key = bw .. "|" .. bs .. "|" .. table.concat(stops, ",")
   if key == headerKey then
     return headerNode
   end
-  local bands = #stops == 1 and 1 or 6
+  local ideal = math.max(1, math.floor((SPECTRUM_WIDTH + bs * SPECTRUM_UNIT) / ((bw + bs) * SPECTRUM_UNIT)))
+  local count = math.min(MAX_BARS, ideal)
+  -- Too many bars to draw: make them wider so the header still fills the width.
+  local unit = SPECTRUM_UNIT * ideal / count
+  local barPx = math.max(1, math.floor(bw * unit))
+  local gapPx = math.floor(bs * unit)
+  local bands = #stops == 1 and 1 or SPECTRUM_BANDS
   local bandHeight = SPECTRUM_HEIGHT // bands
+  local bandColors = {}
+  for j = 1, bands do
+    bandColors[j] = stopAt(stops, bands == 1 and 0 or (j - 1) / (bands - 1))
+  end
   local bars = {}
   for i = 1, count do
     local px = math.floor(spectrumHeight(i, count) * SPECTRUM_HEIGHT + 0.5)
+    -- Top band first: the column is laid out from the top and pushed to the bottom.
     local segs = {}
     for j = bands, 1, -1 do
       local h = math.max(0, math.min(bandHeight, px - (j - 1) * bandHeight))
       if h >= 1 then
-        local fill = stopAt(stops, bands == 1 and 0 or (j - 1) / (bands - 1))
-        table.insert(segs, ui.box({ key = "s-" .. i .. "-" .. j, fill = fill, width = bw, height = h }))
+        table.insert(segs, ui.box({ key = "s-" .. i .. "-" .. j, fill = bandColors[j], width = barPx, height = h }))
       end
     end
-    table.insert(bars, ui.column({ key = "b-" .. i, gap = 0, justify = "end", height = SPECTRUM_HEIGHT, width = bw }, segs))
+    table.insert(bars, ui.column({ key = "b-" .. i, gap = 0, justify = "end", height = SPECTRUM_HEIGHT }, segs))
   end
   headerKey = key
-  headerNode = ui.row({ key = "spectrum", gap = bs, align = "end", justify = "center", height = SPECTRUM_HEIGHT }, bars)
+  headerNode = ui.row({ key = "spectrum", gap = gapPx, align = "end", justify = "center", height = SPECTRUM_HEIGHT }, bars)
   return headerNode
 end
 
