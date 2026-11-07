@@ -236,6 +236,7 @@ end
 local function setEncrypt(on)
   encrypt = on
   armed = nil
+  note = nil
   local path = encPath()
   if path then
     noctalia.mkdirAll(noctalia.pluginDataDir())
@@ -327,12 +328,6 @@ local function settingsView()
   return ui.column(card("settings"), {
     field("Work folder (scratch space, needs about the size of the system)", "workdir"),
     field("ISO folder (where the finished .iso is written)", "output_dir"),
-    ui.column({ key = "f-encrypt", gap = 2 }, {
-      ui.label({ text = "Encrypt personal snapshots with a passphrase (LUKS2, asked in the terminal). Applies at once, no Save needed.", fontSize = 11, color = "on_surface_variant" }),
-      ui.button({ key = "set-encrypt", text = encrypt and "✓ Encrypted (LUKS2)" or "Encrypted (LUKS2): off", variant = encrypt and "outline" or "ghost", controlSize = "sm", onClick = function()
-        setEncrypt(not encrypt)
-      end }),
-    }),
     ui.row({ gap = 6, align = "center" }, {
       ui.button({ text = "Save", variant = "primary", controlSize = "sm", onClick = save }),
       ui.label({ text = saved or "", fontSize = 11, color = "on_surface_variant" }),
