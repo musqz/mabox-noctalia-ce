@@ -54,6 +54,15 @@ post_hook = "mb-cava-theme"
 TOML
 }
 
+# Window rules for the cava layer (always on top, always below); an existing file with them is left alone.
+migrate_5() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && ! grep -q cavatransparent-top "$f" || return 0
+    grep -q "</windowRules>" "$f" && grep -q 'identifier="cava-transparent"' "$f" || return 0
+    sed -i 's#</windowRules>#    <windowRule title="cavatransparent-top">\n      <action name="ToggleAlwaysOnTop"/>\n    </windowRule>\n    <windowRule title="cavatransparent-below">\n      <action name="ToggleAlwaysOnBottom"/>\n    </windowRule>\n  </windowRules>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

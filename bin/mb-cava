@@ -3,6 +3,8 @@
 # mb-cava toggle: close the window when it is open, start it otherwise.
 # Key: jumpapp -m -c cava-transparent mb-cava (minimizes when focused)
 # MB_CAVA_OUTPUT: part of the output make/model (default: first output); MB_CAVA_HEIGHT: pixels (default 200).
+# Layer: normal, top or below, from the state file written by the Cava panel. The window title
+# (cavatransparent, -top, -below) selects the window rule in rc.xml that sets the layer.
 set -euo pipefail
 
 die() { notify-send -a cava -u critical "cava" "$1"; echo "mb-cava: $1" >&2; exit 1; }
@@ -14,6 +16,12 @@ fi
 command -v cava >/dev/null || die "cava is not installed (pacman -S cava)"
 
 height=${MB_CAVA_HEIGHT:-200}
+layer=$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/cava-layer" 2>/dev/null || echo normal)
+case $layer in
+    top) title=cavatransparent-top ;;
+    below) title=cavatransparent-below ;;
+    *) title=cavatransparent ;;
+esac
 match=${MB_CAVA_OUTPUT:-}
 
 # A rotated output has width and height swapped.
@@ -25,5 +33,5 @@ width=$(wlr-randr --json | jq -r --arg m "$match" '
     | ($w / .scale * 0.6 | floor)') || true
 [[ $width =~ ^[0-9]+$ ]] || die "no enabled output found"
 
-setsid -f foot -a cava-transparent -T cavatransparent --window-size-pixels="${width}x${height}" \
+setsid -f foot -a cava-transparent -T "$title" --window-size-pixels="${width}x${height}" \
     -o colors-dark.alpha=0.0 -o colors-light.alpha=0.0 -o pad=0x0 -o font=monospace:size=2 -o csd.preferred=none cava

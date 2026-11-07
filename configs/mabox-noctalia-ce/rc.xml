@@ -246,6 +246,12 @@
       <action name="AutoPlace" policy="center"/>
       <action name="MoveToEdge" direction="down" snapWindows="no"/>
     </windowRule>
+    <windowRule title="cavatransparent-top">
+      <action name="ToggleAlwaysOnTop"/>
+    </windowRule>
+    <windowRule title="cavatransparent-below">
+      <action name="ToggleAlwaysOnBottom"/>
+    </windowRule>
     <windowRule identifier="pyradio">
       <action name="ResizeTo" width="900" height="500"/>
       <action name="MoveTo" x="150" y="50"/>
