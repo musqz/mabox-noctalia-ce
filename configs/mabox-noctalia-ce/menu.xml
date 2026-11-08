@@ -60,7 +60,7 @@
       <action name="Execute" command="noctalia msg panel-toggle control-center" />
     </item>
     <item label="Add/Remove software" icon="system-software-install">
-      <action name="Execute" command="neoarch" />
+      <action name="Execute" command="pamac-manager" />
     </item>
     <item label="Snapshot" icon="media-optical">
       <action name="Execute" command="noctalia msg panel-toggle mabox/snapshot:main" />
