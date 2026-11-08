@@ -276,6 +276,10 @@ read -r _
   end
 
   -- Via a file: a whole report is bigger than one argv entry may be (128 KB).
+  local function openSaveDir()
+    noctalia.runAsync({ "sh", "-c", 'd=${1:-$(xdg-user-dir DOCUMENTS)}; case $d in "~"*) d=$HOME${d#"~"} ;; esac; exec xdg-open "$d"', "sh", saveDir })
+  end
+
   local function copy(text, what, sensitive)
     local dir = noctalia.pluginDataDir()
     if not dir then
@@ -349,6 +353,7 @@ read -r _
           table.insert(items, ui.button({ text = "Save", glyph = "device-floppy", variant = "ghost", controlSize = "sm", onClick = save }))
         end
       end
+      table.insert(items, ui.button({ glyph = "folder-open", variant = "ghost", controlSize = "sm", tooltip = "Open the save folder", onClick = openSaveDir }))
     elseif tab == "hardware" then
       table.insert(items, ui.button({ text = "btop", glyph = "terminal-2", variant = "ghost", controlSize = "sm", onClick = function() terminal("btop") end }))
       table.insert(items, ui.button({ text = "fastfetch", glyph = "terminal-2", variant = "ghost", controlSize = "sm", onClick = function() terminal("sh", "-c", "fastfetch; read -r _") end }))
@@ -372,6 +377,7 @@ read -r _
             saveSettings()
           end,
         }),
+        ui.button({ glyph = "folder-open", variant = "outline", controlSize = "sm", tooltip = "Open this folder", onClick = openSaveDir }),
         ui.button({ text = "Browse", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function()
           local dir = noctalia.pluginDataDir()
           if dir then
