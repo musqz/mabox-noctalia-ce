@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add Save as text and Open text folder to the Colors panel, and a Settings tab for the text folder (default `~/.config/mabox-noctalia-ce/color-palettes`).
+- Remove Edit palettes and Save as palette from the Colors panel.
+- Fix the pinned Colors window not scrolling a long palette.
+- Add W-c for the Colors panel and C-W-c for the pinned Colors window; mb-migrate adds them to an existing rc.xml.
 - Open a plugin in the Configs panel for a Reload button and copyable start, stop and reload commands.
 - Add a Widgets section to the Configs panel for desktop widgets; stopped and failed plugins show "(stopped)".
 - Widen the Configs panel to 540 px.
