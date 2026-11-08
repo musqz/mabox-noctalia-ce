@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Change W-A-c from the color picker to the pinned Configs window.
 - Use the Noctalia CE wallpaper as the default wallpaper on a first login.
 - Add mb-iso-next and a VM button in the Snapshot panel: after a build, write the ISO to USB or start it in a VM with quickbox-qt 1.4 or newer.
 - Fix install.sh installing an old build: it now builds the working tree in a temp folder.

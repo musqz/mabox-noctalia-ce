@@ -31,7 +31,7 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `W-S-r` | record region / stop |
 | `C-S-a` | screenshot |
 | `C-Insert` | open last screenshot |
-| `W-A-c` | color picker |
+| `W-A-c` | pinned configs window |
 | `W-n` | notes |
 | `W-A-n` | pinned notes window |
 | `W-A-s` | status |
