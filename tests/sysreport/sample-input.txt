@@ -9,3 +9,6 @@ monitor "Philips PHL 275E1 0x0000E286 (HDMI-A-2)"
 ssid: HomeNet-5G
 token Zm9vYmFyQmF6MTIzNDU2Nzg5MGFiY0RlZkdoSWpLbE1u
 keep X.org v: 1.21.1.24 v: 1.2.3.4 time 12:34:56 pkg 2.40.1.1-1
+
+unit polkit-agent-helper@0-12294-1082287.service ok
+[31mcolor[0m ansi

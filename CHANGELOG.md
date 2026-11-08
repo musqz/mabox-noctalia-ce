@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a save location to the System panel Settings.
+- Remove the Upload button and the upload address from the System panel.
+- Add a Public/Private switch to the System panel and a list of words to hide in its Settings; Private keeps everything.
+- Cut the Logs tab to 120 lines per section so it scrolls.
+- Let the System panel Report tab pick its parts: Overview, Hardware, each log and topics (audio, graphics, network, Bluetooth, disks, boot, packages, power, desktop). Add previous boot, kernel, failed services and crashes to its Logs tab.
+- Add a Fixes tab to the System panel: 15 common fixes, each with a read-only check and a run-in-terminal button.
 - Add a Reverse frequencies switch to the Cava panel.
 - Change W-A-c from the color picker to the pinned Configs window.
 - Use the Noctalia CE wallpaper as the default wallpaper on a first login.
