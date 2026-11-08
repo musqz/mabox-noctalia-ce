@@ -275,7 +275,11 @@ local function saveDir()
   if dir == "" then
     return DEFAULT_SAVE_DIR
   end
-  return (string.gsub(dir, "^~", HOME))
+  dir = string.gsub(dir, "^~", function() return HOME end)
+  if string.sub(dir, 1, 1) ~= "/" then
+    dir = HOME .. "/" .. dir
+  end
+  return dir
 end
 
 -- Writes the shown palette as NAME.txt, one #hex per line, in the save folder.
