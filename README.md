@@ -2,11 +2,23 @@
 
 Noctalia session on labwc for Mabox Linux. Pick **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and packages.
 
-Work in progress. Take what you like, or install it as is.
+Work in progress: features, keys and docs change. Expect bugs. Take what you like, or install it as is.
 
 ## Install
 
 Needs Mabox Linux and `noctalia` 5.4 or newer (repo `[maboxlinux]`).
+
+From the Mabox repo (no git needed):
+
+```sh
+sudo pacman -S mabox-noctalia-ce
+```
+
+- The repo build lags behind: Daniel builds it by hand and cannot update often.
+- Git is always the latest. While the project changes this fast, use git for new features and fixes.
+- Ask Daniel for a newer repo build if you need one.
+
+From git:
 
 ```sh
 git clone https://github.com/musqz/mabox-noctalia-ce
@@ -22,6 +34,10 @@ cd mabox-noctalia-ce
 
 ## Update
 
+Repo install: `sudo pacman -Syu`.
+
+Git install:
+
 ```sh
 cd mabox-noctalia-ce
 git pull
@@ -33,6 +49,10 @@ git pull
 - Log out and back in after changes to `environment` or the plugins.
 
 ## Remove
+
+Repo install: `sudo pacman -Rns mabox-noctalia-ce`.
+
+Git install:
 
 ```sh
 ./install.sh --uninstall
