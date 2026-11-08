@@ -14,7 +14,7 @@ local DIRS = {
   ["Built-in"] = "/usr/share/colormenu/palettes",
   Wallpaper = HOME .. "/.config/colormenu/palettes/wallp",
 }
-local PROFILES = { "Recent", "My palettes", "Built-in", "Wallpaper" }
+local PROFILES = { "Recent", "My palettes", "Built-in", "Wallpaper", "Settings" }
 local FORMATS = { "hex", "rgb", "rgba" }
 local COLUMNS = pinned and 3 or 6
 local MAX_RECENT = 50
@@ -45,8 +45,8 @@ local ACTIONS = { "copy", "paste" }
 local actionIndex = 1
 local newName = ""
 local nameNonce = 0
-local editMode = false
-local targetIndex = 1
+local DEFAULT_SAVE_DIR = HOME .. "/.config/mabox-noctalia-ce/color-palettes"
+local saveDirText = ""
 
 local function dataPath(name)
   local dir = noctalia.pluginDataDir()
@@ -270,6 +270,34 @@ local function deletePalette()
   end
 end
 
+local function saveDir()
+  local dir = noctalia.string.trim(saveDirText)
+  if dir == "" then
+    return DEFAULT_SAVE_DIR
+  end
+  return (string.gsub(dir, "^~", HOME))
+end
+
+-- Writes the shown palette as NAME.txt, one #hex per line, in the save folder.
+local function saveList()
+  local colors = currentColors()
+  if #colors == 0 then
+    noctalia.notify("Colors", "No colors to save")
+    return
+  end
+  local name = profile == "Recent" and "recent" or cleanName(files[fileIndex] or "palette")
+  local dir = saveDir()
+  noctalia.mkdirAll(dir)
+  noctalia.writeFile(dir .. "/" .. name .. ".txt", table.concat(colors, "\n") .. "\n")
+  noctalia.notify("Saved " .. #colors .. " colors", dir .. "/" .. name .. ".txt")
+end
+
+local function openSaveDir()
+  local dir = saveDir()
+  noctalia.mkdirAll(dir)
+  noctalia.runAsync({ "setsid", "-f", "xdg-open", dir })
+end
+
 -- A pick also lands in the selected custom palette.
 local function addColor(hex)
   addRecent(hex)
@@ -314,35 +342,6 @@ local function clearRecent()
   render()
 end
 
--- Edit mode: a swatch click removes it from the open custom palette, or adds it to the "Add to" palette.
-local function editSwatch(hex, position)
-  if profile == "My palettes" then
-    local name = files[fileIndex]
-    if name then
-      local colors = parseClr(MY .. "/" .. name)
-      table.remove(colors, position)
-      writeClr(MY .. "/" .. name, colors)
-      kbd.clear()
-      render()
-    end
-    return
-  end
-  local target = listFiles(MY)[targetIndex]
-  if not target then
-    noctalia.notify("Colors", "Create a palette first (My palettes)")
-    return
-  end
-  local colors = parseClr(MY .. "/" .. target)
-  for _, c in ipairs(colors) do
-    if c == hex then
-      return
-    end
-  end
-  table.insert(colors, hex)
-  writeClr(MY .. "/" .. target, colors)
-  noctalia.notify("Added " .. hex, cleanName(target))
-end
-
 local function grid(colors)
   local rows = {}
   local i = 1
@@ -353,15 +352,11 @@ local function grid(colors)
       local position = i + c
       if hex then
         local function pick()
-          if editMode then
-            editSwatch(hex, position)
-          else
-            copy(hex)
-          end
+          copy(hex)
         end
         stop(`c{position}`, rightRow + (i - 1) // COLUMNS, 2 + c, pick)
         table.insert(cells, ui.column({ gap = 2, flexGrow = 1, key = `c{position}`, padding = 3, radius = 8, border = "on_surface", borderWidth = kbd.sel(`c{position}`) and 3 or 0 }, {
-          ui.box({ fill = hex, radius = 6, height = 44, tooltip = editMode and (profile == "My palettes" and "Remove" or "Add to palette") or format(hex), onClick = pick }),
+          ui.box({ fill = hex, radius = 6, height = 44, tooltip = format(hex), onClick = pick }),
           ui.label({ text = hex, fontSize = 11, color = "on_surface_variant", textAlign = "center" }),
         }))
       else
@@ -386,6 +381,7 @@ local function sideButton(id, props)
   props.key = id
   props.variant = props.variant or "ghost"
   props.contentAlign = "start"
+  props.controlSize = "sm"
   return ring(id, ui.button(props))
 end
 
@@ -422,20 +418,11 @@ render = function()
       onChange = function(text) newName = text end,
     }))
   end
-  do
-    table.insert(profileButtons, ui.separator({ spacing = 4 }))
-    table.insert(profileButtons, sideButton("edit", {
-      text = "Edit palettes",
-      glyph = "edit",
-      variant = editMode and "primary" or "ghost",
-      onClick = function()
-        editMode = not editMode
-        render()
-      end,
-    }))
+  if profile ~= "Settings" then
+    table.insert(profileButtons, sideButton("list", { text = "Save as text", glyph = "file-text", onClick = saveList }))
   end
+  table.insert(profileButtons, sideButton("folder", { text = "Open text folder", glyph = "folder-open", onClick = openSaveDir }))
   if profile == "Recent" then
-    table.insert(profileButtons, sideButton("save", { text = "Save as palette", glyph = "device-floppy", onClick = function() createPalette(parseClr(RECENT)) end }))
     table.insert(profileButtons, sideButton("clear", { text = "Clear recent", glyph = "trash", onClick = clearRecent }))
   elseif profile == "My palettes" then
     table.insert(profileButtons, sideButton("new", { text = "New palette", glyph = "plus", onClick = function() createPalette({}) end }))
@@ -444,7 +431,20 @@ render = function()
   end
 
   local right = {}
-  if profile ~= "Recent" then
+  if profile == "Settings" then
+    table.insert(right, ui.label({ text = "Save text files in", fontSize = 12, color = "on_surface_variant" }))
+    if pinned then
+      table.insert(right, ui.label({ text = saveDir(), fontSize = 12 }))
+      table.insert(right, ui.label({ text = "Change the folder in the panel.", fontSize = 11, color = "on_surface_variant" }))
+    else
+      table.insert(right, ui.input({ key = "savedir", value = saveDirText, placeholder = DEFAULT_SAVE_DIR, onChange = function(text)
+        saveDirText = text
+        saveChoice("savedir", text)
+      end }))
+      table.insert(right, ui.label({ text = "Save as text writes NAME.txt with one color code per line.", fontSize = 11, color = "on_surface_variant" }))
+    end
+  end
+  if profile ~= "Recent" and profile ~= "Settings" then
     local names = {}
     for _, f in ipairs(files) do
       table.insert(names, cleanName(f))
@@ -458,20 +458,11 @@ render = function()
     end, rightRow, 2))
     rightRow += 1
   end
-  if editMode and profile ~= "My palettes" then
-    local mine = {}
-    for _, f in ipairs(listFiles(MY)) do
-      table.insert(mine, cleanName(f))
-    end
-    table.insert(right, chooser("target", mine, targetIndex, nil, function(i)
-      targetIndex = i
-      render()
-    end, rightRow, 2))
-    rightRow += 1
-  end
   -- Build the grid first: it registers the swatch stops that reveal() looks up.
-  local swatches = grid(currentColors())
-  table.insert(right, ui.scroll({ gap = 8, flexGrow = 1, key = "grid" .. profile .. fileIndex, revealKey = string.match(kbd.reveal() or "", "^c%d+$") }, swatches))
+  if profile ~= "Settings" then
+    local swatches = grid(currentColors())
+    table.insert(right, ui.scroll({ gap = 8, flexGrow = 1, key = "grid" .. profile .. fileIndex, revealKey = string.match(kbd.reveal() or "", "^c%d+$") }, swatches))
+  end
 
   if pinned then
     local profileIndex = 1
@@ -488,20 +479,12 @@ render = function()
       stop(id, toolsRow, toolCol, props.onClick)
       return ring(id, ui.button(props))
     end
-    local tools = {
-      tool("edit", {
-        glyph = "edit",
-        text = "Edit",
-        variant = editMode and "primary" or "ghost",
-        controlSize = "sm",
-        onClick = function()
-          editMode = not editMode
-          render()
-        end,
-      }),
-    }
+    local tools = {}
+    table.insert(tools, tool("folder", { glyph = "folder-open", text = "Folder", tooltip = "Open the text folder", variant = "ghost", controlSize = "sm", onClick = openSaveDir }))
+    if profile ~= "Settings" then
+      table.insert(tools, tool("list", { glyph = "file-text", text = "Text", tooltip = "Save the colors as a text file", variant = "ghost", controlSize = "sm", onClick = saveList }))
+    end
     if profile == "Recent" then
-      table.insert(tools, tool("save", { glyph = "device-floppy", text = "Save", tooltip = "Save recent as palette", variant = "ghost", controlSize = "sm", onClick = function() createPalette(parseClr(RECENT)) end }))
       table.insert(tools, tool("clear", { glyph = "trash", text = "Clear", tooltip = "Clear recent", variant = "ghost", controlSize = "sm", onClick = clearRecent }))
     elseif profile == "My palettes" then
       table.insert(tools, tool("new", { glyph = "plus", text = "New", tooltip = "New palette", variant = "ghost", controlSize = "sm", onClick = function() createPalette({}) end }))
@@ -533,11 +516,11 @@ render = function()
       table.insert(body, node)
     end
     table.insert(body, ui.row({ gap = 4 }, tools))
-    pinSide.render(pinned, ui.column({ gap = 8, padding = 10 }, body))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, body))
     return
   end
 
-  panel.render(ui.column({ gap = 10, padding = 12, height = 520 }, {
+  panel.render(ui.column({ gap = 10, padding = 12, height = 560 }, {
     ui.row({ gap = 8, align = "center" }, {
       ring("pick", ui.button({ text = "Pick from screen", glyph = "color-picker", variant = "primary", onClick = pickFromScreen })),
       ring("select", ui.button({ text = "Add from selector", glyph = "palette", onClick = addFromSelector })),
@@ -580,7 +563,8 @@ local function handleKey(chord)
 end
 
 local function start()
-  editMode = false
+  local savedPath = dataPath("savedir")
+  saveDirText = savedPath and noctalia.string.trim(noctalia.readFile(savedPath) or "") or ""
   formatIndex = loadChoice("format", FORMATS, formatIndex)
   actionIndex = loadChoice("action", ACTIONS, actionIndex)
   setProfile(profile)

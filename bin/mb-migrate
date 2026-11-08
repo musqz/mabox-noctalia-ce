@@ -87,6 +87,15 @@ migrate_8() {
     sed -i '/tertiary/i {{ colors.secondary.default.hex }}' "$f"
 }
 
+# W-c opens the Colors panel, C-W-c the pinned Colors window; a key the user already bound stays as it is.
+migrate_9() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="W-c"' "$f" || sed -i 's#</keyboard>#    <keybind key="W-c"><action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker"/></keybind>\n  </keyboard>#' "$f"
+    grep -q 'key="C-W-c"' "$f" || sed -i 's#</keyboard>#    <keybind key="C-W-c"><action name="Execute" command="mb-pinned colors"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

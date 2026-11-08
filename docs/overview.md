@@ -113,7 +113,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/configs` | `main` dropdown, pinned window | `W-A-c` (pinned window), Mabox Config menu | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
 | `mabox/reset` | `main` dropdown | none (Mabox Config menu) | `mb-reset-wl` |
 | `mabox/capture` | `main` dropdown, pinned window | `noctalia msg panel-toggle mabox/capture:main` | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
-| `mabox/colors` | `picker` dropdown, pinned window | none (root menu: Colors) | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
+| `mabox/colors` | `picker` dropdown, pinned window | `W-c` (panel), `C-W-c` (pinned window), root menu: Colors | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
 | `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` (`noctalia msg panel-toggle mabox/keys:keys`) | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/`; `wlrctl` to open on the focused application |
 | `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
