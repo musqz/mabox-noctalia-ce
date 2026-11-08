@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a button to open the save folder in the System panel Report tab and Settings.
 - Add a save location to the System panel Settings.
 - Remove the Upload button and the upload address from the System panel.
 - Add a Public/Private switch to the System panel and a list of words to hide in its Settings; Private keeps everything.

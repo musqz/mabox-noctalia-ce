@@ -275,6 +275,22 @@ read -r _
     return entry and not entry.loading and entry.text or nil
   end
 
+  -- Same default as mb-sysreport: Documents, or the home folder when that is missing.
+  local OPEN_DIR = [[d=$1
+[ -n "$d" ] || d=$(xdg-user-dir DOCUMENTS)
+case $d in "~"*) d=$HOME${d#"~"} ;; esac
+[ -d "$d" ] || { [ -z "$1" ] && d=$HOME; }
+[ -d "$d" ] || { echo "$d is not a folder" >&2; exit 1; }
+exec xdg-open "$d"]]
+
+  local function openSaveDir()
+    noctalia.runAsync({ "sh", "-c", OPEN_DIR, "sh", saveDir }, function(result)
+      if result.exitCode ~= 0 then
+        noctalia.notify("System", noctalia.string.trim(result.stderr or "") ~= "" and noctalia.string.trim(result.stderr) or "Could not open the folder")
+      end
+    end)
+  end
+
   -- Via a file: a whole report is bigger than one argv entry may be (128 KB).
   local function copy(text, what, sensitive)
     local dir = noctalia.pluginDataDir()
@@ -349,6 +365,7 @@ read -r _
           table.insert(items, ui.button({ text = "Save", glyph = "device-floppy", variant = "ghost", controlSize = "sm", onClick = save }))
         end
       end
+      table.insert(items, ui.button({ glyph = "folder-open", variant = "ghost", controlSize = "sm", tooltip = "Open the save folder", onClick = openSaveDir }))
     elseif tab == "hardware" then
       table.insert(items, ui.button({ text = "btop", glyph = "terminal-2", variant = "ghost", controlSize = "sm", onClick = function() terminal("btop") end }))
       table.insert(items, ui.button({ text = "fastfetch", glyph = "terminal-2", variant = "ghost", controlSize = "sm", onClick = function() terminal("sh", "-c", "fastfetch; read -r _") end }))
@@ -372,6 +389,7 @@ read -r _
             saveSettings()
           end,
         }),
+        ui.button({ glyph = "folder-open", variant = "outline", controlSize = "sm", tooltip = "Open this folder", onClick = openSaveDir }),
         ui.button({ text = "Browse", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function()
           local dir = noctalia.pluginDataDir()
           if dir then
