@@ -42,7 +42,7 @@ mabox-noctalia-ce/
 ├── systemd/user/               mb-updates-ce .service .timer .path → /usr/lib/systemd/user/
 ├── lists/                      pacman.txt, aur.txt, github.txt (what install.sh installs)
 ├── packaging/                  PKGBUILD, .SRCINFO, .install
-└── docs/                       guide.md, music.md, overview.md, screenshots
+└── docs/                       guide.md, keys.md, tools.md, snapshot.md, music.md, overview.md, screenshots
 ```
 
 ## Install map

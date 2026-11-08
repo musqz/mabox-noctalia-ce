@@ -1,6 +1,6 @@
 # Guide
 
-What the Noctalia CE session adds on top of Mabox, and how to use it.
+What the Noctalia CE session adds on top of Mabox, and how to use it. Hotkeys: [keys.md](keys.md). Tools: [tools.md](tools.md). ISO: [snapshot.md](snapshot.md).
 
 ## Where things live
 
@@ -19,73 +19,6 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 *Report* collects the other tabs in one text without user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names. Read it, then *Copy* or *Save* (to `~/Documents`).
 
 *Upload* appears when *Settings* holds an `http(s)` address of a pastebin that takes a raw POST body and answers with the link. It asks before it sends.
-
-## Keys
-
-Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
-
-`W-k` opens the hotkey list: search, Basics or All, play button runs a bind's command. `/keys` in the launcher searches the binds and runs the one you pick.
-
-The list on the left filters the binds: *Panels*, *Mabox tools*, *Windows*, *Apps*, then the hotkeys of each installed application (Firefox, Geany, GIMP, Inkscape, ...). The panel opens on the application you called it from, when that application has a list.
-
-Edit `lists/keys-profiles.csv` (`name,kind,source[,app ids]`) to add or reorder entries. An app entry shows only when its command is installed. App lists are `lists/appkeys/NAME.csv` (`section,keys,description`); Geany, Kitty, Yazi and Double Commander also read their own config.
-
-`W-A-h` opens `/hist` and `W-A-e` opens `/es` in the launcher. Enter types the shell history line or the Espanso replacement text into the previous window (no Enter key). Snippets with variables (`{{...}}`) are listed only.
-
-The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete snippets. They are saved in `~/.config/espanso/match/mabox.yml` (backup: `mabox.yml.bak`); other Espanso files are not touched.
-
-| Key | Action |
-|---|---|
-| `W-k` | hotkey list |
-| `W-A-k` | show the fittsmon zone commands on each monitor (press again to hide) |
-| `W-space` | launcher |
-| `W-s` | control center |
-| `W-,` | noctalia settings |
-| `W-x` | session menu |
-| `W-l` | lock screen |
-| `W-=` | wallpaper panel |
-| `C-A-a` | random wallpaper |
-| `W-S-c` | caffeine (no idle) |
-| `W-A-d` | show or hide desktop widgets |
-| `W-t` | terminal |
-| `F12` | quake terminal |
-| `W-h` | btop |
-| `W-S-r` | record region / stop |
-| `C-S-a` | screenshot |
-| `C-Insert` | open last screenshot |
-| `W-A-c` | color picker |
-| `W-n` | notes |
-| `W-A-n` | pinned notes window |
-| `W-A-s` | status |
-| `W-S-s` | pinned status window |
-| `A-Space` | root menu |
-| `C-S-r` | reload labwc |
-
-Windows:
-
-| Key | Action |
-|---|---|
-| `W-Tab` | skippy-wl window switcher |
-| `W-q` | close |
-| `W-b` | hide or show the window title bar and border (press again to cycle) |
-| `W-A-1` … `W-A-6` | snap to an edge or corner |
-| `W-A-7` | maximize |
-| `C-Space` | pick up to 4 windows and tile them |
-| `W-A-C-7`, `W-A-C-9` | send window to HDMI-A-1, DP-1 |
-| `W-1`, `W-2` | previous, next workspace |
-| `W-S-1`, `W-S-2` | send window to previous, next workspace |
-| `W-grave` | tabdock find |
-| `W-A-r` | capture |
-
-Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; not in the pinned windows). Click the panel once first.
-
-| Key | Action |
-|---|---|
-| `A-Up`, `A-Down`, `A-Left`, `A-Right` | move the cursor |
-| `A-S-Up`, `A-S-Down` | move 5 rows (not in Notes) |
-| `A-Enter` | activate |
-| `A-s` | clear the cursor, back to the search field |
-| `A-q` | close the panel |
 
 ## Bar
 
@@ -136,19 +69,6 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
 
-## Snapshot ISO with the latest changes
-
-The ISO carries what is installed on the build host, not the repo. To build a reset ISO with the newest menu, panels and tools:
-
-1. `git pull` in `mabox-noctalia-ce`.
-2. `./install.sh`. It builds the working tree and installs it.
-3. Check the install: `tests/iso-check.sh --host`. Build only when it prints `ok:`; exit code 2 means a tool is missing, not a wrong install.
-4. Build the snapshot: `mabox-snapshot create reset`, or use the Snapshot panel.
-   After a build in the panel, the terminal offers `mb-iso-next`: write the ISO to USB or start it in a VM (quickbox-qt 1.4 or newer). The panel's USB view has the same `USB` and `VM` buttons per ISO.
-5. Check the image: `tests/iso-check.sh <workdir>/iso/mabox/x86_64/rootfs.sfs`. It lists every checked file that is missing or differs in the image.
-
-`mb-plugins-enable` enables each Mabox plugin once for a user, on login. The plugins it has handled are in `~/.local/state/mabox-noctalia-ce/plugins-seen`: delete a line to get that plugin enabled again.
-
 ## Interval screenshots and GIF
 
 - `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT` or the first), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.
@@ -190,5 +110,6 @@ See [music.md](music.md).
 - Scripts in `bin/` run from `/usr/bin` after a package install. While testing, copy: `sudo install -Dm755 bin/<script> /usr/bin/<script>`.
 - Bar widget shows `--`: enable `[system.monitor]`.
 - `snap` hangs: start `snapd`, or ignore it; the update check skips it.
+- Add your own programs, one per line: `echo 'myapp &' >> ~/.config/mabox-noctalia-ce/autostart.local`. `autostart` stays the shared default.
 - Autostart: `~/.config/mabox-noctalia-ce/autostart`. Personal programs (tabdock, Vorta, PIA VPN, `fittsmon-wl --monitor`) go in `~/.config/mabox-noctalia-ce/autostart.local`; copy the template from `/etc/skel/.config/mabox-noctalia-ce/`.
 - Session PATH does not include `~/bin`. Use `~/.local/bin` or an absolute path in binds.
