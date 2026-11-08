@@ -25,8 +25,10 @@ local function parse(text)
   return out
 end
 
+local FOLLOW_FILE = '"$HOME/.config/mabox-noctalia-ce/cava-follow"'
+
 local function load()
-  noctalia.runAsync({ "sh", "-c", 'cat "$HOME/.config/cava/config" 2>/dev/null; echo; echo "cavactl=$(command -v cavactl)"; echo "running=$(wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 && echo 1)"; echo "layer=$(cat ' .. LAYER_FILE .. ' 2>/dev/null)"; echo "--theme"; cat "$HOME/.config/cava/themes/noctalia" 2>/dev/null' }, function(result)
+  noctalia.runAsync({ "sh", "-c", 'cat "$HOME/.config/cava/config" 2>/dev/null; echo; echo "cavactl=$(command -v cavactl)"; echo "running=$(wlrctl toplevel find app_id:cava-transparent >/dev/null 2>&1 && echo 1)"; echo "layer=$(cat ' .. LAYER_FILE .. ' 2>/dev/null)"; echo "cavawidth=$(wlr-randr --json 2>/dev/null | jq -r \'[.[] | select(.enabled)][0] | (.modes[] | select(.current)) as $m | (if (.transform | tostring | test("90|270")) then $m.height else $m.width end) as $w | ($w / .scale * 0.6 | floor)\' 2>/dev/null)"; echo "follow_pair=$(sed -n \'s/^pair=//p\' ' .. FOLLOW_FILE .. ' 2>/dev/null)"; echo "follow_style=$(sed -n \'s/^style=//p\' ' .. FOLLOW_FILE .. ' 2>/dev/null)"; echo "--theme"; cat "$HOME/.config/cava/themes/noctalia" 2>/dev/null' }, function(result)
     local out = result.stdout or ""
     local cfgText, themeText = string.match(out, "^(.-)\n%-%-theme\n(.*)$")
     cfg = parse(cfgText or out)
@@ -327,6 +329,40 @@ local function setFollow(on)
   end)
 end
 
+-- The pair and style of the followed colors live in cava-follow; mb-cava-theme rebuilds the theme from them.
+local function setFollowOption(key, value)
+  if writing then
+    return
+  end
+  writing = true
+  local cmd = 'f=' .. FOLLOW_FILE .. '; mkdir -p "$(dirname "$f")"; touch "$f"; sed -i "/^' .. key .. '=/d" "$f"; echo "' .. key .. '=' .. value .. '" >> "$f"; mb-cava-theme'
+  noctalia.runAsync({ "sh", "-c", cmd }, function()
+    writing = false
+    load()
+  end)
+end
+
+local function followOptions(rows)
+  local pair = cfg.follow_pair or ""
+  if pair ~= "ps" and pair ~= "st" then
+    pair = "pt"
+  end
+  local style = cfg.follow_style or ""
+  if style ~= "soft" and style ~= "palette" then
+    style = "vivid"
+  end
+  local function choice(key, current, value, name, tip)
+    local on = current == value
+    return ui.button({ key = "f-" .. key .. value, text = (on and "✓ " or "") .. name, variant = on and "primary" or "outline", controlSize = "sm", flexGrow = 1, tooltip = tip, onClick = function()
+      setFollowOption(key, value)
+    end })
+  end
+  table.insert(rows, ui.label({ text = "Colors", fontSize = 11, color = "on_surface_variant" }))
+  table.insert(rows, ui.row({ gap = 6 }, { choice("pair", pair, "pt", "Pri + Ter", "Primary and tertiary"), choice("pair", pair, "ps", "Pri + Sec", "Primary and secondary"), choice("pair", pair, "st", "Sec + Ter", "Secondary and tertiary") }))
+  table.insert(rows, ui.label({ text = "Style", fontSize = 11, color = "on_surface_variant" }))
+  table.insert(rows, ui.row({ gap = 6 }, { choice("style", style, "vivid", "Vivid"), choice("style", style, "soft", "Soft"), choice("style", style, "palette", "Palette") }))
+end
+
 local function colorCard()
   local gradient = cfg.gradient == "1"
   local function mode(name, on, value)
@@ -346,6 +382,7 @@ local function colorCard()
   end
   if following then
     table.insert(rows, ui.label({ text = "The bars use 2 colors from the Noctalia palette and change with the wallpaper.", fontSize = 11, color = "on_surface_variant" }))
+    followOptions(rows)
     return ui.column(card("color"), rows)
   end
   table.insert(rows, ui.row({ gap = 6, align = "center" }, { mode("Solid", not gradient, "solid"), mode("Gradient", gradient, "gradient") }))
@@ -416,10 +453,12 @@ local SPECTRUM_HEIGHT = 60
 local SPECTRUM_WIDTH = 728
 -- Each of the two columns, with a 10 px gap between them.
 local COLUMN_WIDTH = (SPECTRUM_WIDTH - 10) // 2
-local SPECTRUM_UNIT = 3
+-- The real window is the cava window of mb-cava: 60% of the output, one terminal cell (foot, font size 2) is 2 px.
+local CELL_PX = 2
+local DEFAULT_CAVA_WIDTH = 1535
 -- Noctalia limits a callback to 25 ms of CPU, so the header has a bar limit and a few colored boxes per bar.
 -- Beyond MAX_BARS the bars are drawn wider than the settings say, to keep the full width.
-local MAX_BARS = 72
+local MAX_BARS = 96
 local SPECTRUM_BANDS = 4
 
 local function hexToRgb(hex)
@@ -474,16 +513,23 @@ local function spectrumHeader()
   local bw = math.max(1, tonumber(cfg.bar_width) or 2)
   local bs = math.max(0, tonumber(cfg.bar_spacing) or 2)
   local stops = spectrumStops()
-  local key = bw .. "|" .. bs .. "|" .. table.concat(stops, ",")
+  local cavaWidth = tonumber(cfg.cavawidth) or DEFAULT_CAVA_WIDTH
+  local key = bw .. "|" .. bs .. "|" .. cavaWidth .. "|" .. table.concat(stops, ",")
   if key == headerKey then
     return headerNode
   end
-  local ideal = math.max(1, math.floor((SPECTRUM_WIDTH + bs * SPECTRUM_UNIT) / ((bw + bs) * SPECTRUM_UNIT)))
+  -- The whole cava window is scaled down to the panel, so the bar count and proportions match the real ones.
+  local scale = SPECTRUM_WIDTH / cavaWidth
+  local ideal = math.max(1, math.floor((cavaWidth + bs * CELL_PX) / ((bw + bs) * CELL_PX)))
   local count = math.min(MAX_BARS, ideal)
   -- Too many bars to draw: make them wider so the header still fills the width.
-  local unit = SPECTRUM_UNIT * ideal / count
+  local unit = CELL_PX * scale * ideal / count
   local barPx = math.max(1, math.floor(bw * unit))
-  local gapPx = math.floor(bs * unit)
+  -- A spacing of 1 or more always shows at least 1 px.
+  local gapPx = bs > 0 and math.max(1, math.floor(bs * unit + 0.5)) or 0
+  while barPx > 1 and count * barPx + (count - 1) * gapPx > SPECTRUM_WIDTH do
+    barPx -= 1
+  end
   local bands = #stops == 1 and 1 or SPECTRUM_BANDS
   local bandHeight = SPECTRUM_HEIGHT // bands
   local bandColors = {}

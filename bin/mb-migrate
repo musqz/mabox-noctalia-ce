@@ -80,6 +80,13 @@ migrate_7() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# The Cava follow-colors choice needs the secondary color in the palette template.
+migrate_8() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/templates/cava-palette
+    [[ -f $f ]] && ! grep -q secondary "$f" || return 0
+    sed -i '/tertiary/i {{ colors.secondary.default.hex }}' "$f"
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
