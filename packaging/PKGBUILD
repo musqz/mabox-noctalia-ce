@@ -1,6 +1,6 @@
 # Maintainer: musqz
 pkgname=mabox-noctalia-ce
-pkgver=0.4.5
+pkgver=0.4.6
 pkgrel=1
 pkgdesc='Mabox labwc + Noctalia session and default configs (CE)'
 arch=('any')
@@ -10,7 +10,7 @@ depends=('python' 'python-gobject' 'python-cairo' 'gtk3' 'gtk-layer-shell' 'imag
          'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'gmrun' 'qt6ct' 'nwg-look' 'jq')
 optdepends=('pastel: wallpaper colors for the Cava panel (mb-cava-theme)'
             'mabox-colorizer: cavactl for the Cava panel'
-            'cava: audio visualizer for the C-A-v key (mb-cava)'
+            'cava: audio visualizer (mb-cava); the C-A-v key also needs jumpapp-ng'
             'mabox-snapshot: build an ISO from the Snapshot panel'
             'mabox-persistence-usb: write an ISO to a USB stick from the Snapshot panel'
             'quickbox-qt>=1.4: start an ISO in a VM from the Snapshot panel (mb-iso-next)'
@@ -37,7 +37,7 @@ optdepends=('pastel: wallpaper colors for the Cava panel (mb-cava-theme)'
             'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('97c688154e6db0a528036dabe40e00dcfb9487c248e6e51ec88c3ea24e815a5a')
+sha256sums=('SKIP')
 
 package() {
   local root="$srcdir/$pkgname-$pkgver"

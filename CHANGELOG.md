@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.6
+
 - Add a button to open the save folder in the System panel Report tab and Settings.
 - Add a save location to the System panel Settings.
 - Remove the Upload button and the upload address from the System panel.
@@ -11,7 +13,7 @@
 - Add a Fixes tab to the System panel: 15 common fixes, each with a read-only check and a run-in-terminal button.
 - Add a Reverse frequencies switch to the Cava panel.
 - Change W-A-c from the color picker to the pinned Configs window.
-- Use the Noctalia CE wallpaper as the default wallpaper on a first login.
+- Ship the Noctalia CE wallpaper in the package as the default wallpaper on a first login.
 - Add mb-iso-next and a VM button in the Snapshot panel: after a build, write the ISO to USB or start it in a VM with quickbox-qt 1.4 or newer.
 - Fix install.sh installing an old build: it now builds the working tree in a temp folder.
 - Add tests/iso-check.sh --host to check the installed system against the repo before building a snapshot.
@@ -26,11 +28,7 @@
 - Add a Cava panel (mabox/cava): start and stop the transparent cava, change bar color or a gradient of 2 to 8 colors, bar width and spacing, framerate and noise reduction.
 - Add Ctrl+Alt+V to show or hide a transparent cava (mb-cava): foot without frame, 60% of the screen width, bottom centre.
 - Install fittsmon, fittsmon-wl-gui, skippy-wl, tabdock, mabox-snapshot and mabox-persistence-usb from the maboxlinux repo with pacman; the GitHub builds are disabled.
-- Make All in the Snapshot kernel row a switch: a second click keeps only the running kernel; wrap the kernel buttons over rows of three.
-- Remove the Refresh button from the Snapshot panel.
-- Add a Snapshot plugin (mabox/snapshot) with profiles to build an ISO with mabox-snapshot; Explain shows the plan, Build opens a terminal.
-- List the newest ISOs in the Snapshot panel and write one to a USB stick with mabox-persistence-usb.
-- Add an encrypt on/off switch to the Personal snapshot card in the Snapshot panel.
+- Add a Snapshot plugin (mabox/snapshot) to build an ISO with mabox-snapshot: profiles, a kernel row with an All switch, an encrypt switch for the personal snapshot, Explain shows the plan, Build opens a terminal, and the newest ISOs can be written to a USB stick with mabox-persistence-usb.
 - Remove Preferred applications from the root menu.
 - Open a note straight in the editor with autosave; Esc saves and returns to the list.
 - Pick a note color in the editor: alt+Up to the color row, alt+Left/Right, alt+Enter; alt+1..9 and alt+0 as shortcuts.
@@ -48,3 +46,74 @@
 - Add Ctrl+Keypad0 to launch scrcpy.
 - Add Ctrl+Alt+Left and Ctrl+Alt+Right to send a window to the previous or next workspace.
 - List Ctrl+Keypad0, Ctrl+Alt+Left and Ctrl+Alt+Right in the Keys panel.
+
+## 0.4.5
+
+- Use the Noctalia CE wallpaper as the default on a first login.
+- Add a keys entry to the root menu.
+- Add clicks for the screen recorder: area shot, stop, record.
+- Add the wallpaper-dirs plugin.
+- Add the Info, Quoter and Polaroids desktop widgets.
+- Put the pinned windows in the top layer so the bar keeps its place.
+- Keep the bar center lane empty in the default config.
+
+## 0.4.4
+
+- Add a themed Mabox logo template and an `~/.icons` link.
+- Take the default look and bar settings from the live setup.
+- Add a Noctalia item to `mb-reset-wl` for the bar and theme.
+- Point the install notes to `mb-reset-wl`.
+
+## 0.4.3
+
+- Migrate copied configs on login.
+
+## 0.4.2
+
+- Move the update actions from the jgmenu popup to a Status plugin panel; list the pending packages and print a header per step in the update terminal.
+- Drop upgraded AUR packages from the offline update count; the count clears when nothing is pending.
+- Add the sysinfo desktop widget in place of the conky sysinfo.
+- Add a monitor picker, C-S-a area shot and hover thumbnails to the capture panel.
+- Add a copy button on each key row in the Keys panel.
+- Disable every Mabox plugin on uninstall.
+
+## 0.4.1
+
+- Give the Keys panel a fixed width and put the pinned windows on the overlay layer.
+- Leave the screen corners free next to the pinned windows (4 px).
+
+## 0.4.0
+
+- Add the Insert plugin: `/hist` and `/es` in the launcher, and a snippets panel with list, search and delete.
+- Add keyboard navigation (alt+arrows, alt+enter) to the Keys, Snippets, Configs, Status, Capture and Reset panels, and to the pinned windows.
+- Add profile chips, application hotkey profiles and an application list to the Keys panel; add lists for foot, feh, Double Commander and yazi, and read your own yazi and Double Commander shortcuts.
+- Show the pinned windows of Status, Notes, Colors, Configs and Capture as layers with a dock button.
+- Reload all plugins from the Configs panel; failed ones turn red.
+- Show the fittsmon zone commands per monitor with W-A-k.
+- Add W-A-r to open the Capture panel and a bind for Obsidian.
+
+## 0.3.0
+
+- Add the Configs plugin and pin windows to the left or right.
+- Add the Reset plugin and menu entry.
+- Add config file entries to the root menu and the Mabox Config menu.
+- Add the Tools launcher provider.
+- Add the Capture plugin: area, window and monitor screenshots with delay and format, interval shots, gifmaker, screen recording.
+- Add reload buttons to the Configs panel, per enabled plugin.
+- Add an add-track panel to the Music plugin.
+- Add W-b to toggle the window decorations.
+- Add the Keys panel (W-k) with the labwc binds, and `/keys` in the launcher.
+
+## 0.2.0
+
+- Remove conky from the session: autostart, `W-c`, menu entries, window rule, theme template and the `conky` dependency.
+- Clean the old entries from `~/.config/mabox-noctalia-ce/{autostart,rc.xml,menu.xml}` and `~/.config/noctalia/config.toml` after updating.
+
+## 0.1.1
+
+- Name the optional Wayland GUI `fittsmon-wl-gui`, not `fittsmon-gui`.
+- Keep `colormenu` optional.
+
+## 0.1.0
+
+- First tagged release: labwc and Noctalia session with default configs for Mabox, and the Notes, Colors, Music and Status plugins.
