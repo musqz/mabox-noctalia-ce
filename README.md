@@ -50,7 +50,7 @@ git pull
 
 ## Remove
 
-Repo install: `sudo pacman -Rns mabox-noctalia-ce`.
+Repo install: `sudo pacman -R mabox-noctalia-ce`.
 
 Git install:
 
