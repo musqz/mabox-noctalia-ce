@@ -19,10 +19,33 @@ command -v pastel >/dev/null || die "pastel is not installed"
 mapfile -t base < <(grep -E '^#[0-9a-fA-F]{6}$' "$palette")
 ((${#base[@]} >= 2)) || die "no colors in $palette"
 
-# The palette colors are close pastels. A saturation boost and different lightness keep the two colors apart.
-# The last two palette lines are used, so an older three-line template still gives primary and tertiary.
-bottom=$(pastel color "${base[-2]}" | pastel saturate 0.3 | pastel set hsl-lightness 0.55 | pastel format hex) || die "pastel failed"
-top=$(pastel color "${base[-1]}" | pastel saturate 0.3 | pastel set hsl-lightness 0.75 | pastel format hex) || die "pastel failed"
+# Which two palette colors (pair: pt, ps, st) and how they are tuned (style: vivid, soft, palette).
+# The panel writes these to cava-follow; without it the result is primary + tertiary, vivid.
+opts=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/cava-follow
+pair=$(sed -n 's/^pair=//p' "$opts" 2>/dev/null | tail -1)
+style=$(sed -n 's/^style=//p' "$opts" 2>/dev/null | tail -1)
+
+# Palette lines: primary, secondary, tertiary. A two-line palette gives primary and tertiary.
+if ((${#base[@]} >= 3)); then
+  case $pair in
+    ps) lo=${base[0]} hi=${base[1]} ;;
+    st) lo=${base[1]} hi=${base[2]} ;;
+    *) lo=${base[0]} hi=${base[2]} ;;
+  esac
+else
+  lo=${base[-2]} hi=${base[-1]}
+fi
+
+# tone COLOR LIGHTNESS: the palette colors are close pastels, so vivid boosts the saturation and sets the lightness.
+tone() {
+  case $style in
+    palette) pastel color "$1" | pastel format hex ;;
+    soft) pastel color "$1" | pastel desaturate 0.15 | pastel set hsl-lightness "$(awk -v l="$2" 'BEGIN{print l+0.1}')" | pastel format hex ;;
+    *) pastel color "$1" | pastel saturate 0.3 | pastel set hsl-lightness "$2" | pastel format hex ;;
+  esac
+}
+bottom=$(tone "$lo" 0.55) || die "pastel failed"
+top=$(tone "$hi" 0.75) || die "pastel failed"
 [[ $bottom =~ ^#[0-9a-fA-F]{6}$ && $top =~ ^#[0-9a-fA-F]{6}$ ]] || die "pastel failed"
 
 mkdir -p "$(dirname "$theme")"
