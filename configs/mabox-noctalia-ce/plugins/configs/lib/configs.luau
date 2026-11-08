@@ -125,10 +125,10 @@ refresh = function()
       failed[l] = true
     end
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
-      local id, state = string.match(l, "^(mabox/%S+) %[%S+%] %S+ (%a+)")
-      if id then
+      local id, state = string.match(l, "^(%S+) %[%S+%] %S+ (%a+)")
+      if id and (state == "enabled" or string.sub(id, 1, 6) == "mabox/") then
         table.insert(plugins, id)
-        stopped[id] = state ~= "enabled" or nil
+        stopped[id] = state == "disabled" or nil
       end
     end
     for id in pairs(failed) do
@@ -313,7 +313,9 @@ render = function()
         table.insert(running, id)
       end
     end
-    reloadPlugins(running)
+    if #running > 0 then
+      reloadPlugins(running)
+    end
   end
 
   row += 1
