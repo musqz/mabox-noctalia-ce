@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
 """mb-sysreport - system info with personal data removed, for the mabox/system plugin.
 
-  mb-sysreport overview|hardware|logs|report [--save]
+  mb-sysreport overview|hardware|logs|report|<category> [--parts A,B,...] [--save [--dir DIR]] [--raw] [--hide WORDS]
+  mb-sysreport scrub [--hide WORDS]   sanitize stdin
+  mb-sysreport put FILE [--raw] [--dir DIR]   save a report text, then delete FILE
 
-Prints sanitized text. --save (report only) writes mabox-report-YYYYMMDD-HHMM.txt
-to the Documents folder and prints the path.
+--raw keeps everything (private copy, never share it). --hide takes
+comma-separated words that are replaced by <hidden>.
+
+--parts (report only) picks what the report holds: overview, hardware,
+log-system, log-user, log-prev, log-kernel, log-failed, log-crashes,
+log-noctalia, log-pacman and the categories below. Without it: overview,
+hardware and all logs.
+
+Categories: full, hardware-only, audio, graphics, network, bluetooth, disks,
+boot, packages, power, desktop. Prints sanitized text. --save (report and
+categories) writes mabox-report-YYYYMMDD-HHMM.txt to the Documents folder
+and prints the path.
 """
 import collections
 import datetime
@@ -49,6 +61,8 @@ def section(title, body):
 
 # --- sanitizer ---------------------------------------------------------
 
+UNIT_SUFFIXES = (".service", ".socket", ".timer", ".mount", ".automount", ".target",
+                 ".path", ".slice", ".scope", ".device", ".swap")
 COMMON = {"root", "user", "admin", "arch", "manjaro", "mabox", "localhost", "linux"}
 
 
@@ -81,7 +95,7 @@ def known_names():
             for k, v in names.items()}
 
 
-def scrub(text):
+def scrub(text, hide=()):
     hits = collections.Counter()
 
     def sub(pattern, repl, kind, flags=0):
@@ -92,6 +106,7 @@ def scrub(text):
             return m.expand(repl) if isinstance(repl, str) else repl(m)
         text = re.sub(pattern, f, text, flags=flags)
 
+    text = re.sub(r"\x1b\[[0-9;?]*[ -/]*[@-~]", "", text)
     if HOME:
         text = text.replace(HOME, "~")
 
@@ -101,12 +116,17 @@ def scrub(text):
             sub(r"(?<![A-Za-z0-9])" + re.escape(n) + r"(?![A-Za-z0-9])", label, kind, re.I)
 
     sub(r"(\w+://)[^/\s:@]+:[^/\s@]+@", r"\1<cred>@", "url-cred")
-    sub(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", "<email>", "email")
+    # name@instance.service is a systemd template unit, not an address.
+    sub(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+",
+        lambda m: m.group(0) if m.group(0).endswith(UNIT_SUFFIXES) else "<email>", "email")
+    for w in sorted(hide, key=len, reverse=True):
+        sub(r"(?<![A-Za-z0-9])" + re.escape(w) + r"(?![A-Za-z0-9])", "<hidden>", "hidden", re.I)
     sub(r"""(?i)\b(ssid)(\s*[:=]?\s*)(?:"[^"]*"|'[^']*'|[^\s"']+)""", r"\1\2<wifi>", "wifi")
     sub(r"(?i)\b(token|secret|password|passwd|api[_-]?key)(\s*[:=]\s*)\S+", r"\1\2<secret>", "token")
     sub(r"(?i)\b(serial(?: number)?|s/n)(\s*[:=]\s*)\S+", r"\1\2<serial>", "serial")
     sub(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<uuid>", "uuid", re.I)
     sub(r"(?<![0-9a-f:-])(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}(?![0-9a-f:-])", "<mac>", "mac", re.I)
+    sub(r"(?<![\w-])[0-9A-F]{4}-[0-9A-F]{4}(?![\w-])", lambda m: "<id>" if re.search("[A-F]", m.group(0)) else m.group(0), "serial")
     sub(r"\b0x[0-9a-f]{8}\b", "<id>", "serial", re.I)
     sub(r"(?<![0-9a-f])[0-9a-f]{32,}(?![0-9a-f])", "<id>", "machine-id", re.I)
 
@@ -204,16 +224,142 @@ def hardware():
     return section("Hardware", body)
 
 
+FAILED_SERVICES = (
+    "systemctl --failed --no-pager; systemctl --user --failed --no-pager; "
+    "for u in $(systemctl --failed --plain --no-legend | awk '{print $1}'); do "
+    "echo \"## $u\"; journalctl -b -u \"$u\" -n 15 --no-pager; done"
+)
+
+
+def cap(text, n=120, width=200):
+    """Keeps the panel fast: the last n lines, long lines cut."""
+    lines = text.splitlines()
+    out = [l if len(l) <= width else l[:width] + "..." for l in lines[-n:]]
+    if len(lines) > n:
+        out.insert(0, f"({len(lines) - n} earlier lines left out)")
+    return "\n".join(out)
+
+
+LOG_PARTS = {
+    "log-system": lambda: section("Journal, system (warnings, this boot)",
+        cap(run(["journalctl", "-b", "-p", "warning", "--no-pager", "-n", "300"], 30))),
+    "log-user": lambda: section("Journal, user (warnings, this boot)",
+        cap(run(["journalctl", "--user", "-b", "-p", "warning", "--no-pager", "-n", "150"], 30))),
+    "log-prev": lambda: section("Journal, previous boot (errors)",
+        cap(run(["journalctl", "-b", "-1", "-p", "err", "--no-pager", "-n", "100"], 30))),
+    "log-kernel": lambda: section("Kernel warnings (this boot)",
+        cap(run(["journalctl", "-k", "-b", "-p", "warning", "--no-pager", "-n", "150"], 30))),
+    "log-failed": lambda: section("Failed services", run(["sh", "-c", FAILED_SERVICES], 30)),
+    "log-crashes": lambda: section("Crashed programs (7 days)",
+        cap(run(["sh", "-c", "coredumpctl list --no-pager --since=-7d 2>&1 | tail -n 25"], 30))),
+    "log-noctalia": lambda: section("Noctalia log",
+        cap(read_tail(os.path.join(HOME, ".cache", "noctalia", "noctalia.log"), 200))),
+    "log-pacman": lambda: section("Pacman log (last 30 changes)",
+        cap(read_tail("/var/log/pacman.log", 30, r"\] \[ALPM\] (upgraded|installed|removed)"))),
+}
+
+
 def logs():
-    return "\n".join([
-        section("Journal, system (warnings, this boot)",
-                run(["journalctl", "-b", "-p", "warning", "--no-pager", "-n", "300"], 30)),
-        section("Journal, user (warnings, this boot)",
-                run(["journalctl", "--user", "-b", "-p", "warning", "--no-pager", "-n", "150"], 30)),
-        section("Noctalia log", read_tail(os.path.join(HOME, ".cache", "noctalia", "noctalia.log"), 200)),
-        section("Pacman log (last 30 changes)",
-                read_tail("/var/log/pacman.log", 30, r"\] \[ALPM\] (upgraded|installed|removed)")),
-    ])
+    return "\n".join(f() for f in LOG_PARTS.values())
+
+
+# --- report categories -------------------------------------------------
+# (tool the command needs or "", title, shell command)
+
+CATEGORIES = {
+    "full": ("Full system", [
+        ("inxi", "System report (inxi, full)", "inxi -c0 --admin --verbosity=7 --filter --no-host --width 100"),
+    ]),
+    "hardware-only": ("Hardware only", [
+        ("inxi", "Hardware (inxi)", "inxi -c0 -MCmGANDBEazy --no-host"),
+        ("lspci", "PCI devices and drivers", "lspci -nnk"),
+        ("lsusb", "USB devices", "lsusb"),
+    ]),
+    "audio": ("Audio", [
+        ("inxi", "Audio hardware (inxi)", "inxi -c0 -Aazy"),
+        ("pactl", "Sound server", "pactl info"),
+        ("wpctl", "Devices and routing", "wpctl status"),
+        ("aplay", "Sound cards", "aplay -l"),
+        ("systemctl", "Audio services", "systemctl --user status pipewire pipewire-pulse wireplumber --no-pager -n 0"),
+        ("journalctl", "Audio errors this boot", "journalctl --user -b --no-pager -p warning -u pipewire -u pipewire-pulse -u wireplumber | tail -n 40"),
+    ]),
+    "graphics": ("Graphics and display", [
+        ("inxi", "Graphics (inxi)", "inxi -c0 -Gazy"),
+        ("mhwd", "Installed drivers (mhwd)", "mhwd -li"),
+        ("lspci", "Graphics card and kernel driver", "lspci -nnk | grep -A3 -E 'VGA|3D|Display'"),
+        ("", "Session type", 'echo "session: $XDG_SESSION_TYPE  desktop: $XDG_CURRENT_DESKTOP"'),
+        ("wlr-randr", "Monitors (wlr-randr)", "wlr-randr"),
+        ("journalctl", "GPU kernel messages", "journalctl -b -k --no-pager -p warning | grep -iE 'drm|amdgpu|nvidia|i915|xe |nouveau|radeon' | tail -n 40"),
+    ]),
+    "network": ("Network and Wi-Fi", [
+        ("inxi", "Network hardware (inxi)", "inxi -c0 -Nnazy"),
+        ("nmcli", "NetworkManager state", "nmcli general status; echo; nmcli device status"),
+        ("rfkill", "Radio switches", "rfkill list"),
+        ("ip", "Addresses", "ip -br addr; echo; ip route"),
+        ("", "DNS", "grep -v '^#' /etc/resolv.conf"),
+        ("ping", "Can we reach the internet?", "ping -c 3 -W 2 archlinux.org 2>&1 | tail -n 3"),
+        ("journalctl", "Network errors this boot", "journalctl -b --no-pager -p warning -u NetworkManager -u wpa_supplicant -u iwd | tail -n 40"),
+    ]),
+    "bluetooth": ("Bluetooth", [
+        ("inxi", "Bluetooth hardware (inxi)", "inxi -c0 -Eazy"),
+        ("rfkill", "Radio switch", "rfkill list bluetooth"),
+        ("systemctl", "Bluetooth service", "systemctl status bluetooth --no-pager -n 0"),
+        ("bluetoothctl", "Controller", "bluetoothctl show"),
+        ("journalctl", "Bluetooth errors this boot", "journalctl -b --no-pager -p warning -u bluetooth | tail -n 30"),
+    ]),
+    "disks": ("Disks and storage", [
+        ("inxi", "Drives and partitions (inxi)", "inxi -c0 -Dpoazy"),
+        ("lsblk", "Block devices", "lsblk -o NAME,FSTYPE,SIZE,FSUSE%,MOUNTPOINTS"),
+        ("df", "Free space", "df -hT -x tmpfs -x devtmpfs -x efivarfs"),
+        ("", "Mount table (fstab)", "grep -v '^#' /etc/fstab | grep -v '^$'"),
+        ("swapon", "Swap", "swapon --show; echo; free -h"),
+    ]),
+    "boot": ("Boot and kernel", [
+        ("uname", "Kernel", "uname -a"),
+        ("", "Boot options", "cat /proc/cmdline"),
+        ("mhwd-kernel", "Installed kernels (mhwd-kernel)", "mhwd-kernel -li"),
+        ("pacman", "Kernel packages", "pacman -Q | grep -E '^linux[0-9a-z-]* '"),
+        ("systemd-analyze", "Boot time", "systemd-analyze; echo; systemd-analyze blame --no-pager | head -n 15"),
+        ("systemctl", "Failed services", "systemctl --failed --no-pager; systemctl --user --failed --no-pager"),
+        ("journalctl", "Errors this boot", "journalctl -b -p 3 --no-pager | tail -n 60"),
+    ]),
+    "packages": ("Packages and updates", [
+        ("inxi", "Repositories (inxi)", "inxi -c0 -razy"),
+        ("pacman-mirrors", "Branch and mirrors", "pacman-mirrors -G; echo; grep -E '^Server' /etc/pacman.d/mirrorlist | head -n 5"),
+        ("pacman", "Foreign / AUR packages", "pacman -Qm"),
+        ("pacman", "Orphan packages", "pacman -Qdt || echo none"),
+        ("", "Unmerged .pacnew files", "find /etc -name '*.pacnew' 2>/dev/null || true"),
+        ("", "Recent package changes", "grep -E 'upgraded|installed|removed|starting full' /var/log/pacman.log | tail -n 40"),
+        ("checkupdates", "Pending updates", "checkupdates || echo 'up to date (or no network)'"),
+    ]),
+    "power": ("Power and battery", [
+        ("inxi", "Battery (inxi)", "inxi -c0 -Bazy"),
+        ("inxi", "Temperatures and fans (inxi)", "inxi -c0 -sazy"),
+        ("powerprofilesctl", "Power profile", "powerprofilesctl get"),
+        ("", "Sleep mode", "cat /sys/power/mem_sleep"),
+        ("journalctl", "Suspend/resume messages", "journalctl -b --no-pager | grep -iE 'suspend|resume|hibernat|PM: ' | tail -n 30"),
+    ]),
+    "desktop": ("Desktop and Noctalia", [
+        ("inxi", "Desktop session (inxi)", "inxi -c0 -Szy --no-host"),
+        ("", "Session", 'echo "type: $XDG_SESSION_TYPE  desktop: $XDG_CURRENT_DESKTOP  wayland: $WAYLAND_DISPLAY"'),
+        ("noctalia", "Noctalia version", "noctalia --version"),
+        ("noctalia", "Noctalia colour scheme", "noctalia msg color-scheme-get"),
+        ("noctalia", "Noctalia config check", "noctalia config validate"),
+        ("", "Noctalia log (last lines)", 'tail -n 60 "${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/noctalia.log"'),
+        ("", "Compositor", "ps -eo comm= | grep -xE 'labwc|niri|Hyprland|sway|river|mango|wayfire|kwin_wayland|gnome-shell' | sort -u"),
+    ]),
+}
+
+
+def category(cid):
+    title, items = CATEGORIES[cid]
+    parts = []
+    for tool, label, cmd in items:
+        if tool and shutil.which(tool) is None:
+            parts.append(section(label, f"({tool} not installed)"))
+        else:
+            parts.append(section(label, run(["sh", "-c", cmd], 60)))
+    return section(title, "") + "\n".join(parts)
 
 
 def build(cmd):
@@ -223,36 +369,82 @@ def build(cmd):
         return hardware()
     if cmd == "logs":
         return logs()
+    if cmd in CATEGORIES:
+        return category(cmd)
+    if cmd in LOG_PARTS:
+        return LOG_PARTS[cmd]()
     return overview() + "\n" + hardware() + "\n" + logs()
+
+
+def write_report(text, raw, save_dir):
+    if save_dir and not os.path.isdir(save_dir):
+        sys.exit(f"{save_dir} is not a folder")
+    docs = save_dir
+    if not docs:
+        docs = run(["xdg-user-dir", "DOCUMENTS"])
+        if docs.startswith("(") or not os.path.isdir(docs):
+            docs = HOME
+    path = os.path.join(docs, f"mabox-report{'-private' if raw else ''}-{datetime.datetime.now():%Y%m%d-%H%M}.txt")
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+    except OSError as e:
+        sys.exit(f"cannot write {path}: {e}")
+    return path
 
 
 def main():
     args = sys.argv[1:]
     save = "--save" in args
-    args = [a for a in args if a != "--save"]
-    if len(args) != 1 or args[0] not in ("overview", "hardware", "logs", "report"):
+    raw = "--raw" in args
+    hide = []
+    if "--hide" in args:
+        k = args.index("--hide")
+        hide = [w.strip() for w in (args[k + 1] if k + 1 < len(args) else "").split(",") if len(w.strip()) >= 2]
+        del args[k:k + 2]
+    save_dir = ""
+    if "--dir" in args:
+        k = args.index("--dir")
+        save_dir = os.path.expanduser(args[k + 1]) if k + 1 < len(args) else ""
+        del args[k:k + 2]
+    parts = []
+    if "--parts" in args:
+        k = args.index("--parts")
+        parts = [p for p in (args[k + 1] if k + 1 < len(args) else "").split(",") if p]
+        del args[k:k + 2]
+        bad = [p for p in parts if p not in ("overview", "hardware", *LOG_PARTS, *CATEGORIES)]
+        if bad:
+            sys.exit(f"unknown part: {bad[0]}")
+    args = [a for a in args if a not in ("--save", "--raw")]
+    if args == ["scrub"]:
+        data = sys.stdin.read()
+        print(data if raw else scrub(data, hide)[0], end="")
+        return
+    if len(args) == 2 and args[0] == "put":
+        # Writes the text the panel shows (a temp file it made), so the saved file is what was read.
+        with open(args[1], errors="replace") as f:
+            text = f.read()
+        os.remove(args[1])
+        print(write_report(text, raw, save_dir))
+        return
+    if len(args) != 1 or args[0] not in ("overview", "hardware", "logs", "report", *CATEGORIES):
         sys.exit(__doc__.strip())
     cmd = args[0]
-    text, hits = scrub(build(cmd))
-    if cmd == "report":
+    full = cmd == "report" or cmd in CATEGORIES
+    body = "\n".join(build(p) for p in parts) if parts and cmd == "report" else build(cmd)
+    text, hits = (body, {}) if raw else scrub(body, hide)
+    if full:
         removed = ", ".join(f"{k} {n}" for k, n in sorted(hits.items())) or "nothing found"
         ver = run(["pacman", "-Q", "mabox-noctalia-ce"])
+        note = ("PRIVATE copy, nothing removed. Do not post it." if raw
+                else f"Removed: {sum(hits.values())} items ({removed}). Read before posting.")
         head = (f"Mabox Noctalia CE report, {datetime.datetime.now():%Y-%m-%d %H:%M}\n"
-                f"{ver}\n"
-                f"Removed: {sum(hits.values())} items ({removed}). Read before posting.\n\n")
-        text = head + text
-    if save and cmd == "report":
-        docs = run(["xdg-user-dir", "DOCUMENTS"])
-        if docs.startswith("(") or not os.path.isdir(docs):
-            docs = HOME
-        path = os.path.join(docs, f"mabox-report-{datetime.datetime.now():%Y%m%d-%H%M}.txt")
-        try:
-            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-            with os.fdopen(fd, "w") as f:
-                f.write(text)
-        except OSError as e:
-            sys.exit(f"cannot write {path}: {e}")
-        print(path)
+                f"{ver}\n{note}\n"
+                + (f"Included: {', '.join(parts)}\n" if parts and cmd == "report" else "") + "\n")
+        text = (head if raw else scrub(head, hide)[0]) + text
+    if save and full:
+        print(write_report(text, raw, save_dir))
     else:
         print(text)
 

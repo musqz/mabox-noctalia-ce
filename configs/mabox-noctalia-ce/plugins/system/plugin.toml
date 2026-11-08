@@ -5,7 +5,8 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "device-desktop-analytics"
-description = "System information from the Mabox Control Center: overview, hardware, logs and a sanitized report for the forum."
+description = "System information from the Mabox Control Center: overview, hardware, logs, quick fixes and a sanitized report for the forum."
+dependencies = ["yad"]
 tags = ["utility", "system"]
 
 [[panel]]

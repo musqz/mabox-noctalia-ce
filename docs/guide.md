@@ -14,11 +14,13 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 
 ## System info
 
-`W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* and *Report*.
+`W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* (this and the previous boot, kernel, failed services, crashes), *Report* and *Fixes*.
 
-*Report* collects the other tabs in one text without user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names. Read it, then *Copy* or *Save* (to `~/Documents`).
+*Report* builds one text from the parts you choose. *Choose parts* ticks what goes in: Overview, Hardware, each log, and topics such as audio, graphics, network, Bluetooth, disks, boot, packages, power or desktop. The choice is remembered. The text has no user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names. Read it, then *Copy* or *Save* (to `~/Documents`, or the folder set in *Settings*).
 
-*Upload* appears when *Settings* holds an `http(s)` address of a pastebin that takes a raw POST body and answers with the link. It asks before it sends.
+*Fixes* lists common problems with a short description. *Check* shows read-only output (scrubbed); *Run in terminal* shows the command, asks before it runs and asks for your password when it needs root.
+
+*Public* (default) hides names, addresses and ids, plus the words listed in *Settings*. *Private* shows everything; keep that text to yourself.
 
 ## Bar
 
