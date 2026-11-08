@@ -39,7 +39,7 @@ printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 ]]
 
 -- Plugins with a pinned window.
-local WIDGETS = { ["mabox/info"] = true, ["mabox/polaroids"] = true, ["mabox/quoter"] = true, ["mabox/sysinfo"] = true }
+local widgets = {}
 local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
 
 local entries = {}
@@ -132,13 +132,28 @@ refresh = function()
       end
     end
     for id in pairs(failed) do
+      stopped[id] = true
       if not table.find(plugins, id) then
         table.insert(plugins, id)
       end
     end
     render()
   end)
+  noctalia.runAsync({ "sh", "-c", WIDGET_IDS }, function(result)
+    widgets = {}
+    for id in string.gmatch(result.stdout or "", "[^\n]+") do
+      widgets[id] = true
+    end
+    render()
+  end)
 end
+
+-- Ids of the plugins that declare a [[desktop_widget]] in their plugin.toml.
+local WIDGET_IDS = [[
+for d in $(noctalia msg plugins source list | awk '$2=="path"{print $3}'); do
+  grep -l '^\[\[desktop_widget\]\]' "$d"/*/plugin.toml 2>/dev/null
+done | xargs -r sed -s -n '1s/^id = "\(.*\)"/\1/p'
+]]
 
 local RELOAD = [[
 ERR="${XDG_RUNTIME_DIR:-/tmp}/mb-plugin-errors"
@@ -309,7 +324,7 @@ render = function()
   local function reloadAll()
     local running = {}
     for _, id in ipairs(plugins) do
-      if not stopped[id] then
+      if not stopped[id] or failed[id] then
         table.insert(running, id)
       end
     end
@@ -460,7 +475,7 @@ render = function()
   }
   local plugList, widgetList = {}, {}
   for _, id in ipairs(plugins) do
-    table.insert(WIDGETS[id] and widgetList or plugList, id)
+    table.insert(widgets[id] and widgetList or plugList, id)
   end
   if plugOpen then
     pluginRows(plugList, plugRows)
