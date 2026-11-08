@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.7
+
+- Pick two palette colors (Pri + Ter, Pri + Sec, Sec + Ter) and a style (Vivid, Soft, Palette) for Follow wallpaper colors in the Cava panel; mb-migrate adds the secondary color to the palette template.
+- Draw the Cava panel preview with the bar count and bar width of the real window.
 - Add Save as text and Open text folder to the Colors panel, and a Settings tab for the text folder (default `~/.config/mabox-noctalia-ce/color-palettes`).
 - Remove Edit palettes and Save as palette from the Colors panel.
 - Fix the pinned Colors window not scrolling a long palette.
