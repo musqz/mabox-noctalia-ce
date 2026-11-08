@@ -8,7 +8,7 @@ W-x,Panels,1,"Session menu (logout, reboot, shutdown)"
 "W-,",Panels,0,Noctalia settings
 W-n,Panels,1,Notes
 W-A-n,Panels,0,Notes as pinned window
-W-A-c,Panels,0,Color picker
+W-A-c,Panels,0,Configs as pinned window
 W-A-s,Panels,0,Status panel
 W-A-w,Panels,0,Wallpaper folders
 W-A-r,Panels,0,Capture panel (screenshot, recording)
