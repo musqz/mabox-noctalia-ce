@@ -524,9 +524,12 @@ local function spectrumHeader()
   local count = math.min(MAX_BARS, ideal)
   -- Too many bars to draw: make them wider so the header still fills the width.
   local unit = CELL_PX * scale * ideal / count
-  local barPx = math.max(1, math.floor(bw * unit + 0.5))
+  local barPx = math.max(1, math.floor(bw * unit))
   -- A spacing of 1 or more always shows at least 1 px.
   local gapPx = bs > 0 and math.max(1, math.floor(bs * unit + 0.5)) or 0
+  while barPx > 1 and count * barPx + (count - 1) * gapPx > SPECTRUM_WIDTH do
+    barPx -= 1
+  end
   local bands = #stops == 1 and 1 or SPECTRUM_BANDS
   local bandHeight = SPECTRUM_HEIGHT // bands
   local bandColors = {}

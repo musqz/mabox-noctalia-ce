@@ -40,7 +40,7 @@ fi
 tone() {
   case $style in
     palette) pastel color "$1" | pastel format hex ;;
-    soft) pastel color "$1" | pastel desaturate 0.15 | pastel set hsl-lightness "$(awk -v l="$2" 'BEGIN{print l+0.1}')" | pastel format hex ;;
+    soft) pastel color "$1" | pastel desaturate 0.15 | pastel set hsl-lightness "$2" | pastel format hex ;;
     *) pastel color "$1" | pastel saturate 0.3 | pastel set hsl-lightness "$2" | pastel format hex ;;
   esac
 }
