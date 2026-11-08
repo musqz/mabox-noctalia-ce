@@ -275,11 +275,23 @@ read -r _
     return entry and not entry.loading and entry.text or nil
   end
 
-  -- Via a file: a whole report is bigger than one argv entry may be (128 KB).
+  -- Same default as mb-sysreport: Documents, or the home folder when that is missing.
+  local OPEN_DIR = [[d=$1
+[ -n "$d" ] || d=$(xdg-user-dir DOCUMENTS)
+case $d in "~"*) d=$HOME${d#"~"} ;; esac
+[ -d "$d" ] || { [ -z "$1" ] && d=$HOME; }
+[ -d "$d" ] || { echo "$d is not a folder" >&2; exit 1; }
+exec xdg-open "$d"]]
+
   local function openSaveDir()
-    noctalia.runAsync({ "sh", "-c", 'd=${1:-$(xdg-user-dir DOCUMENTS)}; case $d in "~"*) d=$HOME${d#"~"} ;; esac; exec xdg-open "$d"', "sh", saveDir })
+    noctalia.runAsync({ "sh", "-c", OPEN_DIR, "sh", saveDir }, function(result)
+      if result.exitCode ~= 0 then
+        noctalia.notify("System", noctalia.string.trim(result.stderr or "") ~= "" and noctalia.string.trim(result.stderr) or "Could not open the folder")
+      end
+    end)
   end
 
+  -- Via a file: a whole report is bigger than one argv entry may be (128 KB).
   local function copy(text, what, sensitive)
     local dir = noctalia.pluginDataDir()
     if not dir then
