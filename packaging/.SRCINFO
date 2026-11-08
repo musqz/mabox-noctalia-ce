@@ -1,6 +1,6 @@
 pkgbase = mabox-noctalia-ce
 	pkgdesc = Mabox labwc + Noctalia session and default configs (CE)
-	pkgver = 0.4.5
+	pkgver = 0.4.6
 	pkgrel = 1
 	url = https://github.com/musqz/mabox-noctalia-ce
 	install = mabox-noctalia-ce.install
@@ -34,7 +34,7 @@ pkgbase = mabox-noctalia-ce
 	depends = jq
 	optdepends = pastel: wallpaper colors for the Cava panel (mb-cava-theme)
 	optdepends = mabox-colorizer: cavactl for the Cava panel
-	optdepends = cava: audio visualizer for the C-A-v key (mb-cava)
+	optdepends = cava: audio visualizer (mb-cava); the C-A-v key also needs jumpapp-ng
 	optdepends = mabox-snapshot: build an ISO from the Snapshot panel
 	optdepends = mabox-persistence-usb: write an ISO to a USB stick from the Snapshot panel
 	optdepends = quickbox-qt>=1.4: start an ISO in a VM from the Snapshot panel (mb-iso-next)
@@ -59,7 +59,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = python-pywalfox: Firefox theme template
-	source = mabox-noctalia-ce-0.4.5.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.4.5.tar.gz
-	sha256sums = 97c688154e6db0a528036dabe40e00dcfb9487c248e6e51ec88c3ea24e815a5a
+	source = mabox-noctalia-ce-0.4.6.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.4.6.tar.gz
+	sha256sums = SKIP
 
 pkgname = mabox-noctalia-ce
