@@ -365,11 +365,31 @@ local function barsCard()
   })
 end
 
+-- cavactl has no reverse command; write the key straight into the cava config like the gradient does.
+local function setReverse(value)
+  armed = false
+  noctalia.runAsync({ "sh", "-c", 'sed -i -E --follow-symlinks "s|^[ ;]*reverse *=.*|reverse = ' .. value .. '|" "$HOME/.config/cava/config"; pkill -x -USR1 cava; true' }, function()
+    finishWrite()
+  end)
+end
+
+local function reverseChoice()
+  local on = cfg.reverse == "1"
+  return ui.column({ key = "ch-reverse", gap = 6 }, {
+    ui.label({ text = "Reverse frequencies   " .. (on and "on" or "off"), fontSize = 12 }),
+    ui.row({ key = "reverse-r", gap = 6, align = "center" }, {
+      ui.button({ key = "reverse-0", text = (on and "" or "✓ ") .. "Off", variant = on and "outline" or "primary", controlSize = "sm", onClick = function() setReverse(0) end }),
+      ui.button({ key = "reverse-1", text = (on and "✓ " or "") .. "On", variant = on and "primary" or "outline", controlSize = "sm", onClick = function() setReverse(1) end }),
+    }),
+  })
+end
+
 local function generalCard()
   return ui.column(card("general"), {
     ui.label({ text = "General", fontWeight = "bold", fontSize = 14 }),
     choices("Framerate", "framerate", { "60", "120", "144" }, "framerate"),
     choices("Noise reduction", "noise_reduction", { "90", "77", "50", "25" }, "noise_reduction"),
+    reverseChoice(),
   })
 end
 
