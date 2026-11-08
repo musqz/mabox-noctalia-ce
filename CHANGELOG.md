@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Open a plugin in the Configs panel for a Reload button and copyable start, stop and reload commands.
+- Add a Widgets section to the Configs panel for desktop widgets; stopped and failed plugins show "(stopped)".
+- Widen the Configs panel to 540 px.
+
 ## 0.4.6
 
 - Add a button to open the save folder in the System panel Report tab and Settings.
