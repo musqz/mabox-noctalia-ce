@@ -39,11 +39,13 @@ printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 ]]
 
 -- Plugins with a pinned window.
+local widgets = {}
 local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
 
 local entries = {}
 local plugins = {}
 local failed = {}
+local stopped = {}
 local expanded = {}
 local newName = ""
 local newPath = ""
@@ -118,23 +120,40 @@ refresh = function()
   noctalia.runAsync({ "noctalia", "msg", "plugins", "list" }, function(result)
     plugins = {}
     failed = {}
+    stopped = {}
     for l in string.gmatch(noctalia.readFile((noctalia.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/mb-plugin-errors") or "", "[^\n]+") do
       failed[l] = true
     end
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
-      local id = string.match(l, "^(%S+) %[%S+%] %S+ enabled")
-      if id then
+      local id, state = string.match(l, "^(%S+) %[%S+%] %S+ (%a+)")
+      if id and (state == "enabled" or string.sub(id, 1, 6) == "mabox/") then
         table.insert(plugins, id)
+        stopped[id] = state == "disabled" or nil
       end
     end
     for id in pairs(failed) do
+      stopped[id] = true
       if not table.find(plugins, id) then
         table.insert(plugins, id)
       end
     end
     render()
   end)
+  noctalia.runAsync({ "sh", "-c", WIDGET_IDS }, function(result)
+    widgets = {}
+    for id in string.gmatch(result.stdout or "", "[^\n]+") do
+      widgets[id] = true
+    end
+    render()
+  end)
 end
+
+-- Ids of the plugins that declare a [[desktop_widget]] in their plugin.toml.
+local WIDGET_IDS = [[
+for d in $(noctalia msg plugins source list | awk '$2=="path"{print $3}'); do
+  grep -l '^\[\[desktop_widget\]\]' "$d"/*/plugin.toml 2>/dev/null
+done | xargs -r sed -s -n '1s/^id = "\(.*\)"/\1/p'
+]]
 
 local RELOAD = [[
 ERR="${XDG_RUNTIME_DIR:-/tmp}/mb-plugin-errors"
@@ -303,7 +322,15 @@ render = function()
     noctalia.runAsync({ "noctalia", "msg", "config-reload" })
   end
   local function reloadAll()
-    reloadPlugins(plugins)
+    local running = {}
+    for _, id in ipairs(plugins) do
+      if not stopped[id] or failed[id] then
+        table.insert(running, id)
+      end
+    end
+    if #running > 0 then
+      reloadPlugins(running)
+    end
   end
 
   row += 1
@@ -376,6 +403,55 @@ render = function()
   end
   table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
 
+  local function pluginRows(list, into)
+    for _, id in ipairs(list) do
+      row += 1
+      local open = expanded["pc-" .. id]
+      local function toggleOne()
+        toggle("pc-" .. id)
+      end
+      stop("pl-" .. id, 1, toggleOne)
+      table.insert(into, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = stopped[id] and (id .. "  (stopped)") or id, glyph = failed[id] and "alert-circle" or (open and "chevron-down" or "chevron-right"), variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; open it and reload" or nil, onClick = toggleOne }))
+      if open then
+        local function reloadOne()
+          reloadPlugins({ id })
+        end
+        row += 1
+        stop("rl-" .. id, 1, reloadOne)
+        local lines = {
+          ui.button({ key = "rl-" .. id, selected = kbd.sel("rl-" .. id), text = "Reload", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Restart after editing its plugin.toml or Lua files", onClick = reloadOne }),
+        }
+        local cmds = {
+          { "start", "noctalia msg plugins enable " .. id, "Start: load the plugin" },
+          { "stop", "noctalia msg plugins disable " .. id, "Stop: unload the plugin" },
+          { "reload", "noctalia msg plugins disable " .. id .. " && noctalia msg plugins enable " .. id, "Reload: stop, then start" },
+        }
+        for _, c in ipairs(cmds) do
+          row += 1
+          local function copy()
+            noctalia.runAsync({ "wl-copy", "--", c[2] }, function(result)
+              if result.exitCode == 0 then
+                noctalia.notify("Command copied", c[2])
+              else
+                noctalia.copyToClipboard(c[2], "text/plain")
+                noctalia.notify("Command added to clipboard history", "Install wl-clipboard to paste it directly")
+              end
+            end)
+          end
+          stop("cp-" .. id .. c[1], 1, copy)
+          table.insert(lines, ui.row({ gap = 6, align = "center" }, {
+            ui.column({ gap = 0, flexGrow = 1 }, {
+              ui.label({ text = c[3], fontSize = 13, color = "on_surface_variant" }),
+              ui.label({ text = c[2], fontSize = 13 }),
+            }),
+            ui.button({ key = "cp-" .. id .. c[1], selected = kbd.sel("cp-" .. id .. c[1]), glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy the command", onClick = copy }),
+          }))
+        end
+        table.insert(into, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
+      end
+    end
+  end
+
   local plugOpen = expanded["Plugins"]
   row += 1
   stop("h-plug", 1, function() toggle("Plugins") end)
@@ -391,23 +467,41 @@ render = function()
         variant = "ghost",
         controlSize = "sm",
         contentAlign = "start",
-        tooltip = "Click a plugin to restart it after editing its plugin.toml or Lua files",
+        tooltip = "Click a plugin for its commands and a reload button",
         onClick = function() toggle("Plugins") end,
       }),
       ui.button({ key = "reload-all", selected = kbd.sel("reload-all"), text = "Reload all", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Restart every enabled plugin; failed ones turn red", onClick = reloadAll }),
     }),
   }
+  local plugList, widgetList = {}, {}
+  for _, id in ipairs(plugins) do
+    table.insert(widgets[id] and widgetList or plugList, id)
+  end
   if plugOpen then
-    for _, id in ipairs(plugins) do
-      row += 1
-      local function reloadOne()
-        reloadPlugins({ id })
-      end
-      stop("pl-" .. id, 1, reloadOne)
-      table.insert(plugRows, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = id, glyph = failed[id] and "alert-circle" or "refresh", variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; click to retry" or nil, onClick = reloadOne }))
-    end
+    pluginRows(plugList, plugRows)
   end
   table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, plugRows))
+
+  local widOpen = expanded["Widgets"]
+  row += 1
+  stop("h-wid", 1, function() toggle("Widgets") end)
+  local widRows = {
+    ui.button({
+      key = "h-wid",
+      selected = kbd.sel("h-wid"),
+      text = "Widgets",
+      glyph = widOpen and "chevron-down" or "chevron-right",
+      variant = "ghost",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "Desktop widgets: click one for its commands and a reload button",
+      onClick = function() toggle("Widgets") end,
+    }),
+  }
+  if widOpen then
+    pluginRows(widgetList, widRows)
+  end
+  table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, widRows))
 
   for _, g in ipairs(order) do
     local closed = not expanded[g]
