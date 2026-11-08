@@ -54,6 +54,7 @@ mabox-noctalia-ce/
 | `configs/noctalia-ce.desktop` | `/usr/share/wayland-sessions/noctalia-ce.desktop` | package |
 | `configs/mabox-noctalia-ce/` (without `plugins/`) | `/etc/skel/.config/mabox-noctalia-ce/` | package |
 | `configs/noctalia/` | `/usr/share/mabox-noctalia-ce/noctalia/` | package |
+| `configs/backgrounds/noctalia-wallpaper.jpg` | `/usr/share/backgrounds/` | package |
 | `configs/file-manager/actions/*` | `/usr/share/file-manager/actions/` | package |
 | `systemd/user/*` | `/usr/lib/systemd/user/` | package |
 | `configs/mabox-noctalia-ce/plugins/` | `/usr/share/mabox-noctalia-ce/plugins/` | package |
