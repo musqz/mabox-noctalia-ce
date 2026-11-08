@@ -33,9 +33,8 @@
 - Remove the unused jgmenu update menu.
 - Restore the separators in the root menu.
 - Add Look and Feel (nwg-look) to the settings menu.
-- Replace pamac-manager with neoarch for Add/Remove software, moved to the settings menu.
+- Move Add/Remove software to the settings menu.
 - Add Edit autostart to the settings menu.
 - Add Ctrl+Keypad0 to launch scrcpy.
 - Add Ctrl+Alt+Left and Ctrl+Alt+Right to send a window to the previous or next workspace.
 - List Ctrl+Keypad0, Ctrl+Alt+Left and Ctrl+Alt+Right in the Keys panel.
-- Add neoarch as an optional dependency.
