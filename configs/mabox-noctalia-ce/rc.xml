@@ -89,6 +89,7 @@
     <keybind key="F3" name.action="Execute" command.action="jumpapp -m geany"/>
     <keybind key="C-A-v" name.action="Execute" command.action="jumpapp -m -c cava-transparent mb-cava"/>
     <keybind key="W-A-v" name.action="Execute" command.action="noctalia msg panel-open mabox/cava:main"/>
+    <keybind key="W-A-q"><action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main"/></keybind>
     <keybind key="W-e" name.action="Execute" command.action="geany"/>
     <keybind key="W-f" name.action="Execute" command.action="pcmanfm"/>
     <keybind key="W-r" name.action="Execute" command.action="jumpapp -m -c pyradio kitty --class pyradio -e pyradio"/>

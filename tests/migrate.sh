@@ -24,4 +24,10 @@ sed -i 's|command.action="noctalia msg panel-open mabox/cava:main"|command.actio
 migrate
 [[ $(count 'command.action="mine"') == 1 && $(count 'key="W-A-v"') == 1 ]] || { echo "FAIL migrate_7: overwrote the user's own W-A-v"; exit 1; }
 
+# migrate_11: the Equalizer key is added once, and an existing binding of the key is left alone.
+grep -v 'key="W-A-q"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(count 'key="W-A-q"') == 1 ]] || { echo "FAIL migrate_11: expected one W-A-q bind"; exit 1; }
+valid || { echo "FAIL migrate_11: rc.xml is no longer valid"; exit 1; }
+
 echo ok
