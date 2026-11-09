@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add Reset and Undo to each bar button in the Configs panel: Reset fills the fields from `config.toml`, Undo swaps back, Save applies.
+- Add `+ Add button` to Bar buttons in the Configs panel: create a button and put it at the end of the bar; click actions get `exec` added.
+- Draw a border around each section of the Configs panel.
+- Change the screenrec bar button default: camera icon, right click opens the Capture panel, middle click does nothing; `screenrec-toggle` restores the icon after a recording.
+- List a Toggle command for every panel of a plugin in the Configs panel, read from its `plugin.toml`.
 - Add a Bar buttons section to the Configs panel: edit icon, tooltip and left, middle and right click of bar buttons, no file needed.
 - Add a collapse-all button to the Configs panel.
 - Add a Toggle command to each running plugin in the Configs panel.

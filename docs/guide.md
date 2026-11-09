@@ -51,6 +51,9 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 
 Pinned window: press `alt+s` first, then click a field.
 
+- *Reset* fills the fields from `config.toml`, *Undo* switches back. Nothing changes until *Save*.
+- *+ Add button*: fill name, icon and click commands, press *Add to the bar*. The button lands at the end of the bar; reorder it in the Noctalia settings.
+
 ### Change the bar
 
 1. Check the live list: `noctalia msg config-get bar.default.end`.
