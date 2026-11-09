@@ -42,7 +42,52 @@ printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 local widgets = {}
 local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
 
+-- Ids of the plugins that declare a [[desktop_widget]] in their plugin.toml.
+local WIDGET_IDS = [[
+for d in $(noctalia msg plugins source list | awk '$2=="path"{print $3}'); do
+  grep -l '^\[\[desktop_widget\]\]' "$d"/*/plugin.toml 2>/dev/null
+done | xargs -r sed -s -n '1s/^id = "\(.*\)"/\1/p'
+]]
+
+-- Prints name<TAB>tooltip<TAB>left<TAB>middle<TAB>right for every custom_button widget that is in the bar.
+local BUTTONS = [[
+used=$(for k in start center end; do noctalia msg config-get "bar.default.$k"; done | grep -o "'[^']*'" | tr -d "'" | tr '\n' '|')
+noctalia msg config-get widget | awk -v used="|$used" '
+function unq(v,   q) { q = substr(v, 1, 1); v = substr(v, 2, length(v) - 2); if (q == "\"") { gsub(/\\\\/, "\001", v); gsub(/\\"/, "\"", v); gsub(/\001/, "\\", v) } return v }
+/^\[[^.]*\]$/ { cur = substr($0, 2, length($0) - 2); sec = "top"; names[++n] = cur; next }
+/^ *\[.*\.actions\]$/ { sec = "act"; next }
+/^ *\[/ { sec = "other"; next }
+{
+  l = $0; sub(/^ +/, "", l); i = index(l, " = ")
+  if (!i) next
+  k = substr(l, 1, i - 1); v = unq(substr(l, i + 3))
+  if (sec == "top") { if (k == "type" && v == "custom_button") btn[cur] = 1; if (k == "tooltip") tip[cur] = v }
+  else if (sec == "act") act[cur, k] = v
+}
+END { for (j = 1; j <= n; j++) { c = names[j]; if (btn[c] && index(used, "|" c "|")) printf "%s\t%s\t%s\t%s\t%s\n", c, tip[c], act[c, "left"], act[c, "middle"], act[c, "right"] } }
+'
+]]
+
+-- $1 = widget, then key/value pairs (values already TOML-quoted); reload so the bar picks them up.
+local SAVE = [[
+n="$1"; shift
+while [ $# -ge 2 ]; do
+  noctalia msg config-set "widget.$n.$1" "$2" >/dev/null || exit 1
+  shift 2
+done
+noctalia msg config-reload >/dev/null
+]]
+
+local FIELDS = {
+  { "tooltip", "Tooltip", "tooltip" },
+  { "left", "Left click", "actions.left" },
+  { "middle", "Middle click", "actions.middle" },
+  { "right", "Right click", "actions.right" },
+}
+
 local entries = {}
+local buttons = {}
+local drafts = {}
 local plugins = {}
 local failed = {}
 local stopped = {}
@@ -139,6 +184,16 @@ refresh = function()
     end
     render()
   end)
+  noctalia.runAsync({ "sh", "-c", BUTTONS }, function(result)
+    buttons = {}
+    for l in string.gmatch(result.stdout or "", "[^\n]+") do
+      local name, tip, left, middle, right = string.match(l, "^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+      if name then
+        table.insert(buttons, { name = name, tooltip = tip, left = left, middle = middle, right = right })
+      end
+    end
+    render()
+  end)
   noctalia.runAsync({ "sh", "-c", WIDGET_IDS }, function(result)
     widgets = {}
     for id in string.gmatch(result.stdout or "", "[^\n]+") do
@@ -147,13 +202,6 @@ refresh = function()
     render()
   end)
 end
-
--- Ids of the plugins that declare a [[desktop_widget]] in their plugin.toml.
-local WIDGET_IDS = [[
-for d in $(noctalia msg plugins source list | awk '$2=="path"{print $3}'); do
-  grep -l '^\[\[desktop_widget\]\]' "$d"/*/plugin.toml 2>/dev/null
-done | xargs -r sed -s -n '1s/^id = "\(.*\)"/\1/p'
-]]
 
 local RELOAD = [[
 ERR="${XDG_RUNTIME_DIR:-/tmp}/mb-plugin-errors"
@@ -238,6 +286,41 @@ local function removeCustom(name, path)
   refresh()
 end
 
+local function tomlString(s)
+  local flat = string.gsub(s, "[\t\r\n]", " ")
+  local esc = string.gsub(flat, '[\\"]', "\\%0")
+  return '"' .. esc .. '"'
+end
+
+-- Writes only the fields that differ from the live value; an empty click action becomes "none".
+local function saveButton(b)
+  local d = drafts[b.name] or {}
+  local argv = { "sh", "-c", SAVE, "sh", b.name }
+  local changed = 0
+  for _, f in ipairs(FIELDS) do
+    local v = d[f[1]]
+    if v == "" and f[1] ~= "tooltip" then
+      v = "none"
+    end
+    if v ~= nil and v ~= b[f[1]] and not (v == "none" and b[f[1]] == "") then
+      table.insert(argv, f[3])
+      table.insert(argv, tomlString(v))
+      changed += 1
+    end
+  end
+  if changed == 0 then
+    return
+  end
+  noctalia.runAsync(argv, function(result)
+    if result.exitCode == 0 then
+      drafts[b.name] = nil
+    else
+      noctalia.notify("Configs", "Saving " .. b.name .. " failed; your edits are kept")
+    end
+    refresh()
+  end)
+end
+
 local function open(path)
   noctalia.runAsync({ "setsid", "-f", "sh", "-c", OPEN, "sh", path })
 end
@@ -302,6 +385,12 @@ render = function()
     render()
   end
 
+  local function collapseAll()
+    expanded = {}
+    saveExpanded()
+    render()
+  end
+
   local function pinOrClose()
     pinSide.close("configs", pinned)
     if not pinned then
@@ -334,6 +423,7 @@ render = function()
   end
 
   row += 1
+  stop("collapse", 0, collapseAll)
   stop("refresh", 1, refresh)
   if pinned then
     stop("swap", 2, moveSide)
@@ -341,6 +431,7 @@ render = function()
   stop("pin", 3, pinOrClose)
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Configs", flexGrow = 1 }),
+    ui.button({ key = "collapse", selected = kbd.sel("collapse"), glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Collapse all sections", onClick = collapseAll }),
     ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
     pinned and pinSide.dockButton("configs", pinned, render) or ui.spacer({ width = 0 }),
     pinned and ui.button({ key = "swap", selected = kbd.sel("swap"), glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
@@ -366,7 +457,7 @@ render = function()
       selected = kbd.sel("h-side"),
       text = "Pinned windows",
       glyph = sideOpen and "chevron-down" or "chevron-right",
-      variant = "ghost",
+      variant = "outline",
       controlSize = "sm",
       contentAlign = "start",
       onClick = function() toggle("Pinned windows") end,
@@ -464,7 +555,7 @@ render = function()
         text = "Plugins",
         flexGrow = 1,
         glyph = plugOpen and "chevron-down" or "chevron-right",
-        variant = "ghost",
+        variant = "outline",
         controlSize = "sm",
         contentAlign = "start",
         tooltip = "Click a plugin for its commands and a reload button",
@@ -491,7 +582,7 @@ render = function()
       selected = kbd.sel("h-wid"),
       text = "Widgets",
       glyph = widOpen and "chevron-down" or "chevron-right",
-      variant = "ghost",
+      variant = "outline",
       controlSize = "sm",
       contentAlign = "start",
       tooltip = "Desktop widgets: click one for its commands and a reload button",
@@ -503,6 +594,62 @@ render = function()
   end
   table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, widRows))
 
+  if #buttons > 0 then
+    local btnOpen = expanded["Bar buttons"]
+    row += 1
+    stop("h-btn", 1, function() toggle("Bar buttons") end)
+    local btnRows = {
+      ui.button({
+        key = "h-btn",
+        selected = kbd.sel("h-btn"),
+        text = "Bar buttons",
+        glyph = btnOpen and "chevron-down" or "chevron-right",
+        variant = "outline",
+        controlSize = "sm",
+        contentAlign = "start",
+        tooltip = "Tooltip and click actions of the buttons in the bar",
+        onClick = function() toggle("Bar buttons") end,
+      }),
+    }
+    if btnOpen then
+      for _, b in ipairs(buttons) do
+        row += 1
+        local id = "bb-" .. b.name
+        local isOpen = expanded[id]
+        local function toggleOne()
+          toggle(id)
+        end
+        stop(id, 1, toggleOne)
+        table.insert(btnRows, ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "chevron-down" or "chevron-right", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = toggleOne }))
+        if isOpen then
+          local d = drafts[b.name]
+          if not d then
+            d = {}
+            drafts[b.name] = d
+          end
+          local lines = {}
+          for _, f in ipairs(FIELDS) do
+            local key = f[1]
+            table.insert(lines, ui.label({ text = f[2], fontSize = 11, color = "on_surface_variant" }))
+            table.insert(lines, ui.input({
+              key = id .. key,
+              value = d[key] ~= nil and d[key] or b[key],
+              onChange = function(t) d[key] = t end,
+            }))
+          end
+          row += 1
+          local function save()
+            saveButton(b)
+          end
+          stop("bs-" .. b.name, 1, save)
+          table.insert(lines, ui.button({ key = "bs-" .. b.name, selected = kbd.sel("bs-" .. b.name), text = "Save", glyph = "check", variant = "primary", controlSize = "sm", tooltip = "Apply to the bar now", onClick = save }))
+          table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
+        end
+      end
+    end
+    table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, btnRows))
+  end
+
   for _, g in ipairs(order) do
     local closed = not expanded[g]
     row += 1
@@ -513,7 +660,7 @@ render = function()
         selected = kbd.sel("g-" .. g),
         text = g,
         glyph = closed and "chevron-right" or "chevron-down",
-        variant = "ghost",
+        variant = "outline",
         controlSize = "sm",
         contentAlign = "start",
         onClick = function() toggle(g) end,
