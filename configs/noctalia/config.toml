@@ -199,6 +199,7 @@ style = "focus_hint"
 [shell]
 app_icon_color = "primary"
 panel_anchor_bar = "default"
+polkit_agent = true
 polkit_colorize_icons = true
 popup_shadows = false
 screen_time_colorize_icons = true
