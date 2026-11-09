@@ -81,9 +81,12 @@ print("[" + ", ".join("\"%s\"" % i for i in items) + "]")' "$1" <<< "$list") || 
 tip=$(noctalia msg config-get widget.screenrec.tooltip 2>/dev/null) || tip=
 tip=${tip#\'}; tip=${tip%\'}
 [[ $tip == "stop recording" ]] && tip=
+gly=$(noctalia msg config-get widget.screenrec.glyph 2>/dev/null) || gly=
+gly=${gly#\'}; gly=${gly%\'}
+[[ $gly == circle-filled ]] && gly=
 bar_state circle-filled error "stop recording"
 stop_button on
-trap 'bar_state player-record on_surface "${tip:-start recording}"; stop_button off' EXIT
+trap 'bar_state "${gly:-player-record}" on_surface "${tip:-start recording}"; stop_button off' EXIT
 
 mkdir -p "$(dirname "$out")"
 if wl-screenrec "${args[@]}" -f "$out"; then
