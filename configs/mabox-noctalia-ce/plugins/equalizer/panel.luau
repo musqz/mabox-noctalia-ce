@@ -12,6 +12,7 @@ local checked = false
 local startupSaved = false
 local nameText = ""
 local nameKey = 0
+local previous = nil
 local running = false
 local dirty = false
 local render
@@ -44,6 +45,12 @@ local function apply()
 end
 
 local function setGains(gains)
+  for i = 1, 11 do
+    if gains[i] ~= state.gains[i] then
+      previous = { table.unpack(state.gains) }
+      break
+    end
+  end
   state.gains = { table.unpack(gains) }
   startupSaved = false
   eq.save(state)
@@ -102,23 +109,23 @@ local function presetButtons(list, user)
   return rows
 end
 
+-- A name that exists is replaced.
 local function savePreset()
   local name = string.match(nameText, "^%s*(.-)%s*$")
   if name == "" then
     return
   end
   local copy = { table.unpack(state.gains) }
+  local found = false
   for _, p in ipairs(state.presets) do
     if p.name == name then
       p.gains = copy
-      nameText = ""
-      nameKey += 1
-      eq.save(state)
-      render()
-      return
+      found = true
     end
   end
-  table.insert(state.presets, { name = name, gains = copy })
+  if not found then
+    table.insert(state.presets, { name = name, gains = copy })
+  end
   nameText = ""
   nameKey += 1
   eq.save(state)
@@ -142,6 +149,8 @@ local function presetsCard()
     ui.input({ key = "name-" .. nameKey, placeholder = "Preset name", controlSize = "sm", flexGrow = 1, frameVisible = true,
       onChange = function(v) nameText = v end, onSubmit = function(v) nameText = v; savePreset() end }),
     ui.button({ text = "Save", variant = "outline", controlSize = "sm", onClick = savePreset }),
+    ui.button({ text = "Revert", variant = "outline", controlSize = "sm", enabled = previous ~= nil, tooltip = "Back to the gains before the last preset",
+      onClick = function() setGains(previous) end }),
   }))
   return ui.column(card("presets"), rows)
 end

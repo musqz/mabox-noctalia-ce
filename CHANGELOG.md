@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add an Equalizer panel (mabox/equalizer): preamp and 10 bands on a PipeWire filter-chain sink, presets, on/off, and Save as startup values; `mb-eq` does the work and mb-migrate adds `eq.conf` to `~/.config/pipewire/pipewire.conf.d/`. It is in the root menu and `/mb equalizer`.
+- Add an Equalizer panel (mabox/equalizer): preamp and 10 bands on a PipeWire filter-chain sink, presets, on/off, and Save as startup values; `mb-eq` does the work and mb-migrate adds `eq.conf` to `~/.config/pipewire/pipewire.conf.d/`. It is in the root menu and `/mb equalizer`. Saving under an existing name replaces that preset; Revert goes back to the gains before the last preset.
 - Turn on the Noctalia polkit agent by default so password windows (`pkexec`, pamac) appear.
 - Show a dot instead of a chevron on the rows inside Configs panel sections: small when closed, filled when open.
 - Add Reset and Undo to each bar button in the Configs panel: Reset fills the fields from `config.toml`, Undo swaps back, Save applies.
