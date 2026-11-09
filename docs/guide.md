@@ -44,6 +44,13 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 - Snap is skipped in the check and hidden in the menu while `snapd` is stopped.
 - Command line: `mb-updates-ce [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|mirrors [fasttrack|continent|all|reflector]|menu]`.
 
+### Change a bar button
+
+1. Open the Configs panel (or pinned window) and expand *Bar buttons*.
+2. Pick a button, edit *Tooltip* or the *Left*, *Middle* and *Right click* fields, press *Save*.
+
+Pinned window: press `alt+s` first, then click a field.
+
 ### Change the bar
 
 1. Check the live list: `noctalia msg config-get bar.default.end`.
