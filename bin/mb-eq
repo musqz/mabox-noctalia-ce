@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Control the PipeWire equalizer sink (effect_input.eq, configs/pipewire/eq.conf).
+#   mb-eq gains G0..G10   set preamp + 10 band gains (dB) on the running node
+#   mb-eq on | off        make the equalizer the default sink / restore the previous one
+#   mb-eq status          prints "loaded" and "default" when they are true
+#   mb-eq save G0..G10    write the gains into the startup config (keeps eq.conf.bak)
+set -euo pipefail
+
+sink=effect_input.eq
+conf=${XDG_CONFIG_HOME:-$HOME/.config}/pipewire/pipewire.conf.d/eq.conf
+prev=${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/eq-prev
+nodes=(preamp eq1 eq2 eq3 eq4 eq5 eq6 eq7 eq8 eq9 eq10)
+
+node_id() { pactl list sinks short | awk -v s="$sink" '$2 == s { print $1; exit }'; }
+
+check_gains() {
+    (($# == 11)) || { echo "mb-eq: need 11 gains" >&2; exit 2; }
+    local g
+    for g; do [[ $g =~ ^-?[0-9]+(\.[0-9]+)?$ ]] || { echo "mb-eq: bad gain '$g'" >&2; exit 2; }; done
+}
+
+case ${1:-} in
+gains)
+    shift
+    check_gains "$@"
+    g=("$@")
+    id=$(node_id)
+    [[ -n $id ]] || { echo "mb-eq: $sink is not loaded" >&2; exit 1; }
+    params=
+    for i in "${!nodes[@]}"; do params+="\"${nodes[i]}:Gain\", ${g[i]}, "; done
+    pw-cli s "$id" Props "{params=[${params%, }]}" >/dev/null
+    ;;
+on)
+    [[ -n $(node_id) ]] || { echo "mb-eq: $sink is not loaded" >&2; exit 1; }
+    cur=$(pactl get-default-sink)
+    if [[ $cur != "$sink" ]]; then
+        mkdir -p "${prev%/*}"
+        printf '%s\n' "$cur" > "$prev"
+    fi
+    pactl set-default-sink "$sink"
+    ;;
+off)
+    [[ $(pactl get-default-sink) == "$sink" ]] || exit 0
+    old=$(cat "$prev" 2>/dev/null || true)
+    if [[ -n $old ]] && pactl list sinks short | awk '{ print $2 }' | grep -qxF "$old"; then
+        pactl set-default-sink "$old"
+    else
+        # No usable previous sink: take the first real one.
+        old=$(pactl list sinks short | awk -v s="$sink" '$2 != s { print $2; exit }')
+        if [[ -n $old ]]; then pactl set-default-sink "$old"; fi
+    fi
+    ;;
+status)
+    [[ -n $(node_id) ]] && echo loaded
+    [[ $(pactl get-default-sink) == "$sink" ]] && echo default
+    exit 0
+    ;;
+save)
+    shift
+    check_gains "$@"
+    g=("$@")
+    [[ -f $conf ]] || { echo "mb-eq: $conf not found" >&2; exit 1; }
+    for n in "${nodes[@]}"; do
+        grep -qE "name = $n .*\"Gain\" = " "$conf" || { echo "mb-eq: no $n line in $conf" >&2; exit 1; }
+    done
+    cp -f "$conf" "$conf.bak"
+    for i in "${!nodes[@]}"; do
+        sed -i -E "s/(name = ${nodes[i]} .*\"Gain\" = )-?[0-9.]+/\1${g[i]}/" "$conf"
+    done
+    ;;
+*)
+    sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//' >&2
+    exit 2
+    ;;
+esac

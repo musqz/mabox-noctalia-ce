@@ -57,9 +57,11 @@ package() {
   install -dm755 "$skel"
   cp -r "$root/configs/mabox-noctalia-ce" "$skel/"
   chmod 755 "$skel"/mabox-noctalia-ce/autostart
+  install -Dm644 "$root/configs/pipewire/eq.conf" "$skel/pipewire/pipewire.conf.d/eq.conf"
   rm -rf "$skel"/mabox-noctalia-ce/plugins
 
   install -dm755 "$pkgdir/usr/share/mabox-noctalia-ce"
+  install -Dm644 "$root/configs/pipewire/eq.conf" -t "$pkgdir/usr/share/mabox-noctalia-ce/pipewire"
   cp -r "$root/configs/noctalia" "$pkgdir/usr/share/mabox-noctalia-ce/"
   cp -r "$root/configs/mabox-noctalia-ce/plugins" "$pkgdir/usr/share/mabox-noctalia-ce/"
   find "$skel" -name "*.png" -exec chmod 644 {} +

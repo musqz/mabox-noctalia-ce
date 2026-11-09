@@ -96,6 +96,13 @@ migrate_9() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# The Equalizer panel needs eq.conf in the user's pipewire config; it loads at the next PipeWire start.
+migrate_10() {
+    local src=/usr/share/mabox-noctalia-ce/pipewire/eq.conf dst=${XDG_CONFIG_HOME:-$HOME/.config}/pipewire/pipewire.conf.d/eq.conf
+    [[ -f $src && ! -e $dst ]] || return 0
+    install -Dm644 "$src" "$dst"
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
