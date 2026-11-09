@@ -69,6 +69,8 @@ rm -rf ~/.config/mabox-noctalia-ce
 - [docs/music.md](docs/music.md): music launcher and media keys.
 - [docs/overview.md](docs/overview.md): files, paths and tools.
 
-## Screenshot
+## Screenshots
 
 <a href="docs/desktop.png"><img alt="Noctalia CE desktop" src="docs/desktop.png" width="860" /></a>
+
+<a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="860" /></a>
