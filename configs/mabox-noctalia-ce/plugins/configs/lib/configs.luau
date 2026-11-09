@@ -120,14 +120,18 @@ noctalia msg config-reload >/dev/null
 -- $1 = widget; takes it out of the bar lists and reloads. The [widget.x] block stays.
 local REMOVE = [=[
 n="$1"
+e=$(printf '%s' "$n" | sed 's/[][\.*^$\/+?(){}|]/\\&/g')
+found=0
 for k in start center end; do
-  list=$(noctalia msg config-get "bar.default.$k" | tr -d '\n')
+  list=$(noctalia msg config-get "bar.default.$k" 2>/dev/null | tr -d '\n')
   case "$list" in
     *"'$n'"*)
-      new=$(printf '%s' "$list" | sed -E "s/'$n'[[:space:]]*,[[:space:]]*//;t;s/,[[:space:]]*'$n'[[:space:]]*//;t;s/'$n'//")
+      found=1
+      new=$(printf '%s' "$list" | sed -E "s/'$e'[[:space:]]*,[[:space:]]*//;t;s/,[[:space:]]*'$e'[[:space:]]*//;t;s/'$e'//")
       noctalia msg config-set "bar.default.$k" "$new" >/dev/null || exit 1 ;;
   esac
 done
+[ "$found" = 1 ] || exit 4
 noctalia msg config-reload >/dev/null
 ]=]
 
@@ -170,6 +174,7 @@ local newBtnVersion = 0
 local panels = {}
 local staticLoaded = false
 local drafts = {}
+local confirmRemove = {}
 local plugins = {}
 local failed = {}
 local stopped = {}
@@ -509,6 +514,7 @@ end
 
 local function removeButton(b)
   noctalia.runAsync({ "sh", "-c", REMOVE, "sh", b.name }, function(result)
+    confirmRemove[b.name] = nil
     if result.exitCode == 0 then
       expanded["bb-" .. b.name] = nil
       drafts[b.name] = nil
@@ -516,6 +522,8 @@ local function removeButton(b)
       version[b.name] = nil
       saveExpanded()
       noctalia.notify("Configs", b.name .. " removed from the bar")
+    elseif result.exitCode == 4 then
+      noctalia.notify("Configs", b.name .. " is not in the bar")
     else
       noctalia.notify("Configs", "Removing " .. b.name .. " failed")
     end
@@ -859,6 +867,7 @@ render = function()
       local id = "bb-" .. b.name
       local isOpen = expanded[id]
       local function toggleOne()
+        confirmRemove[b.name] = nil
         toggle(id)
       end
       stop(id, 1, toggleOne)
@@ -900,12 +909,18 @@ render = function()
         row += 1
         stop("bs-" .. b.name, 1, save)
         table.insert(lines, ui.button({ key = "bs-" .. b.name, selected = kbd.sel("bs-" .. b.name), text = "Save", glyph = "check", variant = "primary", controlSize = "sm", tooltip = "Apply the fields to the bar now", onClick = save }))
+        local armed = confirmRemove[b.name]
         local function remove()
-          removeButton(b)
+          if confirmRemove[b.name] then
+            removeButton(b)
+          else
+            confirmRemove[b.name] = true
+            render()
+          end
         end
         row += 1
         stop("bx-" .. b.name, 1, remove)
-        table.insert(lines, ui.button({ key = "bx-" .. b.name, selected = kbd.sel("bx-" .. b.name), text = "Remove", glyph = "trash", variant = "outline", controlSize = "sm", tooltip = "Take this button out of the bar", onClick = remove }))
+        table.insert(lines, ui.button({ key = "bx-" .. b.name, selected = kbd.sel("bx-" .. b.name), text = armed and "Click again to remove" or "Remove", glyph = "trash", variant = armed and "destructive" or "outline", controlSize = "sm", tooltip = "Take this button out of the bar", onClick = remove }))
         table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
       end
     end
