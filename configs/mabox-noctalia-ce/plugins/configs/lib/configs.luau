@@ -175,6 +175,7 @@ local panels = {}
 local staticLoaded = false
 local drafts = {}
 local confirmRemove = {}
+local armCount = 0
 local plugins = {}
 local failed = {}
 local stopped = {}
@@ -912,10 +913,19 @@ render = function()
         local armed = confirmRemove[b.name]
         local function remove()
           if confirmRemove[b.name] then
+            confirmRemove[b.name] = nil
             removeButton(b)
           else
-            confirmRemove[b.name] = true
+            armCount += 1
+            local token = armCount
+            confirmRemove[b.name] = token
             render()
+            noctalia.runAsync({ "sleep", "7" }, function()
+              if confirmRemove[b.name] == token then
+                confirmRemove[b.name] = nil
+                render()
+              end
+            end)
           end
         end
         row += 1
