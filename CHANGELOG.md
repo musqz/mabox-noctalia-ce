@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Show a dot instead of a chevron on the rows inside Configs panel sections: hollow when closed, filled when open.
 - Add Reset and Undo to each bar button in the Configs panel: Reset fills the fields from `config.toml`, Undo swaps back, Save applies.
 - Add `+ Add button` to Bar buttons in the Configs panel: create a button and put it at the end of the bar; click actions get `exec` added.
 - Draw a border around each section of the Configs panel.
