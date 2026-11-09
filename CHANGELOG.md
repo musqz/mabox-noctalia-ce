@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add a Bar buttons section to the Configs panel: edit icon, tooltip and left, middle and right click of bar buttons, no file needed.
+- Add a collapse-all button to the Configs panel.
+- Add a Toggle command to each running plugin in the Configs panel.
+- Fix the empty Widgets section in the Configs panel.
 - Add a Mirrors card to the Updates panel: Fasttrack, Continent and Choose (pacman-mirrors), or Reflector on plain Arch; also `mb-updates-ce mirrors`.
 - Group the Updates panel in cards and add a help view and a button for the System panel.
 

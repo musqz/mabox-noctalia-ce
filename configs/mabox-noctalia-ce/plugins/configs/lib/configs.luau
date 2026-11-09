@@ -86,6 +86,13 @@ local FIELDS = {
   { "right", "Right click", "actions.right" },
 }
 
+-- First panel id per plugin, for the toggle command.
+local PANEL = {
+  ["mabox/capture"] = "main", ["mabox/cava"] = "main", ["mabox/colors"] = "picker", ["mabox/configs"] = "main",
+  ["mabox/insert"] = "snippets", ["mabox/keys"] = "keys", ["mabox/music"] = "add", ["mabox/notes"] = "main", ["mabox/reset"] = "main",
+  ["mabox/snapshot"] = "main", ["mabox/status"] = "main", ["mabox/system"] = "system", ["mabox/wallpaper-dirs"] = "dirs",
+}
+
 local entries = {}
 local buttons = {}
 local drafts = {}
@@ -521,6 +528,9 @@ render = function()
           { "stop", "noctalia msg plugins disable " .. id, "Stop: unload the plugin" },
           { "reload", "noctalia msg plugins disable " .. id .. " && noctalia msg plugins enable " .. id, "Reload: stop, then start" },
         }
+        if PANEL[id] and not stopped[id] then
+          table.insert(cmds, { "toggle", "noctalia msg panel-toggle " .. id .. ":" .. PANEL[id], "Toggle the panel" })
+        end
         for _, c in ipairs(cmds) do
           row += 1
           local function copy()
