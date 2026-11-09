@@ -28,7 +28,7 @@ The bar is noctalia's. Extra buttons:
 
 | Button | Left click | Right click |
 |---|---|---|
-| Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), check now | check now |
+| Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), mirrors (pacman-mirrors fasttrack, continent, choose; reflector on plain Arch), check now; `?` button explains the checker, `i` button opens the System panel | check now |
 | Screen recording | start / stop | |
 
 Click the updates button again to close the panel. Flatpak, Snap, npm and pipx entries show only when they have updates.
@@ -42,7 +42,7 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 - Check runs 30 s after login, then hourly, and after every change to `pacman.log` (offline, no refresh).
 - `yay` is used when installed, else `pacman`.
 - Snap is skipped in the check and hidden in the menu while `snapd` is stopped.
-- Command line: `mb-updates-ce [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|menu]`.
+- Command line: `mb-updates-ce [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|mirrors [fasttrack|continent|all|reflector]|menu]`.
 
 ### Change the bar
 

@@ -3,6 +3,7 @@
 local SOURCES = { { "repo", "Repo" }, { "aur", "AUR" }, { "flatpak", "Flatpak" }, { "snap", "Snap" }, { "npm", "npm" }, { "pipx", "pipx" } }
 local counts = {}
 local orphans = 0
+local has = {}
 local checking = false
 local view = "main"
 local render
@@ -67,6 +68,50 @@ local function listView()
   }))
 end
 
+local function card(key, children)
+  return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 4, border = "primary", borderWidth = 1 }, children)
+end
+
+local INFO = {
+  { "Checking", {
+    "Counts pacman, AUR, Flatpak, Snap, npm and pipx updates.",
+    "Runs 30 s after start, hourly and after each pacman change.",
+    "Check now runs it by hand.",
+  } },
+  { "Updating", {
+    "Buttons open a terminal and ask for your password.",
+    "Flatpak, Snap, npm and pipx buttons show only when that source has updates.",
+    "Snap is skipped while snapd is off.",
+  } },
+}
+
+local function mirrorInfo()
+  if has.mirrors then
+    return { "Mirrors", { "Fasttrack: fastest up-to-date mirrors.", "Continent: mirrors near you.", "Choose (all): pick mirrors from a list (takes a minute)." } }
+  elseif has.reflector then
+    return { "Mirrors", { "Reflector: fastest https mirrors, written to /etc/pacman.d/mirrorlist." } }
+  end
+end
+
+local function infoView()
+  local cards = {
+    ui.row({ gap = 6, align = "center" }, {
+      ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function() view = "main" render() end }),
+      ui.label({ text = "Update checker", fontSize = 14 }),
+    }),
+  }
+  local sections = { table.unpack(INFO) }
+  table.insert(sections, mirrorInfo())
+  for _, sec in ipairs(sections) do
+    local rows = { ui.label({ text = sec[1], fontSize = 12, color = "primary" }) }
+    for _, t in ipairs(sec[2]) do
+      table.insert(rows, ui.label({ text = t, fontSize = 11, color = "on_surface_variant" }))
+    end
+    table.insert(cards, card("info-" .. sec[1], rows))
+  end
+  panel.render(ui.column({ gap = 8, padding = 12 }, cards))
+end
+
 local function start(argv)
   panel.close()
   local cmd = { "setsid", "-f", "mb-updates-ce" }
@@ -85,6 +130,10 @@ render = function()
     listView()
     return
   end
+  if view == "info" then
+    infoView()
+    return
+  end
   local total, parts = 0, {}
   for _, s in ipairs(SOURCES) do
     total += counts[s[1]] or 0
@@ -92,27 +141,47 @@ render = function()
       table.insert(parts, s[2] .. " " .. counts[s[1]])
     end
   end
-  local items = {
-    ui.label({ text = checking and "Checking for updates" or (total > 0 and (total .. " updates") or "System up to date"), fontSize = 14 }),
+  local head = {
+    ui.label({ text = checking and "Checking for updates" or (total > 0 and (total .. " updates") or "System up to date"), fontSize = 14, flexGrow = 1 }),
+    ui.button({ glyph = "help-circle", variant = "ghost", controlSize = "sm", tooltip = "About the update checker", onClick = function() view = "info" render() end }),
+    ui.button({ glyph = "info-circle", variant = "ghost", controlSize = "sm", tooltip = "System info and fixes (W-A-i)", onClick = function()
+      panel.close()
+      noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/system:system" })
+    end }),
   }
+  local top = { ui.row({ gap = 6, align = "center" }, head) }
   if #parts > 0 then
-    table.insert(items, ui.label({ text = table.concat(parts, "  "), color = "on_surface_variant", fontSize = 11 }))
+    table.insert(top, ui.label({ text = table.concat(parts, "  "), color = "on_surface_variant", fontSize = 11 }))
   end
+  local updates = {}
   if total > 0 then
-    table.insert(items, ui.button({ text = "View updates (" .. total .. ")", glyph = "list", variant = "ghost", contentAlign = "start", onClick = function() view = "list" render() end }))
+    table.insert(updates, ui.button({ text = "View updates (" .. total .. ")", glyph = "list", variant = "ghost", contentAlign = "start", onClick = function() view = "list" render() end }))
   end
-  table.insert(items, action("Update all", "download", { "upgrade", "all" }, "primary"))
-  table.insert(items, action("Repo + AUR (yay)", "package", { "upgrade", "aur" }))
-  table.insert(items, action("Repo only (pacman)", "package", { "upgrade", "repo" }))
+  table.insert(updates, action("Update all", "download", { "upgrade", "all" }, "primary"))
+  table.insert(updates, action("Repo + AUR (yay)", "package", { "upgrade", "aur" }))
+  table.insert(updates, action("Repo only (pacman)", "package", { "upgrade", "repo" }))
   for _, s in ipairs({ { "flatpak", "Flatpak" }, { "snap", "Snap" }, { "npm", "npm" }, { "pipx", "pipx" } }) do
     if (counts[s[1]] or 0) > 0 then
-      table.insert(items, action("Update " .. s[2], "package", { "upgrade", s[1] }))
+      table.insert(updates, action("Update " .. s[2], "package", { "upgrade", s[1] }))
     end
   end
   if orphans > 0 then
-    table.insert(items, action("Remove orphans (" .. orphans .. ")", "trash", { "orphans" }))
+    table.insert(updates, action("Remove orphans (" .. orphans .. ")", "trash", { "orphans" }))
   end
-  table.insert(items, ui.button({
+  local items = { ui.column({ gap = 2 }, top), card("updates", updates) }
+  if has.mirrors or has.reflector then
+    local mirrors = { ui.label({ text = "Mirrors", fontSize = 14 }) }
+    if has.mirrors then
+      table.insert(mirrors, action("Fasttrack", "world", { "mirrors", "fasttrack" }))
+      table.insert(mirrors, action("Continent", "world", { "mirrors", "continent" }))
+      table.insert(mirrors, action("Choose (all)", "world", { "mirrors", "all" }))
+    end
+    if has.reflector and not has.mirrors then
+      table.insert(mirrors, action("Reflector", "world", { "mirrors", "reflector" }))
+    end
+    table.insert(items, card("mirrors", mirrors))
+  end
+  table.insert(items, card("check", { ui.button({
     text = "Check now",
     glyph = "refresh",
     variant = "ghost",
@@ -126,8 +195,8 @@ render = function()
         render()
       end)
     end,
-  }))
-  panel.render(ui.column({ gap = 4, padding = 12 }, items))
+  }) }))
+  panel.render(ui.column({ gap = 8, padding = 12 }, items))
 end
 
 return function()
@@ -135,6 +204,10 @@ return function()
   view = "main"
   load()
   render()
+  noctalia.runAsync({ "sh", "-c", "command -v pacman-mirrors >/dev/null && echo mirrors; command -v reflector >/dev/null && echo reflector; true" }, function(result)
+    has = { mirrors = string.find(result.stdout or "", "mirrors", 1, true) ~= nil, reflector = string.find(result.stdout or "", "reflector", 1, true) ~= nil }
+    render()
+  end)
   noctalia.runAsync({ "sh", "-c", "pacman -Qtdq 2>/dev/null | grep -c . || true" }, function(result)
     orphans = tonumber(string.match(result.stdout or "", "%d+")) or 0
     render()

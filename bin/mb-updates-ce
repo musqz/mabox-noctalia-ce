@@ -4,6 +4,7 @@
 #   mb-updates-ce offline    same without network (reuses the last synced db and AUR list)
 #   mb-updates-ce upgrade [all|aur|repo|flatpak|snap|npm|pipx]   upgrade in a terminal, then recount
 #   mb-updates-ce orphans    list orphaned packages in a terminal and remove them after confirmation
+#   mb-updates-ce mirrors [fasttrack|continent|all|reflector]   refresh the mirror list in a terminal (pacman-mirrors or reflector)
 set -euo pipefail
 
 dir="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
@@ -168,9 +169,26 @@ orphans() {
         echo; read -rp "Done. Press Enter to close. " _' || true
 }
 
+mirrors() {
+    local tool=pacman-mirrors cmd
+    case ${1:-fasttrack} in
+        fasttrack)  cmd='sudo pacman-mirrors -f 5' ;;
+        continent)  cmd='sudo pacman-mirrors --continent' ;;
+        all)        cmd='sudo env -u DISPLAY pacman-mirrors -i -c all' ;;
+        reflector)  tool=reflector; cmd='sudo reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist' ;;
+        *) echo "usage: ${0##*/} mirrors [fasttrack|continent|all|reflector]" >&2; return 2 ;;
+    esac
+    foot -T "update mirrors" bash -c '
+        command -v "$1" >/dev/null || { echo "$1 not installed"; read -rp "Press Enter to close. " _; exit 1; }
+        [[ $1 == reflector ]] && command -v pacman-mirrors >/dev/null && { echo "Manjaro/Mabox: use pacman-mirrors, reflector writes an Arch mirror list"; read -rp "Press Enter to close. " _; exit 1; }
+        if eval "$2"; then echo; echo "Mirrors updated. The next update uses them."; else echo; echo "Mirror update failed."; fi
+        read -rp "Press Enter to close. " _' _ "$tool" "$cmd" || true
+}
+
 case ${1:-check} in
     check|offline) check "${1:-check}" ;;
     upgrade) upgrade "${2:-all}" ;;
     orphans) orphans ;;
-    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans]" >&2; exit 2 ;;
+    mirrors) mirrors "${2:-fasttrack}" ;;
+    *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|mirrors [fasttrack|continent|all|reflector]]" >&2; exit 2 ;;
 esac
