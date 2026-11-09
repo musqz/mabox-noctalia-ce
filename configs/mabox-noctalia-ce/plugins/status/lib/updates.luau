@@ -68,27 +68,48 @@ local function listView()
   }))
 end
 
+local function card(key, children)
+  return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 4, border = "primary", borderWidth = 1 }, children)
+end
+
 local INFO = {
-  "Checks pacman, AUR, Flatpak, Snap, npm and pipx for updates. The bar button shows the total.",
-  "Runs 30 s after start, then hourly, and again after every pacman change. Check now runs it by hand.",
-  "Flatpak, Snap, npm and pipx buttons appear only when that source has updates.",
-  "Snap is skipped while snapd is off.",
-  "Update buttons open a terminal and ask for your password.",
-  "Mirrors refreshes the mirror list: Fasttrack = fastest up-to-date mirrors, Continent = mirrors near you, Choose (all) = pick by hand. Reflector is for plain Arch and is hidden when pacman-mirrors is installed.",
+  { "Checking", {
+    "Counts pacman, AUR, Flatpak, Snap, npm and pipx updates.",
+    "Runs 30 s after start, hourly and after each pacman change.",
+    "Check now runs it by hand.",
+  } },
+  { "Updating", {
+    "Buttons open a terminal and ask for your password.",
+    "Flatpak, Snap, npm and pipx buttons show only when that source has updates.",
+    "Snap is skipped while snapd is off.",
+  } },
 }
 
-local function infoView()
-  local rows = {}
-  for _, t in ipairs(INFO) do
-    table.insert(rows, ui.label({ text = t, fontSize = 12, color = "on_surface_variant" }))
+local function mirrorInfo()
+  if has.mirrors then
+    return { "Mirrors", { "Fasttrack: fastest up-to-date mirrors.", "Continent: mirrors near you.", "Choose (all): pick mirrors from a list (takes a minute)." } }
+  elseif has.reflector then
+    return { "Mirrors", { "Reflector: fastest https mirrors, written to /etc/pacman.d/mirrorlist." } }
   end
-  panel.render(ui.column({ gap = 8, padding = 12 }, {
+end
+
+local function infoView()
+  local cards = {
     ui.row({ gap = 6, align = "center" }, {
       ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function() view = "main" render() end }),
       ui.label({ text = "Update checker", fontSize = 14 }),
     }),
-    ui.column({ gap = 8, fill = "surface_variant", radius = 10, padding = 12, border = "primary", borderWidth = 1 }, rows),
-  }))
+  }
+  local sections = { table.unpack(INFO) }
+  table.insert(sections, mirrorInfo())
+  for _, sec in ipairs(sections) do
+    local rows = { ui.label({ text = sec[1], fontSize = 12, color = "primary" }) }
+    for _, t in ipairs(sec[2]) do
+      table.insert(rows, ui.label({ text = t, fontSize = 11, color = "on_surface_variant" }))
+    end
+    table.insert(cards, card("info-" .. sec[1], rows))
+  end
+  panel.render(ui.column({ gap = 8, padding = 12 }, cards))
 end
 
 local function start(argv)
@@ -98,10 +119,6 @@ local function start(argv)
     table.insert(cmd, a)
   end
   noctalia.runAsync(cmd)
-end
-
-local function card(key, children)
-  return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 4, border = "primary", borderWidth = 1 }, children)
 end
 
 local function action(text, glyph, argv, variant)

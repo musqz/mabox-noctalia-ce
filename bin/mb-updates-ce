@@ -174,7 +174,7 @@ mirrors() {
     case ${1:-fasttrack} in
         fasttrack)  cmd='sudo pacman-mirrors -f 5' ;;
         continent)  cmd='sudo pacman-mirrors --continent' ;;
-        all)        cmd='sudo pacman-mirrors -i -c all' ;;
+        all)        cmd='sudo env -u DISPLAY pacman-mirrors -i -c all' ;;
         reflector)  tool=reflector; cmd='sudo reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist' ;;
         *) echo "usage: ${0##*/} mirrors [fasttrack|continent|all|reflector]" >&2; return 2 ;;
     esac
