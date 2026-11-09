@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a Mirrors card to the Updates panel: Fasttrack, Continent and Choose (pacman-mirrors), or Reflector on plain Arch; also `mb-updates-ce mirrors`.
+- Group the Updates panel in cards and add a help view and a button for the System panel.
+
 ## 0.4.7
 
 - Pick two palette colors (Pri + Ter, Pri + Sec, Sec + Ter) and a style (Vivid, Soft, Palette) for Follow wallpaper colors in the Cava panel; mb-migrate adds the secondary color to the palette template.
