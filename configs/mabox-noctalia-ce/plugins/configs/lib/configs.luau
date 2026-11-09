@@ -68,6 +68,26 @@ END { for (j = 1; j <= n; j++) { c = names[j]; if (btn[c] && index(used, "|" c "
 '
 ]]
 
+-- Same columns as BUTTONS, read from the user's config.toml, else the packaged one.
+local DEFAULTS = [[
+f=${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/config.toml
+[ -r "$f" ] || f=/usr/share/mabox-noctalia-ce/noctalia/config.toml
+[ -r "$f" ] && awk '
+function unq(v,   q) { q = substr(v, 1, 1); v = substr(v, 2, length(v) - 2); if (q == "\"") { gsub(/\\\\/, "\001", v); gsub(/\\"/, "\"", v); gsub(/\001/, "\\", v) } return v }
+/^\[widget\.[^.]*\]$/ { cur = substr($0, 9, length($0) - 9); sec = "top"; names[++n] = cur; next }
+/^\[widget\.[^.]*\.actions\]$/ { sec = "act"; cur = substr($0, 9, length($0) - 17); next }
+/^\[/ { sec = "other"; next }
+{
+  i = index($0, " = ")
+  if (!i) next
+  k = substr($0, 1, i - 1); v = unq(substr($0, i + 3))
+  if (sec == "top") { if (k == "type" && v == "custom_button") btn[cur] = 1; if (k == "tooltip") tip[cur] = v; if (k == "glyph") gly[cur] = v }
+  else if (sec == "act") act[cur, k] = v
+}
+END { for (j = 1; j <= n; j++) { c = names[j]; if (btn[c]) printf "%s\t%s\t%s\t%s\t%s\t%s\n", c, tip[c], act[c, "left"], act[c, "middle"], act[c, "right"], gly[c] } }
+' "$f"
+]]
+
 -- $1 = widget, then key/value pairs (values already TOML-quoted); reload so the bar picks them up.
 local SAVE = [[
 n="$1"; shift
@@ -78,6 +98,25 @@ done
 noctalia msg config-reload >/dev/null
 ]]
 
+-- $1 = widget, then key/value pairs; also appends the widget to the end of the bar and reloads.
+local ADD = [=[
+n="$1"; shift
+t=$(noctalia msg config-get "widget.$n.type" 2>/dev/null)
+case "$t" in ""|*custom_button*) ;; *) exit 3 ;; esac
+while [ $# -ge 2 ]; do
+  noctalia msg config-set "widget.$n.$1" "$2" >/dev/null || exit 1
+  shift 2
+done
+all=$(for k in start center end; do noctalia msg config-get "bar.default.$k"; done)
+case "$all" in
+  *"'$n'"*) ;;
+  *) list=$(noctalia msg config-get bar.default.end | tr -d '\n')
+     new=$(printf '%s' "$list" | sed -E "s/^\[[[:space:]]*\]$/['$n']/;t;s/,?[[:space:]]*\][[:space:]]*$/, '$n']/")
+     noctalia msg config-set bar.default.end "$new" >/dev/null || exit 1 ;;
+esac
+noctalia msg config-reload >/dev/null
+]=]
+
 local FIELDS = {
   { "glyph", "Icon (Tabler name, e.g. camera)", "glyph" },
   { "tooltip", "Tooltip", "tooltip" },
@@ -86,15 +125,36 @@ local FIELDS = {
   { "right", "Right click", "actions.right" },
 }
 
--- First panel id per plugin, for the toggle command.
-local PANEL = {
-  ["mabox/capture"] = "main", ["mabox/cava"] = "main", ["mabox/colors"] = "picker", ["mabox/configs"] = "main",
-  ["mabox/insert"] = "snippets", ["mabox/keys"] = "keys", ["mabox/music"] = "add", ["mabox/notes"] = "main", ["mabox/reset"] = "main",
-  ["mabox/snapshot"] = "main", ["mabox/status"] = "main", ["mabox/system"] = "system", ["mabox/wallpaper-dirs"] = "dirs",
-}
-
+-- Prints plugin-id:panel-id for every [[panel]] of every plugin, except the pinned windows.
+local PANELS = [[
+noctalia msg plugins source list | awk '$2=="path"{print $3}' | while IFS= read -r d; do
+  for f in "$d"/*/plugin.toml; do
+    [ -f "$f" ] && awk '
+      /^id = / { v = $3; gsub(/"/, "", v); if (!pid) pid = v; else if (p) { if (v !~ /^pin/) print pid ":" v; p = 0 } }
+      /^\[\[panel\]\]/ { p = 1 }
+    ' "$f"
+  done
+done | awk '!seen[$0]++'
+]]
 local entries = {}
 local buttons = {}
+local defaults = {}
+local prev = {}
+local version = {}
+
+-- The Add form starts empty; these show as grey examples.
+local EXAMPLE = {
+  name = "status",
+  glyph = "activity",
+  tooltip = "system status",
+  left = "exec noctalia msg panel-toggle mabox/status:main",
+  middle = "none",
+  right = "exec noctalia msg panel-toggle mabox/status:pinned-left",
+}
+local newBtn = { name = "", glyph = "", tooltip = "", left = "", middle = "", right = "" }
+local newBtnVersion = 0
+local panels = {}
+local staticLoaded = false
 local drafts = {}
 local plugins = {}
 local failed = {}
@@ -202,6 +262,30 @@ refresh = function()
     end
     render()
   end)
+  if not staticLoaded then
+    staticLoaded = true
+    noctalia.runAsync({ "sh", "-c", DEFAULTS }, function(result)
+      defaults = {}
+      for l in string.gmatch(result.stdout or "", "[^\n]+") do
+        local name, tip, left, middle, right, glyph = string.match(l, "^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+        if name then
+          defaults[name] = { tooltip = tip, left = left, middle = middle, right = right, glyph = glyph }
+        end
+      end
+      render()
+    end)
+    noctalia.runAsync({ "sh", "-c", PANELS }, function(result)
+      panels = {}
+      for l in string.gmatch(result.stdout or "", "[^\n]+") do
+        local id, panelId = string.match(l, "^([^:]+):(.+)$")
+        if id then
+          panels[id] = panels[id] or {}
+          table.insert(panels[id], panelId)
+        end
+      end
+      render()
+    end)
+  end
   noctalia.runAsync({ "sh", "-c", WIDGET_IDS }, function(result)
     widgets = {}
     for id in string.gmatch(result.stdout or "", "[^\n]+") do
@@ -300,33 +384,146 @@ local function tomlString(s)
   return '"' .. esc .. '"'
 end
 
--- Writes only the fields that differ from the live value; an empty click action becomes "none", an empty icon is ignored.
-local function saveButton(b)
-  local d = drafts[b.name] or {}
-  local argv = { "sh", "-c", SAVE, "sh", b.name }
-  local changed = 0
+-- Noctalia runs a click action only as "exec <command>"; "none" disables it.
+local function action(v)
+  v = string.gsub(v, "^%s+", "")
+  if v == "" then
+    return "none"
+  end
+  if v == "none" or string.match(v, "^exec%s") then
+    return v
+  end
+  return "exec " .. v
+end
+
+-- config-set arguments for the fields of values that differ from the live button; an empty click action becomes "none", an empty icon is ignored.
+local function changes(b, values)
+  local out = {}
   for _, f in ipairs(FIELDS) do
     local key = f[1]
-    local v = d[key]
-    if v == "" and key ~= "tooltip" and key ~= "glyph" then
-      v = "none"
-    end
     local live = b[key]
+    local v = values[key]
+    if key ~= "tooltip" and key ~= "glyph" then
+      -- untouched click actions are checked too, so an old one without exec gets fixed on Save
+      v = action(v ~= nil and v or live)
+    end
     local same = v == nil or v == live or (key == "glyph" and v == "") or (v == "none" and live == "")
     if not same then
-      table.insert(argv, f[3])
-      table.insert(argv, tomlString(v))
-      changed += 1
+      table.insert(out, f[3])
+      table.insert(out, tomlString(v))
     end
   end
-  if changed == 0 then
+  return out
+end
+
+local function card(rows)
+  return ui.column({ fill = "surface_variant", radius = 10, padding = 8, gap = 4, border = "primary", borderWidth = 1 }, rows)
+end
+
+local function draftOf(name)
+  drafts[name] = drafts[name] or {}
+  return drafts[name]
+end
+
+-- What the fields show now: the edit if there is one, else the live value.
+local function shown(b)
+  local d = draftOf(b.name)
+  local out = {}
+  for _, f in ipairs(FIELDS) do
+    local key = f[1]
+    out[key] = d[key] ~= nil and d[key] or b[key]
+  end
+  return out
+end
+
+-- A new key rebuilds the input, which otherwise keeps the text it already shows.
+local function fill(b, values)
+  version[b.name] = (version[b.name] or 0) + 1
+  local d = draftOf(b.name)
+  for _, f in ipairs(FIELDS) do
+    d[f[1]] = values[f[1]] or ""
+  end
+end
+
+-- Reset and Undo only fill the fields; Save is what writes.
+local function resetFields(b)
+  local now = shown(b)
+  local same = true
+  for _, f in ipairs(FIELDS) do
+    if now[f[1]] ~= (defaults[b.name][f[1]] or "") then
+      same = false
+    end
+  end
+  if not same then
+    prev[b.name] = now
+  end
+  fill(b, defaults[b.name])
+  render()
+end
+
+-- Swaps the fields with the values before the last Reset or Undo, so a second click goes back.
+local function undoFields(b)
+  local before = prev[b.name]
+  if not before then
     return
+  end
+  prev[b.name] = shown(b)
+  fill(b, before)
+  render()
+end
+
+local function saveButton(b)
+  local args = changes(b, draftOf(b.name))
+  if #args == 0 then
+    noctalia.notify("Configs", b.name .. ": nothing to save")
+    return
+  end
+  noctalia.runAsync({ "sh", "-c", SAVE, "sh", b.name, table.unpack(args) }, function(result)
+    if result.exitCode == 0 then
+      for k in pairs(draftOf(b.name)) do
+        drafts[b.name][k] = nil
+      end
+      prev[b.name] = nil
+      version[b.name] = (version[b.name] or 0) + 1
+      noctalia.notify("Configs", b.name .. " saved")
+    else
+      noctalia.notify("Configs", "Saving " .. b.name .. " failed; your edits are kept")
+    end
+    refresh()
+  end)
+end
+
+local function addButton()
+  local name = newBtn.name
+  if not string.match(name, "^[%w_-]+$") then
+    noctalia.notify("Configs", "Name: letters, digits, - and _ only")
+    return
+  end
+  if newBtn.glyph == "" then
+    noctalia.notify("Configs", "Enter an icon name")
+    return
+  end
+  local argv = { "sh", "-c", ADD, "sh", name,
+    "type", tomlString("custom_button"), "color", tomlString("on_surface"), "capsule", "false" }
+  for _, f in ipairs(FIELDS) do
+    local v = newBtn[f[1]]
+    if f[1] ~= "tooltip" and f[1] ~= "glyph" then
+      v = action(v)
+    end
+    table.insert(argv, f[3])
+    table.insert(argv, tomlString(v))
   end
   noctalia.runAsync(argv, function(result)
     if result.exitCode == 0 then
-      drafts[b.name] = nil
+      noctalia.notify("Configs", name .. " added to the bar")
+      for k in pairs(newBtn) do
+        newBtn[k] = ""
+      end
+      newBtnVersion += 1
+    elseif result.exitCode == 3 then
+      noctalia.notify("Configs", name .. " is already a widget that is not a button; pick another name")
     else
-      noctalia.notify("Configs", "Saving " .. b.name .. " failed; your edits are kept")
+      noctalia.notify("Configs", "Adding " .. name .. " failed")
     end
     refresh()
   end)
@@ -443,7 +640,7 @@ render = function()
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Configs", flexGrow = 1 }),
     ui.button({ key = "collapse", selected = kbd.sel("collapse"), glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Collapse all sections", onClick = collapseAll }),
-    ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = refresh }),
+    ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = function() staticLoaded = false; refresh() end }),
     pinned and pinSide.dockButton("configs", pinned, render) or ui.spacer({ width = 0 }),
     pinned and ui.button({ key = "swap", selected = kbd.sel("swap"), glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
     ui.button({ key = "pin", selected = kbd.sel("pin"), glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose }),
@@ -503,7 +700,7 @@ render = function()
       }))
     end
   end
-  table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, sideRows))
+  table.insert(cards, card(sideRows))
 
   local function pluginRows(list, into)
     for _, id in ipairs(list) do
@@ -528,8 +725,10 @@ render = function()
           { "stop", "noctalia msg plugins disable " .. id, "Stop: unload the plugin" },
           { "reload", "noctalia msg plugins disable " .. id .. " && noctalia msg plugins enable " .. id, "Reload: stop, then start" },
         }
-        if PANEL[id] and not stopped[id] then
-          table.insert(cmds, { "toggle", "noctalia msg panel-toggle " .. id .. ":" .. PANEL[id], "Toggle the panel" })
+        if not stopped[id] then
+          for _, p in ipairs(panels[id] or {}) do
+            table.insert(cmds, { "toggle-" .. p, "noctalia msg panel-toggle " .. id .. ":" .. p, "Toggle the " .. p .. " panel" })
+          end
         end
         for _, c in ipairs(cmds) do
           row += 1
@@ -585,7 +784,7 @@ render = function()
   if plugOpen then
     pluginRows(plugList, plugRows)
   end
-  table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, plugRows))
+  table.insert(cards, card(plugRows))
 
   local widOpen = expanded["Widgets"]
   row += 1
@@ -606,63 +805,108 @@ render = function()
   if widOpen then
     pluginRows(widgetList, widRows)
   end
-  table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, widRows))
+  table.insert(cards, card(widRows))
 
-  if #buttons > 0 then
-    local btnOpen = expanded["Bar buttons"]
-    row += 1
-    stop("h-btn", 1, function() toggle("Bar buttons") end)
-    local btnRows = {
-      ui.button({
-        key = "h-btn",
-        selected = kbd.sel("h-btn"),
-        text = "Bar buttons",
-        glyph = btnOpen and "chevron-down" or "chevron-right",
-        variant = "outline",
-        controlSize = "sm",
-        contentAlign = "start",
-        tooltip = "Tooltip and click actions of the buttons in the bar",
-        onClick = function() toggle("Bar buttons") end,
-      }),
-    }
-    if btnOpen then
-      for _, b in ipairs(buttons) do
+  local btnOpen = expanded["Bar buttons"]
+  row += 1
+  stop("h-btn", 1, function() toggle("Bar buttons") end)
+  local btnRows = {
+    ui.button({
+      key = "h-btn",
+      selected = kbd.sel("h-btn"),
+      text = "Bar buttons",
+      glyph = btnOpen and "chevron-down" or "chevron-right",
+      variant = "outline",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "Tooltip and click actions of the buttons in the bar",
+      onClick = function() toggle("Bar buttons") end,
+    }),
+  }
+  if btnOpen then
+    for _, b in ipairs(buttons) do
+      row += 1
+      local id = "bb-" .. b.name
+      local isOpen = expanded[id]
+      local function toggleOne()
+        toggle(id)
+      end
+      stop(id, 1, toggleOne)
+      table.insert(btnRows, ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "chevron-down" or "chevron-right", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = toggleOne }))
+      if isOpen then
+        local d = draftOf(b.name)
+        local lines = {}
+        for _, f in ipairs(FIELDS) do
+          local key = f[1]
+          table.insert(lines, ui.label({ text = f[2], fontSize = 11, color = "on_surface_variant" }))
+          table.insert(lines, ui.input({
+            key = id .. key .. (version[b.name] or 0),
+            value = d[key] ~= nil and d[key] or b[key],
+            onChange = function(t) d[key] = t end,
+          }))
+        end
+        local function save()
+          saveButton(b)
+        end
+        local function reset()
+          resetFields(b)
+        end
+        local function undo()
+          undoFields(b)
+        end
         row += 1
-        local id = "bb-" .. b.name
-        local isOpen = expanded[id]
-        local function toggleOne()
-          toggle(id)
+        local extra = {}
+        if defaults[b.name] then
+          stop("br-" .. b.name, 1, reset)
+          table.insert(extra, ui.button({ key = "br-" .. b.name, selected = kbd.sel("br-" .. b.name), text = "Reset", glyph = "refresh", variant = "outline", controlSize = "sm", flexGrow = 1, tooltip = "Fill the fields with the values from config.toml; Save applies it", onClick = reset }))
         end
-        stop(id, 1, toggleOne)
-        table.insert(btnRows, ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "chevron-down" or "chevron-right", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = toggleOne }))
-        if isOpen then
-          local d = drafts[b.name]
-          if not d then
-            d = {}
-            drafts[b.name] = d
-          end
-          local lines = {}
-          for _, f in ipairs(FIELDS) do
-            local key = f[1]
-            table.insert(lines, ui.label({ text = f[2], fontSize = 11, color = "on_surface_variant" }))
-            table.insert(lines, ui.input({
-              key = id .. key,
-              value = d[key] ~= nil and d[key] or b[key],
-              onChange = function(t) d[key] = t end,
-            }))
-          end
-          row += 1
-          local function save()
-            saveButton(b)
-          end
-          stop("bs-" .. b.name, 1, save)
-          table.insert(lines, ui.button({ key = "bs-" .. b.name, selected = kbd.sel("bs-" .. b.name), text = "Save", glyph = "check", variant = "primary", controlSize = "sm", tooltip = "Apply to the bar now", onClick = save }))
-          table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
+        if prev[b.name] then
+          stop("bu-" .. b.name, 2, undo)
+          table.insert(extra, ui.button({ key = "bu-" .. b.name, selected = kbd.sel("bu-" .. b.name), text = "Undo", glyph = "arrow-back-up", variant = "outline", controlSize = "sm", flexGrow = 1, tooltip = "Back to the fields before the last Reset or Undo; click again to switch back", onClick = undo }))
         end
+        if #extra > 0 then
+          table.insert(lines, ui.row({ gap = 4 }, extra))
+        end
+        row += 1
+        stop("bs-" .. b.name, 1, save)
+        table.insert(lines, ui.button({ key = "bs-" .. b.name, selected = kbd.sel("bs-" .. b.name), text = "Save", glyph = "check", variant = "primary", controlSize = "sm", tooltip = "Apply the fields to the bar now", onClick = save }))
+        table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
       end
     end
-    table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, btnRows))
+    local addOpen = expanded["bb-add"]
+    row += 1
+    local function toggleAdd()
+      toggle("bb-add")
+    end
+    stop("bb-add", 1, toggleAdd)
+    table.insert(btnRows, ui.button({ key = "bb-add", selected = kbd.sel("bb-add"), text = "+ Add button", glyph = addOpen and "chevron-down" or "chevron-right", variant = "ghost", controlSize = "sm", contentAlign = "start", tooltip = "Put a new button in the bar", onClick = toggleAdd }))
+    if addOpen then
+      local function addIt()
+        addButton()
+      end
+      local lines = {}
+      local function field(label, key)
+        table.insert(lines, ui.label({ text = label, fontSize = 11, color = "on_surface_variant" }))
+        table.insert(lines, ui.input({
+          key = "ba-" .. key .. newBtnVersion,
+          value = newBtn[key],
+          placeholder = EXAMPLE[key],
+          onChange = function(t) newBtn[key] = t end,
+        }))
+      end
+      field("Name (letters, digits, - and _)", "name")
+      field("Icon (Tabler name)", "glyph")
+      field("Tooltip", "tooltip")
+      field("Left click", "left")
+      field("Middle click", "middle")
+      field("Right click", "right")
+      row += 1
+      stop("ba-add", 1, addIt)
+      table.insert(lines, ui.button({ key = "ba-add", selected = kbd.sel("ba-add"), text = "Add to the bar", glyph = "plus", variant = "primary", controlSize = "sm", tooltip = "Create the button and put it at the end of the bar; reorder it in the Noctalia settings", onClick = addIt }))
+      table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
+    end
   end
+  table.insert(cards, card(btnRows))
 
   for _, g in ipairs(order) do
     local closed = not expanded[g]
@@ -733,7 +977,7 @@ render = function()
         ui.button({ key = "c-copied", selected = kbd.sel("c-copied"), text = "Add copied", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, tooltip = "Add the file you copied in the file manager", onClick = addCopied }),
       }))
     end
-    table.insert(cards, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows))
+    table.insert(cards, card(rows))
   end
 
   local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() }, cards)
