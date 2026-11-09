@@ -74,3 +74,5 @@ rm -rf ~/.config/mabox-noctalia-ce
 <a href="docs/desktop.png"><img alt="Noctalia CE desktop" src="docs/desktop.png" width="860" /></a>
 
 <a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="860" /></a>
+
+<a href="docs/equalizer.png"><img alt="Equalizer panel" src="docs/equalizer.png" width="860" /></a>
