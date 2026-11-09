@@ -5,6 +5,8 @@
 - Show a dot instead of a chevron on the rows inside Configs panel sections: small when closed, filled when open.
 - Add Reset and Undo to each bar button in the Configs panel: Reset fills the fields from `config.toml`, Undo swaps back, Save applies.
 - Add `+ Add button` to Bar buttons in the Configs panel: create a button and put it at the end of the bar; click actions get `exec` added.
+- Add Remove to each bar button in the Configs panel: takes the button out of the bar; adding the same name again restores its settings.
+- Bold subjects, hover-coloured commands and a frame on the open row in the Configs panel plugin list.
 - Draw a border around each section of the Configs panel.
 - Change the screenrec bar button default: camera icon, right click opens the Capture panel, middle click does nothing; `screenrec-toggle` restores the icon after a recording.
 - List a Toggle command for every panel of a plugin in the Configs panel, read from its `plugin.toml`.

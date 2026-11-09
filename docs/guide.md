@@ -53,6 +53,7 @@ Pinned window: press `alt+s` first, then click a field.
 
 - *Reset* fills the fields from `config.toml`, *Undo* switches back. Nothing changes until *Save*.
 - *+ Add button*: fill name, icon and click commands, press *Add to the bar*. The button lands at the end of the bar; reorder it in the Noctalia settings.
+- *Remove*: takes the button out of the bar. Its settings stay; *+ Add button* with the same name brings it back.
 
 ### Change the bar
 

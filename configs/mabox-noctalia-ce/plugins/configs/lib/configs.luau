@@ -511,6 +511,9 @@ local function removeButton(b)
   noctalia.runAsync({ "sh", "-c", REMOVE, "sh", b.name }, function(result)
     if result.exitCode == 0 then
       expanded["bb-" .. b.name] = nil
+      drafts[b.name] = nil
+      prev[b.name] = nil
+      version[b.name] = nil
       saveExpanded()
       noctalia.notify("Configs", b.name .. " removed from the bar")
     else
