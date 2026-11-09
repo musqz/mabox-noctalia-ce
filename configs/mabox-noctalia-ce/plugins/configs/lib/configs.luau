@@ -117,6 +117,20 @@ esac
 noctalia msg config-reload >/dev/null
 ]=]
 
+-- $1 = widget; takes it out of the bar lists and reloads. The [widget.x] block stays.
+local REMOVE = [=[
+n="$1"
+for k in start center end; do
+  list=$(noctalia msg config-get "bar.default.$k" | tr -d '\n')
+  case "$list" in
+    *"'$n'"*)
+      new=$(printf '%s' "$list" | sed -E "s/'$n'[[:space:]]*,[[:space:]]*//;t;s/,[[:space:]]*'$n'[[:space:]]*//;t;s/'$n'//")
+      noctalia msg config-set "bar.default.$k" "$new" >/dev/null || exit 1 ;;
+  esac
+done
+noctalia msg config-reload >/dev/null
+]=]
+
 local FIELDS = {
   { "glyph", "Icon (Tabler name, e.g. camera)", "glyph" },
   { "tooltip", "Tooltip", "tooltip" },
@@ -493,6 +507,19 @@ local function saveButton(b)
   end)
 end
 
+local function removeButton(b)
+  noctalia.runAsync({ "sh", "-c", REMOVE, "sh", b.name }, function(result)
+    if result.exitCode == 0 then
+      expanded["bb-" .. b.name] = nil
+      saveExpanded()
+      noctalia.notify("Configs", b.name .. " removed from the bar")
+    else
+      noctalia.notify("Configs", "Removing " .. b.name .. " failed")
+    end
+    refresh()
+  end)
+end
+
 local function addButton()
   local name = newBtn.name
   if not string.match(name, "^[%w_-]+$") then
@@ -710,7 +737,7 @@ render = function()
         toggle("pc-" .. id)
       end
       stop("pl-" .. id, 1, toggleOne)
-      table.insert(into, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = stopped[id] and (id .. "  (stopped)") or id, glyph = failed[id] and "alert-circle" or (open and "point-filled" or "point"), variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; open it and reload" or nil, onClick = toggleOne }))
+      table.insert(into, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = stopped[id] and (id .. "  (stopped)") or id, glyph = failed[id] and "alert-circle" or (open and "point-filled" or "point"), variant = failed[id] and "destructive" or (open and "outline" or "ghost"), controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; open it and reload" or nil, onClick = toggleOne }))
       if open then
         local function reloadOne()
           reloadPlugins({ id })
@@ -745,8 +772,8 @@ render = function()
           stop("cp-" .. id .. c[1], 1, copy)
           table.insert(lines, ui.row({ gap = 6, align = "center" }, {
             ui.column({ gap = 0, flexGrow = 1 }, {
-              ui.label({ text = c[3], fontSize = 13, color = "on_surface_variant" }),
-              ui.label({ text = c[2], fontSize = 13 }),
+              ui.label({ text = c[3], fontSize = 13, fontWeight = "bold", color = "on_surface_variant" }),
+              ui.label({ text = c[2], fontSize = 13, color = "hover" }),
             }),
             ui.button({ key = "cp-" .. id .. c[1], selected = kbd.sel("cp-" .. id .. c[1]), glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy the command", onClick = copy }),
           }))
@@ -870,6 +897,12 @@ render = function()
         row += 1
         stop("bs-" .. b.name, 1, save)
         table.insert(lines, ui.button({ key = "bs-" .. b.name, selected = kbd.sel("bs-" .. b.name), text = "Save", glyph = "check", variant = "primary", controlSize = "sm", tooltip = "Apply the fields to the bar now", onClick = save }))
+        local function remove()
+          removeButton(b)
+        end
+        row += 1
+        stop("bx-" .. b.name, 1, remove)
+        table.insert(lines, ui.button({ key = "bx-" .. b.name, selected = kbd.sel("bx-" .. b.name), text = "Remove", glyph = "trash", variant = "outline", controlSize = "sm", tooltip = "Take this button out of the bar", onClick = remove }))
         table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
       end
     end
