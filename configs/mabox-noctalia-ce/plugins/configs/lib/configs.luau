@@ -102,7 +102,7 @@ noctalia msg config-reload >/dev/null
 local ADD = [=[
 n="$1"; shift
 t=$(noctalia msg config-get "widget.$n.type" 2>/dev/null)
-case "$t" in ""|*custom_button*) ;; *) exit 3 ;; esac
+case "$t" in ""|"error: path not found"*|*custom_button*) ;; *) exit 3 ;; esac
 while [ $# -ge 2 ]; do
   noctalia msg config-set "widget.$n.$1" "$2" >/dev/null || exit 1
   shift 2
