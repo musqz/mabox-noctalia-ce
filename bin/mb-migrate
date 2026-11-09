@@ -103,6 +103,14 @@ migrate_10() {
     install -Dm644 "$src" "$dst"
 }
 
+# W-A-q opens the Equalizer panel; a key the user already bound stays as it is.
+migrate_11() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && ! grep -q 'key="W-A-q"' "$f" && grep -q "</keyboard>" "$f" || return 0
+    sed -i 's#</keyboard>#    <keybind key="W-A-q"><action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
