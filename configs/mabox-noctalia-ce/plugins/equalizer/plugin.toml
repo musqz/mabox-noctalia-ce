@@ -1,0 +1,22 @@
+id = "mabox/equalizer"
+name = "Equalizer"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "adjustments-horizontal"
+description = "10-band equalizer with preamp on a PipeWire filter-chain sink (mb-eq); changes apply live."
+tags = ["utility", "audio"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 420
+height = "content"
+max_height = 760
+placement = "attached"
+open_near_click = true
+
+[[service]]
+id = "restore"
+entry = "service.luau"
