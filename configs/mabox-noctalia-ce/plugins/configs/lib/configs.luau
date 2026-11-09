@@ -710,7 +710,7 @@ render = function()
         toggle("pc-" .. id)
       end
       stop("pl-" .. id, 1, toggleOne)
-      table.insert(into, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = stopped[id] and (id .. "  (stopped)") or id, glyph = failed[id] and "alert-circle" or (open and "circle-filled" or "circle"), variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; open it and reload" or nil, onClick = toggleOne }))
+      table.insert(into, ui.button({ key = "pl-" .. id, selected = kbd.sel("pl-" .. id), text = stopped[id] and (id .. "  (stopped)") or id, glyph = failed[id] and "alert-circle" or (open and "point-filled" or "point"), variant = failed[id] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", tooltip = failed[id] and "Failed to load; open it and reload" or nil, onClick = toggleOne }))
       if open then
         local function reloadOne()
           reloadPlugins({ id })
@@ -832,7 +832,7 @@ render = function()
         toggle(id)
       end
       stop(id, 1, toggleOne)
-      table.insert(btnRows, ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "circle-filled" or "circle", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = toggleOne }))
+      table.insert(btnRows, ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "point-filled" or "point", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = toggleOne }))
       if isOpen then
         local d = draftOf(b.name)
         local lines = {}
@@ -879,7 +879,7 @@ render = function()
       toggle("bb-add")
     end
     stop("bb-add", 1, toggleAdd)
-    table.insert(btnRows, ui.button({ key = "bb-add", selected = kbd.sel("bb-add"), text = "+ Add button", glyph = addOpen and "circle-filled" or "circle", variant = "ghost", controlSize = "sm", contentAlign = "start", tooltip = "Put a new button in the bar", onClick = toggleAdd }))
+    table.insert(btnRows, ui.button({ key = "bb-add", selected = kbd.sel("bb-add"), text = "+ Add button", glyph = addOpen and "point-filled" or "point", variant = "ghost", controlSize = "sm", contentAlign = "start", tooltip = "Put a new button in the bar", onClick = toggleAdd }))
     if addOpen then
       local function addIt()
         addButton()
