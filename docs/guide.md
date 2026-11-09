@@ -28,7 +28,7 @@ The bar is noctalia's. Extra buttons:
 
 | Button | Left click | Right click |
 |---|---|---|
-| Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), check now | check now |
+| Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), mirrors (pacman-mirrors fasttrack, continent, choose; reflector on plain Arch), check now; `?` button explains the checker, `i` button opens the System panel | check now |
 | Screen recording | start / stop | |
 
 Click the updates button again to close the panel. Flatpak, Snap, npm and pipx entries show only when they have updates.

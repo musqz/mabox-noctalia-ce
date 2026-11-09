@@ -74,7 +74,7 @@ local INFO = {
   "Flatpak, Snap, npm and pipx buttons appear only when that source has updates.",
   "Snap is skipped while snapd is off.",
   "Update buttons open a terminal and ask for your password.",
-  "Mirrors refreshes the mirror list: Fasttrack = fastest up-to-date mirrors, Continent = mirrors near you, Choose = pick by hand.",
+  "Mirrors refreshes the mirror list: Fasttrack = fastest up-to-date mirrors, Continent = mirrors near you, Choose (all) = pick by hand. Reflector is for plain Arch and is hidden when pacman-mirrors is installed.",
 }
 
 local function infoView()
@@ -159,7 +159,7 @@ render = function()
       table.insert(mirrors, action("Continent", "world", { "mirrors", "continent" }))
       table.insert(mirrors, action("Choose (all)", "world", { "mirrors", "all" }))
     end
-    if has.reflector then
+    if has.reflector and not has.mirrors then
       table.insert(mirrors, action("Reflector", "world", { "mirrors", "reflector" }))
     end
     table.insert(items, card("mirrors", mirrors))

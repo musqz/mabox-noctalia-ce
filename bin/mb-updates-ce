@@ -180,8 +180,9 @@ mirrors() {
     esac
     foot -T "update mirrors" bash -c '
         command -v "$1" >/dev/null || { echo "$1 not installed"; read -rp "Press Enter to close. " _; exit 1; }
-        eval "$2" && sudo pacman -Syy
-        echo; read -rp "Done. Press Enter to close. " _' _ "$tool" "$cmd" || true
+        [[ $1 == reflector ]] && command -v pacman-mirrors >/dev/null && { echo "Manjaro/Mabox: use pacman-mirrors, reflector writes an Arch mirror list"; read -rp "Press Enter to close. " _; exit 1; }
+        if eval "$2"; then echo; echo "Mirrors updated. The next update uses them."; else echo; echo "Mirror update failed."; fi
+        read -rp "Press Enter to close. " _' _ "$tool" "$cmd" || true
 }
 
 case ${1:-check} in
