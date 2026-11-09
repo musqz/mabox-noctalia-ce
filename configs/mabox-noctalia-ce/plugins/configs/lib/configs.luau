@@ -49,7 +49,7 @@ for d in $(noctalia msg plugins source list | awk '$2=="path"{print $3}'); do
 done | xargs -r sed -s -n '1s/^id = "\(.*\)"/\1/p'
 ]]
 
--- Prints name<TAB>tooltip<TAB>left<TAB>middle<TAB>right for every custom_button widget that is in the bar.
+-- Prints name<TAB>tooltip<TAB>left<TAB>middle<TAB>right<TAB>glyph for every custom_button widget that is in the bar.
 local BUTTONS = [[
 used=$(for k in start center end; do noctalia msg config-get "bar.default.$k"; done | grep -o "'[^']*'" | tr -d "'" | tr '\n' '|')
 noctalia msg config-get widget | awk -v used="|$used" '
@@ -61,10 +61,10 @@ function unq(v,   q) { q = substr(v, 1, 1); v = substr(v, 2, length(v) - 2); if 
   l = $0; sub(/^ +/, "", l); i = index(l, " = ")
   if (!i) next
   k = substr(l, 1, i - 1); v = unq(substr(l, i + 3))
-  if (sec == "top") { if (k == "type" && v == "custom_button") btn[cur] = 1; if (k == "tooltip") tip[cur] = v }
+  if (sec == "top") { if (k == "type" && v == "custom_button") btn[cur] = 1; if (k == "tooltip") tip[cur] = v; if (k == "glyph") gly[cur] = v }
   else if (sec == "act") act[cur, k] = v
 }
-END { for (j = 1; j <= n; j++) { c = names[j]; if (btn[c] && index(used, "|" c "|")) printf "%s\t%s\t%s\t%s\t%s\n", c, tip[c], act[c, "left"], act[c, "middle"], act[c, "right"] } }
+END { for (j = 1; j <= n; j++) { c = names[j]; if (btn[c] && index(used, "|" c "|")) printf "%s\t%s\t%s\t%s\t%s\t%s\n", c, tip[c], act[c, "left"], act[c, "middle"], act[c, "right"], gly[c] } }
 '
 ]]
 
@@ -79,6 +79,7 @@ noctalia msg config-reload >/dev/null
 ]]
 
 local FIELDS = {
+  { "glyph", "Icon (Tabler name, e.g. camera)", "glyph" },
   { "tooltip", "Tooltip", "tooltip" },
   { "left", "Left click", "actions.left" },
   { "middle", "Middle click", "actions.middle" },
@@ -187,9 +188,9 @@ refresh = function()
   noctalia.runAsync({ "sh", "-c", BUTTONS }, function(result)
     buttons = {}
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
-      local name, tip, left, middle, right = string.match(l, "^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
+      local name, tip, left, middle, right, glyph = string.match(l, "^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$")
       if name then
-        table.insert(buttons, { name = name, tooltip = tip, left = left, middle = middle, right = right })
+        table.insert(buttons, { name = name, tooltip = tip, left = left, middle = middle, right = right, glyph = glyph })
       end
     end
     render()
@@ -292,17 +293,20 @@ local function tomlString(s)
   return '"' .. esc .. '"'
 end
 
--- Writes only the fields that differ from the live value; an empty click action becomes "none".
+-- Writes only the fields that differ from the live value; an empty click action becomes "none", an empty icon is ignored.
 local function saveButton(b)
   local d = drafts[b.name] or {}
   local argv = { "sh", "-c", SAVE, "sh", b.name }
   local changed = 0
   for _, f in ipairs(FIELDS) do
-    local v = d[f[1]]
-    if v == "" and f[1] ~= "tooltip" then
+    local key = f[1]
+    local v = d[key]
+    if v == "" and key ~= "tooltip" and key ~= "glyph" then
       v = "none"
     end
-    if v ~= nil and v ~= b[f[1]] and not (v == "none" and b[f[1]] == "") then
+    local live = b[key]
+    local same = v == nil or v == live or (key == "glyph" and v == "") or (v == "none" and live == "")
+    if not same then
       table.insert(argv, f[3])
       table.insert(argv, tomlString(v))
       changed += 1
