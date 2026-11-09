@@ -421,9 +421,9 @@ local function cleanRows(rows)
 
   local aurOpts = {}
   local aurDirs = { "~/.cache/paru", "~/.cache/yay", "/var/tmp/pamac-build-$USER" }
-  if has("paru") then table.insert(aurOpts, { label = "paru", run = "paru -Sc --aur" }) end
-  if has("yay") then table.insert(aurOpts, { label = "yay", run = "yay -Sc --aur" }) end
-  if has("pamac") then table.insert(aurOpts, { label = "pamac", run = "pamac clean -b" }) end
+  if has("paru") then table.insert(aurOpts, { label = "Clean with paru", run = "paru -Sc --aur" }) end
+  if has("yay") then table.insert(aurOpts, { label = "Clean with yay", run = "yay -Sc --aur" }) end
+  if has("pamac") then table.insert(aurOpts, { label = "Clean with pamac", run = "pamac clean -b" }) end
   if #aurOpts > 0 then
     local aur = size("~/.cache/paru") + size("~/.cache/yay") + (sizes["/var/tmp/pamac-build-" .. (noctalia.getenv("USER") or "")] or 0)
     if not dyn or aur > 0 then
