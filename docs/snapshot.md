@@ -2,6 +2,7 @@
 
 The ISO carries what is installed on the build host, not the repo. To build a reset ISO with the newest menu, panels and tools:
 
+0. Optional: on a feature branch run `lib/mb-promote`, pick which live bar, widget and look settings become the default, then commit and merge.
 1. `git pull` in `mabox-noctalia-ce`.
 2. `./install.sh`. It builds the working tree and installs it.
 3. Check the install: `tests/iso-check.sh --host`. Build only when it prints `ok:`; exit code 2 means a tool is missing, not a wrong install.
