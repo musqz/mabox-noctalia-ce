@@ -111,6 +111,15 @@ migrate_11() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# calamares_polkit passes DISPLAY to root; a terminal started by a GTK launcher has DISPLAY=wayland-0 and Calamares aborts.
+migrate_12() {
+    local src=/usr/share/applications/calamares.desktop dst=${XDG_DATA_HOME:-$HOME/.local/share}/applications/calamares.desktop
+    [[ -f $src && ! -e $dst ]] || return 0
+    mkdir -p "${dst%/*}"
+    sed 's#^Exec=/usr/bin/calamares_polkit#Exec=env DISPLAY=:0 /usr/bin/calamares_polkit#' "$src" > "$dst.tmp"
+    mv "$dst.tmp" "$dst"
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

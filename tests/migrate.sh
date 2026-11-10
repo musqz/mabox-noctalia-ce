@@ -30,4 +30,13 @@ migrate; migrate
 [[ $(count 'key="W-A-q"') == 1 ]] || { echo "FAIL migrate_11: expected one W-A-q bind"; exit 1; }
 valid || { echo "FAIL migrate_11: rc.xml is no longer valid"; exit 1; }
 
+# migrate_12: the Calamares launcher gets DISPLAY=:0, and an existing user copy is left alone.
+if [[ -f /usr/share/applications/calamares.desktop ]]; then
+    desk=$tmp/.local/share/applications/calamares.desktop
+    migrate
+    grep -q '^Exec=env DISPLAY=:0 /usr/bin/calamares_polkit' "$desk" || { echo "FAIL migrate_12: Exec not rewritten"; exit 1; }
+    echo mine > "$desk"; migrate
+    [[ $(<"$desk") == mine ]] || { echo "FAIL migrate_12: overwrote the user's launcher"; exit 1; }
+fi
+
 echo ok
