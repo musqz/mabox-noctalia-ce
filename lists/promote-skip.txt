@@ -1,0 +1,13 @@
+# Keys that mb-promote never offers: a line is matched as a substring of the dotted config key.
+# Values that contain /home/ or ~/.local/bin are always skipped.
+widget.syshelper
+widget.notify-test
+widget.recstop
+bar.default.monitor
+font_family
+font_scale
+output
+monitor
+ddcutil
+timezone
+widget.updates.tooltip

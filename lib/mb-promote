@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+# Maintainer helper, not installed. Pick which live Noctalia settings become the shipped default.
+#   lib/mb-promote           numbered list of differences; pick numbers to write to configs/noctalia/config.toml
+#   lib/mb-promote --list    print the differences only (exit 1 when there are any)
+#   lib/mb-promote --all     write every difference without asking
+# Live = ~/.config/noctalia/config.toml with ~/.local/state/noctalia/settings.toml on top.
+# Skipped keys are in lists/promote-skip.txt. Run it on a feature branch and commit the result as usual.
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+KEEP_PREFIX = ("bar.default", "widget.", "dock", "notification", "theme.mode", "theme.source", "theme.wallpaper_scheme",
+               "shell.panel.floating_layer")
+BAR_LISTS = ("bar.default.start", "bar.default.center", "bar.default.end")
+
+home = Path.home()
+config_home = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
+state_home = Path(os.environ.get("XDG_STATE_HOME", home / ".local/state"))
+
+
+def load(path: Path) -> dict:
+    if not path.is_file():
+        return {}
+    with path.open("rb") as f:
+        return tomllib.load(f)
+
+
+def merge(base: dict, top: dict) -> dict:
+    out = dict(base)
+    for k, v in top.items():
+        out[k] = merge(out[k], v) if isinstance(out.get(k), dict) and isinstance(v, dict) else v
+    return out
+
+
+def flatten(d: dict, prefix: str = "") -> dict:
+    out = {}
+    for k, v in d.items():
+        key = f"{prefix}.{k}" if prefix else k
+        if isinstance(v, dict):
+            out.update(flatten(v, key))
+        else:
+            out[key] = v
+    return out
+
+
+def skip_words() -> list:
+    f = ROOT / "lists/promote-skip.txt"
+    if not f.is_file():
+        return []
+    return [l.strip() for l in f.read_text().splitlines() if l.strip() and not l.startswith("#")]
+
+
+def skipped(key: str, value, words: list) -> bool:
+    if not key.startswith(KEEP_PREFIX) or any(w in key.split(".") or key.startswith(w + ".") or key == w for w in words):
+        return True
+    return "/home/" in str(value) or "~/.local/bin" in str(value)
+
+
+def fmt(v) -> str:
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, list):
+        return "[" + ", ".join(fmt(x) for x in v) + "]"
+    return json.dumps(v, ensure_ascii=False) if isinstance(v, str) else repr(v)
+
+
+def find_table(lines: list, table: str):
+    """(first body line, end line) of [table], or None."""
+    for i, l in enumerate(lines):
+        if l.strip() == f"[{table}]":
+            j = i + 1
+            while j < len(lines) and not lines[j].startswith("["):
+                j += 1
+            return i + 1, j
+    return None
+
+
+def key_span(lines: list, lo: int, hi: int, key: str):
+    for i in range(lo, hi):
+        if re.match(rf"\s*{re.escape(key)}\s*=", lines[i]):
+            j = i
+            if "[" in lines[i].split("=", 1)[1] and "]" not in lines[i]:
+                while "]" not in lines[j]:
+                    j += 1
+            return i, j + 1
+    return None
+
+
+def set_key(text: str, table: str, key: str, value) -> str:
+    lines = text.split("\n")
+    span = find_table(lines, table)
+    new = f"{key} = {fmt(value)}"
+    if span is None:
+        at = next((i for i, l in enumerate(lines) if l.startswith("[shell")), len(lines))
+        block = [f"[{table}]", new, ""]
+        lines[at:at] = block if at < len(lines) else [""] + block
+        return "\n".join(lines)
+    lo, hi = span
+    hit = key_span(lines, lo, hi, key)
+    if hit:
+        lines[hit[0]:hit[1]] = [new]
+    else:
+        end = hi
+        while end > lo and not lines[end - 1].strip():
+            end -= 1
+        lines.insert(end, new)
+    return "\n".join(lines)
+
+
+def remove_key(text: str, table: str, key: str) -> str:
+    lines = text.split("\n")
+    span = find_table(lines, table)
+    hit = key_span(lines, *span, key) if span else None
+    if hit:
+        del lines[hit[0]:hit[1]]
+    return "\n".join(lines)
+
+
+def split_key(key: str):
+    table, _, name = key.rpartition(".")
+    return table, name
+
+
+def bar_list(default: list, live: list, add: list, drop: list, order: bool) -> list:
+    """Default list with the chosen changes: live order for shared items when `order`, picked additions after their live neighbour."""
+    base = [x for x in default if x not in drop]
+    if order:
+        shared = iter(x for x in live if x in base)
+        base = [next(shared) if x in live else x for x in base]
+    for x in add:
+        prev = next((live[i] for i in range(live.index(x) - 1, -1, -1) if live[i] in base), None)
+        base.insert(base.index(prev) + 1 if prev else 0, x)
+    return base
+
+
+def differences(default: dict, live: dict, words: list) -> list:
+    """Items: dict(label, apply=fn(text, picked) ...). Items of one bar list share a group so they are applied together."""
+    items = []
+    widgets = {}
+    for key in sorted(default.keys() | live.keys()):
+        d, l = default.get(key), live.get(key)
+        if d == l or skipped(key, l if l is not None else d, words):
+            continue
+        if key in BAR_LISTS:
+            d, l = d or [], l or []
+            for x in l:
+                if x not in d:
+                    items.append(dict(label=f"{key.split('.')[-1]} bar: add {x}", bar=(key, "add", x)))
+            for x in d:
+                if x not in l:
+                    items.append(dict(label=f"{key.split('.')[-1]} bar: remove {x}", bar=(key, "drop", x)))
+            if [x for x in d if x in l] != [x for x in l if x in d]:
+                items.append(dict(label=f"{key.split('.')[-1]} bar: order", bar=(key, "order", None)))
+        elif key.startswith("widget."):
+            widgets.setdefault(key.split(".")[1], []).append((key, d, l))
+        else:
+            old = "none" if d is None else fmt(d)
+            items.append(dict(label=f"{key}: {old} -> {'none' if l is None else fmt(l)}", keys=[(key, d, l)]))
+    for name, keys in widgets.items():
+        keys.sort(key=lambda k: (k[0].count("."), k[0]))
+        if all(d is None for _, d, _ in keys):
+            label = f"widget {name}: new ({len(keys)} keys)"
+        else:
+            label = f"widget {name}: " + ", ".join(k[0].split(".", 2)[2] for k in keys)
+        items.append(dict(label=label, keys=keys))
+    return items
+
+
+def apply(text: str, items: list, default: dict, live: dict) -> str:
+    bars = {}
+    for it in items:
+        if "bar" in it:
+            key, kind, x = it["bar"]
+            b = bars.setdefault(key, dict(add=[], drop=[], order=False))
+            if kind == "order":
+                b["order"] = True
+            else:
+                b[kind].append(x)
+        else:
+            for key, d, l in it["keys"]:
+                table, name = split_key(key)
+                text = remove_key(text, table, name) if l is None else set_key(text, table, name, l)
+    for key, b in bars.items():
+        table, name = split_key(key)
+        text = set_key(text, table, name, bar_list(default.get(key) or [], live.get(key) or [], **b))
+    return text
+
+
+def choose(items: list):
+    for i, it in enumerate(items, 1):
+        print(f"{i:3}  {it['label']}")
+    try:
+        ans = input("promote which? numbers like 1,3-4, 'all', Enter = none: ").strip().lower()
+    except EOFError:
+        sys.exit("error: no input (use --list or --all)")
+    if ans == "all":
+        return items
+    picked = set()
+    for part in filter(None, re.split(r"[,\s]+", ans)):
+        lo, _, hi = part.partition("-")
+        if not (lo.isdigit() and (not hi or hi.isdigit())):
+            sys.exit(f"error: bad number {part!r}")
+        if hi and int(hi) < int(lo):
+            sys.exit(f"error: bad range {part!r}")
+        picked.update(range(int(lo), int(hi or lo) + 1))
+    if not picked <= set(range(1, len(items) + 1)):
+        sys.exit("error: number out of range")
+    return [items[i - 1] for i in sorted(picked)]
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Choose which live Noctalia settings become the shipped default.")
+    ap.add_argument("--list", action="store_true", help="print the differences and exit")
+    ap.add_argument("--all", action="store_true", help="write every difference without asking")
+    ap.add_argument("--default", type=Path, default=ROOT / "configs/noctalia/config.toml", help="file to edit")
+    args = ap.parse_args()
+
+    default = flatten(load(args.default))
+    live = flatten(merge(load(config_home / "noctalia/config.toml"), load(state_home / "noctalia/settings.toml")))
+    items = differences(default, live, skip_words())
+
+    if args.list or not items:
+        for it in items:
+            print(it["label"])
+        return 1 if items else 0
+
+    branch = subprocess.run(["git", "-C", str(ROOT), "branch", "--show-current"], capture_output=True, text=True).stdout.strip()
+    if branch in ("", "main", "master"):
+        sys.exit("error: not on a feature branch; create one first")
+
+    if args.all:
+        picked = items
+    else:
+        picked = choose(items)
+    if not picked:
+        print("nothing written")
+        return 0
+
+    text = apply(args.default.read_text(), picked, default, live)
+    try:
+        tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        sys.exit(f"error: the edit would make invalid TOML, nothing written: {e}")
+    args.default.write_text(text)
+    print(f"wrote {len(picked)} change(s) to {args.default} (branch {branch})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
