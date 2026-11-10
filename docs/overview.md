@@ -140,7 +140,7 @@ Pinned windows are the layers `pinned-left` and `pinned-right`, shown and hidden
 
 | Unit (`systemd/user/`) | Does |
 |---|---|
-| `mb-updates-ce.timer` | runs the update check 30 s after start, then hourly |
+| `mb-updates-ce.timer` | runs the update check 30 s after start, then every 6 hours |
 | `mb-updates-ce.service` | the update check (with network) |
 | `mb-updates-ce-offline.service` | the same without network |
 | `mb-updates-ce.path` | triggers the offline check when `pacman.log` changes |
