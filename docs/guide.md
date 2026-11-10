@@ -39,7 +39,7 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 
 - Counts repo, AUR, flatpak, snap, npm and pipx updates. npm and pipx count only when you have user-level global packages.
 - Tooltip shows the split: `5 updates (2 repo, 1 AUR, 2 flatpak)`.
-- Check runs 30 s after login, then hourly, and after every change to `pacman.log` (offline, no refresh).
+- Check runs 30 s after login, then every 6 hours, and after every change to `pacman.log` (offline, no refresh).
 - `yay` is used when installed, else `pacman`.
 - Snap is skipped in the check and hidden in the menu while `snapd` is stopped.
 - Command line: `mb-updates-ce [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|mirrors [fasttrack|continent|all|reflector]|menu]`.
