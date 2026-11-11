@@ -52,7 +52,10 @@ local function loadPlaces()
   for _, f in ipairs(FOLDERS) do
     table.insert(places, { name = f.name, glyph = f.glyph, path = f.path, open = f.path, ok = noctalia.fileExists(f.path) })
   end
-  local raw = noctalia.readFile(HOME .. "/.config/gtk-3.0/bookmarks") or noctalia.readFile(HOME .. "/.gtk-bookmarks") or ""
+  local raw = noctalia.readFile(HOME .. "/.config/gtk-3.0/bookmarks") or ""
+  if raw == "" then
+    raw = noctalia.readFile(HOME .. "/.gtk-bookmarks") or ""
+  end
   for line in string.gmatch(raw, "[^\n]+") do
     local uri, label = string.match(line, "^(%S+)%s*(.-)%s*$")
     if uri then
