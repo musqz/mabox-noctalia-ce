@@ -403,7 +403,9 @@ local function noteControls(n)
     table.insert(head, "select")
   end
   table.insert(head, "title")
-  table.insert(head, "copy")
+  if not pinned then
+    table.insert(head, "copy")
+  end
   if not selecting and not isFiltered() then
     table.insert(head, "up")
     table.insert(head, "down")
@@ -442,7 +444,7 @@ local function noteItem(key, n, detail)
       onClick = function() toggleOpen(n) end,
       onRightClick = function() copyNote(n) end,
     }),
-    ui.button({ glyph = "copy", variant = "ghost", controlSize = "sm", selected = cur == "copy", tooltip = "Copy", onClick = function() copyNote(n) end }),
+    not pinned and ui.button({ glyph = "copy", variant = "ghost", controlSize = "sm", selected = cur == "copy", tooltip = "Copy", onClick = function() copyNote(n) end }) or nil,
   }
   for _, b in ipairs(buttons) do
     table.insert(head, b)
