@@ -134,6 +134,9 @@
     <item label="Equalizer" icon="multimedia-volume-control">
       <action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main" />
     </item>
+    <item label="Crypto" icon="applications-office">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/crypto:main" />
+    </item>
     <item label="System info" icon="computer">
       <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
     </item>

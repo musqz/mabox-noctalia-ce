@@ -1,0 +1,42 @@
+id = "mabox/crypto"
+name = "Crypto"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "currency-bitcoin"
+description = "Convert an amount in a currency to LTC, BTC and more at the latest Kraken price (mb-crypto)."
+tags = ["utility"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 380
+height = "content"
+max_height = 520
+placement = "attached"
+open_near_click = true
+
+[[service]]
+id = "pin"
+entry = "pin.luau"
+
+[[layer]]
+id = "pinned-left"
+entry = "pinned-left.luau"
+layer = "top"
+anchors = ["left", "top", "bottom"]
+width = 330
+margins = { top = 10, bottom = 10, left = 10 }
+keyboard = "on_demand"
+output = "focused"
+
+[[layer]]
+id = "pinned-right"
+entry = "pinned-right.luau"
+layer = "top"
+anchors = ["right", "top", "bottom"]
+width = 330
+margins = { top = 10, bottom = 10, right = 10 }
+keyboard = "on_demand"
+output = "focused"

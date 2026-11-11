@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Toggle the pinned window of a Mabox plugin on its saved side.
-#   mb-pinned <plugin>                       notes, status, colors, configs, capture, places
+#   mb-pinned <plugin>                       notes, status, colors, configs, capture, places, crypto
 #   mb-pinned --side <plugin> [left|right]   print or set the side of a plugin
 set -euo pipefail
 
 file=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/pinned-side
 
-plugins=(colors notes status configs capture places)
+plugins=(colors notes status configs capture places crypto)
 side() { grep -qxs "$1=right" "$file" && echo right || echo left; }
 close_pinned() { noctalia msg plugin "mabox/$1:pin" all hide >/dev/null 2>&1 || true; }
 
