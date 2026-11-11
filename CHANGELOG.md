@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add an offline address check to the Crypto panel: format and checksum for Litecoin, Bitcoin and Dogecoin addresses (legacy, SegWit, Taproot); `mb-crypto check <address>`.
 - Show the file path of a service in the System panel's Services tab, with Open folder and Edit (your own file in an editor, otherwise a `systemctl edit` drop-in); system services ask for the unit name before Stop, Restart, Start and Reset failed.
 - Add a Services tab to the System panel (`W-A-i`): system and user services with Failed/Running/All filters, scrubbed status, and Restart, Stop, Start and Reset failed in a terminal after a prompt; session-critical units show status only.
 - Add a button to the Crypto panel that opens kraken.com/prices.
