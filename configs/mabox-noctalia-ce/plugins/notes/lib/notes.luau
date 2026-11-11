@@ -232,6 +232,8 @@ local function createNote()
   searchNonce += 1
   noctalia.mkdirAll(NOTES)
   current = { id = uniqueName(NOTES, ".md"), tags = "", body = "", fresh = true }
+  editField = "title"
+  editNonce += 1
   saveNote(current)
   render()
 end
@@ -603,6 +605,10 @@ local function editor()
       ui.input({ key = "title" .. n.id .. editNonce, focus = editField == "title", value = n.name or "", placeholder = "default: first line", controlSize = "sm", flexGrow = 1, onChange = function(text)
         n.name = text
         saveNote(n)
+      end, onSubmit = function()
+        editField = "body"
+        editNonce += 1
+        render()
       end }),
     }))
   end
