@@ -38,9 +38,9 @@ valid || { echo "FAIL migrate_13: rc.xml is no longer valid"; exit 1; }
 
 # migrate_14: pinned windows move to C-W-<letter> from the old defaults, and a user-bound key is left alone.
 grep -v -e 'key="C-W-[cnsp]"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
-sed -i 's#</keyboard>#<keybind key="W-A-c"><action name="Execute" command="mb-pinned configs"/></keybind>\n<keybind key="C-W-c"><action name="Execute" command="mb-pinned colors"/></keybind>\n<keybind key="W-A-n"><action name="Execute" command="mb-pinned notes"/></keybind>\n<keybind key="W-S-s"><action name="Execute" command="mb-pinned status"/></keybind>\n<keybind key="C-W-n"><action name="Execute" command="mine"/></keybind>\n</keyboard>#' "$conf/mabox-noctalia-ce/rc.xml"
+sed -i 's#</keyboard>#<keybind key="W-A-c"><action name="Execute"><command>mb-pinned configs</command></action></keybind>\n<keybind key="C-W-c"><action name="Execute" command="mb-pinned colors"/></keybind>\n<keybind key="W-A-n"><action name="Execute" command="mb-pinned notes"/></keybind>\n<keybind key="W-S-s"><action name="Execute" command="mb-pinned status"/></keybind>\n<keybind key="C-W-n"><action name="Execute" command="mine"/></keybind>\n</keyboard>#' "$conf/mabox-noctalia-ce/rc.xml"
 migrate; migrate
-[[ $(count 'key="C-W-c"><action name="Execute" command="mb-pinned configs"') == 1 && $(count 'mb-pinned colors') == 0 ]] || { echo "FAIL migrate_14: configs/colors"; exit 1; }
+[[ $(count 'key="C-W-c">.*mb-pinned configs') == 1 && $(count 'mb-pinned colors') == 0 ]] || { echo "FAIL migrate_14: configs/colors"; exit 1; }
 [[ $(count 'key="C-W-s"><action name="Execute" command="mb-pinned status"') == 1 && $(count 'key="C-W-p"') == 1 ]] || { echo "FAIL migrate_14: status/places"; exit 1; }
 [[ $(count 'key="C-W-n"') == 1 && $(count 'command="mine"') == 1 && $(count 'key="W-A-n"') == 1 ]] || { echo "FAIL migrate_14: touched the user's C-W-n"; exit 1; }
 valid || { echo "FAIL migrate_14: rc.xml is no longer valid"; exit 1; }
