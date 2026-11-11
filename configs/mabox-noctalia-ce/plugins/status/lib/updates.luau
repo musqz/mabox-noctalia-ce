@@ -196,7 +196,7 @@ render = function()
       end)
     end,
   }) }))
-  panel.render(ui.column({ gap = 8, padding = 12 }, items))
+  panel.render(ui.column({ gap = 8, padding = 12 }, { ui.scroll({ gap = 8, flexGrow = 1, key = "main" }, items) }))
 end
 
 return function()
