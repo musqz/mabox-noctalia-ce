@@ -36,6 +36,7 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `C-W-c` | pinned colors window |
 | `W-n` | notes |
 | `W-A-n` | pinned notes window |
+| `W-p` | places |
 | `W-A-s` | status |
 | `W-S-s` | pinned status window |
 | `A-Space` | root menu |

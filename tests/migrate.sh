@@ -30,6 +30,12 @@ migrate; migrate
 [[ $(count 'key="W-A-q"') == 1 ]] || { echo "FAIL migrate_11: expected one W-A-q bind"; exit 1; }
 valid || { echo "FAIL migrate_11: rc.xml is no longer valid"; exit 1; }
 
+# migrate_13: the Places key is added once, and an existing binding of the key is left alone.
+grep -v 'key="W-p"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(count 'key="W-p"') == 1 ]] || { echo "FAIL migrate_13: expected one W-p bind"; exit 1; }
+valid || { echo "FAIL migrate_13: rc.xml is no longer valid"; exit 1; }
+
 # migrate_12: the Calamares launcher gets DISPLAY=:0, and an existing user copy is left alone.
 if [[ -f /usr/share/applications/calamares.desktop ]]; then
     desk=$tmp/.local/share/applications/calamares.desktop
