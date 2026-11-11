@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Prints {"LTC": price, ...} for one currency from the Kraken public ticker.
+set -euo pipefail
+
+case "${1:-}" in
+    prices)
+        cur=${2:-eur}
+        [[ $cur =~ ^(eur|usd)$ ]] || { echo "mb-crypto: unsupported currency" >&2; exit 2; }
+        curl -fsS --max-time 10 "https://api.kraken.com/0/public/Ticker?pair=LTC$cur,XBT$cur,ETH$cur,XMR$cur,DOGE$cur,SOL$cur" |
+            python3 -I -c '
+import json, sys
+cur = sys.argv[1].upper()
+data = json.load(sys.stdin)
+if data.get("error"):
+    sys.exit("mb-crypto: " + ", ".join(data["error"]))
+alias = {"LTC": "LTC", "BTC": "XBT", "ETH": "ETH", "XMR": "XMR", "DOGE": "XDG", "SOL": "SOL"}
+out = {}
+for sym, a in alias.items():
+    for key in (sym + cur, a + cur, "X" + a + "Z" + cur, "X" + a + cur):
+        if key in data["result"]:
+            out[sym] = float(data["result"][key]["c"][0])
+if len(out) != len(alias):
+    sys.exit("mb-crypto: incomplete answer")
+print(json.dumps(out))
+' "$cur"
+        ;;
+    *)
+        echo "usage: mb-crypto prices <eur|usd>" >&2
+        exit 2
+        ;;
+esac

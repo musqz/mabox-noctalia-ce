@@ -40,7 +40,7 @@ printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 
 -- Plugins with a pinned window.
 local widgets = {}
-local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" }, { "places", "Places" } }
+local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" }, { "places", "Places" }, { "crypto", "Crypto" } }
 
 -- Ids of the plugins that declare a [[desktop_widget]] in their plugin.toml.
 local WIDGET_IDS = [[
@@ -817,7 +817,9 @@ render = function()
     }),
   }
   local plugList, widgetList = {}, {}
-  for _, id in ipairs(plugins) do
+  local sorted = { table.unpack(plugins) }
+  table.sort(sorted)
+  for _, id in ipairs(sorted) do
     table.insert(widgets[id] and widgetList or plugList, id)
   end
   if plugOpen then

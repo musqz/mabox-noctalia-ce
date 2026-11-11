@@ -124,6 +124,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/snapshot` | `main` panel, root menu (Mabox noctalia ce), `/mb snapshot` | | `mabox-snapshot`; Explain runs in the panel, Build in a `foot` terminal with sudo |
 | `mabox/cava` | `main` panel, root menu (Tools: Cava, Cava settings), `/mb cava` (start or stop), `/mb cava settings` | | `cavactl`, `mb-cava`; edits `~/.config/cava/config` |
 | `mabox/equalizer` | `main` panel, root menu (Tools: Equalizer), `/mb equalizer` | | `mb-eq`, `pw-cli`, `pactl`; `~/.config/pipewire/pipewire.conf.d/eq.conf`; state in the plugin data folder |
+| `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` | `mb-pinned crypto` | `mb-crypto`, `curl`; needs internet; state in the plugin data folder |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh

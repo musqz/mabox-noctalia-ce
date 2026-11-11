@@ -42,7 +42,7 @@ function M.set(plugin, side)
 end
 
 -- Pinned windows on the same side lie on top of each other: close the others, then run verb.
-local PLUGINS = { "colors", "notes", "status", "configs", "capture", "places" }
+local PLUGINS = { "colors", "notes", "status", "configs", "capture", "places", "crypto" }
 -- Pinned windows are layers; each plugin's "pin" service shows and hides them.
 
 local function dockPath()
