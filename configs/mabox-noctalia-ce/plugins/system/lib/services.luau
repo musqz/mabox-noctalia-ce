@@ -1,5 +1,5 @@
 --!nonstrict
--- Services tab: running state of system and user units; actions only in a terminal after a y/N prompt.
+-- Services tab: running state of system and user units. Actions run in a terminal after a y/N prompt (system units: the unit name typed); Edit opens an editor or a drop-in.
 
 local MAX_ROWS = 40
 
@@ -17,6 +17,44 @@ printf '%s\n\n' "$*"
 printf 'Run this command? [y/N] '
 read -r a
 case $a in y|Y) "$@" ;; *) echo cancelled ;; esac
+printf '\nPress Enter to close '
+read -r _
+]]
+
+-- System units: shows the unit's state and dependents, then wants the unit name typed, not just y.
+local RUN_SYSTEM = [[
+unit=$1; shift
+printf '%s\n\n' "$*"
+echo 'SYSTEM service: this affects the whole machine and every user.'
+printf 'Enabled at boot: '; systemctl is-enabled -- "$unit" 2>&1
+echo 'Units that depend on it:'
+systemctl list-dependencies --reverse --plain --no-pager -- "$unit" 2>&1 | sed 1d | head -n 15
+printf '\nType the unit name (%s) to continue: ' "$unit"
+read -r a
+if [ "$a" = "$unit" ]; then "$@"; else echo cancelled; fi
+printf '\nPress Enter to close '
+read -r _
+]]
+
+-- A file you own is edited in place; a packaged file or a template instance gets a drop-in through systemctl edit.
+local EDIT_USER = [[
+ed=${VISUAL:-$EDITOR}
+[ -n "$ed" ] || ed=$(command -v nano || command -v micro || command -v vim || command -v vi)
+if [ -w "$2" ] && [ "${1#*@}" = "$1" ] && [ -n "$ed" ]; then
+  $ed "$2" && systemctl --user daemon-reload && echo 'daemon-reload done'
+else
+  systemctl --user edit -- "$1"
+fi
+printf '\nPress Enter to close '
+read -r _
+]]
+
+-- A packaged system file stays untouched: the change goes into a drop-in; systemctl edit reloads by itself.
+local EDIT_SYSTEM = [[
+echo 'Edits a drop-in for the SYSTEM unit; the packaged file is not changed.'
+ed=${VISUAL:-$EDITOR}
+[ -n "$ed" ] || ed=$(command -v nano || command -v micro || command -v vim || command -v vi)
+if [ -n "$ed" ]; then sudo env SYSTEMD_EDITOR="$ed" systemctl edit -- "$1"; else sudo systemctl edit -- "$1"; fi
 printf '\nPress Enter to close '
 read -r _
 ]]
@@ -62,6 +100,8 @@ return function(render, terminal, flags)
   local data = {}
   local openUnit = nil
   local statusText = {}
+  local pathText = {}
+  local pathPending = {}
   local session = 0
 
   local function loadScope(which)
@@ -87,11 +127,39 @@ return function(render, terminal, flags)
     data = {}
     openUnit = nil
     statusText = {}
+    pathText = {}
+    pathPending = {}
     query = ""
+  end
+
+  local function fetchPath(name)
+    local key = scope .. ":" .. name
+    if pathText[key] or pathPending[key] then
+      return
+    end
+    pathPending[key] = true
+    local argv = { "systemctl" }
+    if scope == "user" then
+      table.insert(argv, "--user")
+    end
+    for _, a in ipairs({ "show", "-p", "FragmentPath", "--value", "--", name }) do
+      table.insert(argv, a)
+    end
+    local mine = session
+    noctalia.runAsync(argv, function(result)
+      if mine ~= session then
+        return
+      end
+      pathPending[key] = nil
+      local out = noctalia.string.trim(result.stdout or "")
+      pathText[key] = out ~= "" and out or nil
+      render()
+    end)
   end
 
   local function fetchStatus(name)
     local key = scope .. ":" .. name
+    fetchPath(name)
     statusText[key] = "Reading..."
     render()
     local mine = session
@@ -128,8 +196,9 @@ return function(render, terminal, flags)
   end
 
   local function action(verb, name)
-    local argv = { "sh", "-c", RUN_UNIT, "sh" }
+    local argv = { "sh", "-c", scope == "system" and RUN_SYSTEM or RUN_UNIT, "sh" }
     if scope == "system" then
+      table.insert(argv, name)
       table.insert(argv, "sudo")
     end
     table.insert(argv, "systemctl")
@@ -140,6 +209,18 @@ return function(render, terminal, flags)
     table.insert(argv, "--")
     table.insert(argv, name)
     terminal(table.unpack(argv))
+  end
+
+  local function editUnit(name, path)
+    if scope == "system" then
+      terminal("sh", "-c", EDIT_SYSTEM, "sh", name)
+    else
+      terminal("sh", "-c", EDIT_USER, "sh", name, path)
+    end
+  end
+
+  local function openFolder(path)
+    noctalia.runAsync({ "sh", "-c", 'exec setsid -f xdg-open "$(dirname "$1")"', "sh", path })
   end
 
   local function summary()
@@ -194,12 +275,26 @@ return function(render, terminal, flags)
         table.insert(items, ui.label({ text = u.desc, fontSize = 11, color = "on_surface_variant" }))
       end
       table.insert(items, ui.label({ text = statusText[scope .. ":" .. u.name] or "", fontSize = 11, fontFamily = "monospace" }))
+      local path = pathText[scope .. ":" .. u.name] or ""
+      local pathLabel = path ~= "" and path or (pathPending[scope .. ":" .. u.name] and "reading..." or "(none)")
+      table.insert(items, ui.label({ text = "File: " .. pathLabel, fontSize = 11, fontFamily = "monospace", color = "on_surface_variant" }))
+      if scope == "system" then
+        table.insert(items, ui.label({ text = "System service: changes affect the whole machine. Stop, Restart, Start and Reset failed ask for the unit name in a terminal and use sudo. Edit changes a drop-in with sudo.", fontSize = 11, color = "error" }))
+      end
       local buttons = {
         ui.button({ text = "Reload status", glyph = "refresh", variant = "outline", controlSize = "sm", onClick = function() fetchStatus(u.name) end }),
       }
+      if path ~= "" then
+        table.insert(buttons, ui.button({ text = "Open folder", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function() openFolder(path) end }))
+      end
       if protected(u.name) then
         table.insert(items, ui.label({ text = "Protected: stopping or restarting it can end your session. Status only.", fontSize = 11, color = "on_surface_variant" }))
       else
+        if path ~= "" then
+          table.insert(buttons, ui.button({ text = "Edit", glyph = "edit", variant = "outline", controlSize = "sm",
+            tooltip = scope == "system" and "Edit a drop-in with sudo systemctl edit" or "Edit the file, or a drop-in when it is packaged or a template instance",
+            onClick = function() editUnit(u.name, path) end }))
+        end
         local function btn(text, glyph, verb)
           table.insert(buttons, ui.button({ text = text, glyph = glyph, variant = "outline", controlSize = "sm",
             tooltip = "Opens a terminal that shows the command and asks first", onClick = function() action(verb, u.name) end }))
@@ -216,7 +311,7 @@ return function(render, terminal, flags)
       end
       table.insert(items, ui.row({ gap = 6 }, buttons))
     end
-    return ui.column({ key = "u" .. scope .. u.name, fill = "surface_variant", radius = 10, padding = 10, gap = 6, border = u.active == "failed" and "error" or "primary", borderWidth = 1 }, items)
+    return ui.column({ key = "u" .. scope .. u.name, fill = "surface_variant", radius = 10, padding = 10, gap = 6, border = u.active == "failed" and "error" or (scope == "system" and "secondary" or "primary"), borderWidth = scope == "system" and 2 or 1 }, items)
   end
 
   local function body()
