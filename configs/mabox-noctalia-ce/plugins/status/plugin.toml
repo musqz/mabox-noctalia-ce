@@ -23,7 +23,7 @@ id = "updates"
 entry = "updates.luau"
 width = 380
 height = "content"
-max_height = 480
+max_height = 640
 placement = "attached"
 open_near_click = true
 
