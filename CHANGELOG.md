@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Start a new note in the Title field; Enter jumps to the text.
 - Rename the AUR cache rows in the Status panel to Clean with paru, yay and pamac.
 - Add W-A-q to open the Equalizer panel; mb-migrate adds the key to an existing rc.xml.
 - Add an Equalizer panel (mabox/equalizer): preamp and 10 bands on a PipeWire filter-chain sink, presets, on/off, and Save as startup values; `mb-eq` does the work and mb-migrate adds `eq.conf` to `~/.config/pipewire/pipewire.conf.d/`. It is in the root menu and `/mb equalizer`. Saving under an existing name replaces that preset; Revert goes back to the gains before the last preset.
