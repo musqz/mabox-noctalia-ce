@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Remove the `skippy-wl-send-to-*` and `skippy-wl-tiling` scripts and their keybinds (`S-C-KP_7/8/9`, `C-Space`, `W-A-C-*`); the code is in the wiki.
 - Add a Places panel (mabox/places): folders, file manager bookmarks, recent files (5/10/20/50) and FSearch, in the bar panel and a pinned window; `W-p`, root menu, `/mb places`, `mb-pinned places`; mb-migrate adds the key to an existing rc.xml.
 
 - Make the Updates panel taller and scroll when the content does not fit.
