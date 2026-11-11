@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add a Places panel (mabox/places): folders, file manager bookmarks, recent files (5/10/20/50) and FSearch, in the bar panel and a pinned window; `W-p`, root menu, `/mb places`, `mb-pinned places`; mb-migrate adds the key to an existing rc.xml.
 
 - Make the Updates panel taller and scroll when the content does not fit.
 - Remove the copy icon from notes in the pinned Notes panel; right click on the title copies.
