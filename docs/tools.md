@@ -40,5 +40,5 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 
 | Tool | Key | Setup |
 |---|---|---|
-| `mb-updates-ce` bar update indicator | left: update panel (Status plugin), right: recheck | autostart |
+| `mb-updates-ce` bar update indicator | left: update panel (Status plugin), right: Status panel | autostart |
 | `mb-calendar-setup` local calendar (radicale) | run once in a terminal | Thunderbird + Noctalia Settings > Calendar > Local (vdir) |
