@@ -238,7 +238,7 @@ resume_command = "wlopm --on '*'"
 
 [bar.default]
 center = []
-end = ["audio_visualizer", "media", "cpu", "network_rx", "updates", "screenrec", "wallpaper_dirs", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "clock", "control-center", "session"]
+end = ["audio_visualizer", "media", "equalizer", "cpu", "network_rx", "updates", "screenrec", "wallpaper_dirs", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "brightness", "clock", "control-center", "session"]
 border = "primary"
 border_width = 1.0
 color = "primary"
