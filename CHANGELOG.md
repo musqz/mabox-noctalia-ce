@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add a button to the Crypto panel that opens kraken.com/prices.
 - Add a Crypto panel (mabox/crypto): convert an EUR or USD amount to LTC, BTC, ETH, XMR, DOGE or SOL at the latest Kraken price, refreshed every 15 s; dropdown and pinned window, root menu, `/mb crypto`, `mb-pinned crypto`.
 - List the plugins in the Configs panel in alphabetical order.
 - Remove the `skippy-wl-send-to-*` and `skippy-wl-tiling` scripts and their keybinds (`S-C-KP_7/8/9`, `C-Space`, `W-A-C-*`); the code is in the wiki.
