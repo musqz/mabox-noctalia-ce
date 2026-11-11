@@ -51,8 +51,6 @@ Windows:
 | `W-b` | hide or show the window title bar and border (press again to cycle) |
 | `W-A-1` … `W-A-6` | snap to an edge or corner |
 | `W-A-7` | maximize |
-| `C-Space` | pick up to 4 windows and tile them |
-| `W-A-C-7`, `W-A-C-9` | send window to HDMI-A-1, DP-1 |
 | `W-1`, `W-2` | previous, next workspace |
 | `W-S-1`, `W-S-2` | send window to previous, next workspace |
 | `W-grave` | tabdock find |
