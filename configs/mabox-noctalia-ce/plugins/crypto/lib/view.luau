@@ -10,6 +10,9 @@ local state = crypto.load()
 local offline = false
 local busy = false
 local lastTry = 0
+local addr = ""
+local addrCheck = nil
+local addrRun = 0
 local render
 
 local function refresh()
@@ -108,6 +111,38 @@ local function coinControl()
   return ui.select({ key = "coin", options = names, selectedIndex = state.coin - 1, onChange = function(idx) setCoin(tonumber(idx) + 1) end })
 end
 
+-- Offline format and checksum check (LTC, BTC, DOGE) through mb-crypto; says nothing about who owns the address.
+local function checkAddress(text)
+  addr = string.match(text, "^%s*(.-)%s*$")
+  addrRun += 1
+  local run = addrRun
+  -- Shorter than any address: nothing to check yet, so no flicker while typing.
+  if #addr < 26 then
+    addrCheck = nil
+    render()
+    return
+  end
+  noctalia.runAsync({ "mb-crypto", "check", addr }, function(result)
+    if run ~= addrRun then
+      return
+    end
+    local out = noctalia.string.trim(result.stdout or "")
+    addrCheck = { ok = result.exitCode == 0, text = out ~= "" and out or "Could not check" }
+    render()
+  end)
+end
+
+local function addressRows()
+  local rows = {
+    ui.label({ text = "Check an address (LTC, BTC, DOGE)", fontSize = 12, color = "on_surface_variant" }),
+    ui.input({ key = "addr", value = addr, placeholder = "Paste an address", controlSize = "sm", frameVisible = true, onChange = checkAddress }),
+  }
+  if addrCheck then
+    table.insert(rows, ui.label({ key = "addrres", text = addrCheck.text, fontSize = 12, color = addrCheck.ok and "primary" or "error" }))
+  end
+  return rows
+end
+
 local function resultRow()
   local num = converted()
   if not num then
@@ -155,10 +190,13 @@ render = function()
       resultRow(),
       ui.label({ text = infoLine(), fontSize = 12, color = "on_surface_variant" }),
     }),
+    ui.column({ key = "addrcard", fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "primary", borderWidth = 1 }, addressRows()),
   }))
 end
 
 local function open()
+  addr, addrCheck = "", nil
+  addrRun += 1
   state = crypto.load()
   render()
   if stale() then

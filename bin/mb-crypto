@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Prints {"LTC": price, ...} for one currency from the Kraken public ticker.
+# prices <cur>: {"LTC": price, ...} from the Kraken public ticker.
+# check <address>: offline address check (format and checksum) for Litecoin, Bitcoin and Dogecoin; exit 0 valid, 1 not.
 set -euo pipefail
 
 case "${1:-}" in
@@ -24,8 +25,103 @@ if len(out) != len(alias):
 print(json.dumps(out))
 ' "$cur"
         ;;
+    check)
+        [[ -n ${2:-} ]] || { echo "usage: mb-crypto check <address>" >&2; exit 2; }
+        python3 -I -c '
+import hashlib, sys
+
+addr = sys.argv[1].strip()
+B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+BECH = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+# base58 version byte -> (valid, text)
+VERSIONS = {
+    0x30: (True, "Litecoin address (legacy)"), 0x32: (True, "Litecoin address (script)"),
+    0x00: (True, "Bitcoin address (legacy)"), 0x05: (True, "script address, valid on Bitcoin and Litecoin"),
+    0x1E: (True, "Dogecoin address"), 0x16: (True, "Dogecoin address (script)"),
+    0x6F: (False, "Testnet address, not for real coins"), 0xC4: (False, "Testnet address, not for real coins"),
+    0x71: (False, "Testnet address, not for real coins"),
+    0x3C: (False, "Dash address, not supported"), 0x4C: (False, "Dash address, not supported"),
+}
+HRP = {"ltc": "Litecoin", "bc": "Bitcoin", "tltc": None, "tb": None}
+
+
+def say(ok, text):
+    print(text)
+    sys.exit(0 if ok else 1)
+
+
+def polymod(values):
+    gen = (0x3B6A57B2, 0x26508E6D, 0x1EA119FA, 0x3D4233DD, 0x2A1462B3)
+    chk = 1
+    for v in values:
+        top = chk >> 25
+        chk = (chk & 0x1FFFFFF) << 5 ^ v
+        for i in range(5):
+            chk ^= gen[i] if (top >> i) & 1 else 0
+    return chk
+
+
+def bech32(a):
+    if a != a.lower() and a != a.upper():
+        say(False, "Invalid: mixed upper and lower case")
+    a = a.lower()
+    pos = a.rfind("1")
+    if pos < 1 or pos + 7 > len(a) or len(a) > 90:
+        say(False, "Invalid: bad length")
+    hrp, rest = a[:pos], a[pos + 1:]
+    if any(c not in BECH for c in rest):
+        say(False, "Invalid: character not allowed in an address")
+    if hrp not in HRP:
+        say(False, "Not a Litecoin, Bitcoin or Dogecoin address (prefix %s)" % hrp)
+    data = [BECH.index(c) for c in rest]
+    check = polymod([ord(c) >> 5 for c in hrp] + [0] + [ord(c) & 31 for c in hrp] + data)
+    if check not in (1, 0x2BC830A3):
+        say(False, "Invalid: checksum fails, a character is wrong")
+    ver = data[0]
+    if (ver == 0) != (check == 1) or ver > 16:
+        say(False, "Invalid: wrong checksum type for this version")
+    acc = bits = 0
+    prog = []
+    for v in data[1:-6]:
+        acc = acc << 5 | v
+        bits += 5
+        while bits >= 8:
+            bits -= 8
+            prog.append(acc >> bits & 255)
+            acc &= (1 << bits) - 1
+    if bits >= 5 or acc or not 2 <= len(prog) <= 40 or (ver == 0 and len(prog) not in (20, 32)):
+        say(False, "Invalid: bad data length")
+    if HRP[hrp] is None:
+        say(False, "Testnet address, not for real coins")
+    kind = "SegWit" if ver == 0 else "Taproot" if ver == 1 and len(prog) == 32 else "witness v%d" % ver
+    say(True, "Valid %s address (%s)" % (HRP[hrp], kind))
+
+
+def base58(a):
+    n = 0
+    for c in a:
+        if c not in B58:
+            say(False, "Invalid: character not allowed in an address")
+        n = n * 58 + B58.index(c)
+    raw = b"\0" * (len(a) - len(a.lstrip("1"))) + n.to_bytes((n.bit_length() + 7) // 8, "big")
+    if len(raw) != 25:
+        say(False, "Invalid: bad length")
+    if hashlib.sha256(hashlib.sha256(raw[:21]).digest()).digest()[:4] != raw[21:]:
+        say(False, "Invalid: checksum fails, a character is wrong")
+    ok, text = VERSIONS.get(raw[0], (False, "Not a Litecoin, Bitcoin or Dogecoin address"))
+    say(ok, ("Valid " if ok else "") + text)
+
+
+if len(addr) > 100:
+    say(False, "Invalid: bad length")
+if addr[:4].lower() in ("ltc1", "bc1q", "bc1p", "tb1q", "tb1p") or addr[:5].lower() == "tltc1":
+    bech32(addr)
+else:
+    base58(addr)
+' "$2"
+        ;;
     *)
-        echo "usage: mb-crypto prices <eur|usd>" >&2
+        echo "usage: mb-crypto prices <eur|usd> | check <address>" >&2
         exit 2
         ;;
 esac
