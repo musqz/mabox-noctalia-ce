@@ -4,6 +4,7 @@
 local TOOLS = {
   { id = "colors", title = "Colors", glyph = "palette", cmd = { "noctalia", "msg", "panel-toggle", "mabox/colors:picker" }, pinned = "colors" },
   { id = "notes", title = "Notes", glyph = "notes", cmd = { "noctalia", "msg", "panel-toggle", "mabox/notes:main" }, pinned = "notes" },
+  { id = "places", title = "Places", glyph = "folder", cmd = { "noctalia", "msg", "panel-toggle", "mabox/places:main" }, pinned = "places" },
   { id = "status", title = "Status", glyph = "activity", cmd = { "noctalia", "msg", "panel-toggle", "mabox/status:main" }, pinned = "status" },
   { id = "configs", title = "Config files", glyph = "file-settings", cmd = { "noctalia", "msg", "panel-toggle", "mabox/configs:main" }, pinned = "configs" },
   { id = "wallpaper", title = "Wallpaper folders", glyph = "photo", cmd = { "noctalia", "msg", "panel-toggle", "mabox/wallpaper-dirs:dirs" } },

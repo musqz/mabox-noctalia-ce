@@ -40,7 +40,7 @@ printf '%b' "$(printf '%s' "$c" | sed 's/%\(..\)/\\x\1/g')"
 
 -- Plugins with a pinned window.
 local widgets = {}
-local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" } }
+local PINNED_PLUGINS = { { "colors", "Colors" }, { "notes", "Notes" }, { "status", "Status" }, { "configs", "Configs" }, { "places", "Places" } }
 
 -- Ids of the plugins that declare a [[desktop_widget]] in their plugin.toml.
 local WIDGET_IDS = [[

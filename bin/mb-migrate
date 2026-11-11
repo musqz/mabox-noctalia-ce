@@ -120,6 +120,14 @@ migrate_12() {
     mv "$dst.tmp" "$dst"
 }
 
+# W-p opens the Places panel; a key the user already bound stays as it is.
+migrate_13() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && ! grep -q 'key="W-p"' "$f" && grep -q "</keyboard>" "$f" || return 0
+    sed -i 's#</keyboard>#    <keybind key="W-p"><action name="Execute" command="noctalia msg panel-toggle mabox/places:main"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

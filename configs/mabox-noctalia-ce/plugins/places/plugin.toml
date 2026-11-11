@@ -1,0 +1,43 @@
+id = "mabox/places"
+name = "Places"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "folder"
+description = "Folders, file manager bookmarks, recent files and FSearch in one list."
+tags = ["utility", "files"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 440
+height = "content"
+max_height = 640
+placement = "attached"
+open_near_click = true
+capture_keys = ["escape"]
+
+[[service]]
+id = "pin"
+entry = "pin.luau"
+
+[[layer]]
+id = "pinned-left"
+entry = "pinned-left.luau"
+layer = "top"
+anchors = ["left", "top", "bottom"]
+width = 330
+margins = { top = 10, bottom = 10, left = 10 }
+keyboard = "on_demand"
+output = "focused"
+
+[[layer]]
+id = "pinned-right"
+entry = "pinned-right.luau"
+layer = "top"
+anchors = ["right", "top", "bottom"]
+width = 330
+margins = { top = 10, bottom = 10, right = 10 }
+keyboard = "on_demand"
+output = "focused"

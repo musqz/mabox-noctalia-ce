@@ -101,6 +101,13 @@
       <action name="Execute" command="mb-pinned colors" />
     </item>
     <separator />
+    <item label="Places" icon="folder">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/places:main" />
+    </item>
+    <item label="Places pinned" icon="folder">
+      <action name="Execute" command="mb-pinned places" />
+    </item>
+    <separator />
     <item label="Notes" icon="accessories-text-editor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
     </item>
