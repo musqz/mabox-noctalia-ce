@@ -31,14 +31,14 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `W-S-r` | record region / stop |
 | `C-S-a` | screenshot |
 | `C-Insert` | open last screenshot |
-| `W-A-c` | pinned configs window |
+| `C-W-c` | pinned configs window |
 | `W-c` | colors panel |
-| `C-W-c` | pinned colors window |
 | `W-n` | notes |
-| `W-A-n` | pinned notes window |
+| `C-W-n` | pinned notes window |
 | `W-p` | places |
+| `C-W-p` | pinned places window |
 | `W-A-s` | status |
-| `W-S-s` | pinned status window |
+| `C-W-s` | pinned status window |
 | `A-Space` | root menu |
 | `C-S-r` | reload labwc |
 
