@@ -14,9 +14,11 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 
 ## System info
 
-`W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* (this and the previous boot, kernel, failed services, crashes), *Report* and *Fixes*.
+`W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* (this and the previous boot, kernel, failed services, crashes), *Report*, *Services* and *Fixes*.
 
 *Report* builds one text from the parts you choose. *Choose parts* ticks what goes in: Overview, Hardware, each log, and topics such as audio, graphics, network, Bluetooth, disks, boot, packages, power or desktop. The choice is remembered. The text has no user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names. Read it, then *Copy* or *Save* (to `~/Documents`, or the folder set in *Settings*).
+
+*Services* lists the system and user services (Failed, Running, All) with a name filter. Open one for its status (scrubbed). *Restart*, *Stop*, *Start* and *Reset failed* open a terminal that shows the command and asks y/N first; system units use `sudo`. Session-critical units (dbus, systemd-*, login and display managers, polkit) show status only.
 
 *Fixes* lists common problems with a short description. *Check* shows read-only output (scrubbed); *Run in terminal* shows the command, asks before it runs and asks for your password when it needs root.
 

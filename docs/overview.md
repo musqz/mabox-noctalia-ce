@@ -115,7 +115,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/colors` | `picker` dropdown, pinned window | `W-c` (panel), root menu: Colors | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
 | `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` (`noctalia msg panel-toggle mabox/keys:keys`) | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/`; `wlrctl` to open on the focused application |
-| `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
+| `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Services, Fixes, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
 | `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
 | `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
 | `mabox/info` | `info` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `mb-keys`; `[desktop_widgets] enabled = true` |

@@ -2,12 +2,14 @@
 -- System: tabs fed by `mb-sysreport <tab>`; the text is already sanitized.
 local kbd = require("./kbd.luau")
 local FIXES = require("./fixes.luau")
+local newServices = require("./services.luau")
 
 local TABS = {
   { id = "overview", label = "Overview" },
   { id = "hardware", label = "Hardware" },
   { id = "logs", label = "Logs" },
   { id = "report", label = "Report" },
+  { id = "services", label = "Services" },
   { id = "fixes", label = "Fixes" },
   { id = "settings", label = "Settings" },
 }
@@ -66,6 +68,7 @@ return function()
   local manjaro = true
   local note = ""
   local render
+  local services
 
   local function statePath()
     local dir = noctalia.pluginDataDir()
@@ -170,6 +173,10 @@ return function()
   end
 
   local function load(id, force)
+    if id == "services" then
+      services.load(force)
+      return
+    end
     if id == "settings" or id == "fixes" or (cache[id] and not force) then
       return
     end
@@ -410,6 +417,7 @@ exec xdg-open "$d"]]
           saveSettings()
           cache, checks = {}, {}
           session += 1
+          services.clearStatus()
         end,
       }),
     }
@@ -489,11 +497,12 @@ exec xdg-open "$d"]]
     local text = entry and entry.text or "Collecting, this takes a few seconds..."
     local head = extras()
     table.insert(head, ui.spacer({ flexGrow = 1 }))
-    if tab ~= "settings" and tab ~= "fixes" and entry and not entry.loading and entry.text then
+    local plain = tab == "settings" or tab == "fixes" or tab == "services"
+    if not plain and entry and not entry.loading and entry.text then
       local shown = entry.text
       table.insert(head, ui.button({ text = private and "Copy private" or "Copy", glyph = "copy", variant = "outline", controlSize = "sm", tooltip = "Copy all text on this tab", onClick = function() copy(shown, "Text", true) end }))
     end
-    if tab ~= "settings" then
+    if tab ~= "settings" and tab ~= "services" then
       local function mode(label, on, tip, set)
         table.insert(head, ui.button({ text = (on and "✓ " or "") .. label, variant = on and "primary" or "outline", controlSize = "sm", tooltip = tip, onClick = function()
           if not on then
@@ -515,6 +524,8 @@ exec xdg-open "$d"]]
       body = ui.scroll({ flexGrow = 1, key = "textfixes", revealKey = kbd.reveal() }, {
         ui.column({ gap = 10 }, fixesBody()),
       })
+    elseif tab == "services" then
+      body = services.body()
     elseif tab == "settings" then
       body = ui.column({ gap = 6, flexGrow = 1 }, settingsBody())
     else
@@ -525,7 +536,7 @@ exec xdg-open "$d"]]
       })
     end
     local right = { ui.row({ gap = 6, align = "center" }, head) }
-    if private and tab ~= "settings" then
+    if private and tab ~= "settings" and tab ~= "services" then
       table.insert(right, ui.row({ gap = 6, align = "center", fill = "surface_variant", radius = 8, padding = 8, border = "primary", borderWidth = 1 }, {
         ui.label({ text = "Private view. Names, addresses and ids are shown. Keep this text to yourself: do not paste it in a forum, an issue or a chat.", fontSize = 11, flexGrow = 1 }),
       }))
@@ -580,6 +591,16 @@ exec xdg-open "$d"]]
     }))
   end
 
+  services = newServices(function() render() end, function(...) terminal(...) end, function()
+    -- Always the public scrub: this tab has no Public/Private switch.
+    local list = {}
+    if hideWords ~= "" then
+      table.insert(list, "--hide")
+      table.insert(list, hideWords)
+    end
+    return list
+  end)
+
   local function onKey(chord)
     if kbd.key(chord) == "moved" then
       render()
@@ -592,6 +613,7 @@ exec xdg-open "$d"]]
     private = false
     choosing = false
     openFix = nil
+    services.reset()
     session += 1
     noctalia.runAsync({ "sh", "-c", "command -v pacman-mirrors >/dev/null" }, function(result)
       manjaro = result.exitCode == 0
