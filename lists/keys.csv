@@ -7,20 +7,20 @@ W-s,Panels,1,Control center
 W-x,Panels,1,"Session menu (logout, reboot, shutdown)"
 "W-,",Panels,0,Noctalia settings
 W-n,Panels,1,Notes
-W-A-n,Panels,0,Notes as pinned window
-W-A-c,Panels,0,Configs as pinned window
+C-W-n,Panels,0,Notes as pinned window
+C-W-c,Panels,0,Configs as pinned window
 W-c,Panels,0,Colors panel
-C-W-c,Panels,0,Colors as pinned window
 W-A-s,Panels,0,Status panel
 W-A-w,Panels,0,Wallpaper folders
 W-A-r,Panels,0,Capture panel (screenshot, recording)
 W-A-v,Panels,0,Cava settings
 W-p,Panels,1,Places
+C-W-p,Panels,0,Places as pinned window
 W-A-q,Panels,0,Equalizer
 W-A-d,Desktop,0,Show or hide the desktop widgets
 W-A-i,Panels,1,System info and report
 W-A-k,Panels,0,Fittsmon zone commands on each monitor
-W-S-s,Panels,0,Status as pinned window
+C-W-s,Panels,0,Status as pinned window
 W-=,Panels,0,Wallpaper picker
 W-m,Panels,0,Music launcher
 C-S-2,Panels,0,Add a track to the music list

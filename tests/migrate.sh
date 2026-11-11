@@ -36,6 +36,21 @@ migrate; migrate
 [[ $(count 'key="W-p"') == 1 ]] || { echo "FAIL migrate_13: expected one W-p bind"; exit 1; }
 valid || { echo "FAIL migrate_13: rc.xml is no longer valid"; exit 1; }
 
+# migrate_14: pinned windows move to C-W-<letter> from the old defaults, and a user-bound key is left alone.
+grep -v -e 'key="C-W-[cnsp]"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+sed -i 's#</keyboard>#<keybind key="W-A-c"><action name="Execute" command="mb-pinned configs"/></keybind>\n<keybind key="C-W-c"><action name="Execute" command="mb-pinned colors"/></keybind>\n<keybind key="W-A-n"><action name="Execute" command="mb-pinned notes"/></keybind>\n<keybind key="W-S-s"><action name="Execute" command="mb-pinned status"/></keybind>\n<keybind key="C-W-n"><action name="Execute" command="mine"/></keybind>\n</keyboard>#' "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(count 'key="C-W-c"><action name="Execute" command="mb-pinned configs"') == 1 && $(count 'mb-pinned colors') == 0 ]] || { echo "FAIL migrate_14: configs/colors"; exit 1; }
+[[ $(count 'key="C-W-s"><action name="Execute" command="mb-pinned status"') == 1 && $(count 'key="C-W-p"') == 1 ]] || { echo "FAIL migrate_14: status/places"; exit 1; }
+[[ $(count 'key="C-W-n"') == 1 && $(count 'command="mine"') == 1 && $(count 'key="W-A-n"') == 1 ]] || { echo "FAIL migrate_14: touched the user's C-W-n"; exit 1; }
+valid || { echo "FAIL migrate_14: rc.xml is no longer valid"; exit 1; }
+
+# migrate_14: with W-A-c rebound by the user, the pinned Colors key stays.
+grep -v -e 'key="C-W-[cnsp]"' -e 'key="W-A-c"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+sed -i 's#</keyboard>#<keybind key="W-A-c"><action name="Execute" command="mine"/></keybind>\n<keybind key="C-W-c"><action name="Execute" command="mb-pinned colors"/></keybind>\n</keyboard>#' "$conf/mabox-noctalia-ce/rc.xml"
+migrate
+[[ $(count 'mb-pinned colors') == 1 && $(count 'command="mine"') == 1 ]] || { echo "FAIL migrate_14: removed the Colors key without moving configs"; exit 1; }
+
 # migrate_12: the Calamares launcher gets DISPLAY=:0, and an existing user copy is left alone.
 if [[ -f /usr/share/applications/calamares.desktop ]]; then
     desk=$tmp/.local/share/applications/calamares.desktop

@@ -128,6 +128,22 @@ migrate_13() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# Pinned windows move to C-W-<letter>: configs C-W-c, notes C-W-n, places C-W-p, status C-W-s. Colors keeps only W-c.
+# A key is moved only while it still has the old default command; a key the user already bound stays as it is.
+migrate_14() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="W-A-c"><action name="Execute" command="mb-pinned configs"' "$f" &&
+        sed -i '/key="C-W-c"><action name="Execute" command="mb-pinned colors"/d' "$f"
+    local old new name
+    for pair in W-A-c:C-W-c:configs W-A-n:C-W-n:notes W-S-s:C-W-s:status; do
+        IFS=: read -r old new name <<< "$pair"
+        grep -q "key=\"$new\"" "$f" || sed -i "s#key=\"$old\"><action name=\"Execute\" command=\"mb-pinned $name\"#key=\"$new\"><action name=\"Execute\" command=\"mb-pinned $name\"#" "$f"
+    done
+    grep -q 'key="C-W-p"' "$f" || sed -i 's#</keyboard>#    <keybind key="C-W-p"><action name="Execute" command="mb-pinned places"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
