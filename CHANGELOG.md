@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Make the Updates panel taller and scroll when the content does not fit.
 - Remove the copy icon from notes in the pinned Notes panel; right click on the title copies.
 - Start a new note in the Title field; Enter jumps to the text.
 - Rename the AUR cache rows in the Status panel to Clean with paru, yay and pamac.
