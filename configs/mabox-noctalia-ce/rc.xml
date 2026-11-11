@@ -195,22 +195,8 @@
     <keybind key="C-KP_8"><action name="Execute" command="jumpapp -m /usr/bin/firedragon" /></keybind>
     <keybind key="C-KP_9"><action name="Execute" command="jumpapp -m /usr/bin/floorp" /></keybind>
     
-    <!-- send focused window to monitor -->
-    <keybind key="S-C-KP_7"><action name="Execute" command="skippy-wl-send-to-philips"/></keybind>
-    <keybind key="S-C-KP_Home"><action name="Execute" command="skippy-wl-send-to-philips"/></keybind>
-    <keybind key="S-C-KP_9"><action name="Execute" command="skippy-wl-send-to-dell"/></keybind>
-    <keybind key="S-C-KP_Prior"><action name="Execute" command="skippy-wl-send-to-dell"/></keybind>
-    <keybind key="S-C-KP_8"><action name="Execute" command="skippy-wl-send-to-desk"/></keybind>
     <keybind key="A-Space"><action name="ShowMenu" menu="root-menu"/></keybind>
-    <keybind key="C-Space"><action name="Execute" command="skippy-wl-tiling"/></keybind>
 
-    <!-- helper binds the scripts use -->
-    <keybind key="W-A-C-7"><action name="MoveToOutput" output="HDMI-A-1"/></keybind>
-    <keybind key="W-A-C-9"><action name="MoveToOutput" output="DP-1"/></keybind>
-    <keybind key="W-A-C-8"><action name="UnSnap"/></keybind>
-    <keybind key="W-A-C-0"><action name="SendToDesktop" to="right" wrap="yes"/></keybind>
-    <keybind key="W-A-C-1"><action name="SendToDesktop" to="Workspace 1" follow="no"/></keybind>
-    <keybind key="W-A-C-2"><action name="SendToDesktop" to="Workspace 2" follow="no"/></keybind>
     <keybind key="C-A-Right"><action name="SendToDesktop" to="right" wrap="yes"/></keybind>
     <keybind key="C-A-Left"><action name="SendToDesktop" to="left" wrap="yes"/></keybind>
 

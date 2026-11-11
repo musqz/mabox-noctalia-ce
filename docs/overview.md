@@ -99,8 +99,6 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mb-screenshot-menu` | root-menu list of screenshot delays (3, 5, 10, 30 s) | root menu, Screenshot |
 | `capture-stop` | stop a running recording and interval screenshots | `W-S-x`, stop button in the bar while recording |
 | `mb-gifmaker` | make a GIF from the interval screenshots (`gifski`) | run by hand |
-| `skippy-wl-tiling` | pick up to 4 windows and tile them | `C-Space` |
-| `skippy-wl-send-to-{philips,dell,desk}` | pick windows, send to a monitor or workspace | `S-C-KP_7`, `S-C-KP_9`, `S-C-KP_8` |
 
 ## Plugins
 

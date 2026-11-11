@@ -56,7 +56,6 @@ W-b,Windows,0,Toggle window decorations
 A-grave,Windows,0,Minimize window
 W-Tab,Windows,1,Window switcher: next
 W-S-Tab,Windows,0,Window switcher: previous
-C-Space,Windows,0,Tile the windows
 A-Space,Windows,0,Root menu
 W-A-1,Windows,0,Snap left
 W-A-2,Windows,0,Snap right
@@ -66,11 +65,6 @@ W-A-5,Windows,0,Snap bottom left
 W-A-6,Windows,0,Snap bottom right
 W-A-7,Windows,0,Maximize
 W-A-8,Windows,0,Move window to the next monitor
-S-C-KP_7,Windows,0,Send window to the Philips
-S-C-KP_Home,Windows,0,Send window to the Philips
-S-C-KP_9,Windows,0,Send window to the Dell
-S-C-KP_Prior,Windows,0,Send window to the Dell
-S-C-KP_8,Windows,0,Send window to the desk monitor
 W-1,Workspaces,1,Previous workspace
 W-2,Workspaces,1,Next workspace
 W-S-1,Workspaces,0,Send window to the previous workspace
@@ -105,9 +99,3 @@ C-KP_6,Jump,0,Firefox: focus or start
 C-KP_8,Jump,0,Firedragon: focus or start
 C-KP_9,Jump,0,Floorp: focus or start
 C-KP_0,Jump,0,scrcpy: focus or start
-W-A-C-7,Helpers,0,Move window to HDMI-A-1 (used by scripts)
-W-A-C-9,Helpers,0,Move window to DP-1 (used by scripts)
-W-A-C-8,Helpers,0,Unsnap window (used by scripts)
-W-A-C-0,Helpers,0,Send window to the right workspace (used by scripts)
-W-A-C-1,Helpers,0,Send window to workspace 1 (used by scripts)
-W-A-C-2,Helpers,0,Send window to workspace 2 (used by scripts)

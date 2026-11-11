@@ -105,10 +105,8 @@ Saved folders: `W-A-w`, the bar photo button, the *Wallpaper folders* entry in t
 ## Monitors
 
 - `kanshi` sets positions per profile: `~/.config/kanshi/config`.
-- `W-A-C-7` / `W-A-C-9` move a window to a monitor.
 - Screenshots of a whole screen use the focused monitor. Set `SCREENSHOT_OUTPUT` (for example `HDMI-A-1`) in `~/.config/mabox-noctalia-ce/environment` to always take the same one; re-login to apply.
 - Brightness keys control one output; set `BRIGHTNESS_OUTPUT` (default `HDMI-A-1`).
-- `skippy-wl-send-to-*` send the picked window to a named monitor.
 
 ## Music
 
