@@ -122,7 +122,9 @@ end
 
 local function header()
   local btns = { ui.label({ text = "Crypto", flexGrow = 1 }),
-    ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh price", onClick = refresh }) }
+    ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh price", onClick = refresh }),
+    ui.button({ glyph = "external-link", variant = "ghost", controlSize = "sm", tooltip = "Open kraken.com prices",
+      onClick = function() noctalia.runAsync({ "setsid", "-f", "xdg-open", "https://www.kraken.com/prices" }) end }) }
   if pinned then
     table.insert(btns, pinSide.dockButton("crypto", pinned, render))
     table.insert(btns, ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("crypto", pinned) end }))
