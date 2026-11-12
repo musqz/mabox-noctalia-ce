@@ -94,6 +94,13 @@
     </item>
   </menu>
   <menu id="tools-menu" label="Tools noctalia ce" icon="applications-utilities">
+    <item label="Cava" icon="audio-x-generic">
+      <action name="Execute" command="mb-cava toggle" />
+    </item>
+    <item label="Cava settings" icon="preferences-other">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/cava:main" />
+    </item>
+    <separator />
     <item label="Colors" icon="applications-graphics">
       <action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker" />
     </item>
@@ -101,51 +108,16 @@
       <action name="Execute" command="mb-pinned colors" />
     </item>
     <separator />
-    <item label="Places" icon="folder">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/places:main" />
-    </item>
-    <item label="Places pinned" icon="folder">
-      <action name="Execute" command="mb-pinned places" />
-    </item>
-    <separator />
-    <item label="Todo" icon="checkbox">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/todo:main" />
-    </item>
-    <separator />
-    <item label="Notes" icon="accessories-text-editor">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
-    </item>
-    <item label="Notes pinned" icon="accessories-text-editor">
-      <action name="Execute" command="mb-pinned notes" />
-    </item>
-    <separator />
-    <item label="Status" icon="utilities-system-monitor">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
-    </item>
-    <item label="Status pinned" icon="utilities-system-monitor">
-      <action name="Execute" command="mb-pinned status" />
-    </item>
-    <separator />
-    <item label="Keys" icon="input-keyboard">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
-    </item>
-    <separator />
-    <item label="Cava" icon="audio-x-generic">
-      <action name="Execute" command="mb-cava toggle" />
-    </item>
-    <item label="Cava settings" icon="preferences-other">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/cava:main" />
-    </item>
-    <item label="Equalizer" icon="multimedia-volume-control">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main" />
-    </item>
-    <separator />
     <item label="Crypto" icon="applications-office">
       <action name="Execute" command="noctalia msg panel-toggle mabox/crypto:main" />
     </item>
     <separator />
-    <item label="System info" icon="computer">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
+    <item label="Equalizer" icon="multimedia-volume-control">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main" />
+    </item>
+    <separator />
+    <item label="Keys" icon="input-keyboard">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
     </item>
     <separator />
     <item label="Music" icon="multimedia-audio-player">
@@ -156,6 +128,35 @@
     </item>
     <item label="Add music URL" icon="list-add">
       <action name="Execute" command="noctalia msg panel-open mabox/music:add" />
+    </item>
+    <separator />
+    <item label="Notes" icon="accessories-text-editor">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
+    </item>
+    <item label="Notes pinned" icon="accessories-text-editor">
+      <action name="Execute" command="mb-pinned notes" />
+    </item>
+    <separator />
+    <item label="Places" icon="folder">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/places:main" />
+    </item>
+    <item label="Places pinned" icon="folder">
+      <action name="Execute" command="mb-pinned places" />
+    </item>
+    <separator />
+    <item label="Status" icon="utilities-system-monitor">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
+    </item>
+    <item label="Status pinned" icon="utilities-system-monitor">
+      <action name="Execute" command="mb-pinned status" />
+    </item>
+    <separator />
+    <item label="System info" icon="computer">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
+    </item>
+    <separator />
+    <item label="Todo" icon="checkbox">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/todo:main" />
     </item>
   </menu>
   <menu id="widgets-menu" label="Desktop widgets" icon="preferences-desktop" execute="mb-widget menu" />
