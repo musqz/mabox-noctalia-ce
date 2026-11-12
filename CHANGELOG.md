@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Show the whole Todo sidebar (Lists, Sort tasks, Groups) instead of cutting it off at a fixed height.
 - Order the root menu's Tools submenu alphabetically by block, with separators between the blocks.
 - Hide desktop widgets of disabled or removed plugins in `mb-widget` and the widgets panel.
 - Add a *Todo today* desktop widget (mabox/todo): open tasks that are overdue or due today from every list; click the header to open the Todo panel; `max` setting for the number of rows.
