@@ -110,21 +110,21 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/todo` | wide panel + *Todo today* desktop widget | `W-y` | todo.txt lists in `~/.todo` with `due:` dates, +group sub-groups, notes; done tasks stay struck through until moved to `done_<list>.txt` |
 | `mabox/places` | `main` dropdown, pinned window | `W-p`, `C-W-p` | `pcmanfm`, `fsearch`; bookmarks from `~/.config/gtk-3.0/bookmarks` |
 | `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `C-W-s` | none; cleanup rows run in a terminal |
-| `mabox/configs` | `main` dropdown, pinned window | `C-W-c` (pinned window), Mabox Config menu | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
-| `mabox/reset` | `main` dropdown | none (Mabox Config menu) | `mb-reset-wl` |
-| `mabox/capture` | `main` dropdown, pinned window | `noctalia msg panel-toggle mabox/capture:main` | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
-| `mabox/colors` | `picker` dropdown, pinned window | `W-c` (panel), root menu: Colors | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
-| `mabox/tools` | `/mb` launcher, also in global search | type `mb` or a tool name | opens the other Mabox plugins; pinned entries need `mb-pinned` |
-| `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` (`noctalia msg panel-toggle mabox/keys:keys`) | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/` |
+| `mabox/configs` | `main` dropdown, pinned window | `C-W-c` | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
+| `mabox/reset` | `main` dropdown |  | `mb-reset-wl` |
+| `mabox/capture` | `main` dropdown, pinned window |  | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
+| `mabox/colors` | `picker` dropdown, pinned window | `W-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
+| `mabox/tools` | `/mb` launcher, also in global search |  | opens the other Mabox plugins; pinned entries need `mb-pinned` |
+| `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/` |
 | `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Services, Fixes, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
 | `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
 | `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
-| `mabox/info` | `info` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `mb-keys`; `[desktop_widgets] enabled = true` |
-| `mabox/polaroids` | `polaroids` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
+| `mabox/info` | `info` desktop widget |  | `mb-keys`; `[desktop_widgets] enabled = true` |
+| `mabox/polaroids` | `polaroids` desktop widget |  | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
 | `mabox/snapshot` | `main` panel, root menu (Mabox noctalia ce), `/mb snapshot` | | `mabox-snapshot`; Explain runs in the panel, Build in a `foot` terminal with sudo |
 | `mabox/cava` | `main` panel, root menu (Tools: Cava, Cava settings), `/mb cava` (start or stop), `/mb cava settings` | | `cavactl`, `mb-cava`; edits `~/.config/cava/config` |
 | `mabox/equalizer` | `main` panel, root menu (Tools: Equalizer), `/mb equalizer` | | `mb-eq`, `pw-cli`, `pactl`; `~/.config/pipewire/pipewire.conf.d/eq.conf`; state in the plugin data folder |
-| `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` | `mb-pinned crypto` | `mb-crypto`, `curl`, `python3`; needs internet; state in the plugin data folder |
+| `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` |  | `mb-crypto`, `curl`, `python3`; needs internet; state in the plugin data folder |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 
 ```sh
