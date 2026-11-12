@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "tools"
-description = "Launcher entries for the Mabox plugins: Colors, Notes, Status, Config files and Reset, each with a pinned variant. Type /mb or search by name."
+description = "Launcher entries for the Mabox plugins (type /mb), plus a dropdown panel and launcher entries to show or hide the desktop widgets."
 tags = ["launcher", "utility"]
 
 [[launcher_provider]]
@@ -14,3 +14,12 @@ entry = "finder.luau"
 prefix = "mb"
 glyph = "tools"
 include_in_global_search = true
+
+[[panel]]
+id = "widgets"
+entry = "widgets.luau"
+width = 260
+height = "content"
+max_height = 400
+placement = "attached"
+open_near_click = true
