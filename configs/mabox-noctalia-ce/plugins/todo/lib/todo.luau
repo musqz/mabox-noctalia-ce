@@ -252,15 +252,64 @@ local function today()
   return os.date("%Y-%m-%d")
 end
 
--- Accepts 2026-11-5 as well; rejects days that do not exist (2026-02-31).
-local function normDate(s)
-  local y, m, d = string.match(noctalia.string.trim(s or ""), "^(%d%d%d%d)%-(%d%d?)%-(%d%d?)$")
+-- Dates are stored as YYYY-MM-DD; the panel shows and accepts them in the order of the user's locale
+-- (`locale d_fmt`: dd-mm-yyyy, mm/dd/yyyy, ...). The ISO form is always accepted too.
+local dateOrder, dateSep = { "y", "m", "d" }, "-"
+local dateFormatLoaded = false
+
+local function setDateFormat(fmt)
+  local order = {}
+  for c in string.gmatch(fmt or "", "%%([YymdeE])") do
+    table.insert(order, (string.lower(c) == "e") and "d" or string.lower(c))
+  end
+  local sep = string.match(fmt or "", "%%%a(%p)%%")
+  if #order == 3 and sep and sep ~= "%" then
+    dateOrder, dateSep = order, sep
+  end
+end
+
+local function fmtDate(iso)
+  local y, m, d = string.match(iso or "", "^(%d+)%-(%d+)%-(%d+)$")
   if not y then
-    return nil
+    return iso or ""
+  end
+  local v = { y = y, m = m, d = d }
+  return table.concat({ v[dateOrder[1]], v[dateOrder[2]], v[dateOrder[3]] }, dateSep)
+end
+
+local function datePlaceholder()
+  local name = { y = "YYYY", m = "MM", d = "DD" }
+  return table.concat({ name[dateOrder[1]], name[dateOrder[2]], name[dateOrder[3]] }, dateSep)
+end
+
+-- Accepts the ISO form (2026-11-5 too) and the locale order (5-11-2026); rejects days that do not exist.
+local function normDate(s)
+  local text = noctalia.string.trim(s or "")
+  local y, m, d = string.match(text, "^(%d%d%d%d)%-(%d%d?)%-(%d%d?)$")
+  if not y then
+    local a, b, c = string.match(text, "^(%d%d?%d?%d?)[%-/%.](%d%d?)[%-/%.](%d%d?%d?%d?)$")
+    if not a then
+      return nil
+    end
+    if #a == 4 then
+      y, m, d = a, b, c
+    else
+      local v = {}
+      v[dateOrder[1]], v[dateOrder[2]], v[dateOrder[3]] = a, b, c
+      y, m, d = v.y, v.m, v.d
+    end
+    if #y ~= 4 then
+      return nil
+    end
   end
   local out = string.format("%04d-%02d-%02d", tonumber(y), tonumber(m), tonumber(d))
   local check = os.date("%Y-%m-%d", os.time({ year = tonumber(y), month = tonumber(m), day = tonumber(d), hour = 12 }))
   return check == out and out or nil
+end
+
+local function shownDate(raw)
+  local iso = normDate(raw)
+  return iso and fmtDate(iso) or raw or ""
 end
 
 local function dueNote(s)
@@ -269,7 +318,7 @@ local function dueNote(s)
   end
   local date = normDate(s)
   if not date then
-    return "use YYYY-MM-DD", true
+    return "use " .. datePlaceholder(), true
   end
   local function noon(x)
     local y, m, d = string.match(x, "^(%d+)%-(%d+)%-(%d+)$")
@@ -623,7 +672,7 @@ local function editRow(t, key)
   end))
   local dues = {}
   for _, d in ipairs({ { "Today", 0 }, { "Tomorrow", 1 }, { "Next week", 7 } }) do
-    table.insert(dues, colorChip(DUE_HEX[dueKind(addDays(d[2]))], chip("ed" .. d[1], d[1], editDue == addDays(d[2]), "Due " .. addDays(d[2]), function()
+    table.insert(dues, colorChip(DUE_HEX[dueKind(addDays(d[2]))], chip("ed" .. d[1], d[1], editDue == addDays(d[2]), "Due " .. fmtDate(addDays(d[2])), function()
       editDue = addDays(d[2])
       render()
     end)))
@@ -683,9 +732,9 @@ local function editRow(t, key)
     ui.row({ gap = 4, align = "center" }, {
       ui.input({
         key = "edue" .. editDue,
-        value = editDue,
+        value = shownDate(editDue),
         controlSize = "sm",
-        placeholder = "YYYY-MM-DD",
+        placeholder = datePlaceholder(),
         flexGrow = 1,
         onChange = function(s) editDue = s end,
         onSubmit = function() saveEdit(t) end,
@@ -748,7 +797,7 @@ local function taskRow(t, key, overdue, copy, zebra, hideGroup)
     maxLines = 1,
     tooltip = t.text,
   }))
-  table.insert(children, cell(125, (t.due and not t.done) and colorChip(DUE_HEX[dueKind(t.due)], ui.label({ text = t.due, color = "on_surface" })) or nil))
+  table.insert(children, cell(125, (t.due and not t.done) and colorChip(DUE_HEX[dueKind(t.due)], ui.label({ text = fmtDate(t.due), color = "on_surface" })) or nil))
   local shown = {}
   for _, tag in ipairs(t.tags) do
     if not (hideGroup and string.sub(tag, 1, 1) == "+" and string.sub(tag, 2) == groupOf(t)) then
@@ -1224,13 +1273,13 @@ local function addCard()
   local due = { ui.label({ text = "Due:", color = "on_surface_variant" }) }
   for _, d in ipairs({ { "Today", 0 }, { "Tomorrow", 1 }, { "In 1 week", 7 } }) do
     local date = addDays(d[2])
-    table.insert(due, colorChip(DUE_HEX[dueKind(addDays(d[2]))], chip("ad" .. d[1], d[1], addDue == date, "Due " .. date .. "; click again to clear", function()
+    table.insert(due, colorChip(DUE_HEX[dueKind(addDays(d[2]))], chip("ad" .. d[1], d[1], addDue == date, "Due " .. fmtDate(date) .. "; click again to clear", function()
       addDue = addDue ~= date and date or nil
       render()
     end)))
   end
   table.insert(due, ui.button({ key = "acal", glyph = "calendar", text = "Pick date", variant = calFor == "add" and "primary" or "ghost", controlSize = "sm", tooltip = "Choose a day in a calendar", onClick = function() openCalendar("add", addDue) end }))
-  table.insert(due, ui.input({ key = "adue" .. (addDue or ""), value = addDue or "", placeholder = "YYYY-MM-DD", controlSize = "sm", width = 130, onChange = function(v) addDue = v ~= "" and v or nil end, onSubmit = submit }))
+  table.insert(due, ui.input({ key = "adue" .. (addDue or ""), value = shownDate(addDue), placeholder = datePlaceholder(), controlSize = "sm", width = 130, onChange = function(v) addDue = v ~= "" and v or nil end, onSubmit = submit }))
   local note, bad = dueNote(addDue)
   table.insert(due, ui.label({ text = note or "no due date", color = bad and "error" or "on_surface_variant" }))
   local grp = { ui.label({ text = "Group:", color = "on_surface_variant" }) }
@@ -1265,7 +1314,7 @@ local function addCard()
       calFor = nil
       render()
     end) or ui.spacer({ height = 0 }),
-    ui.label({ text = "Pick priority and due date (or type YYYY-MM-DD), then add. +word = project, @word = context.", color = "on_surface_variant" }),
+    ui.label({ text = "Pick priority and due date (or type " .. datePlaceholder() .. "), then add. +word = project, @word = context.", color = "on_surface_variant" }),
   })
 end
 
@@ -1382,6 +1431,16 @@ render = function()
 end
 
 local function open()
+  if not dateFormatLoaded then
+    dateFormatLoaded = true
+    noctalia.runAsync({ "locale", "d_fmt" }, function(r)
+      local before = table.concat(dateOrder) .. dateSep
+      setDateFormat(string.gsub(r.stdout or "", "%s+$", ""))
+      if table.concat(dateOrder) .. dateSep ~= before then
+        render()
+      end
+    end)
+  end
   loadState()
   naming = false
   renaming = false
