@@ -1,5 +1,6 @@
 --!nonstrict
 -- Snapshot: front end for mabox-snapshot. Explain runs in the panel; the build runs in a terminal (sudo, passphrase).
+local logo = require("./lib/celogo.luau")
 
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "primary", borderWidth = 1 }
@@ -423,6 +424,7 @@ render = function()
   if usb and not explain and not settings then
     panel.render(ui.column({ key = "root-usb", gap = 8, padding = 12 }, {
       ui.row({ gap = 6, align = "center" }, {
+        logo(),
         ui.label({ text = "Write an ISO to USB", flexGrow = 1 }),
         ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function()
           usb = false
@@ -449,6 +451,7 @@ render = function()
     end })
   end
   local top = ui.row({ gap = 6, align = "center" }, {
+    logo(),
     ui.label({ text = explain and ("Explain: " .. explain.name) or (settings and "Snapshot settings" or "Snapshot"), flexGrow = 1 }),
     nav,
     ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),

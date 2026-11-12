@@ -7,6 +7,7 @@ local diff = nil
 local note = nil
 local render
 local kbd = require("./lib/kbd.luau")
+local logo = require("./lib/celogo.luau")
 
 -- Keyboard cursor: button with a stop and a thick frame; border props are always sent (retained widgets).
 local function kbtn(id, row, col, props)
@@ -93,6 +94,7 @@ end
 render = function()
   kbd.begin()
   local top = ui.row({ gap = 6, align = "center" }, {
+    logo(),
     ui.label({ text = diff and ("Diff: " .. diff.name) or "Reset configs", flexGrow = 1 }),
     kbtn("back", 1, 1, { glyph = diff and "arrow-left" or "refresh", variant = "ghost", controlSize = "sm", tooltip = diff and "Back" or "Refresh", onClick = function()
       if diff then
