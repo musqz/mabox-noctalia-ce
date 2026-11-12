@@ -568,6 +568,59 @@ local function addButton()
   end)
 end
 
+local logoStyle = nil
+local logoArmed = false
+local logoArmToken = 0
+local LOGO_STYLES = { { "round", "Round", "mabox-logo.svg" }, { "square", "Square", "mabox-logo-square.svg" }, { "3d", "3D", "mabox-logo-3d.svg" }, { "custom", "Custom", "mabox-logo-custom.svg" } }
+local LOGO_PICK = [[p=$(yad --file --center --width=1000 --height=650 --title="Logo (SVG)" --file-filter="SVG | *.svg" --filename="$HOME/Pictures/")
+if [ -n "$p" ]; then mb-logo "$p" >/dev/null || notify-send -a Configs "Logo" "Could not use that file"; fi]]
+
+-- ui.image caches by path and these files are rewritten in place: show a copy named after its content.
+local previews = {}
+local function preview(file)
+  local body = noctalia.readFile(file)
+  local dir = noctalia.pluginDataDir()
+  if not (body and body ~= "" and dir) then
+    return file
+  end
+  local c = previews[file]
+  if c and c.body == body then
+    return c.path
+  end
+  local sum = 0
+  for i = 1, #body do
+    sum = (sum * 31 + string.byte(body, i)) % 4294967291
+  end
+  noctalia.mkdirAll(dir)
+  local path = dir .. "/preview-" .. string.format("%x-%d", sum, #body) .. ".svg"
+  if not noctalia.writeFile(path, body) then
+    return file
+  end
+  if c and c.path ~= path then
+    noctalia.removeFile(c.path)
+  end
+  previews[file] = { body = body, path = path }
+  return path
+end
+
+local function loadLogo()
+  noctalia.runAsync({ "mb-logo" }, function(result)
+    logoStyle = noctalia.string.trim(result.stdout or "")
+    render()
+  end)
+end
+
+local function setLogo(style)
+  local args = { "mb-logo", style }
+  logoArmed = false
+  noctalia.runAsync(args, function(result)
+    if result.exitCode ~= nil and result.exitCode ~= 0 then
+      noctalia.notify("Configs", "Could not switch the logo: " .. noctalia.string.trim(result.stderr or ""))
+    end
+    loadLogo()
+  end)
+end
+
 local function open(path)
   noctalia.runAsync({ "setsid", "-f", "sh", "-c", OPEN, "sh", path })
 end
@@ -848,6 +901,72 @@ render = function()
   end
   table.insert(cards, card(widRows))
 
+  local logoOpen = expanded["Logo"]
+  row += 1
+  stop("h-logo", 1, function() toggle("Logo") end)
+  local logoRows = {
+    ui.button({
+      key = "h-logo",
+      selected = kbd.sel("h-logo"),
+      text = "Logo",
+      glyph = logoOpen and "chevron-down" or "chevron-right",
+      variant = "outline",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "The Mabox logo in the panels and desktop widgets",
+      onClick = function() toggle("Logo") end,
+    }),
+  }
+  if logoOpen then
+    local share = noctalia.getenv("HOME") .. "/.local/share/mabox-noctalia-ce/"
+    local choices = {}
+    for i, st in ipairs(LOGO_STYLES) do
+      local on = logoStyle == st[1]
+      local file = share .. st[3]
+      if st[1] ~= "custom" or noctalia.readFile(file) ~= nil then
+        -- Your own logo: click it once to use it, click it again to delete it.
+        local function act()
+          if st[1] ~= "custom" or not on then
+            setLogo(st[1])
+          elseif logoArmed then
+            setLogo("remove")
+          else
+            logoArmed = true
+            logoArmToken += 1
+            local token = logoArmToken
+            noctalia.runAsync({ "sleep", "8" }, function()
+              if logoArmed and token == logoArmToken then
+                logoArmed = false
+                render()
+              end
+            end)
+            render()
+          end
+        end
+        local sure = st[1] == "custom" and on and logoArmed
+        stop("logo-" .. st[1], i, act)
+        table.insert(choices, ui.column({ key = "lc-" .. st[1], gap = 2, align = "center", flexGrow = 1 }, {
+          ui.image({ path = preview(file), width = 40, height = 40, fit = "contain" }),
+          ui.button({ key = "logo-" .. st[1], selected = kbd.sel("logo-" .. st[1]), text = sure and "Delete?" or ((on and "✓ " or "") .. st[2]), variant = sure and "destructive" or (on and "outline" or "ghost"), controlSize = "sm", tooltip = st[1] == "custom" and (on and "Click again to delete this logo" or nil) or nil, onClick = act }),
+        }))
+      end
+    end
+    row += 1
+    table.insert(logoRows, ui.row({ gap = 4 }, choices))
+    row += 1
+    -- A pinned window stays open, so it reloads when the picker ends. The dropdown closes and kills the dialog: detach it and reopen the panel at the end.
+    local function pick()
+      if pinned then
+        noctalia.runAsync({ "sh", "-c", LOGO_PICK }, function() loadLogo() end)
+      else
+        noctalia.runAsync({ "setsid", "-f", "sh", "-c", LOGO_PICK .. "\nnoctalia msg panel-close; noctalia msg panel-open mabox/configs:main" })
+      end
+    end
+    stop("logo-add", 1, pick)
+    table.insert(logoRows, ui.button({ key = "logo-add", selected = kbd.sel("logo-add"), text = "Add SVG", glyph = "plus", variant = "ghost", controlSize = "sm", tooltip = "Pick your own SVG file as the logo", onClick = pick }))
+  end
+  table.insert(cards, card(logoRows))
+
   local btnOpen = expanded["Bar buttons"]
   row += 1
   stop("h-btn", 1, function() toggle("Bar buttons") end)
@@ -1063,8 +1182,10 @@ end
 
 local function start()
   loadExpanded()
+  logoArmed = false
   render()
   refresh()
+  loadLogo()
 end
 
 return start, handleKey

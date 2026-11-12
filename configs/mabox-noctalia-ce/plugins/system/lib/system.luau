@@ -1,6 +1,7 @@
 --!nonstrict
 -- System: tabs fed by `mb-sysreport <tab>`; the text is already sanitized.
 local kbd = require("./kbd.luau")
+local logo = require("./logo.luau").logo
 local FIXES = require("./fixes.luau")
 local newServices = require("./services.luau")
 
@@ -361,6 +362,7 @@ exec xdg-open "$d"]]
   local function extras()
     local items = {}
     if tab == "overview" then
+      table.insert(items, ui.image({ path = logo(), width = 24, height = 24, fit = "contain" }))
       for _, l in ipairs(LINKS) do
         table.insert(items, ui.button({ text = l.label, glyph = "external-link", variant = "ghost", controlSize = "sm", onClick = function() noctalia.runAsync({ "xdg-open", l.url }) end }))
       end
