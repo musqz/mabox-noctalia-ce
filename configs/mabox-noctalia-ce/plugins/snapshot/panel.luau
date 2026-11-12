@@ -45,7 +45,13 @@ local hasUsb = false
 local usb = false
 local hasVm = false
 local isos = {}
+local doomed = nil
 local probed = false
+local isoNext = false
+local function donePath()
+  local dir = noctalia.pluginDataDir()
+  return dir and (dir .. "/built") or nil
+end
 
 local function q(v)
   return "'" .. string.gsub(v, "'", "'\\''") .. "'"
@@ -119,6 +125,7 @@ local function kernelProblem()
 end
 
 local runExplain
+local loadIsos
 local function probe()
   noctalia.runAsync({ "sh", "-c", "mabox-snapshot version 2>/dev/null; command -v mabox-persistence-usb >/dev/null && echo usb=1; v=$(pacman -Q quickbox-qt 2>/dev/null | cut -d' ' -f2); [ -n \"$v\" ] && [ \"$(vercmp \"$v\" 1.4)\" -ge 0 ] && echo vm=1; echo run=$(uname -r); echo; for f in /etc/mkinitcpio.d/*.preset; do b=${f##*/}; echo k=${b%.preset}; done 2>/dev/null; echo; mabox-snapshot config show 2>/dev/null; echo q=$(grep -c '^encrypt = \"' \"$HOME/.config/mabox-snapshot/mabox-snapshot.conf\" 2>/dev/null)" }, function(result)
     local out = "\n" .. (result.stdout or "")
@@ -166,6 +173,11 @@ local function probe()
     hasUsb = string.match(out, "usb=1") ~= nil
     hasVm = string.match(out, "vm=1") ~= nil
     probed = true
+    if isoNext and outdir then
+      isoNext = false
+      usb = true
+      loadIsos()
+    end
     render()
   end)
 end
@@ -233,7 +245,7 @@ local function build(p)
     return
   end
   local script = "printf '\\033[1m$ %s\\033[0m\\n\\n' " .. q("sudo " .. cmdline(p)) .. "; sudo " .. cmdline(p)
-    .. "; s=$?; echo; if [ $s -eq 0 ]; then echo Done.; " .. (outdir and ("command -v mb-iso-next >/dev/null && mb-iso-next " .. q(outdir) .. "; ") or "") .. "else echo \"Failed (exit code $s).\"; fi; printf 'Press Enter to close. '; read _"
+    .. "; s=$?; echo; if [ $s -eq 0 ]; then " .. (donePath() and ("touch " .. q(donePath()) .. "; ") or "") .. "noctalia msg panel-open mabox/snapshot:main && exit 0; echo \"Done, but the panel did not open.\"; else echo \"Failed (exit code $s).\"; fi; printf 'Press Enter to close. '; read _"
   -- setsid: the terminal would die with the panel when it loses focus.
   noctalia.runAsync({ "sh", "-c", 'command -v foot >/dev/null || { notify-send -u critical "Snapshot" "foot is not installed"; exit 1; }; setsid -f foot -T "Mabox Snapshot" sh -c "$1"', "sh", script })
   panel.close()
@@ -278,14 +290,14 @@ end
 
 local loadingIsos = false
 
--- Skips files touched in the last 2 minutes: a build that is still writing its ISO.
-local function loadIsos()
+-- A fresh ISO (under 2 minutes) counts as finished only once its .sha256 exists; checksums can be off.
+loadIsos = function()
   isos = {}
   if not outdir then
     return
   end
   loadingIsos = true
-  noctalia.runAsync({ "sh", "-c", 'find "$1" -maxdepth 1 -name "*.iso" -mmin +2 -printf "%T@ %s %p\\n" | sort -rn | head -n 8', "sh", outdir }, function(result)
+  noctalia.runAsync({ "sh", "-c", 'find "$1" -maxdepth 1 -name "*.iso" \\( -mmin +2 -o -exec test -e {}.sha256 \\; \\) -printf "%T@ %s %p\\n" | sort -rn', "sh", outdir }, function(result)
     loadingIsos = false
     for mtime, size, path in string.gmatch((result.stdout or "") .. "\n", "(%d+)%.?%d* (%d+) ([^\n]+)\n") do
       table.insert(isos, { size = tonumber(size), mtime = tonumber(mtime), path = path })
@@ -305,20 +317,50 @@ local function writeIso(path)
   panel.close()
 end
 
+-- Removes the ISO and everything named after it (.sha256).
+local function deleteIso(path)
+  doomed = nil
+  noctalia.runAsync({ "sh", "-c", 'rm -f -- "$1" "$1".*', "sh", path }, function(result)
+    if result.exitCode ~= nil and result.exitCode ~= 0 then
+      noctalia.notify("Snapshot", "Could not delete the ISO. Check the folder permissions.")
+    end
+    loadIsos()
+  end)
+end
+
+local ISO_ROW, ISO_GAP, ISO_SHOWN = 60, 8, 6
+
 local function usbView()
   local rows = {
-    ui.label({ text = "Newest ISOs" .. (outdir and (" in " .. outdir) or "") .. ". The stick gets a persistence partition and is erased. More options: mabox-persistence-usb write --help in a terminal.", fontSize = 11, color = "on_surface_variant" }),
+    ui.label({ text = "ISOs" .. (outdir and (" in " .. outdir) or "") .. ". USB erases the stick and adds a persistence partition. More options: mabox-persistence-usb write --help in a terminal.", fontSize = 11, color = "on_surface_variant" }),
   }
+  local list = {}
   for i, iso in ipairs(isos) do
-    local name = string.match(iso.path, "([^/]+)$")
-    table.insert(rows, ui.row(card("iso-" .. i), {
+    local name = string.gsub(string.gsub(string.match(iso.path, "([^/]+)$"), "^mabox%-", ""), "%.iso$", "")
+    local c = card("iso-" .. i)
+    c.height = ISO_ROW
+    local sure = doomed == iso.path
+    table.insert(list, ui.row(c, {
       ui.column({ gap = 2, flexGrow = 1 }, {
-        ui.label({ text = name, fontSize = 12, fontWeight = "bold" }),
-        ui.label({ text = os.date("%x %H:%M", iso.mtime) .. "  " .. string.format("%.1f GiB", iso.size / 1073741824), fontSize = 11, color = "on_surface_variant" }),
+        ui.label({ text = name, fontSize = 12, fontWeight = "bold", maxLines = 1 }),
+        ui.label({ text = sure and "Delete this ISO?" or (os.date("%x %H:%M", iso.mtime) .. "  " .. string.format("%.1f GiB", iso.size / 1073741824)), fontSize = 11, color = sure and "primary" or "on_surface_variant" }),
       }),
-      hasUsb and ui.button({ text = "USB", variant = "outline", controlSize = "sm", tooltip = "Write this ISO to a USB stick", onClick = function() writeIso(iso.path) end }) or nil,
-      hasVm and ui.button({ text = "VM", variant = "outline", controlSize = "sm", tooltip = "Start this ISO in a VM with quickbox", onClick = function() startVm(iso.path) end }) or nil,
+      (not sure and hasUsb) and ui.button({ text = "USB", variant = "outline", controlSize = "sm", tooltip = "Write this ISO to a USB stick", onClick = function() writeIso(iso.path) end }) or nil,
+      (not sure and hasVm) and ui.button({ text = "VM", variant = "outline", controlSize = "sm", tooltip = "Start this ISO in a VM with quickbox", onClick = function() startVm(iso.path) end }) or nil,
+      sure and ui.button({ text = "Delete", variant = "destructive", controlSize = "sm", onClick = function() deleteIso(iso.path) end }) or nil,
+      ui.button({ glyph = sure and "x" or "trash", variant = "ghost", controlSize = "sm", tooltip = sure and "Cancel" or "Delete this ISO", onClick = function()
+        doomed = (not sure) and iso.path or nil
+        render()
+      end }),
     }))
+  end
+  if #list > ISO_SHOWN then
+    -- Height of whole rows only, so no row is cut off at rest.
+    table.insert(rows, ui.column({ key = "isos-box", height = ISO_SHOWN * ISO_ROW + (ISO_SHOWN - 1) * ISO_GAP }, { ui.scroll({ key = "isos", gap = ISO_GAP, flexGrow = 1 }, list) }))
+  else
+    for _, r in ipairs(list) do
+      table.insert(rows, r)
+    end
   end
   if loadingIsos then
     table.insert(rows, ui.label({ text = "Reading ISOs...", color = "on_surface_variant" }))
@@ -425,9 +467,14 @@ render = function()
     panel.render(ui.column({ key = "root-usb", gap = 8, padding = 12 }, {
       ui.row({ gap = 6, align = "center" }, {
         logo(),
-        ui.label({ text = "Write an ISO to USB", flexGrow = 1 }),
+        ui.label({ text = "ISOs", flexGrow = 1 }),
+        outdir and ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm", tooltip = "Open the ISO folder", onClick = function()
+          noctalia.runAsync({ "setsid", "-f", "xdg-open", outdir })
+          panel.close()
+        end }) or nil,
         ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function()
           usb = false
+          doomed = nil
           render()
         end }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
@@ -476,17 +523,15 @@ render = function()
       for _, p in ipairs(PROFILES) do
         table.insert(rows, profileCard(p))
       end
-      if hasUsb or hasVm then
-        table.insert(rows, ui.column(card("usb-card"), {
-          ui.label({ text = hasUsb and "USB stick or VM" or "VM", fontWeight = "bold", fontSize = 14 }),
-          ui.label({ text = "Write one of the newest ISOs to a USB stick (mabox-persistence-usb, the stick is erased) or start it in a VM.", fontSize = 11, color = "on_surface_variant" }),
-          ui.button({ key = "usb", text = "Choose an ISO...", variant = "outline", controlSize = "sm", onClick = function()
-            usb = true
-            loadIsos()
-            render()
-          end }),
-        }))
-      end
+      table.insert(rows, ui.column(card("usb-card"), {
+        ui.label({ text = "Finished ISOs", fontWeight = "bold", fontSize = 14 }),
+        ui.label({ text = "Write an ISO to a USB stick, start it in a VM or delete it.", fontSize = 11, color = "on_surface_variant" }),
+        ui.button({ key = "usb", text = "Open the ISO list", glyph = "arrow-right", variant = "outline", controlSize = "sm", onClick = function()
+          usb = true
+          loadIsos()
+          render()
+        end }),
+      }))
       table.insert(rows, ui.label({ text = note or (busy and "Reading plan..." or "Build asks for your sudo password in the terminal."), fontSize = 11, color = note and "primary" or "on_surface_variant" }))
     end
     body = ui.column({ gap = 10 }, rows)
@@ -497,7 +542,12 @@ end
 
 function onOpen()
   encrypt = loadEncrypt()
-  armed, explain, busy, settings, saved, note, usb = nil, nil, false, false, nil, nil, false
+  local done = donePath()
+  isoNext = done ~= nil and noctalia.readFile(done) ~= nil
+  if isoNext then
+    noctalia.removeFile(done)
+  end
+  armed, explain, busy, settings, saved, note, usb, doomed = nil, nil, false, false, nil, nil, false, nil
   render()
   probe()
 end
