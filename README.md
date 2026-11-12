@@ -1,3 +1,5 @@
+<img alt="Mabox Noctalia CE logo" src="docs/logo.png" width="128" />
+
 # mabox-noctalia-ce
 
 Noctalia session on labwc for Mabox Linux. Pick **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and packages.
