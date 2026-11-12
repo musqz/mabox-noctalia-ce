@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Pick the Mabox logo that ~/.icons/mabox-logo.svg points to: round, square, 3d or your own SVG.
+# mb-logo             print the current style
+# mb-logo round|square|3d|custom
+# mb-logo FILE.svg    copy FILE.svg and use it as the custom logo
+# mb-logo remove      delete the custom logo and switch back to round
+set -euo pipefail
+
+share=$HOME/.local/share/mabox-noctalia-ce
+link=$HOME/.icons/mabox-logo.svg
+
+declare -A files=(
+    [round]=$share/mabox-logo.svg
+    [square]=$share/mabox-logo-square.svg
+    [3d]=$share/mabox-logo-3d.svg
+    [custom]=$share/mabox-logo-custom.svg
+)
+
+current() {
+    local t s
+    t=$(readlink "$link" 2>/dev/null || true)
+    for s in "${!files[@]}"; do
+        [[ $t == "${files[$s]}" ]] && { echo "$s"; return; }
+    done
+    echo unknown
+}
+
+[[ $# -eq 0 ]] && { current; exit 0; }
+
+if [[ ${1:-} == remove ]]; then
+    rm -f -- "${files[custom]}"
+    [[ $(current) == custom ]] && ln -sfn "${files[round]}" "$link"
+    current
+    exit 0
+fi
+
+style=$1
+if [[ -z ${files[$style]:-} && -f $style ]]; then
+    [[ $style == *.svg ]] || { echo "mb-logo: not an .svg file: $style" >&2; exit 1; }
+    mkdir -p "$share"
+    [[ $style -ef ${files[custom]} ]] || cp -- "$style" "${files[custom]}"
+    style=custom
+fi
+[[ -n ${files[$style]:-} ]] || { echo "usage: mb-logo [round|square|3d|custom|FILE.svg]" >&2; exit 1; }
+
+target=${files[$style]}
+if [[ ! -f $target ]]; then
+    # Themed styles are written by Noctalia's template run.
+    [[ $style == custom ]] && { echo "mb-logo: no custom logo yet: mb-logo FILE.svg" >&2; exit 1; }
+    noctalia msg templates-apply >/dev/null 2>&1 || true
+    sleep 1
+    [[ -f $target ]] || { echo "mb-logo: $target is not there yet: change the theme once, then retry" >&2; exit 1; }
+fi
+
+mkdir -p "${link%/*}"
+ln -sfn "$target" "$link"
+echo "$style"

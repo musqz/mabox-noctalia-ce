@@ -152,6 +152,16 @@ migrate_15() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# Square and 3D logo templates for mb-logo.
+migrate_16() {
+    local f=${files[0]} n
+    [[ -f $f ]] || return 0
+    for n in square 3d; do
+        grep -q "^\[theme\.templates\.user\.mabox-logo-$n\]" "$f" && continue
+        printf '\n[theme.templates.user.mabox-logo-%s]\ninput_path = "~/.config/noctalia/templates/mabox-logo-%s.svg"\noutput_path = "~/.local/share/mabox-noctalia-ce/mabox-logo-%s.svg"\n' "$n" "$n" "$n" >> "$f"
+    done
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
