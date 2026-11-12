@@ -1,0 +1,20 @@
+id = "mabox/todo"
+name = "Todo"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "checklist"
+description = "Todo lists in todo.txt format (~/.todo): due dates, priorities, inline edit, filter by +project and @context."
+tags = ["utility", "todo"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 1300
+height = "content"
+max_height = 760
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+capture_keys = ["escape"]
