@@ -36,12 +36,26 @@ printf '\nPress Enter to close '
 read -r _
 ]]
 
--- A file you own is edited in place; a packaged file or a template instance gets a drop-in through systemctl edit.
+-- A file you own is edited in place; a packaged file or a template instance gets a drop-in, pre-filled with a commented template (systemctl edit drops an empty one).
 local EDIT_USER = [[
 ed=${VISUAL:-$EDITOR}
 [ -n "$ed" ] || ed=$(command -v nano || command -v micro || command -v vim || command -v vi)
+d=$HOME/.config/systemd/user/$1.d
+f=$d/override.conf
 if [ -w "$2" ] && [ "${1#*@}" = "$1" ] && [ -n "$ed" ]; then
   $ed "$2" && systemctl --user daemon-reload && echo 'daemon-reload done'
+elif [ -n "$ed" ] && [ ! -e "$f" ]; then
+  mkdir -p "$d"
+  case $1 in
+    *.timer) printf '[Timer]\n# Packaged values add up: clear first, then set. Remove the # to use a line.\n#OnUnitActiveSec=\n#OnUnitActiveSec=3h\n' > "$f" ;;
+    *) printf '[Service]\n# Remove the # to use a line.\n#Environment=NAME=value\n' > "$f" ;;
+  esac
+  $ed "$f"
+  if grep -qv -e '^ *#' -e '^ *$' -e '^ *\[' "$f"; then
+    systemctl --user daemon-reload && echo "drop-in saved. Restart the unit to apply: systemctl --user restart $1"
+  else
+    rm -f "$f"; rmdir "$d" 2>/dev/null; echo 'no change, drop-in not kept'
+  fi
 else
   systemctl --user edit -- "$1"
 fi
