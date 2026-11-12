@@ -1,5 +1,6 @@
 --!nonstrict
 -- Cava: front end for cavactl (colors, bars, framerate) and the transparent cava window (mb-cava).
+local logo = require("./lib/celogo.luau")
 
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 10, border = "primary", borderWidth = 1 }
@@ -573,6 +574,7 @@ render = function()
   end
   panel.render(ui.column({ gap = 10, padding = 12 }, {
     ui.row({ gap = 6, align = "center" }, {
+      logo(),
       ui.label({ text = "Cava", flexGrow = 1 }),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
