@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Hide desktop widgets of disabled or removed plugins in `mb-widget` and the widgets panel.
 - Add a *Todo today* desktop widget (mabox/todo): open tasks that are overdue or due today from every list; click the header to open the Todo panel; `max` setting for the number of rows.
 - Show due dates in the Todo panel in the order of your locale (`dd-mm-yyyy`, `mm/dd/yyyy`); typed dates are accepted in that order or as `YYYY-MM-DD`; the file keeps `due:YYYY-MM-DD`.
 - Show the date of an ISO in the Snapshot panel in your locale format.
