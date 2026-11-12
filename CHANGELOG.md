@@ -3,6 +3,7 @@
 ## Unreleased
 - Open the Keys panel on All binds with the search focused instead of the focused application.
 - Reopen the Snapshot panel on the ISO list after a successful build; the list shows every ISO, scrolls, and deletes an ISO with its checksum; a folder button opens the ISO folder.
+- Switch the Mabox logo between round, square, 3d and your own SVG from the Configs panel (Logo card); the System panel and the info and sysinfo widgets follow the choice.
 - Show the whole Todo sidebar (Lists, Sort tasks, Groups) instead of cutting it off at a fixed height.
 - Order the root menu's Tools submenu alphabetically by block, with separators between the blocks.
 - Hide desktop widgets of disabled or removed plugins in `mb-widget` and the widgets panel.
