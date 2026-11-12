@@ -120,7 +120,6 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
 | `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
 | `mabox/info` | `info` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `mb-keys`; `[desktop_widgets] enabled = true` |
-| `mabox/quoter` | `quoter` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `/usr/share/mabox/quotes.txt`; `[desktop_widgets] enabled = true` |
 | `mabox/polaroids` | `polaroids` desktop widget | `noctalia msg desktop-widgets-toggle-edit` | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
 | `mabox/snapshot` | `main` panel, root menu (Mabox noctalia ce), `/mb snapshot` | | `mabox-snapshot`; Explain runs in the panel, Build in a `foot` terminal with sudo |
 | `mabox/cava` | `main` panel, root menu (Tools: Cava, Cava settings), `/mb cava` (start or stop), `/mb cava settings` | | `cavactl`, `mb-cava`; edits `~/.config/cava/config` |
