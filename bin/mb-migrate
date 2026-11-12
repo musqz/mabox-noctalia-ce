@@ -144,6 +144,14 @@ migrate_14() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# W-y opens the Todo panel; a key the user already bound stays as it is.
+migrate_15() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="W-y"' "$f" || sed -i 's#</keyboard>#    <keybind key="W-y"><action name="Execute" command="noctalia msg panel-toggle mabox/todo:main"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

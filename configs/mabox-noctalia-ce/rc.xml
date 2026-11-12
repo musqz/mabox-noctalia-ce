@@ -90,6 +90,7 @@
     <keybind key="W-A-v" name.action="Execute" command.action="noctalia msg panel-open mabox/cava:main"/>
     <keybind key="W-p"><action name="Execute" command="noctalia msg panel-toggle mabox/places:main"/></keybind>
     <keybind key="C-W-p"><action name="Execute" command="mb-pinned places"/></keybind>
+    <keybind key="W-y"><action name="Execute" command="noctalia msg panel-toggle mabox/todo:main"/></keybind>
     <keybind key="W-A-q"><action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main"/></keybind>
     <keybind key="W-e" name.action="Execute" command.action="geany"/>
     <keybind key="W-f" name.action="Execute" command.action="pcmanfm"/>

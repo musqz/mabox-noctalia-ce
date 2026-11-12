@@ -108,6 +108,10 @@
       <action name="Execute" command="mb-pinned places" />
     </item>
     <separator />
+    <item label="Todo" icon="checkbox">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/todo:main" />
+    </item>
+    <separator />
     <item label="Notes" icon="accessories-text-editor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/notes:main" />
     </item>

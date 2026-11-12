@@ -60,4 +60,10 @@ if [[ -f /usr/share/applications/calamares.desktop ]]; then
     [[ $(<"$desk") == mine ]] || { echo "FAIL migrate_12: overwrote the user's launcher"; exit 1; }
 fi
 
+# migrate_15: the Todo key is added once, and an existing binding of W-y is left alone.
+grep -v -e 'key="W-y"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(count 'key="W-y"') == 1 ]] || { echo "FAIL migrate_15: expected one W-y bind"; exit 1; }
+valid || { echo "FAIL migrate_15: rc.xml is no longer valid"; exit 1; }
+
 echo ok
