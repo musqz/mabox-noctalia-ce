@@ -18,3 +18,16 @@ placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
 capture_keys = ["escape"]
+
+[[desktop_widget]]
+id = "today"
+entry = "widget.luau"
+
+  [[desktop_widget.setting]]
+  key = "max"
+  type = "int"
+  label_key = "settings.max.label"
+  description_key = "settings.max.description"
+  default = 8
+  min = 3
+  max = 15

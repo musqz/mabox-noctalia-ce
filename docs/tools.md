@@ -27,6 +27,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | Info desktop widget:<br>_logo, About line, basic hotkeys_ | `noctalia msg desktop-widgets-toggle-edit`, then add *Info* | same setting as Sysinfo |
 | Polaroids desktop widget:<br>_the previous wallpapers as polaroid thumbnails_ | `noctalia msg desktop-widgets-toggle-edit`, then add *Polaroids* | number of polaroids in the widget settings; needs `magick` |
 | Show or hide desktop widgets | root menu *Desktop widgets*, launcher `/mb` *Widgets panel*, or `mb-widget toggle <name>` | bar button: `noctalia msg panel-toggle mabox/tools:widgets`; `mb-widget` lists the names; `W-A-d` hides all |
+| Todo desktop widget:<br>_open tasks that are overdue or due today; click the header to open the panel_ | `noctalia msg desktop-widgets-toggle-edit`, then add *Todo today* | number of tasks in the widget settings |
 
 ## Music and media
 
