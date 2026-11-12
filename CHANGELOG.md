@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+
+## 0.4.8
+
 - Add a Timers chip to the System panel's Services tab: user timers with Run now, Start, Stop, Enable, Disable and Edit.
 - Add an offline address check to the Crypto panel: format and checksum for Litecoin, Bitcoin and Dogecoin addresses (legacy, SegWit, Taproot); `mb-crypto check <address>`.
 - Show the file path of a service in the System panel's Services tab, with Open folder and Edit (your own file in an editor, otherwise a `systemctl edit` drop-in); system services ask for the unit name before Stop, Restart, Start and Reset failed.
@@ -10,7 +13,11 @@
 - List the plugins in the Configs panel in alphabetical order.
 - Remove the `skippy-wl-send-to-*` and `skippy-wl-tiling` scripts and their keybinds (`S-C-KP_7/8/9`, `C-Space`, `W-A-C-*`); the code is in the wiki.
 - Add a Places panel (mabox/places): folders, file manager bookmarks, recent files (5/10/20/50) and FSearch, in the bar panel and a pinned window; `W-p`, root menu, `/mb places`, `mb-pinned places`; mb-migrate adds the key to an existing rc.xml.
-
+- Pinned windows open with `C-W-<letter>`: Configs `C-W-c`, Notes `C-W-n`, Status `C-W-s`, Places `C-W-p`; Colors keeps `W-c`. mb-migrate moves the old defaults.
+- Match the default Noctalia config to the live setup for new installs: m3-tonal-spot scheme, tray without capsule, equalizer button in the bar, notifications block.
+- Check for updates every 6 hours instead of hourly.
+- Start Calamares from the launcher with `DISPLAY=:0`; mb-migrate writes the user launcher.
+- Make the remove confirmation in the Configs panel fall back to Remove after 7 seconds.
 - Make the Updates panel taller and scroll when the content does not fit.
 - Remove the copy icon from notes in the pinned Notes panel; right click on the title copies.
 - Start a new note in the Title field; Enter jumps to the text.
