@@ -18,6 +18,17 @@ mapfile -t rows < <(noctalia msg config-get desktop_widgets.widget | awk '
     /^enabled = / { en = $3 }
     /^type = / { t = $3; gsub(/\047/, "", t); sub(/^mabox\//, "", t); print id, t, en }')
 
+# Only widgets whose plugin is enabled: a removed or disabled plugin leaves a dead entry in the layout.
+declare -A on=()
+while read -r id; do on[$id]=1; done < <(noctalia msg plugins list 2>/dev/null | awk '/[[:space:]]enabled([[:space:]]|$)/ { print $1 }' || true)
+kept=()
+for r in "${rows[@]}"; do
+    read -r _ t _ <<<"$r"
+    p=${t%%:*}
+    [[ $t != *:* || -n ${on[$p]:-} || -n ${on[mabox/$p]:-} ]] && kept+=("$r")
+done
+rows=("${kept[@]}")
+
 ((${#rows[@]})) || { echo "mb-widget: no desktop widgets found (is noctalia running?)" >&2; exit 1; }
 
 if [[ $cmd == list ]]; then
