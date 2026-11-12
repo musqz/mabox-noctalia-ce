@@ -920,10 +920,13 @@ render = function()
   if logoOpen then
     local share = noctalia.getenv("HOME") .. "/.local/share/mabox-noctalia-ce/"
     local choices = {}
-    for i, st in ipairs(LOGO_STYLES) do
+    for _, st in ipairs(LOGO_STYLES) do
       local on = logoStyle == st[1]
       local file = share .. st[3]
       if st[1] ~= "custom" or noctalia.readFile(file) ~= nil then
+        if #choices % 3 == 0 then
+          row += 1
+        end
         -- Your own logo: click it once to use it, click it again to delete it.
         local function act()
           if st[1] ~= "custom" or not on then
@@ -944,24 +947,40 @@ render = function()
           end
         end
         local sure = st[1] == "custom" and on and logoArmed
-        stop("logo-" .. st[1], i, act)
+        stop("logo-" .. st[1], #choices % 3 + 1, act)
         table.insert(choices, ui.column({ key = "lc-" .. st[1], gap = 2, align = "center", flexGrow = 1 }, {
           ui.image({ path = preview(file), width = 40, height = 40, fit = "contain" }),
           ui.button({ key = "logo-" .. st[1], selected = kbd.sel("logo-" .. st[1]), text = sure and "Delete?" or ((on and "✓ " or "") .. st[2]), variant = sure and "destructive" or (on and "outline" or "ghost"), controlSize = "sm", tooltip = st[1] == "custom" and (on and "Click again to delete this logo" or nil) or nil, onClick = act }),
         }))
       end
     end
-    row += 1
-    table.insert(logoRows, ui.row({ gap = 4 }, choices))
-    row += 1
-    -- A pinned window stays open, so it reloads when the picker ends. The dropdown closes and kills the dialog: detach it and reopen the panel at the end.
+    -- Three per row so the names have room; short rows are padded so cells keep their width.
+    for i = 1, #choices, 3 do
+      local cells = { table.unpack(choices, i, math.min(i + 2, #choices)) }
+      while #cells < 3 do
+        table.insert(cells, ui.spacer({ flexGrow = 1 }))
+      end
+      table.insert(logoRows, ui.row({ key = "lr-" .. i, gap = 4 }, cells))
+    end
+    -- setsid: runAsync ends a long command, which closed the file dialog. A pinned window stays open and polls until the dialog is gone; the dropdown closes, so the script reopens it at the end.
+    local function waitPicker()
+      noctalia.runAsync({ "sh", "-c", "sleep 2; pgrep -f 'Logo [(]SVG[)]' >/dev/null && echo busy" }, function(result)
+        if string.find(result.stdout or "", "busy", 1, true) then
+          waitPicker()
+        else
+          loadLogo()
+        end
+      end)
+    end
     local function pick()
       if pinned then
-        noctalia.runAsync({ "sh", "-c", LOGO_PICK }, function() loadLogo() end)
+        noctalia.runAsync({ "setsid", "-f", "sh", "-c", LOGO_PICK })
+        waitPicker()
       else
         noctalia.runAsync({ "setsid", "-f", "sh", "-c", LOGO_PICK .. "\nnoctalia msg panel-close; noctalia msg panel-open mabox/configs:main" })
       end
     end
+    row += 1
     stop("logo-add", 1, pick)
     table.insert(logoRows, ui.button({ key = "logo-add", selected = kbd.sel("logo-add"), text = "Add SVG", glyph = "plus", variant = "ghost", controlSize = "sm", tooltip = "Pick your own SVG file as the logo", onClick = pick }))
   end
