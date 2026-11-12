@@ -1,0 +1,8 @@
+{
+  "settings": {
+    "max": {
+      "label": "Tasks",
+      "description": "How many tasks to show before \"+N more\"."
+    }
+  }
+}

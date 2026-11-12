@@ -107,7 +107,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | Plugin | Entries | Open | Data / needs |
 |---|---|---|---|
 | `mabox/notes` | `main` dropdown, pinned window | `W-n`, `C-W-n` | notes in the plugin data folder |
-| `mabox/todo` | wide panel | `W-y` | todo.txt lists in `~/.todo` with `due:` dates, +group sub-groups, notes; done tasks stay struck through until moved to `done_<list>.txt` |
+| `mabox/todo` | wide panel + *Todo today* desktop widget | `W-y` | todo.txt lists in `~/.todo` with `due:` dates, +group sub-groups, notes; done tasks stay struck through until moved to `done_<list>.txt` |
 | `mabox/places` | `main` dropdown, pinned window | `W-p`, `C-W-p` | `pcmanfm`, `fsearch`; bookmarks from `~/.config/gtk-3.0/bookmarks` |
 | `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `C-W-s` | none; cleanup rows run in a terminal |
 | `mabox/configs` | `main` dropdown, pinned window | `C-W-c` (pinned window), Mabox Config menu | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
