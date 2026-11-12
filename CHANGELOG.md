@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Pre-fill the drop-in with a commented template when Edit opens a packaged unit in the Services tab; saving it unchanged keeps nothing.
 
 ## 0.4.8
 
