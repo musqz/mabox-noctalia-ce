@@ -1,6 +1,6 @@
 # Maintainer: musqz
 pkgname=mabox-noctalia-ce
-pkgver=0.4.7
+pkgver=0.4.8
 pkgrel=1
 pkgdesc='Mabox labwc + Noctalia session and default configs (CE)'
 arch=('any')
