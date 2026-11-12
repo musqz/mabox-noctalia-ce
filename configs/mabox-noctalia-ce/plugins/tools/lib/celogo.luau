@@ -34,9 +34,5 @@ local function path()
 end
 
 return function()
-  local p = path()
-  if p then
-    return ui.image({ path = p, width = 24, height = 24, fit = "contain" })
-  end
-  return ui.box({ width = 0, height = 0 })
+  return ui.image({ path = path() or "/usr/share/icons/mabox-logo.svg", width = 24, height = 24, fit = "contain" })
 end
