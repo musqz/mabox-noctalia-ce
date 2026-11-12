@@ -8,7 +8,7 @@ Where everything lives: in the repo, after install, and in your home folder.
 | [Install map](#install-map) | repo path → installed path |
 | [Live paths](#live-paths) | config, state, data, logs in `$HOME` |
 | [Tools in `bin/`](#tools-in-bin) | every helper, what calls it |
-| [Plugins](#plugins) | the three Noctalia plugins and their data |
+| [Plugins](#plugins) | every Mabox plugin: entries, keys and data |
 | [Services](#services) | systemd user units |
 | [Packages](#packages) | where the package lists live |
 | [Handy commands](#handy-commands) | paste-ready checks |
