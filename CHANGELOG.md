@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Add `mb-widget` to show or hide a desktop widget by name (`mb-widget toggle <name>`), a *Desktop widgets* entry in the root menu, `/mb` launcher entries and a widgets panel (`noctalia msg panel-toggle mabox/tools:widgets`) for a bar button.
+- Show a theme-coloured M-CE logo in the Cava, Equalizer, Reset and Snapshot panel headers.
+- Remove the Quoter desktop widget (mabox/quoter).
 - Add a button to the Todo panel that hides the add part; the task list then uses the freed space.
 - Add View archive to the Todo panel's Done tasks card.
 - Give Next 7 days and Later than 7 days their own colour in the Todo panel.
