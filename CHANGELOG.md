@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Add a *Todo today* desktop widget (mabox/todo): open tasks that are overdue or due today from every list; click the header to open the Todo panel; `max` setting for the number of rows.
+- Show due dates in the Todo panel in the order of your locale (`dd-mm-yyyy`, `mm/dd/yyyy`); typed dates are accepted in that order or as `YYYY-MM-DD`; the file keeps `due:YYYY-MM-DD`.
+- Show the date of an ISO in the Snapshot panel in your locale format.
 - Add `mb-widget` to show or hide a desktop widget by name (`mb-widget toggle <name>`), a *Desktop widgets* entry in the root menu, `/mb` launcher entries and a widgets panel (`noctalia msg panel-toggle mabox/tools:widgets`) for a bar button.
 - Show a theme-coloured M-CE logo in the Cava, Equalizer, Reset and Snapshot panel headers.
 - Remove the Quoter desktop widget (mabox/quoter).
