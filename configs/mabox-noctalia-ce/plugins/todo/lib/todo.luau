@@ -1424,8 +1424,8 @@ render = function()
     filterText = v
     render()
   end })
-  panel.render(ui.row({ gap = 12, padding = 12, align = "start" }, {
-    ui.column({ width = 240, height = 620 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
+  panel.render(ui.row({ gap = 12, padding = 12, align = "stretch" }, {
+    ui.column({ width = 240 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
     ui.column({ gap = 8, flexGrow = 1 }, { addCard(), search, banner, notesBar, content }),
   }))
 end
