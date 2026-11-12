@@ -314,7 +314,7 @@ local function usbView()
     table.insert(rows, ui.row(card("iso-" .. i), {
       ui.column({ gap = 2, flexGrow = 1 }, {
         ui.label({ text = name, fontSize = 12, fontWeight = "bold" }),
-        ui.label({ text = os.date("%Y-%m-%d %H:%M", iso.mtime) .. "  " .. string.format("%.1f GiB", iso.size / 1073741824), fontSize = 11, color = "on_surface_variant" }),
+        ui.label({ text = os.date("%x %H:%M", iso.mtime) .. "  " .. string.format("%.1f GiB", iso.size / 1073741824), fontSize = 11, color = "on_surface_variant" }),
       }),
       hasUsb and ui.button({ text = "USB", variant = "outline", controlSize = "sm", tooltip = "Write this ISO to a USB stick", onClick = function() writeIso(iso.path) end }) or nil,
       hasVm and ui.button({ text = "VM", variant = "outline", controlSize = "sm", tooltip = "Start this ISO in a VM with quickbox", onClick = function() startVm(iso.path) end }) or nil,
