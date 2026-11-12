@@ -69,7 +69,8 @@ local function protected(name)
 end
 
 local function validUnit(name)
-  return string.match(name, "^[%w:_@%.\\][%w:_@%.%-\\]*%.service$") ~= nil
+  local kind = string.match(name, "^[%w:_@%.\\][%w:_@%.%-\\]*%.(%a+)$")
+  return kind == "service" or kind == "timer"
 end
 
 local function parse(out)
@@ -96,6 +97,7 @@ end
 return function(render, terminal, flags)
   local scope = "system"
   local filter = "running"
+  local savedFilter = "running"
   local query = ""
   local data = {}
   local openUnit = nil
@@ -106,10 +108,10 @@ return function(render, terminal, flags)
 
   local function loadScope(which)
     local argv = { "systemctl" }
-    if which == "user" then
+    if which ~= "system" then
       table.insert(argv, "--user")
     end
-    for _, a in ipairs({ "list-units", "--type=service", "--all", "--no-legend", "--plain", "--no-pager" }) do
+    for _, a in ipairs({ "list-units", "--type=" .. (which == "timers" and "timer" or "service"), "--all", "--no-legend", "--plain", "--no-pager" }) do
       table.insert(argv, a)
     end
     local mine = session
@@ -139,7 +141,7 @@ return function(render, terminal, flags)
     end
     pathPending[key] = true
     local argv = { "systemctl" }
-    if scope == "user" then
+    if scope ~= "system" then
       table.insert(argv, "--user")
     end
     for _, a in ipairs({ "show", "-p", "FragmentPath", "--value", "--", name }) do
@@ -163,7 +165,7 @@ return function(render, terminal, flags)
     statusText[key] = "Reading..."
     render()
     local mine = session
-    local cmd = "systemctl " .. (scope == "user" and "--user " or "") .. "status --no-pager -n 12 -- '" .. name .. "' 2>&1 | mb-sysreport scrub \"$@\""
+    local cmd = "systemctl " .. (scope ~= "system" and "--user " or "") .. "status --no-pager -n 12 -- '" .. name .. "' 2>&1 | mb-sysreport scrub \"$@\""
     local argv = { "sh", "-c", cmd, "sh" }
     for _, f in ipairs(flags()) do
       table.insert(argv, f)
@@ -193,19 +195,25 @@ return function(render, terminal, flags)
     if not data.user then
       loadScope("user")
     end
+    if not data.timers then
+      loadScope("timers")
+    end
   end
 
-  local function action(verb, name)
+  local function action(verb, name, flag)
     local argv = { "sh", "-c", scope == "system" and RUN_SYSTEM or RUN_UNIT, "sh" }
     if scope == "system" then
       table.insert(argv, name)
       table.insert(argv, "sudo")
     end
     table.insert(argv, "systemctl")
-    if scope == "user" then
+    if scope ~= "system" then
       table.insert(argv, "--user")
     end
     table.insert(argv, verb)
+    if flag then
+      table.insert(argv, flag)
+    end
     table.insert(argv, "--")
     table.insert(argv, name)
     terminal(table.unpack(argv))
@@ -234,21 +242,28 @@ return function(render, terminal, flags)
       end
       return string.format("%s: %d units, %d failed", label, d.total, d.failed)
     end
-    return part("System", "system") .. "   |   " .. part("User", "user")
+    return part("System", "system") .. "   |   " .. part("User", "user") .. "   |   " .. part("Timers", "timers")
+  end
+
+  local function isRunning(u)
+    if scope == "timers" then
+      return u.active == "active"
+    end
+    return u.sub == "running"
   end
 
   local function matches(u)
     if filter == "failed" and u.active ~= "failed" then
       return false
     end
-    if filter == "running" and u.sub ~= "running" then
+    if filter == "running" and not isRunning(u) then
       return false
     end
     return query == "" or string.find(string.lower(u.name), string.lower(query), 1, true) ~= nil
   end
 
   local function dot(u)
-    local color = u.active == "failed" and "error" or (u.sub == "running" and "primary" or "on_surface_variant")
+    local color = u.active == "failed" and "error" or (isRunning(u) and "primary" or "on_surface_variant")
     return ui.glyph({ name = "circle-filled", size = 10, color = color })
   end
 
@@ -295,18 +310,25 @@ return function(render, terminal, flags)
             tooltip = scope == "system" and "Edit a drop-in with sudo systemctl edit" or "Edit the file, or a drop-in when it is packaged or a template instance",
             onClick = function() editUnit(u.name, path) end }))
         end
-        local function btn(text, glyph, verb)
+        local function btn(text, glyph, verb, flag, target)
           table.insert(buttons, ui.button({ text = text, glyph = glyph, variant = "outline", controlSize = "sm",
-            tooltip = "Opens a terminal that shows the command and asks first", onClick = function() action(verb, u.name) end }))
+            tooltip = "Opens a terminal that shows the command and asks first", onClick = function() action(verb, target or u.name, flag) end }))
         end
-        if u.active == "failed" then
-          btn("Reset failed", "eraser", "reset-failed")
-        end
-        btn("Restart", "refresh-dot", "restart")
-        if u.sub == "running" then
-          btn("Stop", "player-stop", "stop")
+        if scope == "timers" then
+          btn("Run now", "player-play", "start", nil, (string.gsub(u.name, "%.timer$", ".service")))
+          btn(isRunning(u) and "Stop" or "Start", isRunning(u) and "player-stop" or "player-play", isRunning(u) and "stop" or "start")
+          btn("Enable", "toggle-right", "enable", "--now")
+          btn("Disable", "toggle-left", "disable", "--now")
         else
-          btn("Start", "player-play", "start")
+          if u.active == "failed" then
+            btn("Reset failed", "eraser", "reset-failed")
+          end
+          btn("Restart", "refresh-dot", "restart")
+          if u.sub == "running" then
+            btn("Stop", "player-stop", "stop")
+          else
+            btn("Start", "player-play", "start")
+          end
         end
       end
       table.insert(items, ui.row({ gap = 6 }, buttons))
@@ -316,9 +338,19 @@ return function(render, terminal, flags)
 
   local function body()
     local chips = {}
-    for _, s in ipairs({ { "system", "System" }, { "user", "User" } }) do
+    for _, s in ipairs({ { "system", "System" }, { "user", "User" }, { "timers", "Timers" } }) do
       table.insert(chips, ui.button({ key = "sc-" .. s[1], text = s[2], variant = scope == s[1] and "primary" or "outline", controlSize = "sm",
-        onClick = function() scope = s[1] openUnit = nil render() end }))
+        onClick = function()
+          if s[1] == "timers" and scope ~= "timers" then
+            savedFilter = filter
+            filter = "all"
+          elseif s[1] ~= "timers" and scope == "timers" then
+            filter = savedFilter
+          end
+          scope = s[1]
+          openUnit = nil
+          render()
+        end }))
     end
     table.insert(chips, ui.spacer({ width = 8 }))
     for _, f in ipairs(FILTERS) do
@@ -347,7 +379,7 @@ return function(render, terminal, flags)
         end
       end
       if shown == 0 then
-        table.insert(rows, ui.label({ text = filter == "failed" and "No failed services." or "No matching services.", color = "on_surface_variant" }))
+        table.insert(rows, ui.label({ text = filter == "failed" and "No failed units." or (scope == "timers" and "No matching timers." or "No matching services."), color = "on_surface_variant" }))
       end
       if hidden > 0 then
         table.insert(rows, ui.label({ text = hidden .. " more: type in the filter to narrow the list.", fontSize = 11, color = "on_surface_variant" }))
