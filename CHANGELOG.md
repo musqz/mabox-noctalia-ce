@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- Add a button to the Todo panel that hides the add part; the task list then uses the freed space.
+- Add View archive to the Todo panel's Done tasks card.
+- Give Next 7 days and Later than 7 days their own colour in the Todo panel.
+- Keep ticked tasks struck through in the Todo panel's Overdue, Today, Tomorrow, Next 7 days, Later, No date and Pinned views.
 - Add a Todo panel (mabox/todo, `W-y`): todo.txt lists in `~/.todo` with due dates and a calendar picker, priorities, `+group` sub-groups, notes, search, sort and filter views (Overdue, Today, Tomorrow, Next 7 days, Later), struck-through done tasks with archive, list rename; mb-migrate adds the key to an existing rc.xml.
 - Pre-fill the drop-in with a commented template when Edit opens a packaged unit in the Services tab; saving it unchanged keeps nothing.
 
