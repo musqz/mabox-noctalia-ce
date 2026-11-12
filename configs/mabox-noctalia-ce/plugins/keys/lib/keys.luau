@@ -12,10 +12,6 @@ return function(wide)
   local profiles = {}
   local profile = ""
   local appBinds = {}
-  local focused = ""
-  local focusApplied = false
-  local touched = false -- the user clicked a profile, typed or moved the cursor before the focused app arrived
-  local jumpKey = nil
   local query = ""
   local failed = false
   local searchNonce = 0
@@ -41,25 +37,9 @@ return function(wide)
     render()
   end
 
-  local function profilePath()
-    local dir = noctalia.pluginDataDir()
-    return dir and dir .. "/profile" or nil
-  end
-
-  local function loadProfile()
-    local path = profilePath()
-    profile = path and noctalia.string.trim(noctalia.readFile(path) or "") or ""
-  end
-
   local function setProfile(name)
-    touched = true
     profile = name
     query = ""
-    local path = profilePath()
-    if path then
-      noctalia.mkdirAll(noctalia.pluginDataDir())
-      noctalia.writeFile(path, name .. "\n")
-    end
     render()
     loadApp()
   end
@@ -105,28 +85,6 @@ return function(wide)
       appBinds[app] = result.exitCode == 0 and parseLines(result.stdout or "") or {}
       render()
     end)
-  end
-
-  -- Opens on the app the panel was called from, and scrolls the side list to it. Not saved as the profile.
-  local function applyFocus()
-    if focusApplied or focused == "" or #profiles == 0 then
-      return
-    end
-    focusApplied = true
-    if touched or query ~= "" or kbd.reveal() ~= nil then
-      return
-    end
-    for _, p in ipairs(profiles) do
-      if p.app and p.name == focused then
-        profile = p.name
-        query = ""
-        jumpKey = "sa" .. p.name
-        render()
-        jumpKey = nil
-        loadApp()
-        return
-      end
-    end
   end
 
   parseLines = function(text)
@@ -319,7 +277,7 @@ return function(wide)
     for _, p in ipairs(apps) do
       entry("a" .. p.name, p.name, current == p, function() setProfile(p.name) end)
     end
-    return ui.column({ width = 170, height = 470, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = kbd.reveal() or jumpKey }, { ui.column({ gap = 2 }, items) }) })
+    return ui.column({ width = 170, height = 470, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = kbd.reveal() }, { ui.column({ gap = 2 }, items) }) })
   end
 
   render = function()
@@ -369,27 +327,19 @@ return function(wide)
       return
     end
     loadMode()
-    loadProfile()
+    profile = ""
     kbd.clear()
     query = ""
     failed = false
     binds = {}
     appBinds = {}
-    focused = ""
-    focusApplied = false
-    touched = false
     render()
     noctalia.runAsync({ "mb-keys", "profiles", "--tsv" }, function(result)
       if result.exitCode == 0 then
         parseProfiles(result.stdout or "")
         render()
         loadApp()
-        applyFocus()
       end
-    end)
-    noctalia.runAsync({ "mb-keys", "focused" }, function(result)
-      focused = noctalia.string.trim(result.stdout or "")
-      applyFocus()
     end)
     noctalia.runAsync({ "mb-keys", "list", "--tsv" }, function(result)
       if result.exitCode ~= 0 then
