@@ -9,6 +9,8 @@ local list = "todo"
 local hideDone = false
 local sortMode = "date"
 local sortDesc = false
+local addOpen = true
+local archiveView = false
 local tasks = {}
 local doneTasks = {}
 local addText = ""
@@ -45,6 +47,7 @@ local function loadState()
   hideDone = string.match(raw, "\nhide_done=1") ~= nil
   sortMode = string.match(raw, "\nsort=(%a+)") or "date"
   sortDesc = string.match(raw, "\ndesc=1") ~= nil
+  addOpen = string.match(raw, "\nadd_open=0") == nil
   savedGroups = {}
   for g in string.gmatch(string.match(raw, "\ngroups=([^\n]*)") or "", "[^,]+") do
     table.insert(savedGroups, g)
@@ -53,7 +56,7 @@ end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(statePath(), "list=" .. list .. "\nhide_done=" .. (hideDone and "1" or "0") .. "\nsort=" .. sortMode .. "\ngroups=" .. table.concat(savedGroups, ",") .. "\ndesc=" .. (sortDesc and "1" or "0") .. "\n")
+  noctalia.writeFile(statePath(), "list=" .. list .. "\nhide_done=" .. (hideDone and "1" or "0") .. "\nsort=" .. sortMode .. "\ngroups=" .. table.concat(savedGroups, ",") .. "\ndesc=" .. (sortDesc and "1" or "0") .. "\nadd_open=" .. (addOpen and "1" or "0") .. "\n")
 end
 
 -- Groups are +tags; a group made without a task is kept in the state file so it can be picked later.
@@ -105,7 +108,7 @@ local function writeLines(path, lines)
   noctalia.writeFile(path, table.concat(lines, "\n") .. (#lines > 0 and "\n" or ""))
 end
 
-local DUE_HEX = { overdue = "#e5534b", today = "#f0883e", tomorrow = "#539bf5", later = "#57ab5a", nodate = "#888888" }
+local DUE_HEX = { overdue = "#e5534b", today = "#f0883e", tomorrow = "#539bf5", week = "#57ab5a", later = "#986ee2", nodate = "#888888" }
 local PRI_NAME = { A = "High", B = "Medium", C = "Low" }
 local DATE = "%d%d%d%d%-%d%d%-%d%d"
 
@@ -303,7 +306,6 @@ local function complete(t)
   mutate(listPath(list), t.raw, function(lines, i)
     local copy = parse(lines[i])
     copy.pri = nil
-    copy.pinned = false
     lines[i] = "x " .. today() .. " " .. build(copy)
   end)
   reload()
@@ -500,6 +502,9 @@ local function dueKind(due)
   elseif due == addDays(1) then
     return "tomorrow"
   end
+  if due <= addDays(7) then
+    return "week"
+  end
   return "later"
 end
 
@@ -618,7 +623,7 @@ local function editRow(t, key)
   end))
   local dues = {}
   for _, d in ipairs({ { "Today", 0 }, { "Tomorrow", 1 }, { "Next week", 7 } }) do
-    table.insert(dues, colorChip(DUE_HEX[d[2] == 0 and "today" or d[2] == 1 and "tomorrow" or "later"], chip("ed" .. d[1], d[1], editDue == addDays(d[2]), "Due " .. addDays(d[2]), function()
+    table.insert(dues, colorChip(DUE_HEX[dueKind(addDays(d[2]))], chip("ed" .. d[1], d[1], editDue == addDays(d[2]), "Due " .. addDays(d[2]), function()
       editDue = addDays(d[2])
       render()
     end)))
@@ -836,6 +841,9 @@ local function section(key, title, count, rows, extra, color)
 end
 
 local function groups()
+  if archiveView then
+    return {}
+  end
   local day = today()
   local out = {}
   local function add(key, title, items, cmp, isOverdue, copy, color)
@@ -915,11 +923,11 @@ local function groups()
     local hits = {}
     for _, t in ipairs(rest) do
       local k = dueKind(t.due)
-      if not t.done and ((sortMode == "later" and t.due and t.due > list7) or (sortMode == "nodate" and not t.due) or (sortMode == "overdue" and k == "overdue") or (sortMode == "today" and k == "today") or (sortMode == "tomorrow" and k == "tomorrow") or (sortMode == "week" and t.due and t.due >= day and t.due <= list7)) then
+      if (sortMode == "later" and t.due and t.due > list7) or (sortMode == "nodate" and not t.due) or (sortMode == "overdue" and k == "overdue") or (sortMode == "today" and k == "today") or (sortMode == "tomorrow" and k == "tomorrow") or (sortMode == "week" and t.due and t.due >= day and t.due <= list7) then
         table.insert(hits, t)
       end
     end
-    add("only", only[sortMode], hits, byDue, false, false, DUE_HEX[sortMode == "week" and "later" or sortMode])
+    add("only", only[sortMode], hits, byDue, false, false, DUE_HEX[sortMode])
     return out
   end
   add("pinned", "Pinned", pinned, cmp, false, sortMode ~= "pinned")
@@ -950,7 +958,7 @@ local function groups()
     add("overdue", "Overdue", overdue, byDue, true, false, DUE_HEX.overdue)
     add("today", "Today", now, byDue, false, false, DUE_HEX.today)
     add("tomorrow", "Tomorrow", morrow, byDue, false, false, DUE_HEX.tomorrow)
-    add("upcoming", "Upcoming", upcoming, byDue, false, false, DUE_HEX.later)
+    add("upcoming", "Upcoming", upcoming, byDue, false, false, DUE_HEX.week)
     if sortDesc then
       local lo, hi = base + 1, #out
       while lo < hi do
@@ -963,7 +971,7 @@ local function groups()
   return out
 end
 
-local function doneSection()
+local function doneSection(force)
   local items = {}
   for _, t in ipairs(doneTasks) do
     if matches(t) then
@@ -980,16 +988,16 @@ local function doneSection()
     return (a.doneDate or "") > (b.doneDate or "")
   end)
   local rows = {}
-  if not hideDone then
+  if force or not hideDone then
     for i, t in ipairs(items) do
       table.insert(rows, taskRow(t, "done" .. i))
     end
   end
-  local extra = iconButton(hideDone and "chevron-down" or "chevron-up", hideDone and "Show the archive" or "Hide the archive", function()
+  local extra = not force and iconButton(hideDone and "chevron-down" or "chevron-up", hideDone and "Show the archive" or "Hide the archive", function()
     hideDone = not hideDone
     saveState()
     render()
-  end)
+  end) or nil
   return section("done", "Archive", #items, rows, extra)
 end
 
@@ -1004,12 +1012,16 @@ local function doneBlock()
       n = n + 1
     end
   end
-  if n == 0 and #doneTasks == 0 then
+  if n == 0 and #doneTasks == 0 and not archiveView then
     return {}
   end
   local sure = confirming == "cleardone"
   return {
     sideTitle("Done tasks (" .. n .. ")"),
+    ui.button({ key = "viewarchive", glyph = "archive", text = "View archive (" .. #doneTasks .. ")", variant = archiveView and "primary" or "outline", controlSize = "sm", contentAlign = "start", enabled = #doneTasks > 0 or archiveView, tooltip = "Show the archived tasks; click again to go back", onClick = function()
+      archiveView = not archiveView
+      render()
+    end }),
     ui.button({ key = "archive", glyph = "archive", text = "Move to archive", variant = "ghost", controlSize = "sm", contentAlign = "start", enabled = n > 0, tooltip = "Hide struck-through tasks in the Archive section", onClick = archiveDone }),
     ui.button({
       key = "cleardone",
@@ -1177,6 +1189,16 @@ local function tagPanel()
 end
 
 local function addCard()
+  if not addOpen then
+    return ui.row({ key = "addbar", align = "center" }, {
+      ui.button({ glyph = "plus", text = "New task", variant = "outline", controlSize = "sm", tooltip = "Show the new task part", onClick = function()
+        addOpen = true
+        saveState()
+        render()
+      end }),
+      ui.spacer({ flexGrow = 1 }),
+    })
+  end
   local function submit()
     local text, pri, due, note = addText, addPri, addDue, addNote
     if noctalia.string.trim(due or "") ~= "" and not normDate(due) then
@@ -1202,7 +1224,7 @@ local function addCard()
   local due = { ui.label({ text = "Due:", color = "on_surface_variant" }) }
   for _, d in ipairs({ { "Today", 0 }, { "Tomorrow", 1 }, { "In 1 week", 7 } }) do
     local date = addDays(d[2])
-    table.insert(due, colorChip(DUE_HEX[d[2] == 0 and "today" or d[2] == 1 and "tomorrow" or "later"], chip("ad" .. d[1], d[1], addDue == date, "Due " .. date .. "; click again to clear", function()
+    table.insert(due, colorChip(DUE_HEX[dueKind(addDays(d[2]))], chip("ad" .. d[1], d[1], addDue == date, "Due " .. date .. "; click again to clear", function()
       addDue = addDue ~= date and date or nil
       render()
     end)))
@@ -1227,6 +1249,12 @@ local function addCard()
     ui.row({ gap = 4, align = "center" }, {
       ui.input({ key = "add" .. nonce, focus = not editing and not naming, value = addText, placeholder = "New task, e.g. call Anna +home @phone", flexGrow = 1, onChange = function(s) addText = s end, onSubmit = submit }),
       ui.button({ glyph = "plus", text = "Add task", variant = "primary", tooltip = "Add the task (or press Enter)", onClick = submit }),
+      iconButton("chevron-up", "Hide this part", function()
+        addOpen = false
+        calFor = nil
+        saveState()
+        render()
+      end),
     }),
     ui.input({ key = "addnote" .. nonce, value = addNote, placeholder = "More explanation (optional)", controlSize = "sm", onChange = function(s) addNote = s end, onSubmit = submit }),
     ui.row({ gap = 4, align = "center" }, pri),
@@ -1243,12 +1271,14 @@ end
 
 render = function()
   local body = groups()
-  local done = doneSection()
+  local done = doneSection(archiveView)
   if done then
     table.insert(body, done)
   end
-  if #tasks == 0 then
-    table.insert(body, 1, ui.label({ text = "Nothing to do. Type a task above and press Enter.", color = "on_surface_variant" }))
+  if archiveView and #body == 0 then
+    table.insert(body, ui.label({ text = "The archive is empty", color = "on_surface_variant" }))
+  elseif #tasks == 0 then
+    table.insert(body, 1, ui.label({ text = addOpen and "Nothing to do. Type a task above and press Enter." or "Nothing to do. Click New task to add one.", color = "on_surface_variant" }))
   elseif #body == 0 then
     table.insert(body, ui.label({ text = "No tasks match the current filter or sort", color = "on_surface_variant" }))
   end
@@ -1270,9 +1300,10 @@ render = function()
       render()
     end,
   }) }
-  for _, m in ipairs({ { "date", "By date", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "later" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
-    local btn = ui.button({ key = "s" .. m[1], glyph = m[4] == nil and m[3] or nil, text = m[2], variant = sortMode == m[1] and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = function()
+  for _, m in ipairs({ { "date", "By date", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "week" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
+    local btn = ui.button({ key = "s" .. m[1], glyph = m[4] == nil and m[3] or nil, text = m[2], variant = sortMode == m[1] and not archiveView and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = function()
       sortMode = m[1]
+      archiveView = false
       saveState()
       render()
     end })
@@ -1288,14 +1319,16 @@ render = function()
     table.insert(side, card("donecard", doneItems))
   end
   local visible = 0
-  for _, t in ipairs(tasks) do
-    visible = visible + (matches(t) and 1 or 0)
+  if not archiveView then
+    for _, t in ipairs(tasks) do
+      visible = visible + (matches(t) and 1 or 0)
+    end
   end
-  for _, t in ipairs(hideDone and {} or doneTasks) do
+  for _, t in ipairs((hideDone and not archiveView) and {} or doneTasks) do
     visible = visible + (matches(t) and 1 or 0)
   end
   table.insert(body, ui.spacer({ height = 16 }))
-  local content = (visible > 6 or editing) and ui.column({ height = 380 }, { ui.scroll({ flexGrow = 1, key = "list" }, { ui.column({ gap = 8, padding = 4 }, body) }) }) or ui.column({ gap = 8 }, body)
+  local content = (visible > (addOpen and 6 or 9) or editing) and ui.column({ height = addOpen and 380 or 620 }, { ui.scroll({ flexGrow = 1, key = "list" }, { ui.column({ gap = 8, padding = 4 }, body) }) }) or ui.column({ gap = 8 }, body)
   local banner = ui.spacer({ height = 0 })
   if filterTag or noctalia.string.trim(filterText) ~= "" then
     local what = {}
@@ -1355,6 +1388,7 @@ local function open()
   confirming = nil
   editing = nil
   calFor = nil
+  archiveView = false
   addText, addPri, addDue, addGroup, addNote, filterText, filterTag = "", nil, nil, "", "", "", nil
   reload()
 end
