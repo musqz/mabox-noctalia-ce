@@ -8,6 +8,7 @@ local lists = {}
 local list = "todo"
 local hideDone = false
 local sortMode = "date"
+local sortDesc = false
 local tasks = {}
 local doneTasks = {}
 local addText = ""
@@ -39,19 +40,20 @@ local function statePath()
 end
 
 local function loadState()
-  local raw = noctalia.readFile(statePath()) or ""
-  list = string.match(raw, "list=([%w_%-%.]+)") or "todo"
-  hideDone = string.match(raw, "hide_done=1") ~= nil
-  sortMode = string.match(raw, "sort=(%a+)") or "date"
+  local raw = "\n" .. (noctalia.readFile(statePath()) or "")
+  list = string.match(raw, "\nlist=([%w_%-%.]+)") or "todo"
+  hideDone = string.match(raw, "\nhide_done=1") ~= nil
+  sortMode = string.match(raw, "\nsort=(%a+)") or "date"
+  sortDesc = string.match(raw, "\ndesc=1") ~= nil
   savedGroups = {}
-  for g in string.gmatch(string.match(raw, "groups=([^\n]*)") or "", "[^,]+") do
+  for g in string.gmatch(string.match(raw, "\ngroups=([^\n]*)") or "", "[^,]+") do
     table.insert(savedGroups, g)
   end
 end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(statePath(), "list=" .. list .. "\nhide_done=" .. (hideDone and "1" or "0") .. "\nsort=" .. sortMode .. "\ngroups=" .. table.concat(savedGroups, ",") .. "\n")
+  noctalia.writeFile(statePath(), "list=" .. list .. "\nhide_done=" .. (hideDone and "1" or "0") .. "\nsort=" .. sortMode .. "\ngroups=" .. table.concat(savedGroups, ",") .. "\ndesc=" .. (sortDesc and "1" or "0") .. "\n")
 end
 
 -- Groups are +tags; a group made without a task is kept in the state file so it can be picked later.
@@ -844,6 +846,15 @@ local function groups()
       if a.done ~= b.done then
         return not a.done
       end
+      if sortDesc then
+        -- undated and unprioritised tasks stay last when the order is reversed
+        if cmp == byDue and (a.due == nil) ~= (b.due == nil) then
+          return a.due ~= nil
+        elseif cmp == byPriority and (a.pri == nil) ~= (b.pri == nil) then
+          return a.pri ~= nil
+        end
+        return cmp(b, a)
+      end
       return cmp(a, b)
     end)
     local rows = {}
@@ -860,7 +871,11 @@ local function groups()
       if (a == "") ~= (b == "") then
         return b == ""
       end
-      return a < b
+      local x, y = string.lower(a), string.lower(b)
+      if sortDesc then
+        return x > y
+      end
+      return x < y
     end)
     local headers = not copy and (#order > 1 or order[1] ~= "")
     local i = 0
@@ -931,10 +946,18 @@ local function groups()
         table.insert(upcoming, t)
       end
     end
+    local base = #out
     add("overdue", "Overdue", overdue, byDue, true, false, DUE_HEX.overdue)
     add("today", "Today", now, byDue, false, false, DUE_HEX.today)
     add("tomorrow", "Tomorrow", morrow, byDue, false, false, DUE_HEX.tomorrow)
     add("upcoming", "Upcoming", upcoming, byDue, false, false, DUE_HEX.later)
+    if sortDesc then
+      local lo, hi = base + 1, #out
+      while lo < hi do
+        out[lo], out[hi] = out[hi], out[lo]
+        lo, hi = lo + 1, hi - 1
+      end
+    end
     add("nodate", "No date", none, byDue)
   end
   return out
@@ -951,6 +974,9 @@ local function doneSection()
     return nil
   end
   table.sort(items, function(a, b)
+    if sortDesc then
+      return (a.doneDate or "") < (b.doneDate or "")
+    end
     return (a.doneDate or "") > (b.doneDate or "")
   end)
   local rows = {}
@@ -1229,7 +1255,21 @@ render = function()
   local function card(key, items)
     return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 4, border = "primary", borderWidth = 1 }, items)
   end
-  local sortItems = { sideTitle("Sort tasks") }
+  local sortItems = { sideTitle("Sort tasks"), ui.button({
+    key = "sortdir",
+    glyph = "arrows-up-down",
+    text = sortDesc and "Order: descending" or "Order: ascending",
+    variant = "outline",
+    controlSize = "sm",
+    contentAlign = "start",
+    flexGrow = 1,
+    tooltip = "Reverse the order of sections, groups and tasks",
+    onClick = function()
+      sortDesc = not sortDesc
+      saveState()
+      render()
+    end,
+  }) }
   for _, m in ipairs({ { "date", "By date", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "later" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
     local btn = ui.button({ key = "s" .. m[1], glyph = m[4] == nil and m[3] or nil, text = m[2], variant = sortMode == m[1] and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = function()
       sortMode = m[1]
@@ -1255,7 +1295,7 @@ render = function()
     visible = visible + (matches(t) and 1 or 0)
   end
   table.insert(body, ui.spacer({ height = 16 }))
-  local content = (visible > 6 or editing) and ui.column({ height = 440 }, { ui.scroll({ flexGrow = 1, key = "list" }, { ui.column({ gap = 8, padding = 4 }, body) }) }) or ui.column({ gap = 8 }, body)
+  local content = (visible > 6 or editing) and ui.column({ height = 380 }, { ui.scroll({ flexGrow = 1, key = "list" }, { ui.column({ gap = 8, padding = 4 }, body) }) }) or ui.column({ gap = 8 }, body)
   local banner = ui.spacer({ height = 0 })
   if filterTag or noctalia.string.trim(filterText) ~= "" then
     local what = {}
