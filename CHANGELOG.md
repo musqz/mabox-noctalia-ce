@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add a Todo panel (mabox/todo, `W-y`): todo.txt lists in `~/.todo` with due dates and a calendar picker, priorities, `+group` sub-groups, notes, search, sort and filter views (Overdue, Today, Tomorrow, Next 7 days, Later), struck-through done tasks with archive, list rename; mb-migrate adds the key to an existing rc.xml.
 - Pre-fill the drop-in with a commented template when Edit opens a packaged unit in the Services tab; saving it unchanged keeps nothing.
 
 ## 0.4.8
