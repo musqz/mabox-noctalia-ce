@@ -129,6 +129,7 @@
     <item label="Keys" icon="input-keyboard">
       <action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys" />
     </item>
+    <separator />
     <item label="Cava" icon="audio-x-generic">
       <action name="Execute" command="mb-cava toggle" />
     </item>
@@ -138,9 +139,11 @@
     <item label="Equalizer" icon="multimedia-volume-control">
       <action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main" />
     </item>
+    <separator />
     <item label="Crypto" icon="applications-office">
       <action name="Execute" command="noctalia msg panel-toggle mabox/crypto:main" />
     </item>
+    <separator />
     <item label="System info" icon="computer">
       <action name="Execute" command="noctalia msg panel-toggle mabox/system:system" />
     </item>
