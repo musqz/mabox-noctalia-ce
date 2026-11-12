@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Show or hide one desktop widget by name: mb-widget [toggle|on|off] <name>; no arguments lists them.
+# `mb-widget menu` prints a labwc pipe menu (root menu).
+# <name> is the widget or plugin name, any case: today, todo, sysinfo.
+set -euo pipefail
+
+cmd=${1:-list}
+name=${2:-}
+case $cmd in
+    toggle | on | off) ;;
+    list | menu) ;;
+    *) name=$cmd cmd=toggle ;;
+esac
+
+# "type = 'mabox/info:info'" lines are read with the id of the section above them.
+mapfile -t rows < <(noctalia msg config-get desktop_widgets.widget | awk '
+    /^\[desktop-widget-[0-9]+\]/ { id = substr($1, 2, length($1) - 2); en = "true" }
+    /^enabled = / { en = $3 }
+    /^type = / { t = $3; gsub(/\047/, "", t); sub(/^mabox\//, "", t); print id, t, en }')
+
+((${#rows[@]})) || { echo "mb-widget: no desktop widgets found (is noctalia running?)" >&2; exit 1; }
+
+if [[ $cmd == list ]]; then
+    printf '%s\n' "${rows[@]}" | awk '{ print $2 " (" ($3 == "true" ? "on" : "off") ")" }'
+    exit 0
+fi
+
+if [[ $cmd == menu ]]; then
+    echo '<openbox_pipe_menu>'
+    declare -A seen=()
+    for r in "${rows[@]}"; do
+        read -r _ t en <<<"$r"
+        n=${t#*:}
+        [[ -n ${seen[$n]:-} ]] && continue
+        seen[$n]=1
+        [[ $en == true ]] && mark="on" || mark="off"
+        label=${n^}; [[ $n == today ]] && label="Todo today"
+        printf '  <item label="%s (%s)"><action name="Execute"><command>mb-widget toggle %s</command></action></item>\n' "$label" "$mark" "$n"
+    done
+    echo '  <separator />'
+    echo '  <item label="Edit layout"><action name="Execute"><command>noctalia msg desktop-widgets-toggle-edit</command></action></item>'
+    echo '</openbox_pipe_menu>'
+    exit 0
+fi
+
+found=0
+new=
+if [[ $cmd == toggle ]]; then
+    # on if any instance is off, so a mixed group ends up all on
+    new=false
+    for r in "${rows[@]}"; do
+        read -r _ t en <<<"$r"
+        n=${name,,}
+        [[ ${t,,} == "$n" || ${t,,} == "$n":* || ${t,,} == *:"$n" ]] && [[ $en != true ]] && new=true
+    done
+fi
+for r in "${rows[@]}"; do
+    read -r id t en <<<"$r"
+    n=${name,,}
+    [[ -n $n && ( ${t,,} == "$n" || ${t,,} == "$n":* || ${t,,} == *:"$n" ) ]] || continue
+    found=1
+    case $cmd in
+        on) new=true ;;
+        off) new=false ;;
+        toggle) ;;
+    esac
+    noctalia msg config-set "desktop_widgets.widget.$id.enabled" "$new" >/dev/null
+done
+if ((!found)); then
+    echo "mb-widget: no widget named '$name'; available:" >&2
+    "$0" list >&2
+    exit 1
+fi

@@ -16,6 +16,12 @@ local TOOLS = {
   { id = "crypto", title = "Crypto", glyph = "currency-bitcoin", cmd = { "noctalia", "msg", "panel-toggle", "mabox/crypto:main" }, pinned = "crypto" },
   { id = "snapshot", title = "Snapshot", glyph = "disc", cmd = { "noctalia", "msg", "panel-open", "mabox/snapshot:main" } },
   { id = "reset", title = "Reset configs", glyph = "restore", cmd = { "noctalia", "msg", "panel-toggle", "mabox/reset:main" } },
+  { id = "widgets", title = "Widgets panel", glyph = "layout-dashboard", cmd = { "noctalia", "msg", "panel-toggle", "mabox/tools:widgets" } },
+  { id = "widget:sysinfo", title = "Widget: Sysinfo", glyph = "layout-dashboard", cmd = { "mb-widget", "toggle", "sysinfo" } },
+  { id = "widget:info", title = "Widget: Info", glyph = "layout-dashboard", cmd = { "mb-widget", "toggle", "info" } },
+  { id = "widget:polaroids", title = "Widget: Polaroids", glyph = "layout-dashboard", cmd = { "mb-widget", "toggle", "polaroids" } },
+  { id = "widget:today", title = "Widget: Todo today", glyph = "layout-dashboard", cmd = { "mb-widget", "toggle", "today" } },
+  { id = "widget:edit", title = "Widgets: edit layout", glyph = "layout-dashboard", cmd = { "noctalia", "msg", "desktop-widgets-toggle-edit" } },
 }
 
 local ENTRIES = {}

@@ -155,6 +155,7 @@
       <action name="Execute" command="noctalia msg panel-open mabox/music:add" />
     </item>
   </menu>
+  <menu id="widgets-menu" label="Desktop widgets" icon="preferences-desktop" execute="mb-widget menu" />
   <menu id="apps-menu" label="Applications" icon="applications-other" execute="labwc-menu-generator -p -I" />
   <menu id="client-list-combined-menu" label="Running..." icon="window-duplicate" />
   <separator />
