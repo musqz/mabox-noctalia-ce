@@ -1,5 +1,5 @@
 --!nonstrict
--- Polaroids desktop widget: the previous wallpapers as polaroid thumbnails.
+-- Polaroids desktop widget: the previous wallpapers, or random ones from the wallpaper folder, as polaroid thumbnails.
 -- History is recorded by polling `noctalia msg wallpaper-get` while the widget is placed.
 
 local TICK_MS = 5000
@@ -34,6 +34,50 @@ local function thumbName(path)
 end
 
 local render
+local randoms = {}
+local randomMode = false
+local shuffleGen = 0
+local shuffledCount = 0
+
+local function wantRandom()
+  return noctalia.getConfig("random") == true
+end
+
+local function wantCount()
+  return math.max(1, math.min(8, tonumber(noctalia.getConfig("count")) or 3))
+end
+
+-- Random pictures from the top of the wallpaper folder; drawn again when the wallpaper changes.
+local SHUFFLE = [[d=$(noctalia msg config-get wallpaper.directory | tr -d "'")
+find "$d" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.avif' \) | shuf -n "$1"]]
+
+local function shuffle()
+  shuffleGen = shuffleGen + 1
+  local gen = shuffleGen
+  shuffledCount = wantCount()
+  noctalia.runAsync({ "sh", "-c", SHUFFLE, "sh", tostring(shuffledCount) }, function(r)
+    if gen ~= shuffleGen then
+      return -- a newer shuffle is running
+    end
+    local old = randoms
+    randoms = {}
+    local keep = {}
+    for line in string.gmatch(r.stdout or "", "[^\n]+") do
+      table.insert(randoms, line)
+      keep[line] = true
+    end
+    for _, p in ipairs(history) do
+      keep[p] = true
+    end
+    -- thumbnails of pictures that left the pile; history ones stay
+    for _, p in ipairs(old) do
+      if not keep[p] then
+        noctalia.removeFile(thumbDir .. "/" .. thumbName(p))
+      end
+    end
+    render()
+  end)
+end
 
 local function done(out, r)
   busy[out] = nil
@@ -67,6 +111,9 @@ local function poll()
     local path = string.match(r.stdout or "", "[^\n]+") or ""
     if r.exitCode ~= 0 or path == "" or path == history[1] then
       return
+    end
+    if randomMode then
+      shuffle()
     end
     for i = #history, 1, -1 do
       if history[i] == path then
@@ -167,16 +214,24 @@ local function buildPile(list, out)
 end
 
 render = function()
-  local count = math.max(1, math.min(8, tonumber(noctalia.getConfig("count")) or 3))
+  local count = wantCount()
   local thumbs, pending = {}, false
   -- history[1] is the wallpaper on the desktop now; the pile shows the ones before it
-  for i = 2, math.min(count + 1, #history) do
-    local out = thumbDir .. "/" .. thumbName(history[i])
+  local list = {}
+  if randomMode then
+    list = randoms
+  else
+    for i = 2, math.min(count + 1, #history) do
+      table.insert(list, history[i])
+    end
+  end
+  for _, path in ipairs(list) do
+    local out = thumbDir .. "/" .. thumbName(path)
     if noctalia.fileExists(out) then
       table.insert(thumbs, out)
     elseif not failed[out] then
       pending = true
-      makeThumb(history[i], out)
+      makeThumb(path, out)
     end
   end
   local body = {}
@@ -204,7 +259,7 @@ render = function()
   if pileFile then
     table.insert(body, ui.image({ path = pileFile, width = pileW, height = pileH, fit = "contain" }))
   elseif not pending then
-    table.insert(body, ui.label({ text = "No previous wallpapers yet", fontSize = 10, color = "on_surface_variant" }))
+    table.insert(body, ui.label({ text = randomMode and "No wallpapers found" or "No previous wallpapers yet", fontSize = 10, color = "on_surface_variant" }))
   end
   desktopWidget.render(ui.column({ gap = 0 }, body))
 end
@@ -214,11 +269,21 @@ function update()
 end
 
 function onConfigChanged()
+  local want = wantRandom()
+  local was = randomMode
+  randomMode = want
+  if want and (not was or shuffledCount ~= wantCount()) then
+    shuffle()
+  end
   render()
 end
 
 noctalia.setUpdateInterval(TICK_MS)
 desktopWidget.setWantsSecondTicks(false)
 load()
+randomMode = wantRandom()
+if randomMode then
+  shuffle()
+end
 render()
 poll()

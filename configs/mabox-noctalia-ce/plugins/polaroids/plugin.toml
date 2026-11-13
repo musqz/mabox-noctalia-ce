@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "photo"
-description = "Desktop widget with the previous wallpapers as polaroids."
+description = "Desktop widget with the previous or random wallpapers as polaroids."
 tags = ["desktop", "wallpaper"]
 
 [[desktop_widget]]
@@ -20,3 +20,10 @@ entry = "widget.luau"
   default = 3
   min = 1
   max = 8
+
+  [[desktop_widget.setting]]
+  key = "random"
+  type = "bool"
+  label_key = "settings.random.label"
+  description_key = "settings.random.description"
+  default = false
