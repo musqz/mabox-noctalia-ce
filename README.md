@@ -31,7 +31,6 @@ cd mabox-noctalia-ce
 - Skips packages you already have; rebuilds `mabox-noctalia-ce` on every run.
 - Ends with a `[done]` / `[skip]` / `[todo]` summary.
 - Config lives in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
-- Several monitors: panels can open on the wrong screen until `noctalia` ships the fix ([PR 5173](https://github.com/noctalia-dev/noctalia/pull/5173)). One screen is not affected.
 
 ## Update
 
