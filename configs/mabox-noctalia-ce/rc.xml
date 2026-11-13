@@ -1,6 +1,10 @@
 <!--
   This is a very simple config file with many options missing. For a complete
   set of options with comments, see docs/rc.xml.all
+
+  Panel hotkey hints: lib/hotkey.luau reads this file.
+  Keep each <keybind> that opens a panel on one line,
+  with its command (for example mabox/notes:main or mb-pinned notes) on that same line.
 -->
 
 <labwc_config>
