@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Open rencal with a right-click on the clock; `rencal` and `jumpapp-ng` are optional dependencies.
 - Open the Keys panel on All binds with the search focused instead of the focused application.
 - Reopen the Snapshot panel on the ISO list after a successful build; the list shows every ISO, scrolls, and deletes an ISO with its checksum; a folder button opens the ISO folder.
 - Switch the Mabox logo between round, square, 3d and your own SVG from the Configs panel (Logo card); the System panel and the info and sysinfo widgets follow the choice.
