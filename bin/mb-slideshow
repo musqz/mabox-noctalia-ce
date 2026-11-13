@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Toggle the wallpaper slideshow: mb-slideshow [toggle|on|off]; sends a notification.
+set -euo pipefail
+
+cmd=${1:-toggle}
+now=$(noctalia msg config-get wallpaper.automation.enabled || true)
+
+case $cmd in
+    on) new=true ;;
+    off) new=false ;;
+    toggle) [[ $now == true ]] && new=false || new=true ;;
+    *) echo "usage: mb-slideshow [toggle|on|off]" >&2; exit 1 ;;
+esac
+
+noctalia msg config-set wallpaper.automation.enabled "$new" >/dev/null
+[[ $new == true ]] && state=on || state=off
+notify-send -a Wallpaper -i preferences-desktop-wallpaper "Wallpaper slideshow" "Slideshow $state"

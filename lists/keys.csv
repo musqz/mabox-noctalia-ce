@@ -83,6 +83,7 @@ C-W-F1,Workspaces,0,Tabdock: wider
 C-W-F2,Workspaces,0,Tabdock: narrower
 S-C-p,Workspaces,0,Tabdock: pin
 C-A-a,Desktop,0,Random wallpaper
+W-A-a,Desktop,0,Wallpaper slideshow on/off
 W-l,Desktop,1,Lock screen
 W-S-c,Desktop,0,Caffeine: keep the screen awake
 S-C-r,Desktop,0,Reload the labwc config
