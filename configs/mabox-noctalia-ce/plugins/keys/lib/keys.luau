@@ -3,6 +3,8 @@
 local GROUP_ORDER = { "Panels", "Apps", "Windows", "Workspaces", "Desktop", "Capture", "Media", "Jump", "labwc defaults", "Helpers", "Other" }
 
 local kbd = require("./kbd.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(wide)
   local columns = 2
@@ -277,14 +279,19 @@ return function(wide)
     for _, p in ipairs(apps) do
       entry("a" .. p.name, p.name, current == p, function() setProfile(p.name) end)
     end
-    return ui.column({ width = 170, height = 470, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = kbd.reveal() }, { ui.column({ gap = 2 }, items) }) })
+    return ui.column({ width = 170, height = 502, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = kbd.reveal() }, { ui.column({ gap = 2 }, items) }) })
   end
 
   render = function()
     kbd.begin()
     local searching = noctalia.string.trim(query) ~= ""
     local content = body() -- registers the stops that reveal() and the input focus check
-    panel.render(ui.column({ gap = 8, padding = 12, height = 560 }, {
+    panel.render(ui.column({ gap = 8, padding = 12, height = 592 }, {
+      ui.row({ gap = 8, align = "center" }, {
+        logo(),
+        ui.label({ text = "Keys" }),
+        ui.label({ text = hotkey("mabox/keys:keys"), color = "outline_variant", flexGrow = 1 }),
+      }),
       ui.row({ gap = 6, align = "center" }, {
         ui.input({
           key = "search" .. searchNonce,

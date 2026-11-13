@@ -3,6 +3,8 @@
 -- Folder: <plugin data dir>/notes, or the path written in <plugin data dir>/path.
 
 local pinSide = require("./side.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(pinned)
 local COLORS = {
@@ -757,6 +759,11 @@ render = function()
   if pinned then
     local children = {
       ui.row({ gap = 6, align = "center" }, {
+        logo(),
+        ui.label({ text = "Notes" }),
+        ui.label({ text = hotkey("mb-pinned notes"), color = "outline_variant", flexGrow = 1 }),
+      }),
+      ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "plus", text = "New", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 1, tooltip = "New note in the notes window", onClick = function() openMain("new") end }),
         ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 2, tooltip = "Open the notes window", onClick = function() openMain() end }),
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
@@ -799,7 +806,12 @@ render = function()
     table.insert(right, ui.scroll({ gap = 0, flexGrow = 1, key = "list", revealKey = cursorId and ("n" .. cursorId) or nil }, noteRows()))
   end
 
-  panel.render(ui.column({ gap = 10, padding = 12, height = 520 }, {
+  panel.render(ui.column({ gap = 10, padding = 12, height = 552 }, {
+    ui.row({ gap = 8, align = "center" }, {
+      logo(),
+      ui.label({ text = "Notes" }),
+      ui.label({ text = hotkey("mabox/notes:main"), color = "outline_variant", flexGrow = 1 }),
+    }),
     ui.row({ gap = 12, flexGrow = 1 }, {
       ui.column({ gap = 4, width = 160 }, side),
       ui.column({ gap = 8, flexGrow = 1 }, right),

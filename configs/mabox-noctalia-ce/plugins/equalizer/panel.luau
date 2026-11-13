@@ -2,6 +2,7 @@
 -- Equalizer: preamp and 10 bands on the PipeWire filter-chain sink; mb-eq does the work.
 local eq = require("./lib/eq.luau")
 local logo = require("./lib/celogo.luau")
+local hotkey = require("./lib/hotkey.luau")
 
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 8, border = "primary", borderWidth = 1 }
@@ -189,7 +190,8 @@ render = function()
   panel.render(ui.column({ gap = 10, padding = 12 }, {
     ui.row({ gap = 8, align = "center" }, {
       logo(),
-      ui.label({ text = "Equalizer", flexGrow = 1 }),
+      ui.label({ text = "Equalizer" }),
+      ui.label({ text = hotkey("mabox/equalizer:main"), color = "outline_variant", flexGrow = 1 }),
       ui.toggle({ checked = state.on, enabled = loaded, onChange = function(v)
         local want = v == true or v == "true"
         state.on = want

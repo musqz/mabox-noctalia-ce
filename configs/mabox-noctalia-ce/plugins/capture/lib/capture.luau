@@ -4,6 +4,8 @@
 
 local pinSide = require("./side.luau")
 local kbd = require("./kbd.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(pinned)
 local REFRESH = 2
@@ -411,8 +413,13 @@ end
 render = function()
   kbd.begin()
   kr = 1
+  local title = ui.row({ gap = 6, align = "center" }, {
+    logo(),
+    ui.label({ text = recording and "Capture  (recording)" or "Capture" }),
+    ui.label({ text = hotkey(pinned and "mb-pinned capture" or "mabox/capture:main"), color = "outline_variant", flexGrow = 1 }),
+  })
   local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = recording and "Capture  (recording)" or "Capture", flexGrow = 1 }),
+    ui.spacer({ flexGrow = 1 }),
     pinned and pinSide.dockButton("capture", pinned, render) or ui.spacer({ width = 0 }),
     pinned and kbtn("swap", 1, 1, { glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
     kbtn("pin", 1, 2, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
@@ -424,9 +431,9 @@ render = function()
   })
   local body = ui.column({ gap = 8 }, { shotBlock(), intervalBlock(), recBlock(), recentBlock() })
   if pinned then
-    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { title, top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
   else
-    panel.render(ui.column({ gap = 8, padding = 12 }, { top, body }))
+    panel.render(ui.column({ gap = 8, padding = 12 }, { title, top, body }))
   end
 end
 

@@ -4,6 +4,8 @@
 
 local pinSide = require("./side.luau")
 local kbd = require("./kbd.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(pinned)
 local REFRESH = 30
@@ -651,8 +653,13 @@ render = function()
     stop("t-swap", 1, 3, function() pinSide.swap("status", pinned) end)
   end
   stop("t-pin", 1, 4, pinOrClose)
+  local title = ui.row({ gap = 6, align = "center" }, {
+    logo(),
+    ui.label({ text = settingsView and "Status settings" or (running and "Status  (updating)" or "Status") }),
+    ui.label({ text = hotkey(pinned and "mb-pinned status" or "mabox/status:main"), color = "outline_variant", flexGrow = 1 }),
+  })
   local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = settingsView and "Status settings" or (running and "Status  (updating)" or "Status"), flexGrow = 1 }),
+    ui.spacer({ flexGrow = 1 }),
     ring("t-view", ui.button({ glyph = settingsView and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settingsView and "Back" or "Settings", onClick = switchView })),
     ring("t-refresh", ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = doRefresh })),
     pinned and pinSide.dockButton("status", pinned, render) or ui.spacer({ width = 0 }),
@@ -679,9 +686,9 @@ render = function()
   local inList = cursor and not TOP_IDS[cursor]
   local body = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = inList and "k-" .. cursor or nil }, rows)
   if pinned then
-    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, body }))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { title, top, body }))
   else
-    panel.render(ui.column({ gap = 8, padding = 12, height = 560 }, { top, body }))
+    panel.render(ui.column({ gap = 8, padding = 12, height = 592 }, { title, top, body }))
   end
 end
 

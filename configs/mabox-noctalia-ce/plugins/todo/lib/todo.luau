@@ -2,6 +2,8 @@
 -- Todo: todo.txt lists in ~/.todo; done tasks stay struck through in the list until moved to done_<list>.txt.
 
 return function()
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 local DIR = noctalia.getenv("HOME") .. "/.todo"
 
 local lists = {}
@@ -1424,9 +1426,16 @@ render = function()
     filterText = v
     render()
   end })
-  panel.render(ui.row({ gap = 12, padding = 12, align = "stretch" }, {
-    ui.column({ width = 240 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
-    ui.column({ gap = 8, flexGrow = 1 }, { addCard(), search, banner, notesBar, content }),
+  panel.render(ui.column({ gap = 8, padding = 12 }, {
+    ui.row({ gap = 8, align = "center" }, {
+      logo(),
+      ui.label({ text = "Todo" }),
+      ui.label({ text = hotkey("mabox/todo:main"), color = "outline_variant", flexGrow = 1 }),
+    }),
+    ui.row({ gap = 12, align = "stretch" }, {
+      ui.column({ width = 240 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
+      ui.column({ gap = 8, flexGrow = 1 }, { addCard(), search, banner, notesBar, content }),
+    }),
   }))
 end
 
