@@ -78,6 +78,4 @@ Wallpapers in the screenshots are stills from animated series. They belong to th
 
 <a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="860" /></a>
 
-<a href="docs/equalizer.png"><img alt="Equalizer panel" src="docs/equalizer.png" width="860" /></a>
-
 <a href="docs/wallpaper-quick-settings.png"><img alt="Wallpaper quick settings: slideshow and folders" src="docs/wallpaper-quick-settings.png" width="420" /></a>
