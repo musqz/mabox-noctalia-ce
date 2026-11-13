@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add a *Random pictures* setting to the Polaroids widget: random pictures from the wallpaper folder instead of the previous wallpapers.
 - Update the bar launcher logo when the theme colour or logo style changes (`mb-logo-refresh`).
 - Show the logo and framed sections in the wallpaper folders panel; right-click on the wallpaper widget opens it.
 - Set the slideshow interval in minutes, turn it on or off, and choose random or alphabetical order in the wallpaper folders panel.
