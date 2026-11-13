@@ -24,6 +24,18 @@
     <osd style="thumbnail"/>
   </windowSwitcher>
 
+  <regions>
+    <region name="tl" x="0%" y="0%" width="50%" height="50%"/>
+    <region name="tr" x="50%" y="0%" width="50%" height="50%"/>
+    <region name="bl" x="0%" y="50%" width="50%" height="50%"/>
+    <region name="br" x="50%" y="50%" width="50%" height="50%"/>
+    <region name="l" x="0%" y="0%" width="50%" height="100%"/>
+    <region name="r" x="50%" y="0%" width="50%" height="100%"/>
+    <region name="t" x="0%" y="0%" width="100%" height="50%"/>
+    <region name="b" x="0%" y="50%" width="100%" height="50%"/>
+    <region name="c" x="0%" y="0%" width="100%" height="100%"/>
+  </regions>
+
   <keyboard>
     <default />
     <!-- Use a different terminal emulator -->
@@ -216,6 +228,16 @@
     <keybind key="W-A-7"><action name="Maximize"/></keybind>
     <keybind key="W-A-8"><action name="MoveToOutput" direction="right" wrap="yes"/></keybind>
 
+    <keybind key="W-KP_7"><action name="ToggleSnapToRegion" region="tl"/></keybind>
+    <keybind key="W-KP_8"><action name="ToggleSnapToRegion" region="t"/></keybind>
+    <keybind key="W-KP_9"><action name="ToggleSnapToRegion" region="tr"/></keybind>
+    <keybind key="W-KP_4"><action name="ToggleSnapToRegion" region="l"/></keybind>
+    <keybind key="W-KP_5"><action name="ToggleSnapToRegion" region="c"/></keybind>
+    <keybind key="W-KP_6"><action name="ToggleSnapToRegion" region="r"/></keybind>
+    <keybind key="W-KP_1"><action name="ToggleSnapToRegion" region="bl"/></keybind>
+    <keybind key="W-KP_2"><action name="ToggleSnapToRegion" region="b"/></keybind>
+    <keybind key="W-KP_3"><action name="ToggleSnapToRegion" region="br"/></keybind>
+
     <keybind key="W-S-1"><action name="SendToDesktop" to="left" follow="yes" wrap="yes"/></keybind>
     <keybind key="W-S-2"><action name="SendToDesktop" to="right" follow="yes" wrap="yes"/></keybind>
     </keyboard>
@@ -224,6 +246,15 @@
 
     <mouse>
       <default />
+      <context name="Frame">
+        <mousebind button="W-Left" action="Press">
+          <action name="Focus"/>
+          <action name="Raise"/>
+        </mousebind>
+        <mousebind button="W-Left" action="Drag">
+          <action name="Move"/>
+        </mousebind>
+      </context>
       <!-- Show the root menu on desktop right click -->
       <context name="Root">
         <mousebind button="Right" action="Press">

@@ -92,7 +92,7 @@ def describe(name, get):
         return " ".join(["MoveResizeTo"] + parts)
     if name == "ShowMenu":
         return "ShowMenu " + (get("menu") or "")
-    extra = [get(t) for t in ("direction", "to", "output") if get(t)]
+    extra = [get(t) for t in ("direction", "to", "output", "region") if get(t)]
     return " ".join([name] + extra)
 
 
