@@ -15,9 +15,7 @@ From the Mabox repo (no git needed):
 ```sh
 sudo pacman -S mabox-noctalia-ce
 ```
-
-- The repo build lags behind: Daniel builds it by hand and cannot update often.
-- Git is always the latest. While the project changes this fast, use git for new features and fixes.
+- Git is the latest. Use git for new features and fixes.
 
 From git:
 
