@@ -86,4 +86,14 @@ printf '[theme.templates.user.mabox-logo]\ninput_path = "a"\noutput_path = "~/.l
 migrate; migrate
 [[ $(grep -c 'post_hook = "mb-logo-refresh"' "$conf/noctalia/config.toml") == $(grep -c '^output_path = .*mabox-logo' "$conf/noctalia/config.toml") ]] || { echo "FAIL migrate_20: expected one hook per logo template"; exit 1; }
 
+# migrate_21: the old q-term rule becomes the right terminal, the left rule and key are added once, an edited size stays.
+printf '<openbox_config>\n<keyboard>\n</keyboard>\n<windowRules>\n    <windowRule title="q-term">\n      <action name="SetDecorations" decorations="none"/>\n      <action name="ResizeTo" width="2545" height="700"/>\n      <action name="MoveTo" x="10" y="45"/>\n    </windowRule>\n</windowRules>\n</openbox_config>\n' > "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(count 'title="q-term-right"') == 1 && $(count 'title="q-term-left"') == 1 && $(count 'key="C-grave"') == 1 && $(count 'width="1265"') == 2 ]] || { echo "FAIL migrate_21: expected both rules and the key once"; exit 1; }
+valid || { echo "FAIL migrate_21: rc.xml is no longer valid"; exit 1; }
+sed -i '0,/width="1265"/s/width="1265"/width="999"/' "$conf/mabox-noctalia-ce/rc.xml"
+sed -i 's#title="q-term-right"#title="q-term"#' "$conf/mabox-noctalia-ce/rc.xml"
+migrate
+[[ $(count 'title="q-term-right"') == 1 && $(count 'width="999"') == 1 ]] || { echo "FAIL migrate_21: overwrote an edited rule"; exit 1; }
+
 echo ok

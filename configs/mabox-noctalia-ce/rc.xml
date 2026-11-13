@@ -200,6 +200,7 @@
     <keybind key="F12">
      <action name="Execute" command="q-term-toggle"/>
     </keybind>
+    <keybind key="C-grave"><action name="Execute" command="q-term-toggle left"/></keybind>
     <keybind key="C-KP_0"><action name="Execute" command="jumpapp -m /usr/bin/scrcpy" /></keybind>
 
     <!-- jumpapp -->
@@ -264,7 +265,7 @@
     </mouse>
       
   <windowRules>
-    <windowRule title="q-term">
+    <windowRule title="q-term-right">
       <action name="SetDecorations" decorations="none"/>
       <action name="ResizeTo" width="1265" height="690"/>
       <action name="MoveTo" x="1285" y="60"/>

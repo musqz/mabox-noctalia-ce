@@ -27,7 +27,8 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `W-S-c` | caffeine (no idle) |
 | `W-A-d` | show or hide desktop widgets |
 | `W-t` | terminal |
-| `F12` | quake terminal |
+| `F12` | quake terminal, right half |
+| `C-grave` | quake terminal, left half |
 | `W-h` | btop |
 | `W-S-r` | record region / stop |
 | `C-S-a` | screenshot |

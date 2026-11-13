@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-T=q-term
+# Show, focus or hide a quake terminal: q-term-toggle [right|left]
+side=${1:-right}
+[[ $side == left || $side == right ]] || { echo "usage: q-term-toggle [right|left]" >&2; exit 1; }
+T=q-term-$side
 
 if ! wlrctl toplevel find title:"$T"; then
     terminator -T "$T" &
+elif wlrctl toplevel find title:"$T" state:minimized; then
+    wlrctl toplevel focus title:"$T"
 elif wlrctl toplevel find title:"$T" state:focused; then
     wlrctl toplevel minimize title:"$T"
 else
