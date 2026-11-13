@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Point the bar launcher at a copy of the Mabox logo named by its checksum.
+# Noctalia caches images by path, so the fixed ~/.icons/mabox-logo.svg never shows a new colour.
+set -euo pipefail
+
+share=$HOME/.local/share/mabox-noctalia-ce
+src=$HOME/.icons/mabox-logo.svg
+[[ -f $src ]] || exit 0
+
+mkdir -p "$share"
+# The four logo templates run this hook at the same time.
+exec 9> "$share/.logo-refresh.lock"
+flock 9
+
+cur=$(noctalia msg config-get widget.launcher.custom_image 2>/dev/null || true)
+cur=${cur//[\'\"]/}
+# Only an image set by this script or the Mabox logo itself is replaced; anything else is the user's.
+[[ $cur == "$src" || $cur == "$share"/launcher-logo-*.svg ]] || exit 0
+
+sum=$(cksum < "$src" | cut -d' ' -f1)
+dest=$share/launcher-logo-$sum.svg
+[[ $cur == "$dest" ]] && exit 0
+
+cp -L -- "$src" "$dest"
+noctalia msg config-set widget.launcher.custom_image "\"$dest\"" >/dev/null
+find "$share" -maxdepth 1 -name 'launcher-logo-*.svg' ! -name "${dest##*/}" -delete

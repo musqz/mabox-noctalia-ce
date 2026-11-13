@@ -81,4 +81,9 @@ printf '[widget.wallpaper]\ncapsule = false\n\n[widget.wallpaper.actions]\nright
 migrate
 [[ $(grep -c 'mine' "$conf/noctalia/config.toml") == 1 && $(grep -c 'wallpaper-dirs' "$conf/noctalia/config.toml") == 0 ]] || { echo "FAIL migrate_19: overwrote the user's action"; exit 1; }
 
+# migrate_20: each logo template gets the refresh hook once.
+printf '[theme.templates.user.mabox-logo]\ninput_path = "a"\noutput_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"\n\n[theme.templates.user.mabox-logo-ce]\ninput_path = "b"\noutput_path = "~/.local/share/mabox-noctalia-ce/mabox-logo-ce.svg"\n' > "$conf/noctalia/config.toml"
+migrate; migrate
+[[ $(grep -c 'post_hook = "mb-logo-refresh"' "$conf/noctalia/config.toml") == $(grep -c '^output_path = .*mabox-logo' "$conf/noctalia/config.toml") ]] || { echo "FAIL migrate_20: expected one hook per logo template"; exit 1; }
+
 echo ok
