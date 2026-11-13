@@ -11,6 +11,8 @@ local note = nil
 local armed = nil
 local minutes = nil
 local draft = nil
+local auto = false
+local order = nil
 
 local render
 
@@ -69,6 +71,19 @@ local function setMinutes()
   end)
 end
 
+local function setAuto(key, value, apply)
+  dirs.setAuto(key, value, function(ok)
+    if ok then
+      apply()
+      err = nil
+      note = nil
+    else
+      err = "Could not change the slideshow"
+    end
+    render()
+  end)
+end
+
 local function addFolder()
   dirs.browse(current ~= "" and current or noctalia.getenv("HOME"))
 end
@@ -91,6 +106,19 @@ function render()
   end
   panel.render(ui.column({ gap = 8, padding = 12 }, {
     ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", selected = kbd.sel("add"), onClick = addFolder }),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.label({ text = "Slideshow", flexGrow = 1 }),
+      ui.button({ key = "random", text = "Random", variant = order == "random" and "primary" or "ghost", controlSize = "sm", onClick = function()
+        setAuto("order", '"random"', function() order = "random" end)
+      end }),
+      ui.button({ key = "alpha", text = "Alphabetical", variant = order == "alphabetical" and "primary" or "ghost", controlSize = "sm", onClick = function()
+        setAuto("order", '"alphabetical"', function() order = "alphabetical" end)
+      end }),
+      ui.toggle({ key = "auto", checked = auto, onChange = function(v)
+        local want = v == true or v == "true"
+        setAuto("enabled", want and "true" or "false", function() auto = want end)
+      end }),
+    }),
     ui.row({ gap = 6, align = "center" }, {
       ui.label({ text = "Slideshow every", color = "on_surface_variant" }),
       ui.input({ key = "mins", value = draft or (minutes and tostring(minutes)) or "", width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes between wallpapers", onChange = function(t) draft = t end, onSubmit = setMinutes }),
@@ -119,11 +147,21 @@ end
 function onOpen()
   kbd.clear()
   draft = nil
+  auto = false
+  order = nil
   items = dirs.load()
   err = nil
   note = nil
   armed = nil
   render()
+  dirs.getAuto("enabled", function(v)
+    auto = v == "true"
+    render()
+  end)
+  dirs.getAuto("order", function(v)
+    order = v
+    render()
+  end)
   dirs.interval(function(m)
     minutes = m
     render()
