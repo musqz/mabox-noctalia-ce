@@ -9,6 +9,8 @@ local current = ""
 local err = nil
 local note = nil
 local armed = nil
+local minutes = nil
+local draft = nil
 
 local render
 
@@ -43,6 +45,30 @@ local function pick(p)
   end)
 end
 
+local function setMinutes()
+  if not draft then
+    return
+  end
+  local n = tonumber(string.match(noctalia.string.trim(draft), "^%d+$"))
+  if not n or n < 1 or n > 1440 then
+    err = "Enter whole minutes, 1 to 1440"
+    render()
+    return
+  end
+  dirs.setInterval(n, function(ok)
+    if ok then
+      minutes = n
+      draft = nil
+      err = nil
+      note = "Slideshow every " .. n .. " min"
+    else
+      note = nil
+      err = "Could not set the interval"
+    end
+    render()
+  end)
+end
+
 local function addFolder()
   dirs.browse(current ~= "" and current or noctalia.getenv("HOME"))
 end
@@ -65,6 +91,12 @@ function render()
   end
   panel.render(ui.column({ gap = 8, padding = 12 }, {
     ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", selected = kbd.sel("add"), onClick = addFolder }),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.label({ text = "Slideshow every", color = "on_surface_variant" }),
+      ui.input({ key = "mins", value = draft or (minutes and tostring(minutes)) or "", width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes between wallpapers", onChange = function(t) draft = t end, onSubmit = setMinutes }),
+      ui.label({ text = "min", color = "on_surface_variant" }),
+      ui.button({ key = "savemins", glyph = "device-floppy", text = "Save", variant = "ghost", controlSize = "sm", onClick = setMinutes }),
+    }),
     err and ui.label({ text = err, color = "error" }) or note and ui.label({ text = note, color = "primary" }) or ui.box({ height = 0 }),
     ui.scroll({ key = "list", gap = 0, height = 300, revealKey = kbd.reveal() }, rows),
   }))
@@ -86,11 +118,16 @@ end
 
 function onOpen()
   kbd.clear()
+  draft = nil
   items = dirs.load()
   err = nil
   note = nil
   armed = nil
   render()
+  dirs.interval(function(m)
+    minutes = m
+    render()
+  end)
   dirs.current(function(p)
     current = p
     local known = false

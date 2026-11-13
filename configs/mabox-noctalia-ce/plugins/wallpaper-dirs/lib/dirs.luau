@@ -52,4 +52,18 @@ function M.current(cb)
   end)
 end
 
+-- Slideshow interval in minutes; the config stores seconds.
+function M.interval(cb)
+  noctalia.runAsync({ "noctalia", "msg", "config-get", "wallpaper.automation.interval_seconds" }, function(r)
+    local secs = tonumber(string.match(r.stdout or "", "%d+"))
+    cb(r.exitCode == 0 and secs and math.max(1, math.floor(secs / 60 + 0.5)) or nil)
+  end)
+end
+
+function M.setInterval(minutes, cb)
+  noctalia.runAsync({ "noctalia", "msg", "config-set", "wallpaper.automation.interval_seconds", tostring(minutes * 60) }, function(r)
+    cb(r.exitCode == 0)
+  end)
+end
+
 return M
