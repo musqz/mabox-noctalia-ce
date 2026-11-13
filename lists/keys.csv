@@ -65,6 +65,15 @@ W-A-5,Windows,0,Snap bottom left
 W-A-6,Windows,0,Snap bottom right
 W-A-7,Windows,0,Maximize
 W-A-8,Windows,0,Move window to the next monitor
+W-KP_7,Windows,0,Snap top left (again restores)
+W-KP_8,Windows,0,Snap top half (again restores)
+W-KP_9,Windows,0,Snap top right (again restores)
+W-KP_4,Windows,0,Snap left half (again restores)
+W-KP_5,Windows,0,Snap full (again restores)
+W-KP_6,Windows,0,Snap right half (again restores)
+W-KP_1,Windows,0,Snap bottom left (again restores)
+W-KP_2,Windows,0,Snap bottom half (again restores)
+W-KP_3,Windows,0,Snap bottom right (again restores)
 W-1,Workspaces,1,Previous workspace
 W-2,Workspaces,1,Next workspace
 W-S-1,Workspaces,0,Send window to the previous workspace

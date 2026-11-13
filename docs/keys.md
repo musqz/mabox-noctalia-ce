@@ -53,6 +53,8 @@ Windows:
 | `W-b` | hide or show the window title bar and border (press again to cycle) |
 | `W-A-1` … `W-A-6` | snap to an edge or corner |
 | `W-A-7` | maximize |
+| `W-KP_1` … `W-KP_9` | snap to a 3x3 area (keypad layout); press again to restore |
+| `W-drag` | move a window; keep W held on release to snap to the quarter under the pointer |
 | `W-1`, `W-2` | previous, next workspace |
 | `W-S-1`, `W-S-2` | send window to previous, next workspace |
 | `W-grave` | tabdock find |
