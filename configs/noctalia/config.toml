@@ -132,6 +132,9 @@ icon_color = "primary"
 scale = 1.05
 tooltip_format = "{:+%A %B %d}"
 
+[widget.clock.actions]
+right = "exec jumpapp -m rencal"
+
 [widget.control-center]
 capsule = false
 

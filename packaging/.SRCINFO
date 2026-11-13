@@ -49,6 +49,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = skippy-wl: window switcher keybinds (github.com/musqz/skippy-wl)
 	optdepends = pamac-gtk3: Add/Remove software in the root menu
 	optdepends = jumpapp-ng: app launch/focus keybinds (AUR)
+	optdepends = rencal: calendar opened by right-click on the clock (needs jumpapp-ng)
 	optdepends = wl-screenrec: screen recording keybind (AUR)
 	optdepends = ffmpeg: converter menu
 	optdepends = gifski: converter GIF output
