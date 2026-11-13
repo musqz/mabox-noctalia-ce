@@ -4,6 +4,8 @@ local DEFAULT = require("./paths.luau")
 
 local pinSide = require("./side.luau")
 local kbd = require("./kbd.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(pinned)
 -- Prints group|name|path|state for every entry whose command (or path) exists.
@@ -729,8 +731,13 @@ render = function()
     stop("swap", 2, moveSide)
   end
   stop("pin", 3, pinOrClose)
+  local title = ui.row({ gap = 6, align = "center" }, {
+    logo(),
+    ui.label({ text = "Configs" }),
+    ui.label({ text = pinned and hotkey("mb-pinned configs") or "", color = "outline_variant", flexGrow = 1 }),
+  })
   local top = ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = "Configs", flexGrow = 1 }),
+    ui.spacer({ flexGrow = 1 }),
     ui.button({ key = "collapse", selected = kbd.sel("collapse"), glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Collapse all sections", onClick = collapseAll }),
     ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = function() staticLoaded = false; refresh() end }),
     pinned and pinSide.dockButton("configs", pinned, render) or ui.spacer({ width = 0 }),
@@ -1182,9 +1189,9 @@ render = function()
 
   local list = ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() }, cards)
   if pinned then
-    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { top, reload, list }))
+    pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { title, top, reload, list }))
   else
-    panel.render(ui.column({ gap = 8, padding = 12, height = 520 }, { top, reload, list }))
+    panel.render(ui.column({ gap = 8, padding = 12, height = 552 }, { title, top, reload, list }))
   end
 end
 

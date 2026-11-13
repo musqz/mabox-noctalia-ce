@@ -1,7 +1,8 @@
 --!nonstrict
 -- System: tabs fed by `mb-sysreport <tab>`; the text is already sanitized.
 local kbd = require("./kbd.luau")
-local celogo = require("./celogo.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 local FIXES = require("./fixes.luau")
 local newServices = require("./services.luau")
 
@@ -362,7 +363,6 @@ exec xdg-open "$d"]]
   local function extras()
     local items = {}
     if tab == "overview" then
-      table.insert(items, celogo())
       for _, l in ipairs(LINKS) do
         table.insert(items, ui.button({ text = l.label, glyph = "external-link", variant = "ghost", controlSize = "sm", onClick = function() noctalia.runAsync({ "xdg-open", l.url }) end }))
       end
@@ -587,9 +587,16 @@ exec xdg-open "$d"]]
       end
     end
     table.insert(right, body)
-    panel.render(ui.row({ gap = 8, padding = 12, height = 560 }, {
-      sidebar(),
-      ui.column({ gap = 8, flexGrow = 1 }, right),
+    panel.render(ui.column({ gap = 8, padding = 12 }, {
+      ui.row({ gap = 8, align = "center" }, {
+        logo(),
+        ui.label({ text = "System" }),
+        ui.label({ text = hotkey("mabox/system:system"), color = "outline_variant", flexGrow = 1 }),
+      }),
+      ui.row({ gap = 8, height = 528 }, {
+        sidebar(),
+        ui.column({ gap = 8, flexGrow = 1 }, right),
+      }),
     }))
   end
 

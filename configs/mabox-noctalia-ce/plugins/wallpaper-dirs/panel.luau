@@ -4,6 +4,7 @@
 local kbd = require("./lib/kbd.luau")
 local dirs = require("./lib/dirs.luau")
 local logo = require("./lib/celogo.luau")
+local hotkey = require("./lib/hotkey.luau")
 
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 10, border = "primary", borderWidth = 1 }
@@ -112,12 +113,14 @@ function render()
   panel.render(ui.column({ gap = 10, padding = 12 }, {
     ui.row({ gap = 8, align = "center" }, {
       logo(),
-      ui.label({ text = "Wallpaper folders", flexGrow = 1 }),
+      ui.label({ text = "Wallpaper folders" }),
+      ui.label({ text = hotkey("mabox/wallpaper-dirs:dirs"), color = "outline_variant", flexGrow = 1 }),
       ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", controlSize = "sm", selected = kbd.sel("add"), onClick = addFolder }),
     }),
     ui.column(card("slideshow"), {
       ui.row({ gap = 8, align = "center" }, {
         ui.label({ text = "Slideshow" }),
+        ui.label({ text = hotkey("mb-slideshow"), color = "outline_variant" }),
         ui.toggle({ key = "auto", checked = auto, onChange = function(v)
           local want = v == true or v == "true"
           setAuto("enabled", want and "true" or "false", function() auto = want end)

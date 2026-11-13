@@ -3,6 +3,8 @@
 
 local pinSide = require("./side.luau")
 local kbd = require("./kbd.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(pinned)
 local HOME = noctalia.getenv("HOME")
@@ -496,6 +498,10 @@ render = function()
     end
     local body = {
       ui.row({ gap = 6, align = "center" }, {
+        logo(),
+        ui.label({ text = "Colors" }),
+      }),
+      ui.row({ gap = 6, align = "center" }, {
         ring("pick", ui.button({ glyph = "color-picker", text = "Pick", variant = "primary", controlSize = "sm", tooltip = "Pick from screen", onClick = pickFromScreen })),
         ring("select", ui.button({ glyph = "palette", text = "Select", variant = "ghost", controlSize = "sm", tooltip = "Add from selector", onClick = addFromSelector })),
         ui.spacer({ flexGrow = 1 }),
@@ -524,7 +530,12 @@ render = function()
     return
   end
 
-  panel.render(ui.column({ gap = 10, padding = 12, height = 560 }, {
+  panel.render(ui.column({ gap = 10, padding = 12, height = 592 }, {
+    ui.row({ gap = 8, align = "center" }, {
+      logo(),
+      ui.label({ text = "Colors" }),
+      ui.label({ text = hotkey("mabox/colors:picker"), color = "outline_variant", flexGrow = 1 }),
+    }),
     ui.row({ gap = 8, align = "center" }, {
       ring("pick", ui.button({ text = "Pick from screen", glyph = "color-picker", variant = "primary", onClick = pickFromScreen })),
       ring("select", ui.button({ text = "Add from selector", glyph = "palette", onClick = addFromSelector })),

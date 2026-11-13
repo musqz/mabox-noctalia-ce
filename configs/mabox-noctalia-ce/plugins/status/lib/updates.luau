@@ -1,5 +1,6 @@
 --!nonstrict
 -- Update actions of the bar button: pending counts from mb-updates-ce, buttons start the upgrade in a terminal.
+local hotkey = require("./hotkey.luau")
 local SOURCES = { { "repo", "Repo" }, { "aur", "AUR" }, { "flatpak", "Flatpak" }, { "snap", "Snap" }, { "npm", "npm" }, { "pipx", "pipx" } }
 local counts = {}
 local orphans = 0
@@ -144,7 +145,7 @@ render = function()
   local head = {
     ui.label({ text = checking and "Checking for updates" or (total > 0 and (total .. " updates") or "System up to date"), fontSize = 14, flexGrow = 1 }),
     ui.button({ glyph = "help-circle", variant = "ghost", controlSize = "sm", tooltip = "About the update checker", onClick = function() view = "info" render() end }),
-    ui.button({ glyph = "info-circle", variant = "ghost", controlSize = "sm", tooltip = "System info and fixes (W-A-i)", onClick = function()
+    ui.button({ glyph = "info-circle", variant = "ghost", controlSize = "sm", tooltip = "System info and fixes " .. hotkey("mabox/system:system"), onClick = function()
       panel.close()
       noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/system:system" })
     end }),

@@ -2,6 +2,8 @@
 -- Places: standard folders, file manager bookmarks and recent files; opens folders in pcmanfm.
 
 local pinSide = require("./side.luau")
+local logo = require("./celogo.luau")
+local hotkey = require("./hotkey.luau")
 
 return function(pinned)
 local SIZES = { 5, 10, 20, 50 }
@@ -209,9 +211,14 @@ local function searchRow()
 end
 
 render = function()
-  local head = { searchRow() }
+  local head
   if pinned then
     head = {
+      ui.row({ gap = 8, align = "center" }, {
+        logo(),
+        ui.label({ text = "Places" }),
+        ui.label({ text = hotkey("mb-pinned places"), color = "outline_variant", flexGrow = 1 }),
+      }),
       ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
@@ -222,7 +229,15 @@ render = function()
       searchRow(),
     }
   else
-    table.insert(head, 1, ui.row({ gap = 6, align = "center" }, {
+    head = {
+      ui.row({ gap = 8, align = "center" }, {
+        logo(),
+        ui.label({ text = "Places" }),
+        ui.label({ text = hotkey("mabox/places:main"), color = "outline_variant", flexGrow = 1 }),
+      }),
+      searchRow(),
+    }
+    table.insert(head, 2, ui.row({ gap = 6, align = "center" }, {
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
       ui.button({ glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = function()
@@ -233,7 +248,7 @@ render = function()
     }))
   end
   table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, { placeRows(), recentCard() }))
-  pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 600 or nil }, head))
+  pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 632 or nil }, head))
 end
 
 local function open()
