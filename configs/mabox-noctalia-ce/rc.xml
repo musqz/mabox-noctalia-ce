@@ -266,8 +266,13 @@
   <windowRules>
     <windowRule title="q-term">
       <action name="SetDecorations" decorations="none"/>
-      <action name="ResizeTo" width="2545" height="700"/>
-      <action name="MoveTo" x="10" y="45"/>
+      <action name="ResizeTo" width="1265" height="690"/>
+      <action name="MoveTo" x="1285" y="60"/>
+    </windowRule>
+    <windowRule title="q-term-left">
+      <action name="SetDecorations" decorations="none"/>
+      <action name="ResizeTo" width="1265" height="690"/>
+      <action name="MoveTo" x="10" y="60"/>
     </windowRule>
     <windowRule identifier="cava-transparent">
       <action name="SetDecorations" decorations="none"/>
