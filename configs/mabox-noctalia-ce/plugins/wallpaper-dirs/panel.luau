@@ -3,6 +3,11 @@
 
 local kbd = require("./lib/kbd.luau")
 local dirs = require("./lib/dirs.luau")
+local logo = require("./lib/celogo.luau")
+
+local function card(key)
+  return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 10, border = "primary", borderWidth = 1 }
+end
 
 local items = {}
 local current = ""
@@ -104,29 +109,38 @@ function render()
   if #rows == 0 then
     table.insert(rows, ui.label({ text = "No saved folders", color = "on_surface_variant" }))
   end
-  panel.render(ui.column({ gap = 8, padding = 12 }, {
-    ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", selected = kbd.sel("add"), onClick = addFolder }),
-    ui.row({ gap = 6, align = "center" }, {
-      ui.label({ text = "Slideshow", flexGrow = 1 }),
-      ui.button({ key = "random", text = "Random", variant = order == "random" and "primary" or "ghost", controlSize = "sm", onClick = function()
-        setAuto("order", '"random"', function() order = "random" end)
-      end }),
-      ui.button({ key = "alpha", text = "Alphabetical", variant = order == "alphabetical" and "primary" or "ghost", controlSize = "sm", onClick = function()
-        setAuto("order", '"alphabetical"', function() order = "alphabetical" end)
-      end }),
-      ui.toggle({ key = "auto", checked = auto, onChange = function(v)
-        local want = v == true or v == "true"
-        setAuto("enabled", want and "true" or "false", function() auto = want end)
-      end }),
+  panel.render(ui.column({ gap = 10, padding = 12 }, {
+    ui.row({ gap = 8, align = "center" }, {
+      logo(),
+      ui.label({ text = "Wallpaper folders", flexGrow = 1 }),
+      ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", controlSize = "sm", selected = kbd.sel("add"), onClick = addFolder }),
     }),
-    ui.row({ gap = 6, align = "center" }, {
-      ui.label({ text = "Slideshow every", color = "on_surface_variant" }),
-      ui.input({ key = "mins", value = draft or (minutes and tostring(minutes)) or "", width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes between wallpapers", onChange = function(t) draft = t end, onSubmit = setMinutes }),
-      ui.label({ text = "min", color = "on_surface_variant" }),
-      ui.button({ key = "savemins", glyph = "device-floppy", text = "Save", variant = "ghost", controlSize = "sm", onClick = setMinutes }),
+    ui.column(card("slideshow"), {
+      ui.row({ gap = 8, align = "center" }, {
+        ui.label({ text = "Slideshow" }),
+        ui.toggle({ key = "auto", checked = auto, onChange = function(v)
+          local want = v == true or v == "true"
+          setAuto("enabled", want and "true" or "false", function() auto = want end)
+        end }),
+        ui.box({ flexGrow = 1 }),
+        ui.button({ key = "random", text = "Random", variant = order == "random" and "primary" or "ghost", controlSize = "sm", onClick = function()
+          setAuto("order", '"random"', function() order = "random" end)
+        end }),
+        ui.button({ key = "alpha", text = "Alphabetical", variant = order == "alphabetical" and "primary" or "ghost", controlSize = "sm", onClick = function()
+          setAuto("order", '"alphabetical"', function() order = "alphabetical" end)
+        end }),
+      }),
+      ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = "Slideshow every", color = "on_surface_variant" }),
+        ui.input({ key = "mins", value = draft or (minutes and tostring(minutes)) or "", width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes between wallpapers", onChange = function(t) draft = t end, onSubmit = setMinutes }),
+        ui.label({ text = "min", color = "on_surface_variant" }),
+        ui.button({ key = "savemins", glyph = "device-floppy", text = "Save", variant = "ghost", controlSize = "sm", onClick = setMinutes }),
+      }),
     }),
     err and ui.label({ text = err, color = "error" }) or note and ui.label({ text = note, color = "primary" }) or ui.box({ height = 0 }),
-    ui.scroll({ key = "list", gap = 0, height = 300, revealKey = kbd.reveal() }, rows),
+    ui.column(card("folders"), {
+      ui.scroll({ key = "list", gap = 0, height = 300, revealKey = kbd.reveal() }, rows),
+    }),
   }))
 end
 

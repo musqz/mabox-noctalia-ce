@@ -197,6 +197,9 @@ capsule = false
 [widget.wallpaper]
 capsule = false
 
+[widget.wallpaper.actions]
+right = "exec noctalia msg panel-open mabox/wallpaper-dirs:dirs"
+
 [widget.workspaces]
 capsule = false
 colorize_icons = true
