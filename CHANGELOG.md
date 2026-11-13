@@ -4,7 +4,7 @@
 - Open rencal with a right-click on the clock; `rencal` and `jumpapp-ng` are optional dependencies.
 - Open the Keys panel on All binds with the search focused instead of the focused application.
 - Reopen the Snapshot panel on the ISO list after a successful build; the list shows every ISO, scrolls, and deletes an ISO with its checksum; a folder button opens the ISO folder.
-- Switch the Mabox logo between round, square, 3d and your own SVG from the Configs panel (Logo card); the System panel and the info and sysinfo widgets follow the choice.
+- Switch the Mabox logo between round, square, 3d, ce (theme-coloured M-CE) and your own SVG from the Configs panel (Logo card); every panel header and the info and sysinfo widgets follow the choice.
 - Show the whole Todo sidebar (Lists, Sort tasks, Groups) instead of cutting it off at a fixed height.
 - Order the root menu's Tools submenu alphabetically by block, with separators between the blocks.
 - Hide desktop widgets of disabled or removed plugins in `mb-widget` and the widgets panel.
@@ -12,7 +12,7 @@
 - Show due dates in the Todo panel in the order of your locale (`dd-mm-yyyy`, `mm/dd/yyyy`); typed dates are accepted in that order or as `YYYY-MM-DD`; the file keeps `due:YYYY-MM-DD`.
 - Show the date of an ISO in the Snapshot panel in your locale format.
 - Add `mb-widget` to show or hide a desktop widget by name (`mb-widget toggle <name>`), a *Desktop widgets* entry in the root menu, `/mb` launcher entries and a widgets panel (`noctalia msg panel-toggle mabox/tools:widgets`) for a bar button.
-- Show a theme-coloured M-CE logo in the Cava, Equalizer, Reset and Snapshot panel headers.
+- Show the chosen Mabox logo in the Cava, Equalizer, Reset, Snapshot, Tools and System panel headers.
 - Remove the Quoter desktop widget (mabox/quoter).
 - Add a button to the Todo panel that hides the add part; the task list then uses the freed space.
 - Add View archive to the Todo panel's Done tasks card.
