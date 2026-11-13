@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Show the logo, title and hotkey in grey at the top of every panel; the hotkey is read from `rc.xml`, and pinned windows show their pinned hotkey.
 - Add a *Random pictures* setting to the Polaroids widget: random pictures from the wallpaper folder instead of the previous wallpapers.
 - Update the bar launcher logo when the theme colour or logo style changes (`mb-logo-refresh`).
 - Show the logo and framed sections in the wallpaper folders panel; right-click on the wallpaper widget opens it.
