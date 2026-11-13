@@ -3,6 +3,10 @@
     "count": {
       "label": "Polaroids",
       "description": "How many previous wallpapers to show."
+    },
+    "random": {
+      "label": "Random pictures",
+      "description": "Show random pictures from the wallpaper folder instead of the previous wallpapers; drawn again when the wallpaper changes."
     }
   }
 }
