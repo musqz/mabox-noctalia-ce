@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Turn the wallpaper slideshow on or off with `W-A-a` or `mb-slideshow [toggle|on|off]`, with a notification.
 - Open rencal with a right-click on the clock; `rencal` and `jumpapp-ng` are optional dependencies.
 - Open the Keys panel on All binds with the search focused instead of the focused application.
 - Reopen the Snapshot panel on the ISO list after a successful build; the list shows every ISO, scrolls, and deletes an ISO with its checksum; a folder button opens the ISO folder.
