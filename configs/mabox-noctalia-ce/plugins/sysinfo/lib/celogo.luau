@@ -7,8 +7,8 @@ local logoFile, logoBody, checked = nil, nil, 0
 
 local function logo()
   -- Widgets render every tick; the file only changes when the theme or style does.
-  if logoFile and os.time() - checked < 5 then
-    return logoFile
+  if os.time() - checked < 5 then
+    return logoFile or FALLBACK
   end
   checked = os.time()
   local home = noctalia.getenv("HOME")
@@ -35,4 +35,6 @@ local function logo()
   return logoFile
 end
 
-return { logo = logo }
+return function(size)
+  return ui.image({ path = logo(), width = size or 24, height = size or 24, fit = "contain" })
+end

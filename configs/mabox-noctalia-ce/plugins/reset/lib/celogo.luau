@@ -1,38 +1,40 @@
 --!nonstrict
--- M-CE logo for panel headers. ui.image can't tint, so the file is written in the theme colors;
--- the file name carries the colors so a theme change loads a fresh file.
-local M = "M80 240H16V16h224v224h-64V80h-16v160H96V80H80z"
-local FRAME = "M0 0v256h256V0Zm16 16h224v224h-64V80h-16v160H96V80H80v160H16Z"
-local logoFile, logoKey = nil, nil
+-- Copy of ~/.icons/mabox-logo.svg (mb-logo picks the style, Noctalia's templates set the colors).
+-- ui.image caches by path, so the copy's name carries a checksum of the content.
 
-local function path()
-  local c1 = noctalia.getColor("primary")
-  local c2 = noctalia.getColor("surface_container_highest") or noctalia.getColor("surface_variant")
-  local dir = noctalia.pluginDataDir()
-  if not (c1 and c2 and dir) then
-    return nil
+local FALLBACK = "/usr/share/icons/mabox-logo.svg"
+local logoFile, logoBody, checked = nil, nil, 0
+
+local function logo()
+  -- Widgets render every tick; the file only changes when the theme or style does.
+  if os.time() - checked < 5 then
+    return logoFile or FALLBACK
   end
-  local key = string.sub(c1, 2) .. string.sub(c2, 2)
-  if key ~= logoKey then
-    noctalia.mkdirAll(dir)
-    local file = dir .. "/mabox-ce-" .. key .. ".svg"
-    local body = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">'
-      .. '<rect width="256" height="256" fill="' .. c2 .. '"/>'
-      .. '<path fill="' .. c1 .. '" d="' .. M .. '"/>'
-      .. '<path fill="' .. c2 .. '" d="' .. FRAME .. '"/>'
-      .. '<rect x="28" y="150" width="200" height="68" rx="6" fill="' .. c2 .. '"/>'
-      .. '<text x="128" y="208" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="62" font-weight="700" letter-spacing="6" text-anchor="middle" fill="' .. c1 .. '">CE</text></svg>'
-    if not noctalia.writeFile(file, body) then
-      return nil
+  checked = os.time()
+  local home = noctalia.getenv("HOME")
+  local dir = noctalia.pluginDataDir()
+  local body = home and noctalia.readFile(home .. "/.icons/mabox-logo.svg")
+  if not (body and body ~= "" and dir) then
+    return FALLBACK
+  end
+  if body ~= logoBody then
+    local sum = 0
+    for i = 1, #body do
+      sum = (sum * 31 + string.byte(body, i)) % 4294967291
     end
-    if logoFile then
+    noctalia.mkdirAll(dir)
+    local path = dir .. "/logo-" .. string.format("%x-%d", sum, #body) .. ".svg"
+    if not noctalia.writeFile(path, body) then
+      return FALLBACK
+    end
+    if logoFile and logoFile ~= path then
       noctalia.removeFile(logoFile)
     end
-    logoFile, logoKey = file, key
+    logoFile, logoBody = path, body
   end
   return logoFile
 end
 
-return function()
-  return ui.image({ path = path() or "/usr/share/icons/mabox-logo.svg", width = 24, height = 24, fit = "contain" })
+return function(size)
+  return ui.image({ path = logo(), width = size or 24, height = size or 24, fit = "contain" })
 end

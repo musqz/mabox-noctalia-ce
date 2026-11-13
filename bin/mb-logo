@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Pick the Mabox logo that ~/.icons/mabox-logo.svg points to: round, square, 3d or your own SVG.
+# Pick the Mabox logo that ~/.icons/mabox-logo.svg points to: round, square, 3d, ce or your own SVG.
 # mb-logo             print the current style
-# mb-logo round|square|3d|custom
+# mb-logo round|square|3d|ce|custom
 # mb-logo FILE.svg    copy FILE.svg and use it as the custom logo
 # mb-logo remove      delete the custom logo and switch back to round
 set -euo pipefail
@@ -13,6 +13,7 @@ declare -A files=(
     [round]=$share/mabox-logo.svg
     [square]=$share/mabox-logo-square.svg
     [3d]=$share/mabox-logo-3d.svg
+    [ce]=$share/mabox-logo-ce.svg
     [custom]=$share/mabox-logo-custom.svg
 )
 
@@ -41,7 +42,7 @@ if [[ -z ${files[$style]:-} && -f $style ]]; then
     [[ $style -ef ${files[custom]} ]] || cp -- "$style" "${files[custom]}"
     style=custom
 fi
-[[ -n ${files[$style]:-} ]] || { echo "usage: mb-logo [round|square|3d|custom|FILE.svg]" >&2; exit 1; }
+[[ -n ${files[$style]:-} ]] || { echo "usage: mb-logo [round|square|3d|ce|custom|FILE.svg]" >&2; exit 1; }
 
 target=${files[$style]}
 if [[ ! -f $target ]]; then
