@@ -72,6 +72,9 @@
     <item label="Wallpaper folders" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle mabox/wallpaper-dirs:dirs" />
     </item>
+    <item label="Wallpaper slideshow" icon="preferences-desktop-wallpaper">
+      <action name="Execute" command="mb-slideshow" />
+    </item>
     <item label="Look and Feel" icon="gtk-theme-config.svg">
       <action name="Execute" command="nwg-look" />
     </item>
