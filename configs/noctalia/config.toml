@@ -29,18 +29,22 @@ output_path = "~/.local/share/themes/noctalia/openbox-3/themerc"
 [theme.templates.user.mabox-logo]
 input_path = "~/.config/noctalia/templates/mabox-logo.svg"
 output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo.svg"
+post_hook = "mb-logo-refresh"
 
 [theme.templates.user.mabox-logo-square]
 input_path = "~/.config/noctalia/templates/mabox-logo-square.svg"
 output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo-square.svg"
+post_hook = "mb-logo-refresh"
 
 [theme.templates.user.mabox-logo-3d]
 input_path = "~/.config/noctalia/templates/mabox-logo-3d.svg"
 output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo-3d.svg"
+post_hook = "mb-logo-refresh"
 
 [theme.templates.user.mabox-logo-ce]
 input_path = "~/.config/noctalia/templates/mabox-logo-ce.svg"
 output_path = "~/.local/share/mabox-noctalia-ce/mabox-logo-ce.svg"
+post_hook = "mb-logo-refresh"
 
 [theme.templates.user.cava]
 input_path = "~/.config/noctalia/templates/cava-palette"

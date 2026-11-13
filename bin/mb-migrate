@@ -190,6 +190,13 @@ migrate_19() {
     done
 }
 
+# The logo templates refresh the bar launcher image after every colour change.
+migrate_20() {
+    local f=${files[0]}
+    [[ -f $f ]] && ! grep -q 'mb-logo-refresh' "$f" || return 0
+    sed -i -E 's#^(output_path = "~/\.local/share/mabox-noctalia-ce/mabox-logo[^"]*\.svg")$#\1\npost_hook = "mb-logo-refresh"#' "$f"
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

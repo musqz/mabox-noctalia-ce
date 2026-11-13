@@ -55,4 +55,5 @@ fi
 
 mkdir -p "${link%/*}"
 ln -sfn "$target" "$link"
+mb-logo-refresh || true
 echo "$style"
