@@ -1,7 +1,7 @@
 --!nonstrict
 -- Info desktop widget: logo, About line and the basic hotkeys from mb-keys (same rows as the keys plugin).
 
-local logo = require("./lib/logo.luau").logo
+local celogo = require("./lib/celogo.luau")
 
 local TICK_MS = 5000
 local RELOAD_TICKS = 36
@@ -49,7 +49,7 @@ end
 render = function()
   local body = {
     ui.row({ align = "center", gap = 8 }, {
-      ui.image({ path = logo(), width = 40, height = 40, fit = "contain" }),
+      celogo(40),
       ui.label({ text = "Mabox CE", fontSize = 18, color = "primary", flexGrow = 1 }),
     }),
     ui.label({

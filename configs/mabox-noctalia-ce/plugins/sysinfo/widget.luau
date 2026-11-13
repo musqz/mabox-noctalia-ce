@@ -46,7 +46,7 @@ d="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
 for s in repo aur flatpak snap npm pipx; do echo "U $s $(cat "$d/$s" 2>/dev/null | grep -c .)"; done
 ]]
 
-local logo = require("./lib/logo.luau").logo
+local celogo = require("./lib/celogo.luau")
 
 local function push(hist, value)
   table.insert(hist, math.max(0, math.min(1, value / 100)))
@@ -187,7 +187,7 @@ local function render()
         ui.label({ text = os.date("%A", now), fontSize = 13, color = "primary" }),
         ui.label({ text = tostring(tonumber(os.date("%d", now))) .. os.date(" %B", now), fontSize = 12, color = "on_surface_variant" }),
       }),
-      ui.image({ path = logo(), width = 48, height = 48, fit = "contain" }),
+      celogo(48),
     }),
     ui.separator({ color = "outline_variant" }),
     row(info.distro, info.release, "on_surface_variant"),

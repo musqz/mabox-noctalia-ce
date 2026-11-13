@@ -571,7 +571,7 @@ end
 local logoStyle = nil
 local logoArmed = false
 local logoArmToken = 0
-local LOGO_STYLES = { { "round", "Round", "mabox-logo.svg" }, { "square", "Square", "mabox-logo-square.svg" }, { "3d", "3D", "mabox-logo-3d.svg" }, { "custom", "Custom", "mabox-logo-custom.svg" } }
+local LOGO_STYLES = { { "round", "Round", "mabox-logo.svg" }, { "square", "Square", "mabox-logo-square.svg" }, { "3d", "3D", "mabox-logo-3d.svg" }, { "ce", "CE", "mabox-logo-ce.svg" }, { "custom", "Custom", "mabox-logo-custom.svg" } }
 local LOGO_PICK = [[p=$(yad --file --center --width=1000 --height=650 --title="Logo (SVG)" --file-filter="SVG | *.svg" --filename="$HOME/Pictures/")
 if [ -n "$p" ]; then mb-logo "$p" >/dev/null || notify-send -a Configs "Logo" "Could not use that file"; fi]]
 
@@ -913,7 +913,6 @@ render = function()
       variant = "outline",
       controlSize = "sm",
       contentAlign = "start",
-      tooltip = "The Mabox logo in the panels and desktop widgets",
       onClick = function() toggle("Logo") end,
     }),
   }
