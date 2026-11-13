@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Set the slideshow interval in minutes, turn it on or off, and choose random or alphabetical order in the wallpaper folders panel.
+- Add a wallpaper slideshow entry to the root menu.
 - Turn the wallpaper slideshow on or off with `W-A-a` or `mb-slideshow [toggle|on|off]`, with a notification.
 - Open rencal with a right-click on the clock; `rencal` and `jumpapp-ng` are optional dependencies.
 - Open the Keys panel on All binds with the search focused instead of the focused application.
