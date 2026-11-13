@@ -11,6 +11,24 @@ local PROTECTED = {
 
 local FILTERS = { { "failed", "Failed" }, { "running", "Running" }, { "all", "All" } }
 
+-- Same rules as RUN_UNIT, for a fixed list of commands.
+local REPAIR_TIMER = [[
+u=$1
+printf '%s\n' "systemctl --user daemon-reload" "systemctl --user reset-failed $u" "systemctl --user enable --now $u" "systemctl --user status --no-pager $u"
+printf '\nRun these commands in order? [y/N] '
+read -r a
+case $a in
+  y|Y)
+    systemctl --user daemon-reload &&
+    systemctl --user reset-failed "$u" &&
+    systemctl --user enable --now "$u" &&
+    systemctl --user status --no-pager "$u" ;;
+  *) echo cancelled ;;
+esac
+printf '\nPress Enter to close '
+read -r _
+]]
+
 -- Prints the command, runs it only after y; the unit name is an argument, never part of the script text.
 local RUN_UNIT = [[
 printf '%s\n\n' "$*"
@@ -245,6 +263,20 @@ return function(render, terminal, flags)
     noctalia.runAsync({ "sh", "-c", 'exec setsid -f xdg-open "$(dirname "$1")"', "sh", path })
   end
 
+  local function copyStatus(text, path)
+    if text == "" or text == "Reading..." then
+      noctalia.notify("System", "Status is not loaded yet")
+      return
+    end
+    local all = path ~= "" and (text .. "\nFile: " .. path) or text
+    noctalia.runAsync({ "sh", "-c", 'printf "%s\\n" "$1" | wl-copy', "sh", all }, function(result)
+      if result.exitCode ~= 0 then
+        noctalia.copyToClipboard(all, "text/plain")
+      end
+      noctalia.notify("System", "Status copied")
+    end)
+  end
+
   local function summary()
     local function part(label, which)
       local d = data[which]
@@ -311,8 +343,10 @@ return function(render, terminal, flags)
         table.insert(items, ui.label({ text = "System service: changes affect the whole machine. Stop, Restart, Start and Reset failed ask for the unit name in a terminal and use sudo. Edit changes a drop-in with sudo.", fontSize = 11, color = "error" }))
       end
       local buttons = {
-        ui.button({ text = "Reload status", glyph = "refresh", variant = "outline", controlSize = "sm", onClick = function() fetchStatus(u.name) end }),
+        ui.button({ glyph = "refresh", variant = "outline", controlSize = "sm", tooltip = "Reload status", onClick = function() fetchStatus(u.name) end }),
       }
+      table.insert(buttons, ui.button({ glyph = "copy", variant = "outline", controlSize = "sm", tooltip = "Copy the status text",
+        onClick = function() copyStatus(statusText[scope .. ":" .. u.name] or "", path) end }))
       if path ~= "" then
         table.insert(buttons, ui.button({ text = "Open folder", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function() openFolder(path) end }))
       end
@@ -333,6 +367,9 @@ return function(render, terminal, flags)
           btn(isRunning(u) and "Stop" or "Start", isRunning(u) and "player-stop" or "player-play", isRunning(u) and "stop" or "start")
           btn("Enable", "toggle-right", "enable", "--now")
           btn("Disable", "toggle-left", "disable", "--now")
+          table.insert(buttons, ui.button({ text = "Repair", glyph = "tool", variant = "outline", controlSize = "sm",
+            tooltip = "daemon-reload, reset-failed, enable --now, status: asks first",
+            onClick = function() terminal("sh", "-c", REPAIR_TIMER, "sh", u.name) end }))
         else
           if u.active == "failed" then
             btn("Reset failed", "eraser", "reset-failed")
