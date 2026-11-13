@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Snap windows to a 3x3 area with `W-KP_1` … `W-KP_9` (press again to restore); `W-drag` snaps to the quarter under the pointer.
 - Show the logo, title and hotkey in grey at the top of every panel; the hotkey is read from `rc.xml`, and pinned windows show their pinned hotkey.
 - Add a *Random pictures* setting to the Polaroids widget: random pictures from the wallpaper folder instead of the previous wallpapers.
 - Update the bar launcher logo when the theme colour or logo style changes (`mb-logo-refresh`).
