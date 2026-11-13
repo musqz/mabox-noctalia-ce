@@ -171,6 +171,14 @@ migrate_17() {
     printf '\n[theme.templates.user.mabox-logo-ce]\ninput_path = "~/.config/noctalia/templates/mabox-logo-ce.svg"\noutput_path = "~/.local/share/mabox-noctalia-ce/mabox-logo-ce.svg"\n' >> "$f"
 }
 
+# W-A-a toggles the wallpaper slideshow; a key the user already bound stays as it is.
+migrate_18() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="W-A-a"' "$f" || sed -i 's#</keyboard>#    <keybind key="W-A-a"><action name="Execute" command="mb-slideshow"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

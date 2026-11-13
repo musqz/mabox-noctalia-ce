@@ -23,6 +23,7 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `W-l` | lock screen |
 | `W-=` | wallpaper panel |
 | `C-A-a` | random wallpaper |
+| `W-A-a` | wallpaper slideshow on/off |
 | `W-S-c` | caffeine (no idle) |
 | `W-A-d` | show or hide desktop widgets |
 | `W-t` | terminal |

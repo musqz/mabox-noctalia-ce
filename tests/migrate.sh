@@ -66,4 +66,10 @@ migrate; migrate
 [[ $(count 'key="W-y"') == 1 ]] || { echo "FAIL migrate_15: expected one W-y bind"; exit 1; }
 valid || { echo "FAIL migrate_15: rc.xml is no longer valid"; exit 1; }
 
+# migrate_18: the slideshow key is added once.
+grep -v -e 'key="W-A-a"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(count 'key="W-A-a"') == 1 ]] || { echo "FAIL migrate_18: expected one W-A-a bind"; exit 1; }
+valid || { echo "FAIL migrate_18: rc.xml is no longer valid"; exit 1; }
+
 echo ok
