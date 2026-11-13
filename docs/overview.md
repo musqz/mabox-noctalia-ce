@@ -93,7 +93,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mpv-play-stream` | play a copied URL in mpv | `C-S-1` |
 | `mb-wallpaper-dir` | set the Noctalia wallpaper folder | file manager action "Set wallpaper dir" |
 | `brightness-primary` | brightness up/down on the main monitor (`BRIGHTNESS_OUTPUT`) | brightness keys |
-| `q-term-toggle` | show/hide the quake terminal | keybind in `rc.xml` |
+| `q-term-toggle [right\|left]` | show/hide a quake terminal, right half or left half | keybinds `F12`, `C-grave` in `rc.xml` |
 | `screenrec-toggle` | start/stop recording with `wl-screenrec`; options `-o` output, `-f` fps, `-c` mp4/mkv, `-a` none/system/mic | bar button, root menu, `rc.xml` |
 | `mb-shots-interval` | start/stop screenshots of one monitor or an area every N seconds | run by hand |
 | `mb-screenshot-menu` | root-menu list of screenshot delays (3, 5, 10, 30 s) | root menu, Screenshot |

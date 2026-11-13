@@ -197,6 +197,17 @@ migrate_20() {
     sed -i -E 's#^(output_path = "~/\.local/share/mabox-noctalia-ce/mabox-logo[^"]*\.svg")$#\1\npost_hook = "mb-logo-refresh"#' "$f"
 }
 
+# Two quake terminals side by side; a q-term rule the user resized keeps its size.
+migrate_21() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q '</windowRules>' "$f" && grep -q "</keyboard>" "$f" || return 0
+    sed -zEi 's#(<windowRule title="q-term">\s*<action name="SetDecorations" decorations="none"/>\s*)<action name="ResizeTo" width="2545" height="700"/>(\s*)<action name="MoveTo" x="10" y="45"/>#\1<action name="ResizeTo" width="1265" height="690"/>\2<action name="MoveTo" x="1285" y="60"/>#' "$f"
+    sed -i 's#<windowRule title="q-term">#<windowRule title="q-term-right">#' "$f"
+    grep -q 'title="q-term-left"' "$f" || sed -i 's#</windowRules>#    <windowRule title="q-term-left">\n      <action name="SetDecorations" decorations="none"/>\n      <action name="ResizeTo" width="1265" height="690"/>\n      <action name="MoveTo" x="10" y="60"/>\n    </windowRule>\n  </windowRules>#' "$f"
+    grep -q 'key="C-grave"' "$f" || sed -i 's#</keyboard>#    <keybind key="C-grave"><action name="Execute" command="q-term-toggle left"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
