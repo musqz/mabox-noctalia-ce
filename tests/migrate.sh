@@ -72,4 +72,13 @@ migrate; migrate
 [[ $(count 'key="W-A-a"') == 1 ]] || { echo "FAIL migrate_18: expected one W-A-a bind"; exit 1; }
 valid || { echo "FAIL migrate_18: rc.xml is no longer valid"; exit 1; }
 
+# migrate_19: the wallpaper right-click is added once; a user-edited block stays.
+mkdir -p "$conf/noctalia"
+printf '[widget.workspaces]\n\n[widget.wallpaper]\ncapsule = false\n' > "$conf/noctalia/config.toml"
+migrate; migrate
+[[ $(grep -c 'wallpaper-dirs:dirs' "$conf/noctalia/config.toml") == 1 ]] || { echo "FAIL migrate_19: expected one right-click action"; exit 1; }
+printf '[widget.wallpaper]\ncapsule = false\n\n[widget.wallpaper.actions]\nright = "mine"\n' > "$conf/noctalia/config.toml"
+migrate
+[[ $(grep -c 'mine' "$conf/noctalia/config.toml") == 1 && $(grep -c 'wallpaper-dirs' "$conf/noctalia/config.toml") == 0 ]] || { echo "FAIL migrate_19: overwrote the user's action"; exit 1; }
+
 echo ok

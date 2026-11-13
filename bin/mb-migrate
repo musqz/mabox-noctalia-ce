@@ -179,6 +179,17 @@ migrate_18() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# Right-click on the wallpaper widget opens the wallpaper folders panel; a file that already has the actions block stays.
+migrate_19() {
+    local f
+    for f in "${files[@]}"; do
+        [[ -f $f ]] || continue
+        grep -q '^[[:space:]]*\[widget\.wallpaper\]' "$f" || continue
+        grep -q '^[[:space:]]*\[widget\.wallpaper\.actions\]' "$f" && continue
+        printf '\n[widget.wallpaper.actions]\nright = "exec noctalia msg panel-open mabox/wallpaper-dirs:dirs"\n' >> "$f"
+    done
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
