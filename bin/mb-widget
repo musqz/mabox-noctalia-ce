@@ -14,7 +14,7 @@ esac
 
 # "type = 'mabox/info:info'" lines are read with the id of the section above them.
 mapfile -t rows < <(noctalia msg config-get desktop_widgets.widget | awk '
-    /^\[desktop-widget-[0-9]+\]/ { id = substr($1, 2, length($1) - 2); en = "true" }
+    /^\[desktop-widget-[^].]+\]/ { id = substr($1, 2, length($1) - 2); en = "true" }
     /^enabled = / { en = $3 }
     /^type = / { t = $3; gsub(/\047/, "", t); sub(/^mabox\//, "", t); print id, t, en }')
 
