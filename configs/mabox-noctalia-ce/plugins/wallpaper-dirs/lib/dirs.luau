@@ -66,4 +66,17 @@ function M.setInterval(minutes, cb)
   end)
 end
 
+-- config-get prints strings single-quoted and booleans bare.
+function M.getAuto(key, cb)
+  noctalia.runAsync({ "noctalia", "msg", "config-get", "wallpaper.automation." .. key }, function(r)
+    cb(r.exitCode == 0 and string.match(r.stdout or "", "^%s*'?([%w_]+)'?%s*$") or nil)
+  end)
+end
+
+function M.setAuto(key, value, cb)
+  noctalia.runAsync({ "noctalia", "msg", "config-set", "wallpaper.automation." .. key, value }, function(r)
+    cb(r.exitCode == 0)
+  end)
+end
+
 return M
