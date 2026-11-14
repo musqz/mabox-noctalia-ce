@@ -45,10 +45,11 @@ end
 
 -- setsid: runAsync ends a long command, which closed the file dialog (same as the Logo picker).
 local PICK = [[p=$(yad --file --center --width=1000 --height=650 --title="Lock screen wallpaper" --file-filter="Images | *.jpg *.jpeg *.png *.webp" --filename="$HOME/Pictures/")
+p=$(printf %s "$p" | tr -d "'|")
 if [ -n "$p" ]; then noctalia msg config-set lockscreen.wallpaper "'$p'" >/dev/null || notify-send -a Configs "Lock screen" "Could not use that file"; fi]]
 
 local function waitPicker(render)
-  noctalia.runAsync({ "sh", "-c", "sleep 2; pgrep -f 'Lock screen wallpaper' >/dev/null && echo busy" }, function(r)
+  noctalia.runAsync({ "sh", "-c", "sleep 2; pgrep -f 'Lock screen wallpape[r]' >/dev/null && echo busy" }, function(r)
     if string.find(r.stdout or "", "busy", 1, true) then
       waitPicker(render)
     else

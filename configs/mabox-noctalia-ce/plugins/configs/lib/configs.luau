@@ -189,6 +189,15 @@ local expanded = {}
 local newName = ""
 local newPath = ""
 local render
+-- The pinned window and the dropdown render separately: hovering the card renders it again from the state file.
+local lastSync = 0
+local function sync(state)
+  if state ~= "true" or os.time() - lastSync < 1 then
+    return
+  end
+  lastSync = os.time()
+  render()
+end
 local refresh
 local row = 0
 
@@ -1352,16 +1361,6 @@ local function handleKey(chord)
   elseif kbd.key(chord) == "moved" then
     render()
   end
-end
-
--- The pinned window and the dropdown render separately: hovering the card renders it again from the state file.
-local lastSync = 0
-local function sync(state)
-  if state ~= "true" or os.time() - lastSync < 1 then
-    return
-  end
-  lastSync = os.time()
-  render()
 end
 
 local function start()
