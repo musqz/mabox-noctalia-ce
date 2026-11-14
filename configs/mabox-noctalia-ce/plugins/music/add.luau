@@ -1,83 +1,20 @@
 --!nonstrict
 -- Add a track to the mb-music CSV: URL from the clipboard, title from yt-dlp, category kept between uses.
 
+local csv = require("./lib/csv.luau")
+
 local DIR = noctalia.getenv("HOME") .. "/.config/mabox/mb-music"
-local CSV = DIR .. "/yt_music_list.csv"
 local LAST = DIR .. "/last_category"
 local NEW = "+ New category"
 
 local cats, catIndex = {}, 1
 local url, artist, title, newName, status = "", "", "", "", ""
 local nonce, busy, validated = 0, false, nil
+local saving, loaded = false, false
 local INVALID = "Not a valid stream URL, try again"
 
 local function trim(s)
   return noctalia.string.trim(s or "")
-end
-
-local function loadCategories()
-  cats = {}
-  local cur
-  for line in string.gmatch(noctalia.readFile(CSV) or "", "[^\r\n]+") do
-    local name, u = string.match(line, "^(.*),([^,]*)$")
-    if name then
-      u = trim(u)
-      if u == "-" then
-        name = trim((string.gsub(name, "^[^%w]+", "")))
-        if string.upper(name) == "END" then
-          cur = nil
-        else
-          cur = { name = name, header = line, urls = {} }
-          table.insert(cats, cur)
-        end
-      elseif cur then
-        cur.urls[u] = true
-      end
-    end
-  end
-end
-
-local function csvLines()
-  local lines = {}
-  for l in string.gmatch((noctalia.readFile(CSV) or "") .. "\n", "(.-)\n") do
-    table.insert(lines, l)
-  end
-  if lines[#lines] == "" then
-    table.remove(lines)
-  end
-  return lines
-end
-
--- Entry goes after the last track of the category; a new category is appended at the end.
-local function insert(cat, name, entry)
-  local lines = csvLines()
-  if cat == nil then
-    table.insert(lines, "\u{F0EA2} " .. name .. ",-")
-    table.insert(lines, entry)
-  else
-    local first, stop = nil, #lines + 1
-    for i, l in lines do
-      if first == nil then
-        if l == cat.header then
-          first = i
-        end
-      elseif string.sub(l, -2) == ",-" then
-        stop = i
-        break
-      end
-    end
-    if first == nil then
-      return false
-    end
-    local at = stop
-    while at - 1 > first and lines[at - 1] == "" do
-      at = at - 1
-    end
-    table.insert(lines, at, entry)
-  end
-  noctalia.mkdirAll(DIR)
-  noctalia.writeFile(CSV, table.concat(lines, "\n") .. "\n")
-  return true
 end
 
 local function saveLast(name)
@@ -131,6 +68,9 @@ local function fetchTitle(force, onValid)
 end
 
 local function add()
+  if saving or not loaded then
+    return
+  end
   local cat = cats[catIndex]
   local name = cat and cat.name or trim(newName)
   if cat == nil then
@@ -147,18 +87,25 @@ local function add()
     status = "Title is required"
   elseif name == "" then
     status = "Enter a name for the new category"
-  elseif cat and cat.urls[string.gsub(url, ",", "%%2C")] then
+  elseif cat and cat.urls[(string.gsub(url, ",", "%%2C"))] then
     status = "Already in " .. name
   else
     local t = string.gsub(trim(title), ",", " ")
     local a = string.gsub(trim(artist), ",", " ")
-    if insert(cat, name, (a ~= "" and a .. " - " or "") .. t .. "," .. string.gsub(url, ",", "%%2C")) then
-      saveLast(name)
-      noctalia.notify("Music", "Added " .. t .. " to " .. name)
-      panel.close()
-      return
-    end
-    status = "Could not write the playlist"
+    local entry = (a ~= "" and a .. " - " or "") .. t .. "," .. (string.gsub(url, ",", "%%2C"))
+    saving = true
+    csv.add(cat and cat.header or "", name, entry, function(ok, code)
+      saving = false
+      if ok then
+        saveLast(name)
+        noctalia.notify("Music", "Added " .. t .. " to " .. name)
+        panel.close()
+        return
+      end
+      status = code == 1 and "Category not found, reopen the panel" or "Could not write the playlist"
+      render()
+    end)
+    return
   end
   render()
 end
@@ -233,22 +180,28 @@ render = function()
 end
 
 function onOpen()
-  loadCategories()
-  local last = trim(noctalia.readFile(LAST) or "")
-  catIndex = #cats + 1
-  for i, c in cats do
-    if c.name == last then
-      catIndex = i
-    end
-  end
-  if #cats > 0 and catIndex > #cats then
-    catIndex = 1
-  end
+  cats, catIndex, saving, loaded = {}, 1, false, false
   local clip = trim(noctalia.clipboardText() or "")
   url = string.match(clip, "^https?://%S+$") and clip or ""
   artist, title, newName, status, validated = "", "", "", "", nil
   nonce = nonce + 1
   render()
+  csv.list(function(list)
+    if not list then
+      status = "Could not read the playlist"
+      render()
+      return
+    end
+    cats, loaded = list, true
+    local last = trim(noctalia.readFile(LAST) or "")
+    catIndex = 1
+    for i, c in cats do
+      if c.name == last then
+        catIndex = i
+      end
+    end
+    render()
+  end)
   if url ~= "" then
     fetchTitle()
   end
