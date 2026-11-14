@@ -13,6 +13,7 @@ local agent = "" -- "" = all agents
 local tab = "sessions" -- sessions | new
 local selected = nil
 local newAgent = nil
+local showSettings = false
 local searchNonce = 0
 local loadSeq = 0
 
@@ -240,6 +241,27 @@ local function newView()
   })
 end
 
+local function setTerminal(name)
+  if data then
+    data.terminal = name == "auto" and "" or name
+  end
+  render()
+  noctalia.runAsync({ "mb-agent-sessions", "--set", "terminal", name })
+end
+
+local function settingsView()
+  local current = data and data.terminal or ""
+  local chips = { chip("Auto", current == "", function() setTerminal("auto") end) }
+  for _, t in ipairs(data and data.terminals or {}) do
+    table.insert(chips, chip(t, current == t, function() setTerminal(t) end))
+  end
+  return ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 6 }, {
+    ui.label({ text = "Terminal", fontSize = 13 }),
+    ui.row({ gap = 4, align = "center" }, chips),
+    ui.label({ text = "Auto uses $TERMINAL, then the first installed one. Reopening a session only focuses its window with foot, kitty and alacritty.", fontSize = 11, color = "on_surface_variant" }),
+  })
+end
+
 function render()
   local agents = data and data.agents or {}
   local chips = { chip("All", agent == "", function() agent = "" render() end) }
@@ -253,6 +275,7 @@ function render()
       ui.label({ text = hotkey("mabox/agents:main"), color = "outline_variant", flexGrow = 1 }),
       chip("Sessions", tab == "sessions", function() tab = "sessions" render() end),
       chip("New session", tab == "new", function() tab = "new" render() end),
+      ui.button({ glyph = "settings", variant = showSettings and "primary" or "ghost", controlSize = "sm", tooltip = "Terminal", onClick = function() showSettings = not showSettings render() end }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = load }),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
@@ -262,6 +285,7 @@ function render()
         onChange = function(t) query = t render() end }),
       tab == "sessions" and ui.row({ gap = 4 }, chips) or ui.box({ width = 0 }),
     }),
+    showSettings and settingsView() or ui.box({ height = 0 }),
     tab == "sessions" and sessionsView() or newView(),
   }))
 end

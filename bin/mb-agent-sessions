@@ -6,6 +6,7 @@ Session formats follow mstio/mst.agent-launchers (MIT).
   mb-agent-sessions --json [QUERY]   installed agents + newest sessions as JSON
   mb-agent-sessions --panel [QUERY]  same with detail fields, 200 rows, plus the project folders
   mb-agent-sessions --set NAME DIR   set a project parent folder (github, aur)
+  mb-agent-sessions --set terminal T   terminal for new windows (foot, kitty, alacritty, terminator, xfce4-terminal, xterm, auto)
   mb-agent-sessions --fav add|remove DIR | pick   favorite folders (pick opens a folder chooser)
   mb-agent-sessions --open KEY       resume a session (claude:ID, codex:ID, agy:ID) or focus its window
   mb-agent-sessions --start AGENT [DIR]   new session in DIR (default $HOME)
@@ -208,40 +209,49 @@ def installed():
 
 CONF = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config"), "mabox", "mb-agent-sessions.conf")
 DIR_DEFAULTS = {"github": "~/Github", "aur": "~/AUR"}
+TERMINALS = ("foot", "kitty", "alacritty", "terminator", "xfce4-terminal", "xterm")
 
 
 def read_conf():
-    out, favs = dict(DIR_DEFAULTS), []
+    out, favs, term = dict(DIR_DEFAULTS), [], ""
     try:
         with open(CONF) as f:
             for line in f:
                 k, _, v = line.strip().partition("=")
                 if k == "fav" and v:
                     favs.append(os.path.expanduser(v))
+                elif k == "terminal" and v in TERMINALS:
+                    term = v
                 elif k in out and v:
                     out[k] = v
     except OSError:
         pass
-    return {k: os.path.expanduser(v) for k, v in out.items()}, favs
+    return {k: os.path.expanduser(v) for k, v in out.items()}, favs, term
 
 
-def write_conf(d, favs):
+def write_conf(d, favs, term=""):
     os.makedirs(os.path.dirname(CONF), exist_ok=True)
     with open(CONF, "w") as f:
-        f.write("".join(f"{k}={v}\n" for k, v in d.items()) + "".join(f"fav={v}\n" for v in favs))
+        f.write("".join(f"{k}={v}\n" for k, v in d.items()) + "".join(f"fav={v}\n" for v in favs)
+                + (f"terminal={term}\n" if term else ""))
 
 
 def set_dir(name, path):
+    d, favs, term = read_conf()
+    if name == "terminal":
+        if path not in TERMINALS + ("auto",):
+            fail("Unknown terminal")
+        write_conf(d, favs, "" if path == "auto" else path)
+        return
     path = os.path.abspath(os.path.expanduser(path))
     if name not in DIR_DEFAULTS or not allowed_dir(path):
         fail("Folder must be an existing folder under your home")
-    d, favs = read_conf()
     d[name] = path
-    write_conf(d, favs)
+    write_conf(d, favs, term)
 
 
 def fav(action, path=None):
-    d, favs = read_conf()
+    d, favs, term = read_conf()
     if action == "pick":
         picker = [["yad", "--file", "--directory", "--title=Favorite folder", "--filename=" + HOME + "/"],
                   ["zenity", "--file-selection", "--directory", "--title=Favorite folder", "--filename=" + HOME + "/"]]
@@ -264,12 +274,12 @@ def fav(action, path=None):
         favs = [f for f in favs if f != path]
     else:
         fail("Unknown favorite action")
-    write_conf(d, favs)
+    write_conf(d, favs, term)
 
 
 def projects(rows):
     """[(dir, section)]: favorites, then git repos one level below the GitHub and AUR folders, then folders of earlier sessions."""
-    d, favs = read_conf()
+    d, favs, _ = read_conf()
     seen, out = set(), []
     cand = [(f, "fav") for f in favs]
     for name in ("github", "aur"):
@@ -299,6 +309,9 @@ def cmd_json(query, panel=False):
         if len(rows) == (200 if panel else LIMIT):
             break
     out = {"agents": have, "sessions": rows}
+    if panel:
+        out["terminals"] = [t for t in TERMINALS if shutil.which(t)]
+        out["terminal"] = read_conf()[2]
     if panel or q:
         found = [{"dir": d, "text": short_dir(d), "section": sec} for d, sec in projects(sessions) if q in short_dir(d).lower()]
         out["projects"] = found[:200 if panel else 4]
@@ -321,8 +334,8 @@ def focus(app):
 
 
 def terminal(app):
-    chosen = os.environ.get("TERMINAL", "").split()[:1]
-    for t in chosen + ["foot", "kitty", "alacritty", "terminator", "xfce4-terminal", "xterm"]:
+    chosen = [t for t in (read_conf()[2], *os.environ.get("TERMINAL", "").split()[:1]) if t]
+    for t in chosen + list(TERMINALS):
         if not shutil.which(t):
             continue
         name = os.path.basename(t)
