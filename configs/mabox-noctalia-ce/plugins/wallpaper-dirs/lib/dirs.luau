@@ -79,4 +79,17 @@ function M.setAuto(key, value, cb)
   end)
 end
 
+-- Generic wallpaper.* keys (transition settings).
+function M.get(key, cb)
+  noctalia.runAsync({ "noctalia", "msg", "config-get", "wallpaper." .. key }, function(r)
+    cb(r.exitCode == 0 and noctalia.string.trim(r.stdout or "") or nil)
+  end)
+end
+
+function M.set(key, value, cb)
+  noctalia.runAsync({ "noctalia", "msg", "config-set", "wallpaper." .. key, value }, function(r)
+    cb(r.exitCode == 0)
+  end)
+end
+
 return M
