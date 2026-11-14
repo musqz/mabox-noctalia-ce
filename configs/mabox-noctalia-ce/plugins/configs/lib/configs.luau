@@ -180,6 +180,8 @@ local confirmRemove = {}
 local armCount = 0
 local plugins = {}
 local failed = {}
+-- Plugins with a pinned window; keep in step with `plugins` in bin/mb-pinned.
+local PINNABLE = { colors = true, notes = true, status = true, configs = true, capture = true, places = true, crypto = true }
 local stopped = {}
 local expanded = {}
 local newName = ""
@@ -828,6 +830,10 @@ render = function()
           for _, p in ipairs(panels[id] or {}) do
             table.insert(cmds, { "toggle-" .. p, "noctalia msg panel-toggle " .. id .. ":" .. p, "Toggle the " .. p .. " panel" })
           end
+        end
+        local short = string.match(id, "^mabox/(.+)$")
+        if not stopped[id] and short and PINNABLE[short] then
+          table.insert(cmds, { "pinned", "mb-pinned " .. short, "Toggle the pinned window" })
         end
         for _, c in ipairs(cmds) do
           row += 1
