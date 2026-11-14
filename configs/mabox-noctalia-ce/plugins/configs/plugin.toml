@@ -41,3 +41,15 @@ width = 330
 margins = { top = 10, bottom = 10, right = 10 }
 keyboard = "on_demand"
 output = "focused"
+
+[[service]]
+id = "blank"
+entry = "blank.luau"
+
+[[layer]]
+id = "cover"
+entry = "cover.luau"
+layer = "overlay"
+anchors = ["left", "right", "top", "bottom"]
+keyboard = "none"
+output = "all"
