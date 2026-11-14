@@ -383,12 +383,13 @@ render = function()
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }))
   end
+  loadLayout()
   local byId = placeRows()
   byId.drives = driveCard()
   byId.recent = recentCard()
   local cards = {}
   for i, id in ipairs(order) do
-    if editing then
+    if editing and byId[id] then
       table.insert(cards, ui.row({ key = "ed-" .. id, gap = 4, align = "center" }, {
         ui.label({ text = TITLES[id], color = hidden[id] and "outline_variant" or "on_surface", flexGrow = 1 }),
         ui.button({ key = "up-" .. id, glyph = "arrow-up", variant = "ghost", controlSize = "sm", enabled = i > 1, tooltip = "Move up", onClick = function() moveCard(i, -1) end }),
