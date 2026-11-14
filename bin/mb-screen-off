@@ -1,42 +1,43 @@
 #!/usr/bin/env bash
-# Turn the screens off (idle) and keep them off when a monitor re-announces itself (HPD pulse).
-#   mb-screen-off   screens off + guard
-#   mb-screen-on    screens on, stop the guard
-# Noctalia: idle behavior command = mb-screen-off, resume_command = mb-screen-on.
+# Idle screen off through the monitors' backlight (DDC/CI) instead of DPMS: the video signal stays up,
+# so the monitors do not scan for a signal, show "power save" and re-announce themselves.
+# Monitors without DDC/CI fall back to DPMS.
+#   mb-screen-off   remember the brightness of every monitor, set it to 0
+#   mb-screen-on    restore the brightness
+# Noctalia idle behavior: command = mb-screen-off, resume_command = mb-screen-on.
 set -u
 
-pidfile=${XDG_RUNTIME_DIR:-/tmp}/mb-screen-guard.pid
-tries=5
-
-stop_guard() {
-    [[ -f $pidfile ]] && kill -- "-$(<"$pidfile")" 2>/dev/null
-    rm -f "$pidfile"
-}
+dir=${XDG_RUNTIME_DIR:-/tmp}/mb-screen
+mkdir -p "$dir"
+exec 9> "$dir/lock"
+flock 9
 
 case ${0##*/} in
     mb-screen-on)
-        stop_guard
-        exec wlopm --on '*' ;;
+        for f in "$dir"/bus-*; do
+            [[ -f $f ]] || continue
+            b=${f##*/bus-}
+            ( ddcutil --bus "$b" setvcp 10 "$(<"$f")" >/dev/null 2>&1 && rm -f "$f" ) &
+        done
+        wait
+        rm -f "$dir/dpms"
+        wlopm --on '*' 2>/dev/null ;;
+    *)
+        # already off: keep the stored brightness
+        compgen -G "$dir/bus-*" > /dev/null && exit 0
+        [[ -f $dir/dpms ]] && exit 0
+        for b in $(ddcutil detect --brief 2>/dev/null | sed -n 's|.*I2C bus: */dev/i2c-||p'); do
+            (
+                v=$(ddcutil --bus "$b" getvcp 10 --brief 2>/dev/null | awk '{print $4}')
+                [[ $v =~ ^[0-9]+$ ]] || exit 0
+                ((v > 0)) || v=50
+                echo "$v" > "$dir/bus-$b"
+                ddcutil --bus "$b" setvcp 10 0 >/dev/null 2>&1
+            ) &
+        done
+        wait
+        if ! compgen -G "$dir/bus-*" > /dev/null; then
+            touch "$dir/dpms"
+            wlopm --off '*'
+        fi ;;
 esac
-
-stop_guard
-wlopm --off '*'
-
-# a hotplug event while idle means the screens were woken without input
-guard() {
-    local n=0 l last=0
-    udevadm monitor --udev --subsystem-match=drm --property | while read -r l; do
-        [[ $l == HOTPLUG=1 ]] || continue
-        # events caused by our own wlopm call do not count
-        ((SECONDS - last < 4)) && continue
-        ((n++ >= tries)) && break
-        sleep 1
-        wlopm --off '*'
-        last=$SECONDS
-    done
-    rm -f "$pidfile"
-}
-export tries pidfile
-export -f guard
-setsid bash -c guard > /dev/null 2>&1 &
-echo "$!" > "$pidfile"
