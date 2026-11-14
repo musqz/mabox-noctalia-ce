@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Lock the Recolor panel while a job runs: only *Stop* works until it finishes.
+- Show Trash, a Drives card (USB and `/run/media` partitions; click mounts and opens, eject unmounts) and a separate Bookmarks card in the Places panel.
 - Scroll the folder list in the Wallpaper folders panel: it has a fixed height and a scrollbar.
 - Recolor (beta, still being tested and tuned): recolor images from the Recolor panel (root menu → Tools, `/mb recolor`): pick an image or folder, palette, colors, look (Soft, Hard, Smooth) and output folder; `mb-recolor -m smooth` gives flat areas with clean edges.
 - Show three previews (Soft, Hard, Smooth) and the palette colors in the Recolor panel; *Another* previews a random image from a folder; avif images are accepted.
