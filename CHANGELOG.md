@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.4.9
 - Set the screens-off and lock times in the Configs panel (Power card); *Screens off by* Dim (brightness and contrast to 0 over DDC/CI), Black layer or Both; `mb-screen-off` and `mb-screen-on` do the work and fall back to DPMS without DDC/CI.
 - Set background, wallpaper (file picker), blur, tint and transition of the lock screen in the Configs panel (Lockscreen card).
 - Show the same Power and Lockscreen values in the dropdown and the pinned Configs window.
