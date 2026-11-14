@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Set the wallpaper transition in the Wallpaper folders panel (Transition card, collapsible): effects, duration, edge smoothness, animate on startup, same effect on all monitors.
+- Hover a folder in the Wallpaper folders panel to see a random image from it; the full path shows below the list.
 - Show `mb-pinned <plugin>` with a copy button in the Configs panel for plugins that have a pinned window.
 - Lock the Recolor panel while a job runs: only *Stop* works until it finishes.
 - Show Trash, a Drives card (USB and `/run/media` partitions; click mounts and opens, eject unmounts) and a separate Bookmarks card in the Places panel.
