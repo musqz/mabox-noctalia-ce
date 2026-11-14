@@ -26,6 +26,12 @@ local size = 10
 local query = ""
 local render
 
+local ORDER = { "places", "bookmarks", "drives", "recent" }
+local TITLES = { places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
+local order = { table.unpack(ORDER) }
+local hidden = {}
+local editing = false
+
 local function unescape(s)
   s = string.gsub(s, "%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
   return s
@@ -49,6 +55,53 @@ local function setSize(n)
   noctalia.mkdirAll(noctalia.pluginDataDir())
   noctalia.writeFile(sizeFile(), n .. "\n")
   render()
+end
+
+local function layoutFile()
+  return noctalia.pluginDataDir() .. "/layout"
+end
+
+-- One id per line in order; a leading "!" marks a hidden card.
+local function loadLayout()
+  order, hidden = {}, {}
+  local seen = {}
+  for l in string.gmatch(noctalia.readFile(layoutFile()) or "", "[^\n]+") do
+    local hide, id = string.match(l, "^(!?)(%a+)$")
+    if id and TITLES[id] and not seen[id] then
+      seen[id] = true
+      table.insert(order, id)
+      hidden[id] = hide == "!" or nil
+    end
+  end
+  for _, id in ipairs(ORDER) do
+    if not seen[id] then
+      table.insert(order, id)
+    end
+  end
+end
+
+local function saveLayout()
+  local out = {}
+  for _, id in ipairs(order) do
+    table.insert(out, (hidden[id] and "!" or "") .. id)
+  end
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.writeFile(layoutFile(), table.concat(out, "\n") .. "\n")
+  render()
+end
+
+local function moveCard(i, d)
+  local j = i + d
+  if j < 1 or j > #order then
+    return
+  end
+  order[i], order[j] = order[j], order[i]
+  saveLayout()
+end
+
+local function toggleCard(id)
+  hidden[id] = (not hidden[id]) or nil
+  saveLayout()
 end
 
 local function loadPlaces()
@@ -208,10 +261,10 @@ local function placeRows()
       onRightClick = string.find(p.open, "^/") and function() copyPath({ path = p.open }) end or nil,
     }))
   end
-  local cards = { card("places", std) }
+  local cards = { places = card("places", std) }
   if #marks > 0 then
     table.insert(marks, 1, ui.label({ text = "Bookmarks", color = "on_surface_variant" }))
-    table.insert(cards, card("bookmarks", marks))
+    cards.bookmarks = card("bookmarks", marks)
   end
   return cards
 end
@@ -289,6 +342,10 @@ end
 
 render = function()
   local head
+  local editButton = ui.button({ key = "edit", glyph = "adjustments", variant = editing and "primary" or "ghost", controlSize = "sm", tooltip = "Show, hide and move the cards", onClick = function()
+    editing = not editing
+    render()
+  end })
   if pinned then
     head = {
       ui.row({ gap = 8, align = "center" }, {
@@ -298,6 +355,7 @@ render = function()
       }),
       ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
+        editButton,
         ui.spacer({ flexGrow = 1 }),
         pinSide.dockButton("places", pinned, render),
         ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("places", pinned) end }),
@@ -315,6 +373,7 @@ render = function()
       searchRow(),
     }
     table.insert(head, 2, ui.row({ gap = 6, align = "center" }, {
+      editButton,
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
       ui.button({ glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = function()
@@ -324,17 +383,30 @@ render = function()
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }))
   end
-  local cards = placeRows()
-  local dc = driveCard()
-  if dc then
-    table.insert(cards, dc)
+  loadLayout()
+  local byId = placeRows()
+  byId.drives = driveCard()
+  byId.recent = recentCard()
+  local cards = {}
+  for i, id in ipairs(order) do
+    if editing and byId[id] then
+      table.insert(cards, ui.row({ key = "ed-" .. id, gap = 4, align = "center" }, {
+        ui.label({ text = TITLES[id], color = hidden[id] and "outline_variant" or "on_surface", flexGrow = 1 }),
+        ui.button({ key = "up-" .. id, glyph = "arrow-up", variant = "ghost", controlSize = "sm", enabled = i > 1, tooltip = "Move up", onClick = function() moveCard(i, -1) end }),
+        ui.button({ key = "dn-" .. id, glyph = "arrow-down", variant = "ghost", controlSize = "sm", enabled = i < #order, tooltip = "Move down", onClick = function() moveCard(i, 1) end }),
+        ui.button({ key = "ey-" .. id, glyph = hidden[id] and "eye-off" or "eye", variant = "ghost", controlSize = "sm", tooltip = hidden[id] and "Show" or "Hide", onClick = function() toggleCard(id) end }),
+      }))
+    elseif byId[id] and not hidden[id] then
+      table.insert(cards, byId[id])
+    end
   end
-  table.insert(cards, recentCard())
   table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards))
   pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 712 or nil }, head))
 end
 
 local function open()
+  editing = false
+  loadLayout()
   loadSize()
   reload()
 end
