@@ -226,6 +226,17 @@ migrate_23() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# eq.conf gets a 40 Hz high-pass and Q 1.4 on the bands; the user's startup gains are carried over (mb-eq save adds the headroom).
+migrate_24() {
+    local src=/usr/share/mabox-noctalia-ce/pipewire/eq.conf dst=${XDG_CONFIG_HOME:-$HOME/.config}/pipewire/pipewire.conf.d/eq.conf
+    command -v mb-eq >/dev/null && [[ -f $src && -f $dst ]] && grep -q 'name = hpf' "$src" && ! grep -q 'name = hpf' "$dst" || return 0
+    local gains n
+    gains=$(for n in preamp eq1 eq2 eq3 eq4 eq5 eq6 eq7 eq8 eq9 eq10; do sed -n -E "s/.*name = $n .*\"Gain\" = (-?[0-9.]+).*/\1/p" "$dst"; done)
+    cp -f "$dst" "$dst.old"
+    install -Dm644 "$src" "$dst"
+    [[ $(wc -w <<<"$gains") == 11 ]] && mb-eq save $gains
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

@@ -15,6 +15,7 @@ local startupSaved = false
 local nameText = ""
 local nameKey = 0
 local previous = nil
+local filePresets = {}
 local running = false
 local dirty = false
 local render
@@ -79,7 +80,7 @@ local function sliderRow(i)
   })
 end
 
-local function presetButtons(list, user)
+local function presetButtons(list, user, tag)
   local btns = {}
   for n, p in ipairs(list) do
     local same = true
@@ -89,7 +90,7 @@ local function presetButtons(list, user)
         break
       end
     end
-    local b = ui.button({ key = (user and "up-" or "bp-") .. n, text = p.name, controlSize = "sm", variant = same and "primary" or "outline",
+    local b = ui.button({ key = (tag or (user and "up" or "bp")) .. "-" .. n, text = p.name, controlSize = "sm", variant = same and "primary" or "outline",
       onClick = function() setGains(p.gains) end })
     if user then
       b = ui.row({ key = "upr-" .. n, gap = 0, align = "center" }, {
@@ -105,8 +106,9 @@ local function presetButtons(list, user)
     table.insert(btns, b)
   end
   local rows = {}
-  for i = 1, #btns, 3 do
-    table.insert(rows, ui.row({ key = (user and "ur-" or "br-") .. i, gap = 6, align = "center" }, { table.unpack(btns, i, math.min(i + 2, #btns)) }))
+  local per = user and 2 or 3
+  for i = 1, #btns, per do
+    table.insert(rows, ui.row({ key = (tag and (tag .. "r") or (user and "ur" or "br")) .. "-" .. i, gap = 6, align = "center" }, { table.unpack(btns, i, math.min(i + per - 1, #btns)) }))
   end
   return rows
 end
@@ -144,17 +146,20 @@ end
 
 local function presetsCard()
   local rows = presetButtons(eq.PRESETS, false)
+  for _, r in ipairs(presetButtons(filePresets, false, "fp")) do
+    table.insert(rows, r)
+  end
   for _, r in ipairs(presetButtons(state.presets, true)) do
     table.insert(rows, r)
   end
-  table.insert(rows, ui.row({ key = "name-row", gap = 6, align = "center" }, {
+  local list = ui.scroll({ key = "plist", height = 372 }, { ui.column({ gap = 8 }, rows) })
+  return ui.column(card("presets"), { list, ui.row({ key = "name-row", gap = 6, align = "center" }, {
     ui.input({ key = "name-" .. nameKey, placeholder = "Preset name", controlSize = "sm", flexGrow = 1, frameVisible = true,
       onChange = function(v) nameText = v end, onSubmit = function(v) nameText = v; savePreset() end }),
     ui.button({ text = "Save", variant = "outline", controlSize = "sm", onClick = savePreset }),
     ui.button({ text = "Revert", variant = "outline", controlSize = "sm", enabled = previous ~= nil, tooltip = "Back to the gains before the last preset",
       onClick = function() setGains(previous) end }),
-  }))
-  return ui.column(card("presets"), rows)
+  }) })
 end
 
 render = function()
@@ -173,8 +178,10 @@ render = function()
     })
   else
     body = ui.column({ gap = 10 }, {
-      bandsCard(),
-      presetsCard(),
+      ui.row({ gap = 10, align = "start" }, {
+        ui.column({ key = "col-bands", flexGrow = 1, minWidth = 400 }, { bandsCard() }),
+        ui.column({ key = "col-presets", width = 310 }, { presetsCard() }),
+      }),
       ui.row({ key = "startup", gap = 6, align = "center" }, {
         ui.button({ text = startupSaved and "✓ Saved as startup values" or "Save as startup values", variant = "outline", controlSize = "sm",
           tooltip = "Write the gains into eq.conf (eq.conf.bak keeps the old file); used at the next PipeWire start",
@@ -207,7 +214,23 @@ render = function()
   }))
 end
 
+-- Presets from the shipped and the user folder: one JSON file each, {"name": ..., "gains": [11 numbers]}.
+local function loadFilePresets()
+  local cmd = [[jq -c 'select((.gains | length) == 11 and (.name | type) == "string") | {name, gains}' /usr/share/mabox-noctalia-ce/eq-presets/*.json "${XDG_CONFIG_HOME:-$HOME/.config}"/mabox-noctalia-ce/eq-presets/*.json 2>/dev/null]]
+  noctalia.runAsync({ "sh", "-c", cmd }, function(result)
+    filePresets = {}
+    for line in string.gmatch(result.stdout or "", "[^\n]+") do
+      local p = noctalia.json.decode(line)
+      if type(p) == "table" then
+        table.insert(filePresets, p)
+      end
+    end
+    render()
+  end)
+end
+
 function onOpen()
+  loadFilePresets()
   state = eq.load()
   startupSaved = false
   checked = false

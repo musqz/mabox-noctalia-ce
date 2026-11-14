@@ -1,0 +1,5 @@
+{
+  "name": "Adam D3V",
+  "gains": [0, 2, 1, 0, 0, 0, -1, 0.5, 0.5, -3, -1],
+  "note": "AutoEq correction for the Adam Audio D3V, fitted to the ten bands (about 0.3 dB RMS). Measurement by Erin's Audio Corner (CC BY-NC-SA 4.0), data on spinorama.org."
+}
