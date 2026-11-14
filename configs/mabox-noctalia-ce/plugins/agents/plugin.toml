@@ -1,0 +1,17 @@
+id = "mabox/agents"
+name = "AI agents"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "robot"
+description = "Start Claude Code, Codex or Agy and resume any earlier session (/ag). Backend: mb-agent-sessions."
+dependencies = ["python3", "wlrctl"]
+tags = ["launcher", "ai"]
+
+[[launcher_provider]]
+id = "finder"
+entry = "finder.luau"
+prefix = "ag"
+glyph = "robot"
+include_in_global_search = false
