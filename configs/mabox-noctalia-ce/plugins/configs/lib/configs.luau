@@ -6,6 +6,7 @@ local pinSide = require("./side.luau")
 local kbd = require("./kbd.luau")
 local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
+local lockscreen = require("./lockscreen.luau")
 
 return function(pinned)
 -- Prints group|name|path|state for every entry whose command (or path) exists.
@@ -1086,6 +1087,29 @@ render = function()
   end
   table.insert(cards, card(pwrRows))
 
+  local lockOpen = expanded["Lockscreen"]
+  row += 1
+  stop("h-lock", 1, function() toggle("Lockscreen") end)
+  local lockRows = {
+    ui.button({
+      key = "h-lock",
+      selected = kbd.sel("h-lock"),
+      text = "Lockscreen",
+      glyph = lockOpen and "chevron-down" or "chevron-right",
+      variant = "outline",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "Background, tint and transition of the lock screen",
+      onClick = function() toggle("Lockscreen") end,
+    }),
+  }
+  if lockOpen then
+    for _, w in ipairs(lockscreen.rows(render)) do
+      table.insert(lockRows, w)
+    end
+  end
+  table.insert(cards, card(lockRows))
+
   local btnOpen = expanded["Bar buttons"]
   row += 1
   stop("h-btn", 1, function() toggle("Bar buttons") end)
@@ -1306,6 +1330,7 @@ local function start()
   refresh()
   loadLogo()
   loadIdle()
+  lockscreen.load(render)
 end
 
 return start, handleKey
