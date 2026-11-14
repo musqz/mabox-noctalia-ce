@@ -4,7 +4,7 @@
 - Recolor images from the Recolor panel (root menu → Tools, `/mb recolor`): pick an image or folder, palette, colors, look (Soft, Hard, Smooth) and output folder; `mb-recolor -m smooth` gives flat areas with clean edges.
 - Show three previews (Soft, Hard, Smooth) and the palette colors in the Recolor panel; *Another* previews a random image from a folder; avif images are accepted.
 - Run Recolor in the background with a notification at the end; the button turns into *Stop* while it runs.
-- Recolor images to a palette with `mb-recolor [-m clut|remap] [-g group] <palette> <files or folder>`; palettes: nord, gruvbox, catppuccin-mocha, dracula, solarized (`mb-recolor --list`); output goes to `~/Pictures/<palette>/<group>/`.
+- Recolor images to a palette with `mb-recolor [-m clut|remap|smooth] [-g group] [-o outdir] <palette> <files or folder>`; palettes: nord, gruvbox, catppuccin-mocha, dracula, solarized (`mb-recolor --list`); output goes to `~/Pictures/<palette>/<group>/`.
 - Open two quake terminals side by side: `F12` right, `C-grave` left (`q-term-toggle [right|left]`).
 - Copy the unit status in the Services tab with the copy button; user timers get a Repair button (daemon-reload, reset-failed, enable --now, status).
 - Fix the Polaroids toggle in the widgets panel: widgets with letters in their id are read correctly.
