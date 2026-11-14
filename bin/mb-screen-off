@@ -21,17 +21,22 @@ esac
 
 stop_guard
 wlopm --off '*'
+
 # a hotplug event while idle means the screens were woken without input
 guard() {
-    local n=0 l
+    local n=0 l last=0
     udevadm monitor --udev --subsystem-match=drm --property | while read -r l; do
         [[ $l == HOTPLUG=1 ]] || continue
+        # events caused by our own wlopm call do not count
+        ((SECONDS - last < 4)) && continue
         ((n++ >= tries)) && break
         sleep 1
         wlopm --off '*'
+        last=$SECONDS
     done
+    rm -f "$pidfile"
 }
-export tries
+export tries pidfile
 export -f guard
 setsid bash -c guard > /dev/null 2>&1 &
 echo "$!" > "$pidfile"

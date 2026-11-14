@@ -224,7 +224,7 @@ local function saveIdle()
     if not n or n < 1 or n > 1440 then
       idle.note = "Enter whole minutes, 1 to 1440"
       render()
-      return
+      return false
     end
     idle[key].min = n
   end
@@ -234,6 +234,7 @@ local function saveIdle()
     idle.note = r.exitCode == 0 and "Saved" or "Could not save (noctalia msg config-set failed)"
     render()
   end)
+  return true
 end
 
 local function stop(id, col, action)
@@ -1068,8 +1069,11 @@ render = function()
         ui.input({ key = "pwin-" .. k .. idle[k].min, value = idle.draft[k] or tostring(idle[k].min), width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes without input", onChange = function(t) idle.draft[k] = t end, onSubmit = saveIdle }),
         ui.label({ text = "min", color = "on_surface_variant" }),
         ui.toggle({ key = "pwt-" .. k, checked = idle[k].on, onChange = function(v)
+          local was = idle[k].on
           idle[k].on = v == true or v == "true"
-          saveIdle()
+          if saveIdle() == false then
+            idle[k].on = was
+          end
         end }),
       }))
     end
