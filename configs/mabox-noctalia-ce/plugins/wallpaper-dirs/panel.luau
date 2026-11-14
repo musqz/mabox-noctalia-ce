@@ -98,11 +98,19 @@ function render()
   kbd.begin()
   kbd.stop("add", 0, 1, addFolder)
   local rows = {}
+  local seen = {}
+  for _, p in ipairs(items) do
+    seen[dirs.name(p)] = (seen[dirs.name(p)] or 0) + 1
+  end
   for i, p in ipairs(items) do
+    local label = dirs.name(p)
+    if seen[label] > 1 then
+      label = (string.match(p, "([^/]+)/[^/]+/*$") or "") .. "/" .. label
+    end
     kbd.stop("p" .. i, i, 1, function() pick(p) end)
     kbd.stop("d" .. i, i, 2, function() remove(i) end)
-    table.insert(rows, ui.row({ key = "r" .. i, gap = 6, align = "center", padding = 4 }, {
-      ui.label({ text = p, flexGrow = 1, maxLines = 1, color = p == current and "primary" or "on_surface" }),
+    table.insert(rows, ui.row({ key = "r" .. i, gap = 6, align = "center", padding = 4, tooltip = p }, {
+      ui.label({ text = label, flexGrow = 1, maxLines = 1, color = p == current and "primary" or "on_surface" }),
       ui.button({ key = "p" .. i, glyph = p == current and "circle-check" or "circle", variant = p == current and "primary" or "ghost", controlSize = "sm", selected = kbd.sel("p" .. i), tooltip = "Select as wallpaper folder", onClick = function() pick(p) end }),
       ui.button({ key = "d" .. i, glyph = "trash", selected = kbd.sel("d" .. i), text = armed == i and "Click again" or nil, variant = armed == i and "destructive" or "ghost", controlSize = "sm", tooltip = "Remove from list", onClick = function() remove(i) end }),
     }))
@@ -135,7 +143,7 @@ function render()
       }),
       ui.row({ gap = 6, align = "center" }, {
         ui.label({ text = "Slideshow every", color = "on_surface_variant" }),
-        ui.input({ key = "mins", value = draft or (minutes and tostring(minutes)) or "", width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes between wallpapers", onChange = function(t) draft = t end, onSubmit = setMinutes }),
+        ui.input({ key = "mins" .. tostring(minutes), value = draft or (minutes and tostring(minutes)) or "", width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes between wallpapers", onChange = function(t) draft = t end, onSubmit = setMinutes }),
         ui.label({ text = "min", color = "on_surface_variant" }),
         ui.button({ key = "savemins", glyph = "device-floppy", text = "Save", variant = "ghost", controlSize = "sm", onClick = setMinutes }),
       }),
