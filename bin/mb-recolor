@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Recolor images to a palette. Usage: mb-recolor [-m clut|remap] [-g GROUP] [-o OUTDIR] PALETTE SRC...
+# SRC is files or a directory. Output goes to ~/Pictures/<palette>/<group>/, never overwriting.
+set -euo pipefail
+
+mode=clut group=all out=
+here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+dirs=("$HOME/.local/share/mabox-noctalia-ce/palettes" /usr/share/mabox-noctalia-ce/palettes "$here/../lists/palettes")
+
+usage() { echo "usage: mb-recolor [-m clut|remap] [-g GROUP] [-o OUTDIR] PALETTE SRC..." >&2
+          echo "       mb-recolor --list" >&2; exit 2; }
+find_pal() { local d; for d in "${dirs[@]}"; do [[ -f $d/$1.pal ]] && { echo "$d/$1.pal"; return 0; }; done; return 1; }
+
+if [[ ${1:-} == --list ]]; then
+    for d in "${dirs[@]}"; do
+        for f in "$d"/*.pal; do
+            [[ -f $f ]] || continue
+            echo "$(basename "$f" .pal): $(cut -d: -f1 "$f" | paste -sd' ')"
+        done
+    done | awk -F: '!seen[$1]++'
+    exit 0
+fi
+
+while getopts m:g:o: opt; do
+    case $opt in
+        m) mode=$OPTARG ;;
+        g) group=$OPTARG ;;
+        o) out=$OPTARG ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+(($# >= 2)) || usage
+[[ $mode == clut || $mode == remap ]] || { echo "unknown mode: $mode" >&2; exit 2; }
+command -v magick >/dev/null || { echo "magick is not installed" >&2; exit 1; }
+
+palette=$1; shift
+[[ $palette != */* ]] || { echo "bad palette name: $palette" >&2; exit 2; }
+file=$(find_pal "$palette") || { echo "unknown palette: $palette (see --list)" >&2; exit 1; }
+line=$(tr -d '\r' <"$file" | awk -F: -v g="$group" '$1==g {print; exit}')
+[[ -n $line ]] || { echo "palette $palette has no group: $group" >&2; exit 1; }
+
+# colours sorted dark to light by luminance
+mapfile -t colors < <(echo "${line#*:}" | tr -s ' ' '\n' | awk 'NF {
+    h=substr($1,2); r=strtonum("0x" substr(h,1,2)); g=strtonum("0x" substr(h,3,2)); b=strtonum("0x" substr(h,5,2))
+    printf "%.2f %s\n", 0.2126*r+0.7152*g+0.0722*b, $1 }' | sort -n | cut -d' ' -f2)
+
+[[ -n $out ]] || out=$HOME/Pictures/$palette/$group
+mkdir -p "$out"
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+args=(); for c in "${colors[@]}"; do args+=("xc:$c"); done
+magick "${args[@]}" +append "$tmp/pal.png"
+
+files=()
+for s in "$@"; do
+    if [[ -d $s ]]; then
+        while IFS= read -r -d '' f; do files+=("$f"); done < <(find "$s" -maxdepth 1 -type f \
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.bmp' \) -print0 | sort -z)
+    elif [[ -f $s ]]; then
+        files+=("$s")
+    else
+        echo "not found: $s" >&2; exit 1
+    fi
+done
+((${#files[@]} > 0)) || { echo "no images found" >&2; exit 1; }
+
+rc=0 ok=1
+for f in "${files[@]}"; do
+    [[ $f == /* ]] || f=./$f
+    base=$(basename "$f"); name=${base%.*}; ext=${base##*.}
+    [[ $base == *.* ]] || { echo "skipped (no extension): $f" >&2; rc=1; continue; }
+    dest=$out/$name.$ext; n=1
+    while [[ -e $dest ]]; do dest=$out/$name-$n.$ext; ((n++)); done
+    if [[ $mode == clut ]]; then
+        magick "$f" -colorspace Gray "$tmp/pal.png" -clut "$dest" || ok=0
+    else
+        magick "$f" +dither -remap "$tmp/pal.png" "$dest" || ok=0
+    fi
+    if ((ok)); then echo "$dest"; else echo "failed: $f" >&2; rm -f "$dest"; rc=1; ok=1; fi
+done
+exit $rc
