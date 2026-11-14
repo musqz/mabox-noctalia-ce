@@ -42,7 +42,7 @@ local function visibleSessions()
   local q = lower(noctalia.string.trim(query))
   local out = {}
   for _, s in ipairs(data and data.sessions or {}) do
-    if (agent == "" or s.agent == agent) and (q == "" or string.find(lower(s.title .. " " .. s.dir .. " " .. (s.first or "") .. " " .. (s.last or "")), q, 1, true)) then
+    if (agent == "" or s.agent == agent) and (q == "" or string.find(lower(s.title .. " " .. s.dir .. " " .. (s.first or "")), q, 1, true)) then
       table.insert(out, s)
     end
   end
@@ -127,7 +127,7 @@ local function detail(s)
     ui.label({ text = meta .. "  ·  " .. os.date("%x %H:%M", s.ts), fontSize = 11, color = "on_surface_variant" }),
     field("Folder", s.dir),
     field("First prompt", s.first),
-    s.last ~= s.first and field("Last prompt", s.last) or ui.box({ height = 0 }),
+    field("Last answer", s.answer),
     ui.row({ gap = 6 }, {
       ui.button({ text = "Resume", variant = "primary", controlSize = "sm", onClick = function() resume(s) end }),
       ui.button({ text = "Copy command", variant = "ghost", controlSize = "sm", onClick = function() copyResume(s) end }),
