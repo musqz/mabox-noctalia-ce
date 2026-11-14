@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Hide the pointer after N idle seconds; any input shows it again.
+#   mb-hide-cursor            start when enabled (autostart)
+#   mb-hide-cursor on [secs]  enable (default: the last value, else 5) and start now
+#   mb-hide-cursor off        disable and stop
+# Sends F20 once per idle period; rc.xml binds F20 to HideCursor. A repeating key
+# would keep resetting the idle timers of Noctalia (screen off, lock). F20 counts
+# as input there too: keep N below the screen-off and lock times.
+set -euo pipefail
+
+conf=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/hide-cursor
+run=${XDG_RUNTIME_DIR:-/tmp}
+flag=$run/mb-hide-cursor.flag
+now() { date +%s%N; }
+
+state=off secs=5
+[[ -f $conf ]] && read -r state secs < "$conf" || true
+
+stop() {
+    pkill -f '[s]wayidle .*mb-hide-cursor.* fire' || true
+    rm -f "$flag"
+}
+
+case ${1:-} in
+fire)
+    # Our own F20 restarts the timer, so the next fire comes secs after ours;
+    # a later one means real input came in between and the pointer is visible again.
+    [[ -e $flag ]] && (($(now) - $(<"$flag") < (secs + 1) * 1000000000)) && exit 0
+    now > "$flag"
+    exec wtype -k F20
+    ;;
+resume)
+    # Our own F20 resumes the idle state within a few ms; ignore that one.
+    [[ -e $flag ]] && (($(now) - $(<"$flag") > 500000000)) && rm -f "$flag"
+    exit 0
+    ;;
+off)
+    mkdir -p "${conf%/*}"
+    echo "off $secs" > "$conf"
+    stop
+    exit 0
+    ;;
+on)
+    secs=${2:-$secs}
+    [[ $secs =~ ^[0-9]+$ && $secs -ge 1 ]] || { echo "mb-hide-cursor: seconds must be a number" >&2; exit 2; }
+    mkdir -p "${conf%/*}"
+    echo "on $secs" > "$conf"
+    stop
+    setsid -f "$0" >/dev/null 2>&1
+    exit 0
+    ;;
+esac
+
+[[ $state == on ]] || exit 0
+self=$(readlink -f "$0")
+stop
+exec swayidle -w timeout "$secs" "'$self' fire" resume "'$self' resume"

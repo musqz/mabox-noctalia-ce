@@ -18,6 +18,7 @@ pkgbase = mabox-noctalia-ce
 	depends = wlr-randr
 	depends = wlopm
 	depends = wtype
+	depends = swayidle
 	depends = wlrctl
 	depends = grim
 	depends = slurp

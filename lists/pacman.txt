@@ -4,6 +4,7 @@ kanshi
 wlr-randr
 wlopm
 wtype
+swayidle
 wlrctl
 grim
 slurp

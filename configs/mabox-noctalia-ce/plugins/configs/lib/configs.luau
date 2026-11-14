@@ -237,8 +237,16 @@ local function setMode(m)
   render()
 end
 
+local function hideFile()
+  return noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce/hide-cursor"
+end
+
 local function loadIdle()
   loadMode()
+  if not idle.hideBusy then
+    local st, sec = string.match(noctalia.readFile(hideFile()) or "", "^(%a+)%s+(%d+)")
+    idle.hide = { on = st == "on", sec = tonumber(sec) or 5 }
+  end
   for key, name in pairs({ screen = "screen_off", lock = "lock" }) do
     local t = toml.section("idle.behavior." .. name)
     idle[key].on = t.enabled == "true"
@@ -249,7 +257,19 @@ local function loadIdle()
   end
 end
 
+local saveHide
+
+local function hideSeconds()
+  local n = tonumber(string.match(noctalia.string.trim(idle.hideDraft), "^%d+$"))
+  return n and n >= 1 and n <= 3600 and n or nil
+end
+
 local function saveIdle()
+  if idle.hideDraft and not hideSeconds() then
+    idle.note = "Enter whole seconds, 1 to 3600"
+    render()
+    return false
+  end
   for key, d in pairs(idle.draft) do
     local n = tonumber(string.match(noctalia.string.trim(d), "^%d+$"))
     if not n or n < 1 or n > 1440 then
@@ -260,9 +280,34 @@ local function saveIdle()
     idle[key].min = n
   end
   idle.draft = {}
+  if idle.hideDraft and saveHide() == false then
+    return false
+  end
   local s, l = idle.screen, idle.lock
   noctalia.runAsync({ "sh", "-c", IDLE_APPLY, "sh", tostring(s.on), tostring(s.min * 60), tostring(l.on), tostring(l.min * 60) }, function(r)
     idle.note = r.exitCode == 0 and "Saved" or "Could not save (noctalia msg config-set failed)"
+    render()
+  end)
+  return true
+end
+
+saveHide = function()
+  local h = idle.hide
+  if idle.hideDraft then
+    local n = hideSeconds()
+    if not n then
+      idle.note = "Enter whole seconds, 1 to 3600"
+      render()
+      return false
+    end
+    h.sec = n
+    idle.hideDraft = nil
+  end
+  local args = h.on and { "mb-hide-cursor", "on", tostring(h.sec) } or { "mb-hide-cursor", "off" }
+  idle.hideBusy = true
+  noctalia.runAsync(args, function(r)
+    idle.hideBusy = false
+    idle.note = r.exitCode == 0 and "Saved" or "Could not save (mb-hide-cursor failed)"
     render()
   end)
   return true
@@ -1111,6 +1156,18 @@ render = function()
         end }),
       }))
     end
+    table.insert(pwrRows, ui.row({ key = "pw-hide", gap = 8, align = "center" }, {
+      ui.label({ text = "Hide pointer", flexGrow = 1 }),
+      ui.input({ key = "pwin-hide" .. idle.hide.sec, value = idle.hideDraft or tostring(idle.hide.sec), width = 64, controlSize = "sm", frameVisible = true, tooltip = "Seconds without input; keep it below the screen-off and lock times", onChange = function(t) idle.hideDraft = t end, onSubmit = saveHide }),
+      ui.label({ text = "sec", color = "on_surface_variant" }),
+      ui.toggle({ key = "pwt-hide", checked = idle.hide.on, onChange = function(v)
+        local was = idle.hide.on
+        idle.hide.on = v == true or v == "true"
+        if saveHide() == false then
+          idle.hide.on = was
+        end
+      end }),
+    }))
     local modes = {}
     for _, m in ipairs(MODES) do
       local on = idle.mode == m[1]

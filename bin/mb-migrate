@@ -208,6 +208,16 @@ migrate_21() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# F20 hides the pointer (mb-hide-cursor, switched on in the Configs panel).
+migrate_22() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    local a=${f%/*}/autostart
+    [[ -f $a ]] && ! grep -q 'mb-hide-cursor' "$a" && { [[ -z $(tail -c1 "$a") ]] || echo >> "$a"; } && echo 'command -v mb-hide-cursor >/dev/null && mb-hide-cursor &' >> "$a"
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="F20"' "$f" || sed -i 's#</keyboard>#    <keybind key="F20"><action name="HideCursor"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
