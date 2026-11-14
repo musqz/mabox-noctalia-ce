@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Set the screens-off and lock times in the Configs panel (Power card); *Screens off by* Dim (brightness and contrast to 0 over DDC/CI), Black layer or Both; `mb-screen-off` and `mb-screen-on` do the work and fall back to DPMS without DDC/CI.
+- Set background, wallpaper (file picker), blur, tint and transition of the lock screen in the Configs panel (Lockscreen card).
+- Show the same Power and Lockscreen values in the dropdown and the pinned Configs window.
 - Set the wallpaper transition in the Wallpaper folders panel (Transition card, collapsible): effects, duration, edge smoothness, animate on startup, same effect on all monitors.
 - Hover a folder in the Wallpaper folders panel to see a random image from it; the full path shows below the list.
 - Show `mb-pinned <plugin>` with a copy button in the Configs panel for plugins that have a pinned window.
