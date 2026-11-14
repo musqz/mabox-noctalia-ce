@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Hide the pointer after some idle seconds: switch and seconds in the Configs panel (Power card, off by default); `mb-hide-cursor on [secs]` and `off`.
 
 ## 0.4.9
 - Set the screens-off and lock times in the Configs panel (Power card); *Screens off by* Dim (brightness and contrast to 0 over DDC/CI), Black layer or Both; `mb-screen-off` and `mb-screen-on` do the work and fall back to DPMS without DDC/CI.
