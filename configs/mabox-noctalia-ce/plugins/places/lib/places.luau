@@ -110,10 +110,10 @@ local function loadDrives()
     for line in string.gmatch(r.stdout or "", "[^\n]+") do
       local d = {}
       for k, v in string.gmatch(line, '(%u+)="([^"]*)"') do
-        d[k] = v
+        d[k] = string.gsub(v, "\\x(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
       end
       local mp = d.MOUNTPOINT or ""
-      if d.TYPE == "part" and (d.FSTYPE or "") ~= "" and d.FSTYPE ~= "swap" and (d.HOTPLUG == "1" or string.find(mp, "^/run/media/")) then
+      if d.TYPE == "part" and (d.FSTYPE or "") ~= "" and not string.find(d.FSTYPE, "^crypto") and not string.find(d.FSTYPE, "_member$") and d.FSTYPE ~= "swap" and (d.HOTPLUG == "1" or string.find(mp, "^/run/media/")) then
         table.insert(drives, { dev = d.NAME, name = d.LABEL ~= "" and d.LABEL or string.match(d.NAME, "[^/]+$"), mount = mp, size = d.SIZE })
       end
     end
@@ -148,6 +148,8 @@ local function openDrive(d)
     local mp = string.match(r.stdout or "", " at (/[^\n]-)%.?%s*$")
     if mp then
       noctalia.runAsync({ "pcmanfm", mp })
+    else
+      noctalia.runAsync({ "notify-send", "-a", "Places", "Mount failed", d.name .. ": " .. noctalia.string.trim(r.stderr or "") })
     end
     loadDrives()
   end)
@@ -155,7 +157,12 @@ local function openDrive(d)
 end
 
 local function unmountDrive(d)
-  noctalia.runAsync({ "udisksctl", "unmount", "-b", d.dev }, function() loadDrives() end)
+  noctalia.runAsync({ "udisksctl", "unmount", "-b", d.dev }, function(r)
+    if r.exitCode ~= 0 then
+      noctalia.runAsync({ "notify-send", "-a", "Places", "Unmount failed", d.name .. ": " .. noctalia.string.trim(r.stderr or "") })
+    end
+    loadDrives()
+  end)
 end
 
 local function openFile(f)
@@ -196,9 +203,9 @@ local function placeRows()
       variant = "ghost",
       contentAlign = "start",
       enabled = p.ok,
-      tooltip = p.ok and (p.open .. "\nClick: open, right click: copy the path") or (p.open .. " is not available"),
+      tooltip = p.ok and (p.open .. "\nClick: open" .. (string.find(p.open, "^/") and ", right click: copy the path" or "")) or (p.open .. " is not available"),
       onClick = function() openFolder(p) end,
-      onRightClick = function() copyPath({ path = p.open }) end,
+      onRightClick = string.find(p.open, "^/") and function() copyPath({ path = p.open }) end or nil,
     }))
   end
   local cards = { card("places", std) }
@@ -226,7 +233,7 @@ local function driveCard()
         tooltip = mounted and (d.mount .. "\nClick: open") or (d.dev .. "\nClick: mount and open"),
         onClick = function() openDrive(d) end,
       }),
-      mounted and ui.button({ glyph = "player-eject", variant = "ghost", controlSize = "sm", tooltip = "Unmount", onClick = function() unmountDrive(d) end }) or ui.spacer({ width = 0 }),
+      mounted and ui.button({ key = "ej" .. i, glyph = "player-eject", variant = "ghost", controlSize = "sm", tooltip = "Unmount", onClick = function() unmountDrive(d) end }) or ui.box({ key = "ej" .. i, height = 0 }),
     }))
   end
   return card("drives", rows)
