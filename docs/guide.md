@@ -111,7 +111,7 @@ Saved folders: `W-A-w`, the bar photo button, the *Wallpaper folders* entry in t
 Open the Configs panel and expand *Power*: set the minutes until the screens turn off and until the screen locks, and switch each on or off.
 
 - The settings are written to the Noctalia idle behaviors `screen_off` and `lock`. Change them here, not in the Noctalia settings.
-- `mb-screen-off` turns the screens off and turns them off again when a monitor wakes them by itself (hotplug signal). Input runs `mb-screen-on`.
+- `mb-screen-off` sets the backlight of every monitor to 0 over DDC/CI (`ddcutil`) instead of cutting the signal; input runs `mb-screen-on` and restores the brightness. Monitors that wake by themselves from a cut signal flicker the power-save icon.
 - The *Lockscreen* card below it sets background, blur, tint and transition of the lock screen.
 
 ## Monitors
