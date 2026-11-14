@@ -255,8 +255,8 @@ colorize_icons = true
 [idle.behavior.screen_off]
 action = "custom"
 timeout = 450
-command = "wlopm --off '*'"
-resume_command = "wlopm --on '*'"
+command = "mb-screen-off"
+resume_command = "mb-screen-on"
 
 [bar.default]
 center = []
