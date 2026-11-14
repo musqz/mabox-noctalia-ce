@@ -18,6 +18,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | Cava panel:<br>_start and stop the transparent cava, bar color, gradient or wallpaper colors, bar width and spacing, framerate, noise reduction_ | root menu → Tools noctalia ce → Cava (start or stop) and Cava settings, `/mb cava` and `/mb cava settings` | `cavactl` (mabox-colorizer) |
 | Crypto panel:<br>_amount in a currency converted to LTC, BTC, ETH, XMR, DOGE or SOL at the latest price, offline address check for Litecoin, Bitcoin and Dogecoin_ | root menu → Tools noctalia ce → Crypto, `/mb crypto`, `noctalia msg panel-toggle mabox/crypto:main`; pin button for a pinned window | `mb-crypto` |
 | Equalizer panel:<br>_preamp and 10 bands on a PipeWire filter-chain sink, presets, on/off, save as startup values_ | root menu → Tools noctalia ce → Equalizer, `/mb equalizer`, `noctalia msg panel-toggle mabox/equalizer:main` | `mb-eq` |
+| Recolor panel:<br>_recolor an image or a folder to Nord, Gruvbox, Catppuccin Mocha, Dracula or Solarized; soft or hard look; `mb-recolor` on the command line_ | root menu → Tools noctalia ce → Recolor, `/mb recolor`, `noctalia msg panel-toggle mabox/recolor:main` | `mb-recolor`, `magick`, `yad` |
 
 ## Desktop widgets
 
