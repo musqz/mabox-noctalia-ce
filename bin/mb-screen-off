@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Turn the screens off (idle) and keep them off when a monitor re-announces itself (HPD pulse).
+#   mb-screen-off   screens off + guard
+#   mb-screen-on    screens on, stop the guard
+# Noctalia: idle behavior command = mb-screen-off, resume_command = mb-screen-on.
+set -u
+
+pidfile=${XDG_RUNTIME_DIR:-/tmp}/mb-screen-guard.pid
+tries=5
+
+stop_guard() {
+    [[ -f $pidfile ]] && kill -- "-$(<"$pidfile")" 2>/dev/null
+    rm -f "$pidfile"
+}
+
+case ${0##*/} in
+    mb-screen-on)
+        stop_guard
+        exec wlopm --on '*' ;;
+esac
+
+stop_guard
+wlopm --off '*'
+
+# a hotplug event while idle means the screens were woken without input
+guard() {
+    local n=0 l last=0
+    udevadm monitor --udev --subsystem-match=drm --property | while read -r l; do
+        [[ $l == HOTPLUG=1 ]] || continue
+        # events caused by our own wlopm call do not count
+        ((SECONDS - last < 4)) && continue
+        ((n++ >= tries)) && break
+        sleep 1
+        wlopm --off '*'
+        last=$SECONDS
+    done
+    rm -f "$pidfile"
+}
+export tries pidfile
+export -f guard
+setsid bash -c guard > /dev/null 2>&1 &
+echo "$!" > "$pidfile"
