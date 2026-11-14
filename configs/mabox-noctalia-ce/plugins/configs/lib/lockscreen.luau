@@ -1,5 +1,6 @@
 --!nonstrict
 -- Lock screen look (Noctalia lockscreen.* settings): background and transition.
+local toml = require("./tomlsection.luau")
 local M = {}
 
 local EFFECTS = { "crt", "diamond", "disc", "fade", "golden", "honeycomb", "melt", "pixel", "stripes", "vortex", "wipe", "zoom" }
@@ -8,27 +9,25 @@ local TINTS = { "surface", "primary", "secondary", "tertiary", "error" }
 local st = { blurred = false, wallpaper = "", blur = 0.5, tint = 0.3, color = "surface", effects = {}, duration = 1500, smooth = 0.3, note = nil }
 local draft = nil
 
-local function get(key, cb)
-  noctalia.runAsync({ "noctalia", "msg", "config-get", "lockscreen." .. key }, function(r)
-    cb(r.exitCode == 0 and noctalia.string.trim(r.stdout or "") or nil)
-  end)
-end
+-- Re-read from the state file on every render; keys left out of the file hold their default.
+local dragging = false
 
-function M.load(render)
-  get("blurred_desktop", function(v) st.blurred = v == "true"; render() end)
-  get("wallpaper", function(v) st.wallpaper = string.match(v or "", "^'(.*)'$") or ""; render() end)
-  get("blur_intensity", function(v) st.blur = tonumber(v) or st.blur; render() end)
-  get("tint_intensity", function(v) st.tint = tonumber(v) or st.tint; render() end)
-  get("tint_color", function(v) st.color = string.match(v or "", "^'(.*)'$") or st.color; render() end)
-  get("transition_duration", function(v) st.duration = tonumber(v) or st.duration; render() end)
-  get("edge_smoothness", function(v) st.smooth = tonumber(v) or st.smooth; render() end)
-  get("transition", function(v)
-    st.effects = {}
-    for e in string.gmatch(v or "", "'(%w+)'") do
-      st.effects[e] = true
-    end
-    render()
-  end)
+function M.load()
+  if dragging then
+    return
+  end
+  local t = toml.section("lockscreen")
+  st.blurred = t.blurred_desktop == "true"
+  st.wallpaper = toml.str(t.wallpaper, "")
+  st.blur = tonumber(t.blur_intensity) or 0.5
+  st.tint = tonumber(t.tint_intensity) or 0.3
+  st.color = toml.str(t.tint_color, "surface")
+  st.duration = tonumber(t.transition_duration) or 1500
+  st.smooth = tonumber(t.edge_smoothness) or 0.3
+  st.effects = {}
+  for _, e in ipairs(t.transition and toml.words(t.transition) or EFFECTS) do
+    st.effects[e] = true
+  end
 end
 
 local function set(key, value, render, apply)
@@ -39,10 +38,32 @@ local function set(key, value, render, apply)
       st.note = nil
     else
       st.note = "Could not change the lock screen"
-      M.load(render)
     end
     render()
   end)
+end
+
+-- setsid: runAsync ends a long command, which closed the file dialog (same as the Logo picker).
+local PICK = [[p=$(yad --file --center --width=1000 --height=650 --title="Lock screen wallpaper" --file-filter="Images | *.jpg *.jpeg *.png *.webp" --filename="$HOME/Pictures/")
+if [ -n "$p" ]; then noctalia msg config-set lockscreen.wallpaper "'$p'" >/dev/null || notify-send -a Configs "Lock screen" "Could not use that file"; fi]]
+
+local function waitPicker(render)
+  noctalia.runAsync({ "sh", "-c", "sleep 2; pgrep -f 'Lock screen wallpaper' >/dev/null && echo busy" }, function(r)
+    if string.find(r.stdout or "", "busy", 1, true) then
+      waitPicker(render)
+    else
+      render()
+    end
+  end)
+end
+
+local function pickWallpaper(render, pinned)
+  if pinned then
+    noctalia.runAsync({ "setsid", "-f", "sh", "-c", PICK })
+    waitPicker(render)
+  else
+    noctalia.runAsync({ "setsid", "-f", "sh", "-c", PICK .. "\nnoctalia msg panel-close; noctalia msg panel-open mabox/configs:main" })
+  end
 end
 
 local function bool(v)
@@ -53,17 +74,18 @@ local function slider(label, key, cfg, min, max, step, fmt, render)
   return ui.row({ gap = 8, align = "center" }, {
     ui.label({ text = label, color = "on_surface_variant", width = 80 }),
     ui.slider({ key = "ls-" .. key, min = min, max = max, step = step, value = st[key], controlSize = "sm", flexGrow = 1,
-      onChange = function(v) st[key] = tonumber(v) or st[key]; render() end,
-      onDragEnd = function() set(cfg, string.format(fmt, st[key]), render, function() end) end }),
+      onChange = function(v) dragging = true; st[key] = tonumber(v) or st[key]; render() end,
+      onDragEnd = function() dragging = false; set(cfg, string.format(fmt, st[key]), render, function() end) end }),
     ui.label({ text = string.format(fmt, st[key]), width = 52 }),
   })
 end
 
-function M.rows(render)
+function M.rows(render, pinned)
+  M.load()
   local fx, fxRows = {}, {}
   for _, e in ipairs(EFFECTS) do
     local on = st.effects[e] == true
-    table.insert(fx, ui.button({ key = "lfx" .. e .. (on and "1" or "0"), text = e, glyph = on and "check" or nil, variant = on and "primary" or "ghost", controlSize = "sm", onClick = function()
+    table.insert(fx, ui.button({ key = "lfx" .. e .. (on and "1" or "0"), text = e, variant = on and "primary" or "outline", controlSize = "sm", onClick = function()
       local list, n = {}, 0
       for _, x in ipairs(EFFECTS) do
         local keep = st.effects[x]
@@ -83,13 +105,13 @@ function M.rows(render)
       set("transition", "[ " .. table.concat(list, ", ") .. " ]", render, function() st.effects[e] = not st.effects[e] or nil end)
     end }))
   end
-  for i = 1, #fx, 4 do
-    table.insert(fxRows, ui.row({ key = "lfxr" .. i, gap = 6 }, { fx[i], fx[i + 1], fx[i + 2], fx[i + 3] }))
+    for i = 1, #fx, 3 do
+    table.insert(fxRows, ui.row({ key = "lfxr" .. i, gap = 6 }, { fx[i], fx[i + 1], fx[i + 2] }))
   end
   local tints = {}
   for _, c in ipairs(TINTS) do
     local on = st.color == c
-    table.insert(tints, ui.button({ key = "lt" .. c .. (on and "1" or "0"), text = c, glyph = on and "check" or nil, variant = on and "primary" or "ghost", controlSize = "sm", onClick = function()
+    table.insert(tints, ui.button({ key = "lt" .. c .. (on and "1" or "0"), text = c, variant = on and "primary" or "outline", controlSize = "sm", onClick = function()
       set("tint_color", "'" .. c .. "'", render, function() st.color = c end)
     end }))
   end
@@ -110,6 +132,7 @@ function M.rows(render)
     ui.row({ gap = 6, align = "center" }, {
       ui.label({ text = "Wallpaper", color = "on_surface_variant", width = 80 }),
       ui.input({ key = "ls-wp" .. st.wallpaper, value = draft or st.wallpaper, placeholder = "Use desktop wallpaper", controlSize = "sm", frameVisible = true, flexGrow = 1, onChange = function(t) draft = t end, onSubmit = setWallpaper }),
+      ui.button({ key = "ls-wppick", glyph = "folder-open", variant = "ghost", controlSize = "sm", tooltip = "Choose an image", onClick = function() pickWallpaper(render, pinned) end }),
       ui.button({ key = "ls-wpsave", glyph = "device-floppy", variant = "ghost", controlSize = "sm", tooltip = "Save (empty: desktop wallpaper)", onClick = setWallpaper }),
     }),
     slider("Blur", "blur", "blur_intensity", 0, 1, 0.05, "%.2f", render),

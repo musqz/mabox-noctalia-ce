@@ -7,6 +7,7 @@ local kbd = require("./kbd.luau")
 local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 local lockscreen = require("./lockscreen.luau")
+local toml = require("./tomlsection.luau")
 
 return function(pinned)
 -- Prints group|name|path|state for every entry whose command (or path) exists.
@@ -230,15 +231,12 @@ end
 local function loadIdle()
   loadMode()
   for key, name in pairs({ screen = "screen_off", lock = "lock" }) do
-    noctalia.runAsync({ "noctalia", "msg", "config-get", "idle.behavior." .. name }, function(r)
-      local out = r.stdout or ""
-      local t = tonumber(string.match("\n" .. out, "\ntimeout = (%d+)"))
-      idle[key].on = string.find(out, "enabled = true", 1, true) ~= nil
-      if t and t >= 60 then
-        idle[key].min = math.floor(t / 60)
-      end
-      render()
-    end)
+    local t = toml.section("idle.behavior." .. name)
+    idle[key].on = t.enabled == "true"
+    local sec = tonumber(t.timeout)
+    if sec and sec >= 60 then
+      idle[key].min = math.floor(sec / 60)
+    end
   end
 end
 
@@ -511,8 +509,8 @@ local function changes(b, values)
   return out
 end
 
-local function card(rows)
-  return ui.column({ fill = "surface_variant", radius = 10, padding = 8, gap = 4, border = "primary", borderWidth = 1 }, rows)
+local function card(rows, onHover)
+  return ui.column({ fill = "surface_variant", radius = 10, padding = 8, gap = 4, border = "primary", borderWidth = 1, onHover = onHover }, rows)
 end
 
 local function draftOf(name)
@@ -1070,6 +1068,9 @@ render = function()
   table.insert(cards, card(logoRows))
 
   local pwrOpen = expanded["Power"]
+  if pwrOpen then
+    loadIdle()
+  end
   row += 1
   stop("h-pwr", 1, function() toggle("Power") end)
   local pwrRows = {
@@ -1115,7 +1116,7 @@ render = function()
       ui.label({ text = idle.note or "", color = "on_surface_variant", fontSize = 12 }),
     }))
   end
-  table.insert(cards, card(pwrRows))
+  table.insert(cards, card(pwrRows, sync))
 
   local lockOpen = expanded["Lockscreen"]
   row += 1
@@ -1134,11 +1135,11 @@ render = function()
     }),
   }
   if lockOpen then
-    for _, w in ipairs(lockscreen.rows(render)) do
+    for _, w in ipairs(lockscreen.rows(render, pinned)) do
       table.insert(lockRows, w)
     end
   end
-  table.insert(cards, card(lockRows))
+  table.insert(cards, card(lockRows, sync))
 
   local btnOpen = expanded["Bar buttons"]
   row += 1
@@ -1351,6 +1352,16 @@ local function handleKey(chord)
   elseif kbd.key(chord) == "moved" then
     render()
   end
+end
+
+-- The pinned window and the dropdown render separately: hovering the card renders it again from the state file.
+local lastSync = 0
+local function sync(state)
+  if state ~= "true" or os.time() - lastSync < 1 then
+    return
+  end
+  lastSync = os.time()
+  render()
 end
 
 local function start()
