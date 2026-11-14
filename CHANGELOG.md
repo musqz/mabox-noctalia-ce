@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Equalizer presets keep the Pre level: a preset or Revert changes only the ten bands, and the preset in use is highlighted by its bands.
 - Equalizer: the preamp drops by the largest boost, bands use Q 1.4, a 40 Hz high-pass starts the chain, presets also load from `~/.config/mabox-noctalia-ce/eq-presets/*.json` (Adam D3V ships as one), and the panel has two columns. Presets with a negative preamp play quieter by the headroom.
 - Fix the Music add panel and `/music` stopping on a long list: the CSV is read and edited by python.
 - Show, hide and reorder the cards of the Places panel with the edit button (panel and pinned window).
