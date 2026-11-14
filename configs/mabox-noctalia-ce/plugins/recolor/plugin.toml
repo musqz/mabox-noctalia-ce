@@ -14,6 +14,6 @@ id = "main"
 entry = "panel.luau"
 width = 460
 height = "content"
-max_height = 900
+max_height = 1100
 placement = "attached"
 open_near_click = true
