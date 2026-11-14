@@ -47,14 +47,17 @@ local function apply()
   end)
 end
 
+-- Pre (the first value) is the user's own level: a preset never changes it.
 local function setGains(gains)
-  for i = 1, 11 do
+  for i = 2, 11 do
     if gains[i] ~= state.gains[i] then
       previous = { table.unpack(state.gains) }
       break
     end
   end
+  local pre = state.gains[1]
   state.gains = { table.unpack(gains) }
+  state.gains[1] = pre
   startupSaved = false
   eq.save(state)
   apply()
@@ -84,7 +87,7 @@ local function presetButtons(list, user, tag)
   local btns = {}
   for n, p in ipairs(list) do
     local same = true
-    for i = 1, 11 do
+    for i = 2, 11 do
       if math.abs((tonumber(p.gains[i]) or 0) - state.gains[i]) > 0.01 then
         same = false
         break
