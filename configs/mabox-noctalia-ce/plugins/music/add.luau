@@ -10,7 +10,7 @@ local NEW = "+ New category"
 local cats, catIndex = {}, 1
 local url, artist, title, newName, status = "", "", "", "", ""
 local nonce, busy, validated = 0, false, nil
-local saving = false
+local saving, loaded = false, false
 local INVALID = "Not a valid stream URL, try again"
 
 local function trim(s)
@@ -68,7 +68,7 @@ local function fetchTitle(force, onValid)
 end
 
 local function add()
-  if saving then
+  if saving or not loaded then
     return
   end
   local cat = cats[catIndex]
@@ -94,7 +94,7 @@ local function add()
     local a = string.gsub(trim(artist), ",", " ")
     local entry = (a ~= "" and a .. " - " or "") .. t .. "," .. (string.gsub(url, ",", "%%2C"))
     saving = true
-    csv.add(cat and cat.header or "", name, entry, function(ok)
+    csv.add(cat and cat.header or "", name, entry, function(ok, code)
       saving = false
       if ok then
         saveLast(name)
@@ -102,7 +102,7 @@ local function add()
         panel.close()
         return
       end
-      status = "Could not write the playlist"
+      status = code == 1 and "Category not found, reopen the panel" or "Could not write the playlist"
       render()
     end)
     return
@@ -180,14 +180,19 @@ render = function()
 end
 
 function onOpen()
-  cats, catIndex = {}, 1
+  cats, catIndex, saving, loaded = {}, 1, false, false
   local clip = trim(noctalia.clipboardText() or "")
   url = string.match(clip, "^https?://%S+$") and clip or ""
   artist, title, newName, status, validated = "", "", "", "", nil
   nonce = nonce + 1
   render()
   csv.list(function(list)
-    cats = list
+    if not list then
+      status = "Could not read the playlist"
+      render()
+      return
+    end
+    cats, loaded = list, true
     local last = trim(noctalia.readFile(LAST) or "")
     catIndex = 1
     for i, c in cats do

@@ -28,9 +28,8 @@ local function trackRow(t, score)
   return { id = "play:" .. t.url, title = t.title, subtitle = "Enter to play", glyph = "player-play", score = score }
 end
 
-function onQuery(text)
-  local q = noctalia.string.trim(text or "")
-  csv.list(function(cats)
+local function respond(text, q, cats)
+  do
     local rows = {}
 
     if #cats == 0 then
@@ -75,6 +74,21 @@ function onQuery(text)
       rows[1] = { id = "", title = "Nothing matches '" .. q .. "'", glyph = "mood-empty" }
     end
     launcher.setResults(text, rows)
+  end
+end
+
+-- Typing narrows the list that the empty query loaded, so only that one starts python.
+local cache
+
+function onQuery(text)
+  local q = noctalia.string.trim(text or "")
+  if q ~= "" and cache then
+    respond(text, q, cache)
+    return
+  end
+  csv.list(function(cats)
+    cache = cats
+    respond(text, q, cats or {})
   end)
 end
 
@@ -91,8 +105,11 @@ function onActivate(id)
     launcher.setQuery(arg)
     return
   end
+  if kind ~= "shuffle" and kind ~= "playcat" then
+    return
+  end
   csv.list(function(cats, all)
-    if kind == "shuffle" or kind == "playcat" then
+    if cats then
       local urls = all
       if arg ~= "" then
         urls = {}

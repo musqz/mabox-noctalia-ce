@@ -5,7 +5,7 @@ local PY = [==[
 import json, re, sys
 mode, path = sys.argv[1], sys.argv[2]
 try:
-    raw = open(path, encoding="utf-8", errors="replace").read()
+    raw = open(path, encoding="utf-8", errors="surrogateescape").read()
 except OSError:
     raw = ""
 if mode == "list":
@@ -42,19 +42,23 @@ else:
         while at - 1 > first and lines[at - 1] == "":
             at -= 1
         lines.insert(at, entry)
-    open(path, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    open(path, "w", encoding="utf-8", errors="surrogateescape").write("\n".join(lines) + "\n")
 ]==]
 
 local M = {}
 
 M.path = noctalia.getenv("HOME") .. "/.config/mabox/mb-music/yt_music_list.csv"
 
--- onDone gets the categories in file order, { {name=, header=, tracks={ {title=, url=} }, playlist={ url }, urls={ [url]=true }} },
+-- onDone gets nil when python failed, else the categories in file order, { {name=, header=, tracks={ {title=, url=} }, playlist={ url }, urls={ [url]=true }} },
 -- and the list of all playable urls.
 function M.list(onDone)
   noctalia.runAsync({ "python3", "-I", "-c", PY, "list", M.path }, function(r)
     local data = r.exitCode == 0 and noctalia.json.decode(r.stdout or "") or nil
-    onDone(data and data.cats or {}, data and data.all or {})
+    if data then
+      onDone(data.cats, data.all)
+    else
+      onDone(nil, nil)
+    end
   end)
 end
 
@@ -62,7 +66,7 @@ end
 function M.add(header, name, entry, onDone)
   noctalia.mkdirAll(string.match(M.path, "^(.*)/[^/]*$"))
   noctalia.runAsync({ "python3", "-I", "-c", PY, "add", M.path, header, name, entry }, function(r)
-    onDone(r.exitCode == 0)
+    onDone(r.exitCode == 0, r.exitCode)
   end)
 end
 
