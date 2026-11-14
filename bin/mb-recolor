@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth] [-g GROUP] [-o OUTDIR] PALETTE SRC...
+# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth] [-g GROUP] [-o OUTDIR] [-w WIDTH] PALETTE SRC...
 # SRC is files or a directory. Output goes to ~/Pictures/<palette>/<group>/, never overwriting.
 set -euo pipefail
 
@@ -7,8 +7,9 @@ mode=clut group=all out=
 here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 dirs=("$HOME/.local/share/mabox-noctalia-ce/palettes" /usr/share/mabox-noctalia-ce/palettes "$here/../lists/palettes")
 
-usage() { echo "usage: mb-recolor [-m clut|remap|smooth] [-g GROUP] [-o OUTDIR] PALETTE SRC..." >&2
-          echo "       mb-recolor --list" >&2; exit 2; }
+usage() { echo "usage: mb-recolor [-m clut|remap|smooth] [-g GROUP] [-o OUTDIR] [-w WIDTH] PALETTE SRC..." >&2
+          echo "       mb-recolor --list" >&2
+          echo "       mb-recolor --colors [-g GROUP] PALETTE" >&2; exit 2; }
 find_pal() { local d; for d in "${dirs[@]}"; do [[ -f $d/$1.pal ]] && { echo "$d/$1.pal"; return 0; }; done; return 1; }
 
 if [[ ${1:-} == --list ]]; then
@@ -21,16 +22,20 @@ if [[ ${1:-} == --list ]]; then
     exit 0
 fi
 
-while getopts m:g:o: opt; do
+show=0
+[[ ${1:-} == --colors ]] && { show=1; shift; }
+width=0
+while getopts m:g:o:w: opt; do
     case $opt in
         m) mode=$OPTARG ;;
         g) group=$OPTARG ;;
         o) out=$OPTARG ;;
+        w) width=$OPTARG ;;
         *) usage ;;
     esac
 done
 shift $((OPTIND - 1))
-(($# >= 2)) || usage
+((show && $# >= 1 || $# >= 2)) || usage
 [[ $mode == clut || $mode == remap || $mode == smooth ]] || { echo "unknown mode: $mode" >&2; exit 2; }
 command -v magick >/dev/null || { echo "magick is not installed" >&2; exit 1; }
 
@@ -45,11 +50,14 @@ mapfile -t colors < <(echo "${line#*:}" | tr -s ' ' '\n' | awk 'NF {
     h=substr($1,2); r=strtonum("0x" substr(h,1,2)); g=strtonum("0x" substr(h,3,2)); b=strtonum("0x" substr(h,5,2))
     printf "%.2f %s\n", 0.2126*r+0.7152*g+0.0722*b, $1 }' | sort -n | cut -d' ' -f2)
 
+if ((show)); then printf '%s\n' "${colors[@]}"; exit 0; fi
+
 [[ -n $out ]] || out=$HOME/Pictures/$palette/$group
 mkdir -p "$out"
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+trap 'exit 143' TERM INT
 args=(); for c in "${colors[@]}"; do args+=("xc:$c"); done
 magick "${args[@]}" +append "$tmp/pal.png"
 
@@ -57,7 +65,7 @@ files=()
 for s in "$@"; do
     if [[ -d $s ]]; then
         while IFS= read -r -d '' f; do files+=("$f"); done < <(find "$s" -maxdepth 1 -type f \
-            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.bmp' \) -print0 | sort -z)
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.avif' -o -iname '*.bmp' \) -print0 | sort -z)
     elif [[ -f $s ]]; then
         files+=("$s")
     else
@@ -73,15 +81,17 @@ for f in "${files[@]}"; do
     [[ $base == *.* ]] || { echo "skipped (no extension): $f" >&2; rc=1; continue; }
     dest=$out/$name.$ext; n=1
     while [[ -e $dest ]]; do dest=$out/$name-$n.$ext; ((n++)); done
+    pre=(); ((width > 0)) && pre=(-resize "${width}x>")
     case $mode in
-        clut)   magick "$f" -colorspace Gray "$tmp/pal.png" -clut "$dest" || ok=0 ;;
-        remap)  magick "$f" +dither -remap "$tmp/pal.png" "$dest" || ok=0 ;;
+        clut)   magick "$f" "${pre[@]}" -colorspace Gray "$tmp/pal.png" -clut "$dest" || ok=0 ;;
+        remap)  magick "$f" "${pre[@]}" +dither -remap "$tmp/pal.png" "$dest" || ok=0 ;;
         smooth) # flat areas with clean edges; filter sizes follow the image width
                 w=$(magick identify -format %w "${f}[0]" 2>/dev/null) || w=
                 [[ $w =~ ^[0-9]+$ ]] || w=1920
+                ((width > 0 && w > width)) && w=$width
                 k=$((w / 250)); ((k < 2)) && k=2
                 m=$((w / 140 | 1)); ((m < 3)) && m=3
-                magick "$f" -kuwahara "$k" +dither -remap "$tmp/pal.png" -statistic Mode "${m}x${m}" "$dest" || ok=0 ;;
+                magick "$f" "${pre[@]}" -kuwahara "$k" +dither -remap "$tmp/pal.png" -statistic Mode "${m}x${m}" "$dest" || ok=0 ;;
     esac
     if ((ok)); then echo "$dest"; else echo "failed: $f" >&2; rm -f "$dest"; rc=1; ok=1; fi
 done
