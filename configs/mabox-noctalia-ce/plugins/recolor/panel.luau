@@ -227,8 +227,17 @@ local function run()
   render()
 end
 
+-- While a job runs only Stop works; the rest is inert so inputs cannot change under it.
+local function idle(fn)
+  return function(...)
+    if not running then
+      fn(...)
+    end
+  end
+end
+
 local function chip(key, text, on, onClick)
-  return ui.button({ key = key, text = text, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm", onClick = onClick })
+  return ui.button({ key = key, text = text, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm", enabled = not running, onClick = idle(onClick) })
 end
 
 function render()
@@ -261,8 +270,8 @@ function render()
   for _, l in ipairs({ { "clut", "Soft" }, { "remap", "Hard" }, { "smooth", "Smooth" } }) do
     local m, label = l[1], l[2]
     local pick = function() mode = m; done = nil; render() end
-    local thumb = previews[m] and ui.image({ key = "pv" .. m .. pvGen, path = previews[m], width = 116, height = 68, radius = 6, fit = "cover", border = m == mode and "primary" or "on_surface_variant", borderWidth = m == mode and 3 or 1, onClick = pick })
-      or ui.box({ key = "pvb" .. m, fill = "surface", width = 116, height = 68, radius = 6, border = m == mode and "primary" or "on_surface_variant", borderWidth = m == mode and 3 or 1, onClick = pick })
+    local thumb = previews[m] and ui.image({ key = "pv" .. m .. pvGen, path = previews[m], width = 116, height = 68, radius = 6, fit = "cover", border = m == mode and "primary" or "on_surface_variant", borderWidth = m == mode and 3 or 1, onClick = idle(pick) })
+      or ui.box({ key = "pvb" .. m, fill = "surface", width = 116, height = 68, radius = 6, border = m == mode and "primary" or "on_surface_variant", borderWidth = m == mode and 3 or 1, onClick = idle(pick) })
     table.insert(lookCols, ui.column({ key = "look" .. m, gap = 6, align = "center" }, { thumb, chip(m, label, m == mode, pick) }))
   end
 
@@ -274,18 +283,18 @@ function render()
     }),
     ui.column(card("src"), {
       ui.label({ text = "Image or folder", fontWeight = "bold" }),
-      ui.input({ key = "src" .. gen, value = src, placeholder = "/path/to/image or folder", frameVisible = true, onChange = function(t) src = t end, onSubmit = function() loadPreviews() end }),
+      ui.input({ key = "src" .. gen, value = src, placeholder = "/path/to/image or folder", frameVisible = true, onChange = idle(function(t) src = t end), onSubmit = idle(function() loadPreviews() end) }),
       ui.row({ gap = 6 }, {
-        ui.button({ key = "file", glyph = "photo", text = "Image", variant = "outline", controlSize = "sm", onClick = function() browse("file") end }),
-        ui.button({ key = "dir", glyph = "folder-open", text = "Folder", variant = "outline", controlSize = "sm", onClick = function() browse("dir") end }),
+        ui.button({ key = "file", glyph = "photo", text = "Image", variant = "outline", controlSize = "sm", enabled = not running, onClick = idle(function() browse("file") end) }),
+        ui.button({ key = "dir", glyph = "folder-open", text = "Folder", variant = "outline", controlSize = "sm", enabled = not running, onClick = idle(function() browse("dir") end) }),
       }),
     }),
     ui.column(card("out"), {
       ui.label({ text = "Output folder", fontWeight = "bold" }),
-      ui.input({ key = "out" .. gen, value = out, placeholder = "~/Pictures/" .. palette .. "/" .. group, frameVisible = true, onChange = function(t) out = t end, onSubmit = run }),
+      ui.input({ key = "out" .. gen, value = out, placeholder = "~/Pictures/" .. palette .. "/" .. group, frameVisible = true, onChange = idle(function(t) out = t end), onSubmit = idle(run) }),
       ui.row({ gap = 6 }, {
-        ui.button({ key = "outdir", glyph = "folder-open", text = "Folder", variant = "outline", controlSize = "sm", onClick = function() browse("out") end }),
-        ui.button({ key = "outclear", glyph = "x", text = "Default", variant = "ghost", controlSize = "sm", onClick = function() out = ""; render() end }),
+        ui.button({ key = "outdir", glyph = "folder-open", text = "Folder", variant = "outline", controlSize = "sm", enabled = not running, onClick = idle(function() browse("out") end) }),
+        ui.button({ key = "outclear", glyph = "x", text = "Default", variant = "ghost", controlSize = "sm", enabled = not running, onClick = idle(function() out = ""; render() end) }),
       }),
     }),
     ui.column(card("pal"), {
@@ -299,7 +308,7 @@ function render()
       ui.row({ gap = 8, align = "center" }, {
         ui.label({ text = "Look", fontWeight = "bold" }),
         ui.label({ text = pvName or "", color = "outline_variant", fontSize = 11, maxLines = 1, flexGrow = 1 }),
-        pvDir and ui.button({ key = "shuffle", glyph = "arrows-shuffle", text = "Another", variant = "outline", controlSize = "sm", tooltip = "Preview another image from the folder", onClick = function() loadPreviews(true) end }) or ui.box({ height = 0 }),
+        pvDir and ui.button({ key = "shuffle", glyph = "arrows-shuffle", text = "Another", variant = "outline", controlSize = "sm", tooltip = "Preview another image from the folder", enabled = not running, onClick = idle(function() loadPreviews(true) end) }) or ui.box({ height = 0 }),
       }),
       ui.row({ gap = 8 }, lookCols),
       ui.label({ text = mode == "clut" and "Brightness mapped over the palette; keeps gradients and detail."
