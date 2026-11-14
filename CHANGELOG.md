@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Equalizer: the preamp drops by the largest boost, bands use Q 1.4, a 40 Hz high-pass starts the chain, presets also load from `~/.config/mabox-noctalia-ce/eq-presets/*.json` (Adam D3V ships as one), and the panel has two columns. Presets with a negative preamp play quieter by the headroom.
 - Fix the Music add panel and `/music` stopping on a long list: the CSV is read and edited by python.
 - Show, hide and reorder the cards of the Places panel with the edit button (panel and pinned window).
 - Hide the pointer after some idle seconds: switch and seconds in the Configs panel (Power card, off by default); `mb-hide-cursor on [secs]` and `off`.
