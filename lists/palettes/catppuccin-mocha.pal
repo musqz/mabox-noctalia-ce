@@ -1,0 +1,4 @@
+base: #11111b #181825 #1e1e2e #313244 #45475a #585b70
+text: #6c7086 #7f849c #9399b2 #a6adc8 #bac2de #cdd6f4
+accents: #f5e0dc #f2cdcd #f5c2e7 #cba6f7 #f38ba8 #eba0ac #fab387 #f9e2af #a6e3a1 #94e2d5 #89dceb #74c7ec #89b4fa #b4befe
+all: #11111b #181825 #1e1e2e #313244 #45475a #585b70 #6c7086 #7f849c #9399b2 #a6adc8 #bac2de #cdd6f4 #f5e0dc #f2cdcd #f5c2e7 #cba6f7 #f38ba8 #eba0ac #fab387 #f9e2af #a6e3a1 #94e2d5 #89dceb #74c7ec #89b4fa #b4befe
