@@ -50,22 +50,32 @@ def short_dir(cwd):
     return "~" + cwd[len(HOME):] if cwd.startswith(HOME) else cwd
 
 
-def records(path, needles=None, limit=None):
+def lines(path, limit=None):
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
             for n, line in enumerate(f):
                 if limit and n >= limit:
                     return
-                if needles and not any(t in line for t in needles):
-                    continue
-                try:
-                    r = json.loads(line)
-                except ValueError:
-                    continue
-                if isinstance(r, dict):
-                    yield r
+                yield line
     except OSError:
         return
+
+
+def decode(line):
+    try:
+        r = json.loads(line)
+    except ValueError:
+        return None
+    return r if isinstance(r, dict) else None
+
+
+def records(path, needles=None, limit=None):
+    for line in lines(path, limit):
+        if needles and not any(t in line for t in needles):
+            continue
+        r = decode(line)
+        if r:
+            yield r
 
 
 def user_text(msg, n=80):
@@ -83,7 +93,18 @@ def user_text(msg, n=80):
 def parse_claude(path):
     title = cwd = first = last = ""
     count = 0
-    for r in records(path, ('"type":"user"', '"ai-title"', '"custom-title"')):
+    replies = []
+    for line in lines(path):
+        if '"type":"assistant"' in line:
+            # Only the last text reply is decoded, after the loop.
+            if '"type":"text"' in line and '"isSidechain":true' not in line and '"isApiErrorMessage":true' not in line:
+                replies = (replies + [line])[-2:]
+            continue
+        if not any(t in line for t in ('"type":"user"', '"ai-title"', '"custom-title"')):
+            continue
+        r = decode(line)
+        if not r:
+            continue
         t = r.get("type")
         if t == "custom-title" and isinstance(r.get("customTitle"), str) and r["customTitle"]:
             title = r["customTitle"]
@@ -99,7 +120,16 @@ def parse_claude(path):
                 last = t
     if not title or title.lower() in GENERIC:
         title = first or title
-    return {"title": clean(title)[:80], "cwd": cwd, "ok": bool(first), "n": count, "first": first, "last": last}
+    answer = ""
+    for line in reversed(replies):
+        r = decode(line)
+        blocks = ((r or {}).get("message") or {}).get("content")
+        if isinstance(blocks, list):
+            answer = clean(" ".join(b.get("text", "") for b in blocks
+                                    if isinstance(b, dict) and b.get("type") == "text" and isinstance(b.get("text"), str)))[:400]
+        if answer:
+            break
+    return {"title": clean(title)[:80], "cwd": cwd, "ok": bool(first), "n": count, "first": first, "last": last, "answer": answer}
 
 
 def claude_sessions():
@@ -121,7 +151,7 @@ def claude_sessions():
         sid = os.path.basename(p)[:-6]
         if not UUID.fullmatch(sid):
             continue
-        k = f"2:{mtime}:{size}"
+        k = f"4:{mtime}:{size}"
         e = old.get(p)
         if not isinstance(e, dict) or e.get("k") != k:
             e = parse_claude(p)
@@ -129,7 +159,7 @@ def claude_sessions():
         new[p] = e
         if e["ok"] and e["cwd"]:
             out.append({"key": "claude:" + sid, "title": e["title"][:80] or sid[:8], "cwd": e["cwd"], "ts": mtime,
-                        "n": e["n"], "first": e["first"], "last": e["last"]})
+                        "n": e["n"], "first": e["first"], "last": e["last"], "answer": e["answer"]})
     if new != old:
         tmp = f"{CACHE}.{os.getpid()}"
         try:
@@ -304,7 +334,7 @@ def cmd_json(query, panel=False):
         row = {"key": r["key"], "text": f"{LABEL[agent]}  {r['title']}  ·  {short_dir(r['cwd'])}"}
         if panel:
             row.update(agent=agent, title=r["title"], dir=short_dir(r["cwd"]), ts=int(r["ts"]),
-                       n=r.get("n", 0), first=r.get("first", ""), last=r.get("last", ""))
+                       n=r.get("n", 0), first=r.get("first", ""), answer=r.get("answer", ""))
         rows.append(row)
         if len(rows) == (200 if panel else LIMIT):
             break
