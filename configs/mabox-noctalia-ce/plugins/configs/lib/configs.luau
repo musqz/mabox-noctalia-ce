@@ -192,7 +192,7 @@ local refresh
 local row = 0
 
 -- Idle power: screens off and lock after minutes without input, kept in Noctalia's idle behaviors.
-local idle = { screen = { on = false, min = 10 }, lock = { on = false, min = 15 }, draft = {}, note = nil }
+local idle = { screen = { on = false, min = 10 }, lock = { on = false, min = 15 }, draft = {}, note = nil, mode = "dim" }
 
 local IDLE_APPLY = [[cs() { noctalia msg config-set "$@" >/dev/null || exit 1; }
 cs idle.behavior.screen_off.action "'command'"
@@ -205,7 +205,26 @@ cs idle.behavior.lock.enabled "$3"
 cs idle.behavior.lock.timeout "$4"
 cs idle.behavior.idle-behavior.enabled false]]
 
+local MODES = { { "dim", "Dim" }, { "black", "Black layer" }, { "both", "Both" } }
+
+local function modeFile()
+  return noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce/screen-off-mode"
+end
+
+local function loadMode()
+  local m = string.match(noctalia.readFile(modeFile()) or "", "%a+")
+  idle.mode = (m == "black" or m == "both") and m or "dim"
+end
+
+local function setMode(m)
+  idle.mode = m
+  noctalia.mkdirAll(noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce")
+  noctalia.writeFile(modeFile(), m .. "\n")
+  render()
+end
+
 local function loadIdle()
+  loadMode()
   for key, name in pairs({ screen = "screen_off", lock = "lock" }) do
     noctalia.runAsync({ "noctalia", "msg", "config-get", "idle.behavior." .. name }, function(r)
       local out = r.stdout or ""
@@ -1078,6 +1097,13 @@ render = function()
         end }),
       }))
     end
+    local modes = {}
+    for _, m in ipairs(MODES) do
+      local on = idle.mode == m[1]
+      table.insert(modes, ui.button({ key = "pm-" .. m[1] .. (on and "1" or "0"), text = m[2], glyph = on and "check" or nil, variant = on and "primary" or "ghost", controlSize = "sm", tooltip = m[1] == "dim" and "Brightness and contrast of the monitors to 0 (DDC)" or m[1] == "black" and "Black layer over every monitor" or "Dim and black layer", onClick = function() setMode(m[1]) end }))
+    end
+    table.insert(pwrRows, ui.label({ text = "Screens off by", color = "on_surface_variant" }))
+    table.insert(pwrRows, ui.row({ gap = 6 }, modes))
     row += 1
     stop("pw-save", 1, saveIdle)
     table.insert(pwrRows, ui.row({ gap = 8, align = "center" }, {

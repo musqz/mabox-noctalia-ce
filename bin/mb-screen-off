@@ -2,12 +2,19 @@
 # Idle screen off through the monitors' backlight (DDC/CI) instead of DPMS: the video signal stays up,
 # so the monitors do not scan for a signal, show "power save" and re-announce themselves.
 # Monitors without DDC/CI fall back to DPMS.
-#   mb-screen-off   remember the brightness of every monitor, set it to 0
-#   mb-screen-on    restore the brightness
+# The mode is one word in ~/.config/mabox-noctalia-ce/screen-off-mode (Configs panel, Power):
+#   dim    brightness and contrast to 0 (default)
+#   black  black layer over every monitor (Configs plugin, layer "cover")
+#   both   both
+#   mb-screen-off   remember brightness and contrast of every monitor, set both to 0
+#   mb-screen-on    restore them, remove the black layer
 # Noctalia idle behavior: command = mb-screen-off, resume_command = mb-screen-on.
 set -u
 
 dir=${XDG_RUNTIME_DIR:-/tmp}/mb-screen
+mode=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/screen-off-mode" 2>/dev/null || true)
+[[ $mode == black || $mode == both ]] || mode=dim
+cover() { noctalia msg plugin mabox/configs:blank all "$1" > /dev/null 2>&1; }
 mkdir -p "$dir"
 exec 9> "$dir/lock"
 flock 9
@@ -17,12 +24,16 @@ case ${0##*/} in
         for f in "$dir"/bus-*; do
             [[ -f $f ]] || continue
             b=${f##*/bus-}
-            ( ddcutil --bus "$b" setvcp 10 "$(<"$f")" >/dev/null 2>&1 && rm -f "$f" ) &
+            ( ddcutil --bus "$b" setvcp 10 "$(<"$f")" >/dev/null 2>&1 && rm -f "$f"
+              [[ -f $dir/con-$b ]] && ddcutil --bus "$b" setvcp 12 "$(<"$dir/con-$b")" >/dev/null 2>&1 && rm -f "$dir/con-$b" ) &
         done
         wait
+        cover hide
         rm -f "$dir/dpms"
         wlopm --on '*' 2>/dev/null ;;
     *)
+        [[ $mode == dim ]] || cover show
+        [[ $mode == black ]] && exit 0
         # already off: keep the stored brightness
         compgen -G "$dir/bus-*" > /dev/null && exit 0
         [[ -f $dir/dpms ]] && exit 0
@@ -32,7 +43,10 @@ case ${0##*/} in
                 [[ $v =~ ^[0-9]+$ ]] || exit 0
                 ((v > 0)) || v=50
                 echo "$v" > "$dir/bus-$b"
+                c=$(ddcutil --bus "$b" getvcp 12 --brief 2>/dev/null | awk '{print $4}')
+                [[ $c =~ ^[0-9]+$ ]] && ((c > 0)) && echo "$c" > "$dir/con-$b"
                 ddcutil --bus "$b" setvcp 10 0 >/dev/null 2>&1
+                [[ -f $dir/con-$b ]] && ddcutil --bus "$b" setvcp 12 0 >/dev/null 2>&1
             ) &
         done
         wait
