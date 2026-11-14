@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Show `mb-pinned <plugin>` with a copy button in the Configs panel for plugins that have a pinned window.
 - Lock the Recolor panel while a job runs: only *Stop* works until it finishes.
 - Show Trash, a Drives card (USB and `/run/media` partitions; click mounts and opens, eject unmounts) and a separate Bookmarks card in the Places panel.
 - Scroll the folder list in the Wallpaper folders panel: it has a fixed height and a scrollbar.
