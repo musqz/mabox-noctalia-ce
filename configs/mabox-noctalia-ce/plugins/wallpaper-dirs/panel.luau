@@ -28,8 +28,9 @@ local THUMBS = (noctalia.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/mb-wallpaper-
 local THUMB_CMD = [[d=$1; out=$2; mkdir -p "$out" || exit 1
 f=$(find "$d" -maxdepth 2 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.avif' \) 2>/dev/null | shuf -n1)
 [ -n "$f" ] || exit 1
-rm -f "$out"/*.png
-magick "$f[0]" -thumbnail 320x "$out/$3.png" && echo "$out/$3.png"]]
+magick "$f[0]" -thumbnail 320x "$out/$3.png" || exit 1
+find "$out" -name '*.png' ! -name "$3.png" -delete
+echo "$out/$3.png"]]
 local preview = nil
 local hoverPath = nil
 local pvGen = 0
@@ -37,8 +38,11 @@ local pvBusy = false
 
 local render
 
+local pvNext = nil
+
 local function showPreview(p)
   if pvBusy then
+    pvNext = p
     return
   end
   pvBusy = true
@@ -48,6 +52,11 @@ local function showPreview(p)
     local f = noctalia.string.trim(r.stdout or "")
     preview = r.exitCode == 0 and f ~= "" and f or nil
     render()
+    local nxt = pvNext
+    pvNext = nil
+    if nxt and nxt ~= p then
+      showPreview(nxt)
+    end
   end)
 end
 
