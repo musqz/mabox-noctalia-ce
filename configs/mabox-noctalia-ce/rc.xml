@@ -71,6 +71,7 @@
     <keybind key="C-W-c"><action name="Execute" command="mb-pinned configs"/></keybind>
     <keybind key="W-c"><action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker"/></keybind>
     <keybind key="W-k"><action name="Execute" command="noctalia msg panel-toggle mabox/keys:keys"/></keybind>
+    <keybind key="S-W-a"><action name="Execute" command="noctalia msg panel-toggle mabox/agents:main"/></keybind>
     <keybind key="W-A-i"><action name="Execute" command="noctalia msg panel-toggle mabox/system:system"/></keybind>
     <keybind key="W-A-k"><action name="Execute" command="mb-fitts"/></keybind>
     <keybind key="W-n"><action name="Execute" command="noctalia msg panel-open mabox/notes:main new"/></keybind>

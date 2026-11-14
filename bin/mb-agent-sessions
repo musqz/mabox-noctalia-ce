@@ -4,6 +4,9 @@
 Session formats follow mstio/mst.agent-launchers (MIT).
 
   mb-agent-sessions --json [QUERY]   installed agents + newest sessions as JSON
+  mb-agent-sessions --panel [QUERY]  same with detail fields, 200 rows, plus the project folders
+  mb-agent-sessions --set NAME DIR   set a project parent folder (github, aur)
+  mb-agent-sessions --fav add|remove DIR | pick   favorite folders (pick opens a folder chooser)
   mb-agent-sessions --open KEY       resume a session (claude:ID, codex:ID, agy:ID) or focus its window
   mb-agent-sessions --start AGENT [DIR]   new session in DIR (default $HOME)
 """
@@ -64,7 +67,7 @@ def records(path, needles=None, limit=None):
         return
 
 
-def user_text(msg):
+def user_text(msg, n=80):
     c = msg.get("content") if isinstance(msg, dict) else None
     if isinstance(c, list):
         c = " ".join(b.get("text", "") for b in c if isinstance(b, dict) and isinstance(b.get("text"), str))
@@ -73,11 +76,12 @@ def user_text(msg):
     c = re.sub(r"<system-reminder>.*?</system-reminder>", " ", c, flags=re.S)
     c = re.sub(r"\[(Image|Pasted text)[ :#][^\]]*\]", " ", c)
     c = clean(c)
-    return "" if c.startswith(("<", "Caveat:", "[Request interrupted")) or len(c) < 8 else c[:80]
+    return "" if c.startswith(("<", "Caveat:", "[Request interrupted")) or len(c) < 8 else c[:n]
 
 
 def parse_claude(path):
-    title = cwd = first = ""
+    title = cwd = first = last = ""
+    count = 0
     for r in records(path, ('"type":"user"', '"ai-title"', '"custom-title"')):
         t = r.get("type")
         if t == "custom-title" and isinstance(r.get("customTitle"), str) and r["customTitle"]:
@@ -87,10 +91,14 @@ def parse_claude(path):
         elif t == "user" and not r.get("isSidechain") and not r.get("isMeta"):
             if not cwd and isinstance(r.get("cwd"), str):
                 cwd = r["cwd"]
-            first = first or user_text(r.get("message"))
+            t = user_text(r.get("message"), 300)
+            if t:
+                count += 1
+                first = first or t
+                last = t
     if not title or title.lower() in GENERIC:
         title = first or title
-    return {"title": clean(title)[:80], "cwd": cwd, "ok": bool(first)}
+    return {"title": clean(title)[:80], "cwd": cwd, "ok": bool(first), "n": count, "first": first, "last": last}
 
 
 def claude_sessions():
@@ -112,14 +120,15 @@ def claude_sessions():
         sid = os.path.basename(p)[:-6]
         if not UUID.fullmatch(sid):
             continue
-        k = f"{mtime}:{size}"
+        k = f"2:{mtime}:{size}"
         e = old.get(p)
         if not isinstance(e, dict) or e.get("k") != k:
             e = parse_claude(p)
             e["k"] = k
         new[p] = e
         if e["ok"] and e["cwd"]:
-            out.append(("claude:" + sid, e["title"] or sid[:8], e["cwd"], mtime))
+            out.append({"key": "claude:" + sid, "title": e["title"][:80] or sid[:8], "cwd": e["cwd"], "ts": mtime,
+                        "n": e["n"], "first": e["first"], "last": e["last"]})
     if new != old:
         tmp = f"{CACHE}.{os.getpid()}"
         try:
@@ -152,7 +161,7 @@ def codex_sessions():
             continue
         sid, cwd = str(meta.get("id") or ""), str(meta.get("cwd") or "")
         if SAFE_ID.fullmatch(sid) and cwd:
-            out.append(("codex:" + sid, clean(names.get(sid)) or sid[:8], cwd, mtime))
+            out.append({"key": "codex:" + sid, "title": clean(names.get(sid)) or sid[:8], "cwd": cwd, "ts": mtime})
     return out
 
 
@@ -177,7 +186,7 @@ def agy_sessions():
         uris = summ.get("WorkspaceURIs") or []
         cwd = unquote(str(uris[0])[7:]) if uris and str(uris[0]).startswith("file://") else ""
         if cwd:
-            out.append(("agy:" + str(cid), clean(summ.get("Title") or summ.get("Preview")) or str(cid)[:8], cwd, ts))
+            out.append({"key": "agy:" + str(cid), "title": clean(summ.get("Title") or summ.get("Preview"))[:80] or str(cid)[:8], "cwd": cwd, "ts": ts})
     return out
 
 
@@ -188,8 +197,8 @@ def all_sessions():
             rows += fn()
         except Exception:
             continue
-    rows = [r for r in rows if allowed_dir(r[2])]
-    rows.sort(key=lambda r: r[3], reverse=True)
+    rows = [r for r in rows if allowed_dir(r["cwd"])]
+    rows.sort(key=lambda r: r["ts"], reverse=True)
     return rows
 
 
@@ -197,34 +206,103 @@ def installed():
     return [a for a in AGENTS if shutil.which(a)]
 
 
+CONF = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config"), "mabox", "mb-agent-sessions.conf")
+DIR_DEFAULTS = {"github": "~/Github", "aur": "~/AUR"}
+
+
+def read_conf():
+    out, favs = dict(DIR_DEFAULTS), []
+    try:
+        with open(CONF) as f:
+            for line in f:
+                k, _, v = line.strip().partition("=")
+                if k == "fav" and v:
+                    favs.append(os.path.expanduser(v))
+                elif k in out and v:
+                    out[k] = v
+    except OSError:
+        pass
+    return {k: os.path.expanduser(v) for k, v in out.items()}, favs
+
+
+def write_conf(d, favs):
+    os.makedirs(os.path.dirname(CONF), exist_ok=True)
+    with open(CONF, "w") as f:
+        f.write("".join(f"{k}={v}\n" for k, v in d.items()) + "".join(f"fav={v}\n" for v in favs))
+
+
+def set_dir(name, path):
+    path = os.path.abspath(os.path.expanduser(path))
+    if name not in DIR_DEFAULTS or not allowed_dir(path):
+        fail("Folder must be an existing folder under your home")
+    d, favs = read_conf()
+    d[name] = path
+    write_conf(d, favs)
+
+
+def fav(action, path=None):
+    d, favs = read_conf()
+    if action == "pick":
+        picker = [["yad", "--file", "--directory", "--title=Favorite folder", "--filename=" + HOME + "/"],
+                  ["zenity", "--file-selection", "--directory", "--title=Favorite folder", "--filename=" + HOME + "/"]]
+        cmd = next((c for c in picker if shutil.which(c[0])), None)
+        if cmd is None:
+            fail("Install yad or zenity to pick a folder")
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode != 0:
+            return
+        path, action = r.stdout.strip(), "add"
+    if not path:
+        fail("Folder missing")
+    path = os.path.abspath(os.path.expanduser(path))
+    if action == "add":
+        if not allowed_dir(path) or path == HOME:
+            fail("Folder must be an existing folder under your home")
+        if path not in favs:
+            favs.append(path)
+    elif action == "remove":
+        favs = [f for f in favs if f != path]
+    else:
+        fail("Unknown favorite action")
+    write_conf(d, favs)
+
+
 def projects(rows):
-    """Folders of earlier sessions first, then git repos up to two levels under $HOME."""
+    """[(dir, section)]: favorites, then git repos one level below the GitHub and AUR folders, then folders of earlier sessions."""
+    d, favs = read_conf()
     seen, out = set(), []
-    repos = [os.path.dirname(g) for g in sorted(glob.glob(os.path.join(HOME, "*", ".git")) +
-                                                glob.glob(os.path.join(HOME, "*", "*", ".git")))]
-    for d in [r[2] for r in rows] + repos:
-        if d != HOME and d not in seen and allowed_dir(d):
-            seen.add(d)
-            out.append(d)
+    cand = [(f, "fav") for f in favs]
+    for name in ("github", "aur"):
+        cand += [(os.path.dirname(g), name) for g in sorted(glob.glob(os.path.join(glob.escape(d[name]), "*", ".git")))]
+    cand += [(r["cwd"], "recent") for r in rows]
+    for p, section in cand:
+        if p != HOME and p not in seen and allowed_dir(p):
+            seen.add(p)
+            out.append((p, section))
     return out
 
 
-def cmd_json(query):
+def cmd_json(query, panel=False):
     q = query.lower()
     rows = []
     have = installed()
-    for key, title, cwd, _ in all_sessions():
-        if key.split(":")[0] not in have:
+    sessions = all_sessions()
+    for r in sessions:
+        agent = r["key"].split(":")[0]
+        if agent not in have or q not in (r["title"] + " " + short_dir(r["cwd"])).lower():
             continue
-        if q in (title + " " + short_dir(cwd)).lower():
-            agent = key.split(":")[0]
-            rows.append({"key": key, "text": f"{LABEL[agent]}  {title}  ·  {short_dir(cwd)}"})
-            if len(rows) == LIMIT:
-                break
-    found = []
-    if q:
-        found = [{"dir": d, "text": short_dir(d)} for d in projects(all_sessions()) if q in short_dir(d).lower()][:4]
-    print(json.dumps({"agents": have, "sessions": rows, "projects": found}))
+        row = {"key": r["key"], "text": f"{LABEL[agent]}  {r['title']}  ·  {short_dir(r['cwd'])}"}
+        if panel:
+            row.update(agent=agent, title=r["title"], dir=short_dir(r["cwd"]), ts=int(r["ts"]),
+                       n=r.get("n", 0), first=r.get("first", ""), last=r.get("last", ""))
+        rows.append(row)
+        if len(rows) == (200 if panel else LIMIT):
+            break
+    out = {"agents": have, "sessions": rows}
+    if panel or q:
+        found = [{"dir": d, "text": short_dir(d), "section": sec} for d, sec in projects(sessions) if q in short_dir(d).lower()]
+        out["projects"] = found[:200 if panel else 4]
+    print(json.dumps(out))
 
 
 def appid(sid):
@@ -282,7 +360,7 @@ def cmd_open(key):
         fail("Bad session key")
     if focus(appid(sid)):
         return
-    cwd = next((r[2] for r in all_sessions() if r[0] == key), None)
+    cwd = next((r["cwd"] for r in all_sessions() if r["key"] == key), None)
     if not cwd:
         fail("Session not found")
     argv = {"claude": ["claude", "--resume", sid], "codex": ["codex", "resume", sid],
@@ -294,6 +372,12 @@ def main():
     a = sys.argv[1:]
     if a[:1] == ["--json"]:
         cmd_json(" ".join(a[1:]).strip())
+    elif a[:1] == ["--panel"]:
+        cmd_json(" ".join(a[1:]).strip(), True)
+    elif a[:1] == ["--set"] and len(a) == 3:
+        set_dir(a[1], a[2])
+    elif a[:1] == ["--fav"] and len(a) in (2, 3):
+        fav(a[1], a[2] if len(a) == 3 else None)
     elif a[:1] == ["--open"] and len(a) == 2:
         cmd_open(a[1])
     elif a[:1] == ["--start"] and 2 <= len(a) <= 3 and a[1] in AGENTS:

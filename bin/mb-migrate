@@ -218,6 +218,14 @@ migrate_22() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# S-W-a opens the AI agents panel.
+migrate_23() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="S-W-a"' "$f" || sed -i 's#</keyboard>#    <keybind key="S-W-a"><action name="Execute" command="noctalia msg panel-toggle mabox/agents:main"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

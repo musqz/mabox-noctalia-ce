@@ -12,6 +12,9 @@ function onQuery(text)
       ok, data = pcall(noctalia.json.decode, result.stdout)
     end
     local rows = {}
+    if q == "" then
+      table.insert(rows, { id = "panel", title = "All sessions …", subtitle = "Panel with details and a project picker", glyph = "list-search", score = 1100 })
+    end
     if ok and type(data) == "table" then
       for i, a in data.agents or {} do
         if LABEL[a] and (q == "" or noctalia.fuzzyScore(q, LABEL[a]) ~= nil) then
@@ -38,6 +41,10 @@ end
 
 -- The short sleep lets the launcher close first, as in the keys plugin.
 function onActivate(id)
+  if id == "panel" then
+    noctalia.runAsync({ "sh", "-c", "sleep 0.2; exec noctalia msg panel-toggle mabox/agents:main" })
+    return
+  end
   local agent, dir = string.match(id or "", "^startin:(%a+):(/.+)$")
   if agent and LABEL[agent] then
     noctalia.runAsync({ "sh", "-c", 'sleep 0.2; exec "$@"', "sh", "mb-agent-sessions", "--start", agent, dir })
