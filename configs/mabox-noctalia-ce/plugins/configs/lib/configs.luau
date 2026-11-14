@@ -190,6 +190,52 @@ local render
 local refresh
 local row = 0
 
+-- Idle power: screens off and lock after minutes without input, kept in Noctalia's idle behaviors.
+local idle = { screen = { on = false, min = 10 }, lock = { on = false, min = 15 }, draft = {}, note = nil }
+
+local IDLE_APPLY = [[cs() { noctalia msg config-set "$@" >/dev/null || exit 1; }
+cs idle.behavior.screen_off.action "'command'"
+cs idle.behavior.screen_off.command '"mb-screen-off"'
+cs idle.behavior.screen_off.resume_command '"mb-screen-on"'
+cs idle.behavior.screen_off.enabled "$1"
+cs idle.behavior.screen_off.timeout "$2"
+cs idle.behavior.lock.action "'lock'"
+cs idle.behavior.lock.enabled "$3"
+cs idle.behavior.lock.timeout "$4"
+cs idle.behavior.idle-behavior.enabled false]]
+
+local function loadIdle()
+  for key, name in pairs({ screen = "screen_off", lock = "lock" }) do
+    noctalia.runAsync({ "noctalia", "msg", "config-get", "idle.behavior." .. name }, function(r)
+      local out = r.stdout or ""
+      local t = tonumber(string.match("\n" .. out, "\ntimeout = (%d+)"))
+      idle[key].on = string.find(out, "enabled = true", 1, true) ~= nil
+      if t and t >= 60 then
+        idle[key].min = math.floor(t / 60)
+      end
+      render()
+    end)
+  end
+end
+
+local function saveIdle()
+  for key, d in pairs(idle.draft) do
+    local n = tonumber(string.match(noctalia.string.trim(d), "^%d+$"))
+    if not n or n < 1 or n > 1440 then
+      idle.note = "Enter whole minutes, 1 to 1440"
+      render()
+      return
+    end
+    idle[key].min = n
+  end
+  idle.draft = {}
+  local s, l = idle.screen, idle.lock
+  noctalia.runAsync({ "sh", "-c", IDLE_APPLY, "sh", tostring(s.on), tostring(s.min * 60), tostring(l.on), tostring(l.min * 60) }, function(r)
+    idle.note = r.exitCode == 0 and "Saved" or "Could not save (noctalia msg config-set failed)"
+    render()
+  end)
+end
+
 local function stop(id, col, action)
   kbd.stop(id, row, col, action)
 end
@@ -998,6 +1044,44 @@ render = function()
   end
   table.insert(cards, card(logoRows))
 
+  local pwrOpen = expanded["Power"]
+  row += 1
+  stop("h-pwr", 1, function() toggle("Power") end)
+  local pwrRows = {
+    ui.button({
+      key = "h-pwr",
+      selected = kbd.sel("h-pwr"),
+      text = "Power",
+      glyph = pwrOpen and "chevron-down" or "chevron-right",
+      variant = "outline",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "Idle: turn the screens off and lock after some minutes",
+      onClick = function() toggle("Power") end,
+    }),
+  }
+  if pwrOpen then
+    for _, e in ipairs({ { "screen", "Screens off" }, { "lock", "Lock screen" } }) do
+      local k = e[1]
+      table.insert(pwrRows, ui.row({ key = "pw-" .. k, gap = 8, align = "center" }, {
+        ui.label({ text = e[2], flexGrow = 1 }),
+        ui.input({ key = "pwin-" .. k .. idle[k].min, value = idle.draft[k] or tostring(idle[k].min), width = 64, controlSize = "sm", frameVisible = true, tooltip = "Minutes without input", onChange = function(t) idle.draft[k] = t end, onSubmit = saveIdle }),
+        ui.label({ text = "min", color = "on_surface_variant" }),
+        ui.toggle({ key = "pwt-" .. k, checked = idle[k].on, onChange = function(v)
+          idle[k].on = v == true or v == "true"
+          saveIdle()
+        end }),
+      }))
+    end
+    row += 1
+    stop("pw-save", 1, saveIdle)
+    table.insert(pwrRows, ui.row({ gap = 8, align = "center" }, {
+      ui.button({ key = "pw-save", selected = kbd.sel("pw-save"), text = "Save", glyph = "device-floppy", variant = "ghost", controlSize = "sm", onClick = saveIdle }),
+      ui.label({ text = idle.note or "", color = "on_surface_variant", fontSize = 12 }),
+    }))
+  end
+  table.insert(cards, card(pwrRows))
+
   local btnOpen = expanded["Bar buttons"]
   row += 1
   stop("h-btn", 1, function() toggle("Bar buttons") end)
@@ -1217,6 +1301,7 @@ local function start()
   render()
   refresh()
   loadLogo()
+  loadIdle()
 end
 
 return start, handleKey
