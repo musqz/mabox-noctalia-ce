@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""List and resume Claude Code, Codex and Agy sessions for the /ag launcher plugin.
+
+Session formats follow mstio/mst.agent-launchers (MIT).
+
+  mb-agent-sessions --json [QUERY]   installed agents + newest sessions as JSON
+  mb-agent-sessions --open KEY       resume a session (claude:ID, codex:ID, agy:ID) or focus its window
+  mb-agent-sessions --start AGENT [DIR]   new session in DIR (default $HOME)
+"""
+import glob
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+from urllib.parse import unquote
+
+HOME = os.path.expanduser("~")
+CLAUDE = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(HOME, ".claude")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"),
+                     "mb-agent-sessions", "index.json")
+UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{7,79}")
+AGENTS = ("claude", "codex", "agy")
+LABEL = {"claude": "Claude", "codex": "Codex", "agy": "Agy"}
+LIMIT = 25
+SCAN = 300  # newest transcript files read per agent
+GENERIC = {"image attachment", "image", "screenshot", "untitled", "new session"}
+# Titles and prompts are foreign content: no control or bidi characters.
+CTRL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f؜​‎‏⁠﻿‪-‮⁦-⁩]")
+# A session started from inside Claude would inherit these and not save its history.
+CLAUDE_ENV = {"CLAUDECODE", "CLAUDE_PID", "CLAUDE_EFFORT"}
+
+
+def clean(s):
+    return " ".join(CTRL.sub("", s if isinstance(s, str) else "").split())
+
+
+def allowed_dir(cwd):
+    return (cwd == HOME or cwd.startswith(HOME + "/")) and ".." not in cwd.split("/") and os.path.isdir(cwd)
+
+
+def short_dir(cwd):
+    return "~" + cwd[len(HOME):] if cwd.startswith(HOME) else cwd
+
+
+def records(path, needles=None, limit=None):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for n, line in enumerate(f):
+                if limit and n >= limit:
+                    return
+                if needles and not any(t in line for t in needles):
+                    continue
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(r, dict):
+                    yield r
+    except OSError:
+        return
+
+
+def user_text(msg):
+    c = msg.get("content") if isinstance(msg, dict) else None
+    if isinstance(c, list):
+        c = " ".join(b.get("text", "") for b in c if isinstance(b, dict) and isinstance(b.get("text"), str))
+    if not isinstance(c, str):
+        return ""
+    c = re.sub(r"<system-reminder>.*?</system-reminder>", " ", c, flags=re.S)
+    c = re.sub(r"\[(Image|Pasted text)[ :#][^\]]*\]", " ", c)
+    c = clean(c)
+    return "" if c.startswith(("<", "Caveat:", "[Request interrupted")) or len(c) < 8 else c[:80]
+
+
+def parse_claude(path):
+    title = cwd = first = ""
+    for r in records(path, ('"type":"user"', '"ai-title"', '"custom-title"')):
+        t = r.get("type")
+        if t == "custom-title" and isinstance(r.get("customTitle"), str) and r["customTitle"]:
+            title = r["customTitle"]
+        elif t == "ai-title" and not title and isinstance(r.get("aiTitle"), str) and r["aiTitle"]:
+            title = r["aiTitle"]
+        elif t == "user" and not r.get("isSidechain") and not r.get("isMeta"):
+            if not cwd and isinstance(r.get("cwd"), str):
+                cwd = r["cwd"]
+            first = first or user_text(r.get("message"))
+    if not title or title.lower() in GENERIC:
+        title = first or title
+    return {"title": clean(title)[:80], "cwd": cwd, "ok": bool(first)}
+
+
+def claude_sessions():
+    try:
+        with open(CACHE) as f:
+            old = json.load(f)
+    except (OSError, ValueError):
+        old = {}
+    files = []
+    for p in glob.glob(os.path.join(CLAUDE, "projects", "*", "*.jsonl")):
+        try:
+            st = os.stat(p)
+        except OSError:
+            continue
+        files.append((st.st_mtime, st.st_size, p))
+    files.sort(reverse=True)
+    new, out = {}, []
+    for mtime, size, p in files[:SCAN]:
+        sid = os.path.basename(p)[:-6]
+        if not UUID.fullmatch(sid):
+            continue
+        k = f"{mtime}:{size}"
+        e = old.get(p)
+        if not isinstance(e, dict) or e.get("k") != k:
+            e = parse_claude(p)
+            e["k"] = k
+        new[p] = e
+        if e["ok"] and e["cwd"]:
+            out.append(("claude:" + sid, e["title"] or sid[:8], e["cwd"], mtime))
+    if new != old:
+        tmp = f"{CACHE}.{os.getpid()}"
+        try:
+            os.makedirs(os.path.dirname(CACHE), mode=0o700, exist_ok=True)
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w") as f:
+                json.dump(new, f)
+            os.replace(tmp, CACHE)
+        except OSError:
+            pass
+    return out
+
+
+def codex_sessions():
+    names = {}
+    for r in records(os.path.join(HOME, ".codex", "session_index.jsonl")):
+        if "id" in r:
+            names[str(r["id"])] = str(r.get("thread_name") or "")
+    files = []
+    for p in glob.glob(os.path.join(HOME, ".codex", "sessions", "*", "*", "*", "rollout-*.jsonl")):
+        try:
+            files.append((os.stat(p).st_mtime, p))
+        except OSError:
+            continue
+    files.sort(reverse=True)
+    out = []
+    for mtime, p in files[:SCAN]:
+        meta = next(records(p, limit=1), {}).get("payload")
+        if not isinstance(meta, dict) or meta.get("thread_source", "user") != "user":
+            continue
+        sid, cwd = str(meta.get("id") or ""), str(meta.get("cwd") or "")
+        if SAFE_ID.fullmatch(sid) and cwd:
+            out.append(("codex:" + sid, clean(names.get(sid)) or sid[:8], cwd, mtime))
+    return out
+
+
+def agy_sessions():
+    path = os.path.join(HOME, ".gemini", "antigravity-cli", "cache", "conversation_metadata.json")
+    try:
+        with open(path) as f:
+            convs = json.load(f).get("conversations") or {}
+    except (OSError, ValueError, AttributeError):
+        return []
+    out = []
+    for cid, entry in convs.items():
+        if not isinstance(entry, dict) or entry.get("is_internal") or not SAFE_ID.fullmatch(str(cid)):
+            continue
+        summ = entry.get("summary")
+        if not isinstance(summ, dict):
+            continue
+        try:
+            ts = datetime.fromisoformat(str(summ.get("UpdatedAt", "")).replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            continue
+        uris = summ.get("WorkspaceURIs") or []
+        cwd = unquote(str(uris[0])[7:]) if uris and str(uris[0]).startswith("file://") else ""
+        if cwd:
+            out.append(("agy:" + str(cid), clean(summ.get("Title") or summ.get("Preview")) or str(cid)[:8], cwd, ts))
+    return out
+
+
+def all_sessions():
+    rows = []
+    for fn in (claude_sessions, codex_sessions, agy_sessions):
+        try:
+            rows += fn()
+        except Exception:
+            continue
+    rows = [r for r in rows if allowed_dir(r[2])]
+    rows.sort(key=lambda r: r[3], reverse=True)
+    return rows
+
+
+def installed():
+    return [a for a in AGENTS if shutil.which(a)]
+
+
+def projects(rows):
+    """Folders of earlier sessions first, then git repos up to two levels under $HOME."""
+    seen, out = set(), []
+    repos = [os.path.dirname(g) for g in sorted(glob.glob(os.path.join(HOME, "*", ".git")) +
+                                                glob.glob(os.path.join(HOME, "*", "*", ".git")))]
+    for d in [r[2] for r in rows] + repos:
+        if d != HOME and d not in seen and allowed_dir(d):
+            seen.add(d)
+            out.append(d)
+    return out
+
+
+def cmd_json(query):
+    q = query.lower()
+    rows = []
+    have = installed()
+    for key, title, cwd, _ in all_sessions():
+        if key.split(":")[0] not in have:
+            continue
+        if q in (title + " " + short_dir(cwd)).lower():
+            agent = key.split(":")[0]
+            rows.append({"key": key, "text": f"{LABEL[agent]}  {title}  ·  {short_dir(cwd)}"})
+            if len(rows) == LIMIT:
+                break
+    found = []
+    if q:
+        found = [{"dir": d, "text": short_dir(d)} for d in projects(all_sessions()) if q in short_dir(d).lower()][:4]
+    print(json.dumps({"agents": have, "sessions": rows, "projects": found}))
+
+
+def appid(sid):
+    return "mb-agent-" + sid
+
+
+def focus(app):
+    if not shutil.which("wlrctl"):
+        return False
+    sel = "app_id:" + app
+    try:
+        return (subprocess.run(["wlrctl", "toplevel", "find", sel], capture_output=True, timeout=5).returncode == 0
+                and subprocess.run(["wlrctl", "toplevel", "focus", sel], capture_output=True, timeout=5).returncode == 0)
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def terminal(app):
+    chosen = os.environ.get("TERMINAL", "").split()[:1]
+    for t in chosen + ["foot", "kitty", "alacritty", "terminator", "xfce4-terminal", "xterm"]:
+        if not shutil.which(t):
+            continue
+        name = os.path.basename(t)
+        if name == "foot":
+            return [t, "--app-id=" + app, "-e"]
+        if name == "kitty":
+            return [t, "--class", app]
+        if name == "alacritty":
+            return [t, "--class", app, "-e"]
+        if name in ("terminator", "xfce4-terminal"):
+            return [t, "-x"]
+        return [t, "-e"]
+    return None
+
+
+def fail(msg):
+    if shutil.which("notify-send"):
+        subprocess.run(["notify-send", "-u", "critical", "AI agents", msg], timeout=5, check=False)
+    sys.exit(msg)
+
+
+def launch(argv, cwd, app):
+    term = terminal(app)
+    if term is None or not shutil.which(argv[0]) or not shutil.which("setsid"):
+        fail(f"Cannot start {argv[0]}: terminal or program missing")
+    env = {k: v for k, v in os.environ.items() if k not in CLAUDE_ENV and not k.startswith("CLAUDE_CODE_")}
+    subprocess.Popen(["setsid", "-f"] + term + argv, cwd=cwd, env=env,
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def cmd_open(key):
+    agent, _, sid = key.partition(":")
+    ok = (UUID if agent == "claude" else SAFE_ID).fullmatch(sid) if agent in AGENTS else None
+    if not ok:
+        fail("Bad session key")
+    if focus(appid(sid)):
+        return
+    cwd = next((r[2] for r in all_sessions() if r[0] == key), None)
+    if not cwd:
+        fail("Session not found")
+    argv = {"claude": ["claude", "--resume", sid], "codex": ["codex", "resume", sid],
+            "agy": ["agy", "--conversation", sid]}[agent]
+    launch(argv, cwd, appid(sid))
+
+
+def main():
+    a = sys.argv[1:]
+    if a[:1] == ["--json"]:
+        cmd_json(" ".join(a[1:]).strip())
+    elif a[:1] == ["--open"] and len(a) == 2:
+        cmd_open(a[1])
+    elif a[:1] == ["--start"] and 2 <= len(a) <= 3 and a[1] in AGENTS:
+        cwd = os.path.abspath(a[2]) if len(a) == 3 else HOME
+        if not allowed_dir(cwd):
+            fail("Folder must be an existing folder under your home")
+        launch([a[1]], cwd, "mb-agent")
+    else:
+        sys.exit(__doc__)
+
+
+main()

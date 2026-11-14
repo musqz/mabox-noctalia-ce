@@ -127,6 +127,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/recolor` | `main` panel, root menu (Tools: Recolor), `/mb recolor` | | `mb-recolor`, `magick`, `yad`; palettes in `/usr/share/mabox-noctalia-ce/palettes/` |
 | `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` |  | `mb-crypto`, `curl`, `python3`; needs internet; state in the plugin data folder |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
+| `mabox/agents` | `/ag` launcher | | `mb-agent-sessions`, `python3`, `wlrctl`, a terminal; starts and resumes Claude Code, Codex, Agy; session formats from mstio/mst.agent-launchers (MIT) |
 
 ```sh
 noctalia msg plugins list
