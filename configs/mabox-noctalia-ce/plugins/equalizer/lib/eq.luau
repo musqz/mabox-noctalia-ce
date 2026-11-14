@@ -4,13 +4,13 @@ local M = {}
 
 M.LABELS = { "Pre", "31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k" }
 
--- Preamp first, then the ten bands.
+-- Preamp trim first (mb-eq lowers the preamp by the largest boost), then the ten bands.
 M.PRESETS = {
   { name = "Flat", gains = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
-  { name = "Bass", gains = { -3, 6, 5, 4, 2, 0, 0, 0, 0, 0, 0 } },
-  { name = "Treble", gains = { -3, 0, 0, 0, 0, 0, 1, 2, 4, 5, 6 } },
-  { name = "Vocal", gains = { -2, -2, -1, 0, 0, 2, 3, 3, 2, 0, -1 } },
-  { name = "Loudness", gains = { -4, 5, 4, 1, 0, -1, 0, 1, 3, 4, 2 } },
+  { name = "Bass", gains = { 0, 6, 5, 4, 2, 0, 0, 0, 0, 0, 0 } },
+  { name = "Treble", gains = { 0, 0, 0, 0, 0, 0, 1, 2, 4, 5, 6 } },
+  { name = "Vocal", gains = { 0, -2, -1, 0, 0, 2, 3, 3, 2, 0, -1 } },
+  { name = "Loudness", gains = { 0, 5, 4, 1, 0, -1, 0, 1, 3, 4, 2 } },
 }
 
 local function path()

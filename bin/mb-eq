@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Control the PipeWire equalizer sink (effect_input.eq, configs/pipewire/eq.conf).
-#   mb-eq gains G0..G10   set preamp + 10 band gains (dB) on the running node
+#   mb-eq gains G0..G10   set preamp trim + 10 band gains (dB) on the running node; the preamp is lowered by the largest boost
 #   mb-eq on | off        make the equalizer the default sink / restore the previous one
 #   mb-eq status          prints "loaded" and "default" when they are true
 #   mb-eq save G0..G10    write the gains into the startup config (keeps eq.conf.bak)
@@ -13,6 +13,10 @@ nodes=(preamp eq1 eq2 eq3 eq4 eq5 eq6 eq7 eq8 eq9 eq10)
 
 node_id() { pactl list sinks short | awk -v s="$sink" '$2 == s { print $1; exit }'; }
 
+# Preamp trim minus the largest boost, counting about a third of each neighbouring band (they overlap at Q 1.4),
+# so the filters together stay at or below 0 dB.
+headroom() { awk -v a="$*" 'BEGIN { n = split(a, g, " "); m = 0; for (i = 2; i <= n; i++) { s = g[i] + (i > 2 ? 0.35 * g[i - 1] : 0) + (i < n ? 0.35 * g[i + 1] : 0); if (s > m) m = s }; printf "%.1f", g[1] - m }'; }
+
 check_gains() {
     (($# == 11)) || { echo "mb-eq: need 11 gains" >&2; exit 2; }
     local g
@@ -24,6 +28,7 @@ gains)
     shift
     check_gains "$@"
     g=("$@")
+    g[0]=$(headroom "$@")
     id=$(node_id)
     [[ -n $id ]] || { echo "mb-eq: $sink is not loaded" >&2; exit 1; }
     params=
@@ -59,6 +64,7 @@ save)
     shift
     check_gains "$@"
     g=("$@")
+    g[0]=$(headroom "$@")
     [[ -f $conf ]] || { echo "mb-eq: $conf not found" >&2; exit 1; }
     for n in "${nodes[@]}"; do
         grep -qE "name = $n .*\"Gain\" = " "$conf" || { echo "mb-eq: no $n line in $conf" >&2; exit 1; }

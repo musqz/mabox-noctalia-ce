@@ -11,11 +11,12 @@ tags = ["utility", "audio"]
 [[panel]]
 id = "main"
 entry = "panel.luau"
-width = 420
+width = 780
 height = "content"
-max_height = 760
-placement = "attached"
-open_near_click = true
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
 
 [[service]]
 id = "restore"
