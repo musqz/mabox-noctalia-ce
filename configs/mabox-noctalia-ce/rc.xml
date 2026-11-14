@@ -65,6 +65,8 @@
     <keybind key="XF86AudioPrev"><action name="Execute"><command>noctalia msg media previous</command></action></keybind>
     <keybind key="XF86MonBrightnessUp"><action name="Execute"><command>brightness-primary up</command></action></keybind>
     <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightness-primary down</command></action></keybind>
+    <!-- Sent by mb-hide-cursor, not a key to press -->
+    <keybind key="F20"><action name="HideCursor"/></keybind>
     
     <keybind key="C-W-c"><action name="Execute" command="mb-pinned configs"/></keybind>
     <keybind key="W-c"><action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker"/></keybind>
