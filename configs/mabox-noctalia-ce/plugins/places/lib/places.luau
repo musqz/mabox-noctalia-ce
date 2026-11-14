@@ -16,9 +16,11 @@ local FOLDERS = {
   { name = "Music", glyph = "music", path = HOME .. "/Music" },
   { name = "Pictures", glyph = "photo", path = HOME .. "/Pictures" },
   { name = "Videos", glyph = "video", path = HOME .. "/Videos" },
+  { name = "Trash", glyph = "trash", open = "trash:///" },
 }
 
 local places = {}
+local drives = {}
 local recent = {}
 local size = 10
 local query = ""
@@ -52,7 +54,8 @@ end
 local function loadPlaces()
   places = {}
   for _, f in ipairs(FOLDERS) do
-    table.insert(places, { name = f.name, glyph = f.glyph, path = f.path, open = f.path, ok = noctalia.fileExists(f.path) })
+    local target = f.open or f.path
+    table.insert(places, { name = f.name, glyph = f.glyph, path = f.path, open = target, ok = f.open ~= nil or noctalia.fileExists(target), std = true })
   end
   local raw = noctalia.readFile(HOME .. "/.config/gtk-3.0/bookmarks") or ""
   if raw == "" then
@@ -66,7 +69,7 @@ local function loadPlaces()
       if label == "" then
         label = unescape(string.match(uri, "([^/]+)/*$") or uri)
       end
-      table.insert(places, { name = label, glyph = "folder", path = path, open = path or uri, ok = path == nil or noctalia.fileExists(path) })
+      table.insert(places, { name = label, glyph = "bookmark", path = path, open = path or uri, ok = path == nil or noctalia.fileExists(path) })
     end
   end
 end
@@ -100,9 +103,28 @@ local function loadRecent()
   end)
 end
 
+-- Removable (hotplug) partitions and anything udisks mounted under /run/media.
+local function loadDrives()
+  noctalia.runAsync({ "lsblk", "-P", "-p", "-o", "NAME,LABEL,MOUNTPOINT,TYPE,FSTYPE,HOTPLUG,SIZE" }, function(r)
+    drives = {}
+    for line in string.gmatch(r.stdout or "", "[^\n]+") do
+      local d = {}
+      for k, v in string.gmatch(line, '(%u+)="([^"]*)"') do
+        d[k] = string.gsub(v, "\\x(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
+      end
+      local mp = d.MOUNTPOINT or ""
+      if d.TYPE == "part" and (d.FSTYPE or "") ~= "" and not string.find(d.FSTYPE, "^crypto") and not string.find(d.FSTYPE, "_member$") and d.FSTYPE ~= "swap" and (d.HOTPLUG == "1" or string.find(mp, "^/run/media/")) then
+        table.insert(drives, { dev = d.NAME, name = d.LABEL ~= "" and d.LABEL or string.match(d.NAME, "[^/]+$"), mount = mp, size = d.SIZE })
+      end
+    end
+    render()
+  end)
+end
+
 local function reload()
   loadPlaces()
   render()
+  loadDrives()
   loadRecent()
 end
 
@@ -115,6 +137,32 @@ end
 local function openFolder(p)
   noctalia.runAsync({ "pcmanfm", p.open })
   done()
+end
+
+local function openDrive(d)
+  if d.mount ~= "" then
+    openFolder({ open = d.mount })
+    return
+  end
+  noctalia.runAsync({ "udisksctl", "mount", "-b", d.dev }, function(r)
+    local mp = string.match(r.stdout or "", " at (/[^\n]-)%.?%s*$")
+    if mp then
+      noctalia.runAsync({ "pcmanfm", mp })
+    else
+      noctalia.runAsync({ "notify-send", "-a", "Places", "Mount failed", d.name .. ": " .. noctalia.string.trim(r.stderr or "") })
+    end
+    loadDrives()
+  end)
+  done()
+end
+
+local function unmountDrive(d)
+  noctalia.runAsync({ "udisksctl", "unmount", "-b", d.dev }, function(r)
+    if r.exitCode ~= 0 then
+      noctalia.runAsync({ "notify-send", "-a", "Places", "Unmount failed", d.name .. ": " .. noctalia.string.trim(r.stderr or "") })
+    end
+    loadDrives()
+  end)
 end
 
 local function openFile(f)
@@ -145,21 +193,50 @@ local function card(key, children)
 end
 
 local function placeRows()
-  local rows = {}
+  local std, marks = {}, {}
   for i, p in ipairs(places) do
-    table.insert(rows, ui.button({
+    local list = p.std and std or marks
+    table.insert(list, ui.button({
       key = "p" .. i,
       glyph = p.glyph,
       text = p.name,
       variant = "ghost",
       contentAlign = "start",
       enabled = p.ok,
-      tooltip = p.ok and (p.open .. "\nClick: open, right click: copy the path") or (p.open .. " is not available"),
+      tooltip = p.ok and (p.open .. "\nClick: open" .. (string.find(p.open, "^/") and ", right click: copy the path" or "")) or (p.open .. " is not available"),
       onClick = function() openFolder(p) end,
-      onRightClick = function() copyPath({ path = p.open }) end,
+      onRightClick = string.find(p.open, "^/") and function() copyPath({ path = p.open }) end or nil,
     }))
   end
-  return card("places", rows)
+  local cards = { card("places", std) }
+  if #marks > 0 then
+    table.insert(marks, 1, ui.label({ text = "Bookmarks", color = "on_surface_variant" }))
+    table.insert(cards, card("bookmarks", marks))
+  end
+  return cards
+end
+
+local function driveCard()
+  if #drives == 0 then
+    return nil
+  end
+  local rows = {}
+  for i, d in ipairs(drives) do
+    local mounted = d.mount ~= ""
+    table.insert(rows, ui.row({ key = "d" .. i, gap = 4, align = "center" }, {
+      ui.button({
+        glyph = "device-floppy",
+        text = d.name .. "  " .. d.size,
+        variant = "ghost",
+        contentAlign = "start",
+        flexGrow = 1,
+        tooltip = mounted and (d.mount .. "\nClick: open") or (d.dev .. "\nClick: mount and open"),
+        onClick = function() openDrive(d) end,
+      }),
+      mounted and ui.button({ key = "ej" .. i, glyph = "player-eject", variant = "ghost", controlSize = "sm", tooltip = "Unmount", onClick = function() unmountDrive(d) end }) or ui.box({ key = "ej" .. i, height = 0 }),
+    }))
+  end
+  return card("drives", rows)
 end
 
 local function recentCard()
@@ -247,8 +324,14 @@ render = function()
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }))
   end
-  table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, { placeRows(), recentCard() }))
-  pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 632 or nil }, head))
+  local cards = placeRows()
+  local dc = driveCard()
+  if dc then
+    table.insert(cards, dc)
+  end
+  table.insert(cards, recentCard())
+  table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards))
+  pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 712 or nil }, head))
 end
 
 local function open()
