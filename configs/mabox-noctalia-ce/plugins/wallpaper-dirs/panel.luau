@@ -142,7 +142,9 @@ function render()
     }),
     err and ui.label({ text = err, color = "error" }) or note and ui.label({ text = note, color = "primary" }) or ui.box({ height = 0 }),
     ui.column(card("folders"), {
-      ui.scroll({ key = "list", gap = 0, height = 300, revealKey = kbd.reveal() }, rows),
+      ui.column({ key = "listbox", height = 300 }, {
+        ui.scroll({ key = "list", gap = 0, flexGrow = 1, revealKey = kbd.reveal() }, rows),
+      }),
     }),
   }))
 end
