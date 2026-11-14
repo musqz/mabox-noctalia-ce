@@ -15,3 +15,14 @@ entry = "finder.luau"
 prefix = "ag"
 glyph = "robot"
 include_in_global_search = false
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 1200
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+capture_keys = ["alt+s"]
