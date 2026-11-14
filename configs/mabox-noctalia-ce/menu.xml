@@ -147,6 +147,10 @@
       <action name="Execute" command="mb-pinned places" />
     </item>
     <separator />
+    <item label="Recolor" icon="applications-graphics">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/recolor:main" />
+    </item>
+    <separator />
     <item label="Status" icon="utilities-system-monitor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
     </item>

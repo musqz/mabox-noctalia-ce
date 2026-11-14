@@ -1,0 +1,19 @@
+id = "mabox/recolor"
+name = "Recolor"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "color-swatch"
+description = "Recolor an image or a folder of images to a palette (Nord, Gruvbox, Catppuccin Mocha, Dracula, Solarized) with mb-recolor."
+dependencies = ["yad"]
+tags = ["utility", "graphics"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 460
+height = "content"
+max_height = 900
+placement = "attached"
+open_near_click = true

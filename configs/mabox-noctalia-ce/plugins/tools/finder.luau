@@ -13,6 +13,7 @@ local TOOLS = {
   { id = "cava", title = "Cava", glyph = "chart-bar", cmd = { "mb-cava", "toggle" } },
   { id = "cava-settings", title = "Cava settings", glyph = "adjustments", cmd = { "noctalia", "msg", "panel-toggle", "mabox/cava:main" } },
   { id = "equalizer", title = "Equalizer", glyph = "adjustments-horizontal", cmd = { "noctalia", "msg", "panel-toggle", "mabox/equalizer:main" } },
+  { id = "recolor", title = "Recolor", glyph = "color-swatch", cmd = { "noctalia", "msg", "panel-toggle", "mabox/recolor:main" } },
   { id = "crypto", title = "Crypto", glyph = "currency-bitcoin", cmd = { "noctalia", "msg", "panel-toggle", "mabox/crypto:main" }, pinned = "crypto" },
   { id = "snapshot", title = "Snapshot", glyph = "disc", cmd = { "noctalia", "msg", "panel-open", "mabox/snapshot:main" } },
   { id = "reset", title = "Reset configs", glyph = "restore", cmd = { "noctalia", "msg", "panel-toggle", "mabox/reset:main" } },
