@@ -331,8 +331,10 @@ function onOpen()
   for name, set in pairs({ src = function(v) src = v end, out = function(v) out = v end }) do
     local picked = noctalia.readFile(pickFile(name))
     if picked and picked ~= "" then
-      set(noctalia.string.trim(picked))
-      gen = gen + 1
+      if not running then
+        set(noctalia.string.trim(picked))
+        gen = gen + 1
+      end
       noctalia.writeFile(pickFile(name), "")
     end
   end
