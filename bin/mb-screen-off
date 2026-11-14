@@ -14,7 +14,7 @@ set -u
 dir=${XDG_RUNTIME_DIR:-/tmp}/mb-screen
 mode=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/screen-off-mode" 2>/dev/null || true)
 [[ $mode == black || $mode == both ]] || mode=dim
-cover() { noctalia msg plugin mabox/configs:blank all "$1" > /dev/null 2>&1; }
+cover() { noctalia msg plugin mabox/configs:blank all "$1" 2>&1 | grep -q '^ok'; }
 mkdir -p "$dir"
 exec 9> "$dir/lock"
 flock 9
@@ -24,16 +24,22 @@ case ${0##*/} in
         for f in "$dir"/bus-*; do
             [[ -f $f ]] || continue
             b=${f##*/bus-}
-            ( ddcutil --bus "$b" setvcp 10 "$(<"$f")" >/dev/null 2>&1 && rm -f "$f"
-              [[ -f $dir/con-$b ]] && ddcutil --bus "$b" setvcp 12 "$(<"$dir/con-$b")" >/dev/null 2>&1 && rm -f "$dir/con-$b" ) &
+            ( ddcutil --bus "$b" setvcp 10 "$(<"$f")" >/dev/null 2>&1 && rm -f "$f" ) &
+        done
+        for f in "$dir"/con-*; do
+            [[ -f $f ]] || continue
+            b=${f##*/con-}
+            ( ddcutil --bus "$b" setvcp 12 "$(<"$f")" >/dev/null 2>&1 && rm -f "$f" ) &
         done
         wait
         cover hide
         rm -f "$dir/dpms"
         wlopm --on '*' 2>/dev/null ;;
     *)
-        [[ $mode == dim ]] || cover show
-        [[ $mode == black ]] && exit 0
+        # black mode without a working cover layer dims instead
+        if [[ $mode != dim ]] && cover show && [[ $mode == black ]]; then
+            exit 0
+        fi
         # already off: keep the stored brightness
         compgen -G "$dir/bus-*" > /dev/null && exit 0
         [[ -f $dir/dpms ]] && exit 0
@@ -43,6 +49,7 @@ case ${0##*/} in
                 [[ $v =~ ^[0-9]+$ ]] || exit 0
                 ((v > 0)) || v=50
                 echo "$v" > "$dir/bus-$b"
+                rm -f "$dir/con-$b"
                 c=$(ddcutil --bus "$b" getvcp 12 --brief 2>/dev/null | awk '{print $4}')
                 [[ $c =~ ^[0-9]+$ ]] && ((c > 0)) && echo "$c" > "$dir/con-$b"
                 ddcutil --bus "$b" setvcp 10 0 >/dev/null 2>&1

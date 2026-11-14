@@ -205,7 +205,11 @@ cs idle.behavior.lock.enabled "$3"
 cs idle.behavior.lock.timeout "$4"
 cs idle.behavior.idle-behavior.enabled false]]
 
-local MODES = { { "dim", "Dim" }, { "black", "Black layer" }, { "both", "Both" } }
+local MODES = {
+  { "dim", "Dim", "Brightness and contrast of the monitors to 0 (DDC)" },
+  { "black", "Black layer", "Black layer over every monitor" },
+  { "both", "Both", "Dim and black layer" },
+}
 
 local function modeFile()
   return noctalia.getenv("HOME") .. "/.config/mabox-noctalia-ce/screen-off-mode"
@@ -1100,7 +1104,7 @@ render = function()
     local modes = {}
     for _, m in ipairs(MODES) do
       local on = idle.mode == m[1]
-      table.insert(modes, ui.button({ key = "pm-" .. m[1] .. (on and "1" or "0"), text = m[2], glyph = on and "check" or nil, variant = on and "primary" or "ghost", controlSize = "sm", tooltip = m[1] == "dim" and "Brightness and contrast of the monitors to 0 (DDC)" or m[1] == "black" and "Black layer over every monitor" or "Dim and black layer", onClick = function() setMode(m[1]) end }))
+      table.insert(modes, ui.button({ key = "pm-" .. m[1] .. (on and "1" or "0"), text = m[2], glyph = on and "check" or nil, variant = on and "primary" or "ghost", controlSize = "sm", tooltip = m[3], onClick = function() setMode(m[1]) end }))
     end
     table.insert(pwrRows, ui.label({ text = "Screens off by", color = "on_surface_variant" }))
     table.insert(pwrRows, ui.row({ gap = 6 }, modes))
