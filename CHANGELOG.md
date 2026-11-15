@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Install apps from the pacman repositories with the Install apps panel (`W-i`, root menu, right click on the launcher button, `/mb install`): categories, installed state, Install button with a password window; the list is `/usr/share/mabox-noctalia-ce/install.csv`.
 - Right click on the volume bar button opens the Equalizer panel.
 - List unmounted disks in the Drives card of the Places panel: every partition with a filesystem except the system mounts; click mounts and opens it, the eject button unmounts it.
 - Create a folder from the Places panel: the new folder button next to the terminal button of an expanded folder opens a name field; Enter or the check button creates it.
