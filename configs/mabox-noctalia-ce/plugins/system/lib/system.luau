@@ -240,6 +240,7 @@ return function()
 
   local function terminal(...)
     noctalia.runAsync({ "sh", "-c", FIND_TERM, "sh", ... })
+    panel.close()
   end
 
   local function fixCommand(f)

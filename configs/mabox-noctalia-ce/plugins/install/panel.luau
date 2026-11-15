@@ -1,5 +1,5 @@
 --!nonstrict
--- Install apps: curated pacman-only list (lists/install.csv); installs through pkexec pacman -S.
+-- Install apps: curated pacman-only list (lists/install.csv); installs with sudo pacman -S in a terminal.
 local logo = require("./lib/celogo.luau")
 local hotkey = require("./lib/hotkey.luau")
 
@@ -12,8 +12,6 @@ end
 local apps, order = {}, {}
 local installed = {}
 local query = ""
-local status = ""
-local busyPkg = nil
 local render
 
 local function loadList()
@@ -32,42 +30,37 @@ local function loadList()
   end
 end
 
-local function queryInstalled(after)
+local function queryInstalled()
   noctalia.runAsync({ "sh", "-c", "pacman -Qq 2>/dev/null" }, function(result)
     installed = {}
     for pkg in string.gmatch(result.stdout or "", "[^\n]+") do
       installed[pkg] = true
     end
-    if after then
-      after()
-    end
     render()
   end)
 end
 
+-- Terminal from the Agents plugin setting, then $TERMINAL, then the first installed one; detached so it outlives the panel command.
+local RUN = [[t=$(sed -n 's/^terminal=//p' "${XDG_CONFIG_HOME:-$HOME/.config}/mabox/mb-agent-sessions.conf" 2>/dev/null)
+for t in "$t" ${TERMINAL%% *} foot kitty alacritty terminator xfce4-terminal xterm; do
+  [ -n "$t" ] && command -v "$t" >/dev/null || continue
+  case "${t##*/}" in
+    kitty) setsid -f "$t" sh -c "$1" sh "$2"; exit ;;
+    terminator|xfce4-terminal) setsid -f "$t" -x sh -c "$1" sh "$2"; exit ;;
+    *) setsid -f "$t" -e sh -c "$1" sh "$2"; exit ;;
+  esac
+done
+exit 127]]
+
 local function install(app)
-  busyPkg = app.pkg
-  status = "Installing " .. app.name .. "..."
-  render()
-  noctalia.runAsync({ "sh", "-c", "pkexec pacman -S --needed --noconfirm " .. app.pkg .. " 2>&1" }, function(result)
-    local out = result.stdout or ""
-    queryInstalled(function()
-      busyPkg = nil
-      if installed[app.pkg] then
-        status = app.name .. " installed"
-      else
-        local lines = {}
-        for l in string.gmatch(out, "[^\n]+") do
-          table.insert(lines, l)
-        end
-        local tail = table.concat(lines, "\n", math.max(1, #lines - 2))
-        if string.find(out, "target not found", 1, true) then
-          tail = tail .. "\nRun the Updates panel, or enable the repo that has this package (multilib, Mabox)."
-        end
-        status = app.name .. " not installed:\n" .. tail
-      end
-    end)
+  -- Closing the terminal reopens the panel, which re-reads the installed packages.
+  local script = "sudo pacman -S --needed \"$1\"; echo; printf 'Press Enter to close. '; read _; noctalia msg panel-open mabox/install:main"
+  noctalia.runAsync({ "sh", "-c", RUN, "sh", script, app.pkg }, function(result)
+    if result.exitCode == 127 then
+      noctalia.notify("Install apps", "No terminal found")
+    end
   end)
+  panel.close()
 end
 
 local function row(app)
@@ -75,10 +68,8 @@ local function row(app)
   if installed[app.pkg] then
     right = ui.label({ text = "installed", color = "primary" })
   else
-    right = ui.button({ text = busyPkg == app.pkg and "..." or "Install", variant = "outline", controlSize = "sm", onClick = function()
-      if not busyPkg then
-        install(app)
-      end
+    right = ui.button({ text = "Install", variant = "outline", controlSize = "sm", onClick = function()
+      install(app)
     end })
   end
   return ui.column({ key = app.pkg, gap = 0 }, {
@@ -140,12 +131,10 @@ render = function()
       ui.label({ text = have .. " of " .. total .. " installed", color = "on_surface_variant", fontSize = 11 }),
     }),
     ui.scroll({ flexGrow = 1, key = "list" }, { body }),
-    status ~= "" and ui.label({ text = status, color = "on_surface_variant", fontSize = 11 }) or nil,
   }))
 end
 
 function onOpen()
-  status = ""
   query = ""
   loadList()
   render()

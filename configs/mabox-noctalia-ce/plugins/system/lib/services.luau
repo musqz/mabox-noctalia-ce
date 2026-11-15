@@ -261,6 +261,7 @@ return function(render, terminal, flags)
 
   local function openFolder(path)
     noctalia.runAsync({ "sh", "-c", 'exec setsid -f xdg-open "$(dirname "$1")"', "sh", path })
+    panel.close()
   end
 
   local function copyStatus(text, path)
