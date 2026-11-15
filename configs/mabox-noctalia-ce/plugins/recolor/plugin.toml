@@ -12,8 +12,8 @@ tags = ["utility", "graphics"]
 [[panel]]
 id = "main"
 entry = "panel.luau"
-width = 460
+width = 1200
 height = "content"
 max_height = 1100
-placement = "attached"
-open_near_click = true
+placement = "floating"
+position = "top_center"
