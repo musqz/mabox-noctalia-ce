@@ -1,0 +1,19 @@
+id = "mabox/install"
+name = "Install apps"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "download"
+description = "Install common apps from the pacman repositories: browsers, office, graphics, media, dev and chat."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 760
+height = "content"
+max_height = 900
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"

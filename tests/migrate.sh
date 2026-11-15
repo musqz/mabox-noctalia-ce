@@ -96,4 +96,14 @@ sed -i 's#title="q-term-right"#title="q-term"#' "$conf/mabox-noctalia-ce/rc.xml"
 migrate
 [[ $(count 'title="q-term-right"') == 1 && $(count 'width="999"') == 1 ]] || { echo "FAIL migrate_21: overwrote an edited rule"; exit 1; }
 
+# migrate_25: the install key and the launcher right-click are added once; an edited action stays.
+grep -v -e 'key="W-i"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+printf '[widget.launcher]\nshow_tooltip = false\n' > "$conf/noctalia/config.toml"
+migrate; migrate
+[[ $(count 'key="W-i"') == 1 ]] || { echo "FAIL migrate_25: expected one W-i bind"; exit 1; }
+[[ $(grep -c 'mabox/install:main' "$conf/noctalia/config.toml") == 1 ]] || { echo "FAIL migrate_25: expected one launcher action"; exit 1; }
+printf '[widget.launcher]\n\n[widget.launcher.actions]\nright = "mine"\n' > "$conf/noctalia/config.toml"
+migrate
+[[ $(grep -c 'mine' "$conf/noctalia/config.toml") == 1 && $(grep -c 'install:main' "$conf/noctalia/config.toml") == 0 ]] || { echo "FAIL migrate_25: overwrote the user's action"; exit 1; }
+
 echo ok

@@ -51,6 +51,9 @@
   <item label="Launcher" icon="applications-all">
     <action name="Execute" command="noctalia msg panel-toggle launcher" />
   </item>
+  <item label="Install apps" icon="system-software-install">
+    <action name="Execute" command="noctalia msg panel-toggle mabox/install:main" />
+  </item>
   <separator />
   <menu id="settings-menu" label="Mabox noctalia ce" icon="preferences-system">
     <item label="Noctalia settings" icon="preferences-system">

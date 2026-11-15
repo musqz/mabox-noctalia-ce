@@ -143,6 +143,9 @@ show_value = false
 [widget.launcher]
 show_tooltip = false
 
+[widget.launcher.actions]
+right = "exec noctalia msg panel-toggle mabox/install:main"
+
 [widget.media]
 artist_first = true
 capsule = true
