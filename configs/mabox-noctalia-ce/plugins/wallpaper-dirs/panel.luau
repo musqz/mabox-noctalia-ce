@@ -12,6 +12,7 @@ end
 
 local items = {}
 local current = ""
+local revealCurrent = true
 local err = nil
 local note = nil
 local armed = nil
@@ -254,6 +255,7 @@ function render()
   for _, p in ipairs(items) do
     seen[dirs.name(p)] = (seen[dirs.name(p)] or 0) + 1
   end
+  local currentKey, currentLabel = nil, nil
   for i, p in ipairs(items) do
     local label = dirs.name(p)
     if seen[label] > 1 then
@@ -261,7 +263,10 @@ function render()
     end
     kbd.stop("p" .. i, i, 1, function() pick(p) end)
     kbd.stop("d" .. i, i, 2, function() remove(i) end)
-    table.insert(rows, ui.row({ key = "r" .. i, gap = 6, align = "center", padding = 4, onHover = function(state)
+    if p == current then
+      currentKey, currentLabel = "r" .. i, label
+    end
+    table.insert(rows, ui.row({ key = "r" .. i, gap = 6, align = "center", padding = 4, radius = 6, border = p == current and "primary" or nil, borderWidth = p == current and 1 or nil, onHover = function(state)
       if state == "true" then
         hoverPath = p
         showPreview(p)
@@ -274,6 +279,10 @@ function render()
   end
   if #rows == 0 then
     table.insert(rows, ui.label({ text = "No saved folders", color = "on_surface_variant" }))
+  end
+  local reveal = kbd.reveal() or (revealCurrent and currentKey or nil)
+  if currentKey then
+    revealCurrent = false
   end
   panel.render(ui.column({ gap = 10, padding = 12 }, {
     ui.row({ gap = 8, align = "center" }, {
@@ -308,8 +317,9 @@ function render()
     }),
     err and ui.label({ text = err, color = "error" }) or note and ui.label({ text = note, color = "primary" }) or ui.box({ height = 0 }),
     ui.column(card("folders"), {
+      current == "" and ui.box({ height = 0 }) or ui.label({ text = currentLabel and ("In use: " .. currentLabel) or "In use: a folder that is not in this list", color = "primary", fontSize = 12, maxLines = 1 }),
       ui.column({ key = "listbox", height = 300 }, {
-        ui.scroll({ key = "list", gap = 0, flexGrow = 1, revealKey = kbd.reveal() }, rows),
+        ui.scroll({ key = "list", gap = 0, flexGrow = 1, revealKey = reveal }, rows),
       }),
       ui.label({ text = hoverPath or "", fontSize = 12, color = "on_surface_variant", maxLines = 2 }),
       preview and ui.image({ path = preview, width = 300, height = 170, fit = "contain", radius = 6 }) or ui.box({ height = 0 }),
@@ -332,6 +342,8 @@ function onKey(chord, pressed)
 end
 
 function onOpen()
+  revealCurrent = true
+  current = ""
   kbd.clear()
   draft = nil
   auto = false
