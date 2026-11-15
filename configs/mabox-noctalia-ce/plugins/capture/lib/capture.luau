@@ -262,6 +262,9 @@ local function headingWithFolder(text, path)
     ui.label({ text = string.upper(text), fontSize = 11, color = "primary", flexGrow = 1 }),
     kbtn(block .. "folder", nextRow(), 1, { text = "Folder", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function()
       noctalia.runAsync({ "xdg-open", path })
+      if not pinned then
+        panel.close()
+      end
     end }),
   })
 end

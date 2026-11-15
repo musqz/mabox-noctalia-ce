@@ -33,16 +33,17 @@ function M.apply(path, cb)
 end
 
 -- Runs detached (setsid) so the dialog survives the panel closing; adds the pick to the list and reopens the panel.
-local BROWSE = [[p=$(yad --file --directory --center --width=1000 --height=650 --title="Wallpaper folder" --filename="$1/") || exit 0
+local BROWSE = [[p=$(yad --file --directory --center --width=1000 --height=650 --title="Wallpaper folder" --filename="$1/")
+[ -n "$p" ] || [ "$3" = panel ] || exit 0
 if [ -n "$p" ]; then
   p=$(readlink -f "$p")
   grep -qxF -- "$p" "$2" 2>/dev/null || echo "$p" >> "$2"
 fi
 noctalia msg panel-close; noctalia msg panel-open mabox/wallpaper-dirs:dirs]]
 
-function M.browse(start)
+function M.browse(start, fromPanel)
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.runAsync({ "setsid", "-f", "sh", "-c", BROWSE, "sh", start, file() })
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", BROWSE, "sh", start, file(), fromPanel and "panel" or "" })
 end
 
 -- config-get prints the value single-quoted.

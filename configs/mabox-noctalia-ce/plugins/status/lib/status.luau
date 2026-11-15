@@ -263,10 +263,16 @@ exec setsid -f "$t" "$f" sh -c "$script" sh "$@"
 local function runTerminal(title, size, dry, run)
   noctalia.runAsync({ "sh", "-c", FIND_TERM, "sh", TERM_SCRIPT, title, size, dry, run })
   fullNext = true
+  if not pinned then
+    panel.close()
+  end
 end
 
 local function openDir(path)
   noctalia.runAsync({ "xdg-open", path })
+  if not pinned then
+    panel.close()
+  end
 end
 
 -- Rows
