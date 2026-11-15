@@ -29,9 +29,38 @@ set_bar() {
         printf '%s' "$state" > "$cache"
 }
 
-full=${full//[\"\\]/}
+# One notification per change of the full-disc list; "Snooze" mutes it for 24 h. The bar button is not muted.
+notify_full() {
+    local run="${XDG_RUNTIME_DIR:-/tmp}" snooze=0
+    [[ -f $run/mb-status-warn.snooze ]] && snooze=$(<"$run/mb-status-warn.snooze")
+    [[ $snooze =~ ^[0-9]+$ ]] || snooze=0
+    ((EPOCHSECONDS < snooze)) && return 0
+    # keyed on the mount points, so growing percentages do not notify again
+    local key
+    key=$(sed 's/ [0-9]*%//g' <<<"$1")
+    [[ -f $run/mb-status-warn.notified && $(<"$run/mb-status-warn.notified") == "$key" ]] && return 0
+    printf '%s' "$key" > "$run/mb-status-warn.notified"
+    if command -v notify-send.sh >/dev/null; then
+        setsid -f notify-send.sh -u critical -t 0 -a "Disc space" -i drive-harddisk \
+            -R "$run/mb-status-warn.id" \
+            -d "noctalia msg panel-open mabox/status:main" \
+            -o "Open status:noctalia msg panel-open mabox/status:main" \
+            -o "Snooze 24 h:sh -c 'echo \$((\$(date +%s) + 86400)) > $run/mb-status-warn.snooze'" \
+            "Disc almost full" "$1" >/dev/null 2>&1
+    else
+        notify-send -u critical -a "Disc space" -i drive-harddisk "Disc almost full" "$1"
+    fi
+}
+
+full=${full//[\"\\&<>]/}
 if [[ -n $full ]]; then
-    set_bar alert-triangle "$warn" "disc full: ${full%; }"
+    set_bar alert-triangle "$warn" "disc full: ${full%; }" || echo "mb-status-warn: bar update failed" >&2
+    notify_full "${full%; }"
 else
-    set_bar activity on_surface "system status"
+    set_bar activity on_surface "system status" || echo "mb-status-warn: bar update failed" >&2
+    run="${XDG_RUNTIME_DIR:-/tmp}"
+    if [[ -f $run/mb-status-warn.id ]] && command -v notify-send.sh >/dev/null; then
+        notify-send.sh -s "$(<"$run/mb-status-warn.id")" >/dev/null 2>&1 || true
+    fi
+    rm -f "$run/mb-status-warn.notified" "$run/mb-status-warn.snooze" "$run/mb-status-warn.id"
 fi
