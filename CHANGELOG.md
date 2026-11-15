@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Places: left click on a folder expands it in place (subfolders, files, no dotfiles), right click opens it in the file manager; expanded folders get an open-in-terminal button that follows the Agents terminal; add Close all and a clear button for the search box.
 - Recolor Smooth mode softens the edges slightly.
 - Equalizer presets keep the Pre level: a preset or Revert changes only the ten bands, and the preset in use is highlighted by its bands.
 - Equalizer: the preamp drops by the largest boost, bands use Q 1.4, a 40 Hz high-pass starts the chain, presets also load from `~/.config/mabox-noctalia-ce/eq-presets/*.json` (Adam D3V ships as one), and the panel has two columns. Presets with a negative preamp play quieter by the headroom.
