@@ -37,6 +37,7 @@ local ORDER = { "places", "bookmarks", "drives", "recent" }
 local TITLES = { places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
 local order = { table.unpack(ORDER) }
 local hidden = {}
+local folded = {}
 local editing = false
 
 local function unescape(s)
@@ -68,16 +69,17 @@ local function layoutFile()
   return noctalia.pluginDataDir() .. "/layout"
 end
 
--- One id per line in order; a leading "!" marks a hidden card.
+-- One id per line in order; a leading "!" marks a hidden card, "~" a folded one.
 local function loadLayout()
-  order, hidden = {}, {}
+  order, hidden, folded = {}, {}, {}
   local seen = {}
   for l in string.gmatch(noctalia.readFile(layoutFile()) or "", "[^\n]+") do
-    local hide, id = string.match(l, "^(!?)(%a+)$")
+    local hide, fold, id = string.match(l, "^(!?)(~?)(%a+)$")
     if id and TITLES[id] and not seen[id] then
       seen[id] = true
       table.insert(order, id)
       hidden[id] = hide == "!" or nil
+      folded[id] = fold == "~" or nil
     end
   end
   for _, id in ipairs(ORDER) do
@@ -90,7 +92,7 @@ end
 local function saveLayout()
   local out = {}
   for _, id in ipairs(order) do
-    table.insert(out, (hidden[id] and "!" or "") .. id)
+    table.insert(out, (hidden[id] and "!" or "") .. (folded[id] and "~" or "") .. id)
   end
   noctalia.mkdirAll(noctalia.pluginDataDir())
   noctalia.writeFile(layoutFile(), table.concat(out, "\n") .. "\n")
@@ -108,6 +110,11 @@ end
 
 local function toggleCard(id)
   hidden[id] = (not hidden[id]) or nil
+  saveLayout()
+end
+
+local function toggleFold(id)
+  folded[id] = (not folded[id]) or nil
   saveLayout()
 end
 
@@ -402,8 +409,29 @@ local function childRows(path, depth, out, tag)
   end
 end
 
-local function card(key, children)
-  return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 2, border = "primary", borderWidth = 1 }, children)
+local function card(key, children, extra)
+  local closed = folded[key]
+  local top = { ui.button({
+    key = "fold-" .. key,
+    glyph = closed and "chevron-right" or "chevron-down",
+    text = TITLES[key],
+    variant = "outline",
+    controlSize = "sm",
+    contentAlign = "start",
+    flexGrow = 1,
+    tooltip = closed and "Show the card" or "Fold the card",
+    onClick = function() toggleFold(key) end,
+  }) }
+  if extra and not closed then
+    table.insert(top, extra)
+  end
+  local rows = { ui.row({ gap = 4, align = "center" }, top) }
+  if not closed then
+    for _, c in ipairs(children) do
+      table.insert(rows, c)
+    end
+  end
+  return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 2, border = "primary", borderWidth = 1 }, rows)
 end
 
 local function placeRows()
@@ -433,7 +461,6 @@ local function placeRows()
   end
   local cards = { places = card("places", std) }
   if #marks > 0 then
-    table.insert(marks, 1, ui.label({ text = "Bookmarks", color = "on_surface_variant" }))
     cards.bookmarks = card("bookmarks", marks)
   end
   return cards
@@ -467,12 +494,7 @@ local function recentCard()
   for _, n in ipairs(SIZES) do
     table.insert(sizes, ui.button({ key = "sz" .. n, text = tostring(n), variant = n == size and "primary" or "ghost", controlSize = "sm", tooltip = "Show " .. n .. " recent files", onClick = function() setSize(n) end }))
   end
-  local rows = {
-    ui.row({ gap = 4, align = "center" }, {
-      ui.label({ text = "Recent", color = "on_surface_variant", flexGrow = 1 }),
-      table.unpack(sizes),
-    }),
-  }
+  local rows = {}
   for i, f in ipairs(recent) do
     if i > size then
       break
@@ -488,10 +510,10 @@ local function recentCard()
       onRightClick = function() copyPath(f) end,
     }))
   end
-  if #rows == 1 then
+  if #rows == 0 then
     table.insert(rows, ui.label({ text = "No recent files", color = "on_surface_variant" }))
   end
-  return card("recent", rows)
+  return card("recent", rows, ui.row({ gap = 4, align = "center" }, sizes))
 end
 
 local function searchRow()
