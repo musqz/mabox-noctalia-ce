@@ -91,7 +91,8 @@ for f in "${files[@]}"; do
                 ((width > 0 && w > width)) && w=$width
                 k=$((w / 250)); ((k < 2)) && k=2
                 m=$((w / 140 | 1)); ((m < 3)) && m=3
-                magick "$f" "${pre[@]}" -kuwahara "$k" +dither -remap "$tmp/pal.png" -statistic Mode "${m}x${m}" "$dest" || ok=0 ;;
+                b=$(awk -v w="$w" 'BEGIN{printf "%.2f", w/3000}')
+                magick "$f" "${pre[@]}" -kuwahara "$k" +dither -remap "$tmp/pal.png" -statistic Mode "${m}x${m}" -blur "0x$b" "$dest" || ok=0 ;;
     esac
     if ((ok)); then echo "$dest"; else echo "failed: $f" >&2; rm -f "$dest"; rc=1; ok=1; fi
 done
