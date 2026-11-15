@@ -237,6 +237,21 @@ migrate_24() {
     [[ $(wc -w <<<"$gains") == 11 ]] && mb-eq save $gains
 }
 
+# W-i and a right-click on the launcher button open the app installer panel.
+migrate_25() {
+    local c
+    for c in "${files[@]}"; do
+        [[ -f $c ]] || continue
+        grep -q '^[[:space:]]*\[widget\.launcher\]' "$c" || continue
+        grep -q '^[[:space:]]*\[widget\.launcher\.actions\]' "$c" && continue
+        printf '\n[widget.launcher.actions]\nright = "exec noctalia msg panel-toggle mabox/install:main"\n' >> "$c"
+    done
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="W-i"' "$f" || sed -i 's#</keyboard>#    <keybind key="W-i"><action name="Execute" command="noctalia msg panel-toggle mabox/install:main"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

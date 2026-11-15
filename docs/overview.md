@@ -128,6 +128,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` |  | `mb-crypto`, `curl`, `python3`; needs internet; state in the plugin data folder |
 | `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 | `mabox/agents` | `main` panel (wide, top), `/ag` launcher | `S-W-a` | `noctalia msg panel-toggle mabox/agents:main`; `mb-agent-sessions`, `python3`, `wlrctl`, a terminal; GitHub and AUR folders, terminal (gear button) and favorite folders (`yad` or `zenity` folder chooser) in `~/.config/mabox/mb-agent-sessions.conf`; starts and resumes Claude Code, Codex, Agy; session formats from mstio/mst.agent-launchers (MIT) |
+| `mabox/install` | `main` panel (wide), root menu, `/mb install` | `W-i` | app list in `lists/install.csv` (pacman repos only); Install runs `pkexec pacman -S --needed`, password through the Noctalia polkit agent |
 
 ```sh
 noctalia msg plugins list

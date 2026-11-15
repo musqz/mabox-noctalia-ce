@@ -1,0 +1,24 @@
+# category,package,name,description  (pacman repos only)
+Browsers,firefox,Firefox,Web browser
+Browsers,chromium,Chromium,Web browser
+Browsers,vivaldi,Vivaldi,Web browser
+Office,libreoffice-fresh,LibreOffice,Office suite
+Office,thunderbird,Thunderbird,Mail client
+Office,okular,Okular,PDF and document viewer
+Office,evince,Evince,PDF viewer
+Graphics,gimp,GIMP,Image editor
+Graphics,inkscape,Inkscape,Vector graphics
+Graphics,krita,Krita,Digital painting
+Graphics,darktable,Darktable,Photo workflow
+Graphics,blender,Blender,3D creation
+Graphics,artcraft-launcher,ArtCraft,Install and launch ArtCraft apps (Mabox repo)
+Media,vlc,VLC,Media player
+Media,mpv,mpv,Minimal media player
+Media,obs-studio,OBS Studio,Recording and streaming
+Media,audacity,Audacity,Audio editor
+Media,kdenlive,Kdenlive,Video editor
+Dev,code,VS Code (OSS),Code editor
+Dev,geany,Geany,Light editor and IDE
+Chat and games,signal-desktop,Signal,Private messenger
+Chat and games,discord,Discord,Voice and text chat
+Chat and games,steam,Steam,Game store

@@ -35,6 +35,7 @@ W-w,Apps,1,Web browser
 W-v,Apps,0,Volume control
 W-r,Apps,0,Internet radio
 W-o,Apps,0,Todo list
+W-i,Apps,0,Install apps
 A-F2,Apps,0,Run a command
 F1,Apps,0,Firefox: focus or start
 F2,Apps,0,Double Commander: focus or start
