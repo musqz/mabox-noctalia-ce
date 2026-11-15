@@ -163,7 +163,17 @@ local function loadRecent()
   end)
 end
 
--- Removable (hotplug) partitions and anything udisks mounted under /run/media.
+-- Partitions with a filesystem, mounted or not; the system mounts are left out.
+local SYSTEM = { "/", "/boot", "/efi", "/usr", "/var", "/home", "/opt", "/srv", "/root", "/tmp", "/etc" }
+local function isSystemMount(mp)
+  for _, p in ipairs(SYSTEM) do
+    if mp == p or (p ~= "/" and string.sub(mp, 1, #p + 1) == p .. "/") then
+      return true
+    end
+  end
+  return false
+end
+
 local function loadDrives()
   noctalia.runAsync({ "lsblk", "-P", "-p", "-o", "NAME,LABEL,MOUNTPOINT,TYPE,FSTYPE,HOTPLUG,SIZE" }, function(r)
     drives = {}
@@ -173,8 +183,8 @@ local function loadDrives()
         d[k] = string.gsub(v, "\\x(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
       end
       local mp = d.MOUNTPOINT or ""
-      if d.TYPE == "part" and (d.FSTYPE or "") ~= "" and not string.find(d.FSTYPE, "^crypto") and not string.find(d.FSTYPE, "_member$") and d.FSTYPE ~= "swap" and (d.HOTPLUG == "1" or string.find(mp, "^/run/media/")) then
-        table.insert(drives, { dev = d.NAME, name = d.LABEL ~= "" and d.LABEL or string.match(d.NAME, "[^/]+$"), mount = mp, size = d.SIZE })
+      if d.TYPE == "part" and (d.FSTYPE or "") ~= "" and not string.find(d.FSTYPE, "^crypto") and not string.find(d.FSTYPE, "_member$") and d.FSTYPE ~= "swap" and not isSystemMount(mp) then
+        table.insert(drives, { dev = d.NAME, name = d.LABEL ~= "" and d.LABEL or string.match(d.NAME, "[^/]+$"), mount = mp, size = d.SIZE, hot = d.HOTPLUG == "1" })
       end
     end
     render()
@@ -438,7 +448,7 @@ local function driveCard()
     local mounted = d.mount ~= ""
     table.insert(rows, ui.row({ key = "d" .. i, gap = 4, align = "center" }, {
       ui.button({
-        glyph = "device-floppy",
+        glyph = d.hot and "device-floppy" or "database",
         text = d.name .. "  " .. d.size,
         variant = "ghost",
         contentAlign = "start",
