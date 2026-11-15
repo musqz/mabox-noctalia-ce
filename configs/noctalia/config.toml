@@ -187,6 +187,9 @@ show_tooltip = true
 [widget.volume]
 capsule = false
 
+[widget.volume.actions]
+right = "exec noctalia msg panel-toggle mabox/equalizer:main"
+
 [widget.wallpaper]
 capsule = false
 
