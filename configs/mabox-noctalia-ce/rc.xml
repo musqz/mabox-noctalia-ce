@@ -39,16 +39,12 @@
   <keyboard>
     <default />
     <!-- Use a different terminal emulator -->
-    <keybind key="W-Return">
-    <action name="Execute" command="foot" />
-    </keybind>
+    <keybind key="W-Return"><action name="Execute" command="terminator" /></keybind>
     <!--
       Remove a previously defined keybind
       A shorter alternative is <keybind key="W-F4" />
     -->
-    <keybind key="W-F4">
-    <action name="None" />
-    </keybind>
+    <keybind key="W-F4"><action name="None" /></keybind>
     <!-- Core keys -->
     <keybind key="W-space"><action name="Execute"><command>noctalia msg panel-toggle launcher</command></action></keybind>
     <keybind key="W-s"><action name="Execute"><command>noctalia msg panel-toggle control-center</command></action></keybind>
@@ -65,8 +61,6 @@
     <keybind key="XF86AudioPrev"><action name="Execute"><command>noctalia msg media previous</command></action></keybind>
     <keybind key="XF86MonBrightnessUp"><action name="Execute"><command>brightness-primary up</command></action></keybind>
     <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightness-primary down</command></action></keybind>
-    <!-- Sent by mb-hide-cursor, not a key to press -->
-    <keybind key="F20"><action name="HideCursor"/></keybind>
     
     <keybind key="C-W-c"><action name="Execute" command="mb-pinned configs"/></keybind>
     <keybind key="W-c"><action name="Execute" command="noctalia msg panel-toggle mabox/colors:picker"/></keybind>
@@ -200,9 +194,7 @@
     <keybind key="C-Insert"><action name="Execute"><command>bash -c 'viewnior "$(ls -t $HOME/Pictures/screenshots/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1)"'</command></action></keybind>
 
     <!-- Quake term -->
-    <keybind key="F12">
-     <action name="Execute" command="q-term-toggle"/>
-    </keybind>
+    <keybind key="F12"><action name="Execute" command="q-term-toggle"/></keybind>
     <keybind key="C-grave"><action name="Execute" command="q-term-toggle left"/></keybind>
     <keybind key="C-KP_0"><action name="Execute" command="jumpapp -m /usr/bin/scrcpy" /></keybind>
 
@@ -269,15 +261,19 @@
       
   <windowRules>
     <windowRule title="q-term-right">
-      <action name="SetDecorations" decorations="none"/>
-      <action name="ResizeTo" width="1265" height="690"/>
-      <action name="MoveTo" x="1285" y="60"/>
-    </windowRule>
+        <action name="SetDecorations" decorations="none"/>
+        <action name="ResizeTo" width="1265" height="690"/>
+        <action name="MoveTo" x="1285" y="60"/>
+  </windowRule>
     <windowRule title="q-term-left">
-      <action name="SetDecorations" decorations="none"/>
-      <action name="ResizeTo" width="1265" height="690"/>
-      <action name="MoveTo" x="10" y="60"/>
-    </windowRule>
+        <action name="SetDecorations" decorations="none"/>
+        <action name="ResizeTo" width="1265" height="690"/>
+        <action name="MoveTo" x="10" y="60"/>
+  </windowRule>
+    <windowRule title="gmrun">
+        <action name="SetDecorations" decorations="none"/>
+  </windowRule>
+
     <windowRule identifier="cava-transparent">
       <action name="SetDecorations" decorations="none"/>
       <action name="AutoPlace" policy="center"/>
