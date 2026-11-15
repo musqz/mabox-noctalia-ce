@@ -318,7 +318,10 @@ function render()
     ui.row({ gap = 8, align = "center" }, {
       ui.button({ key = "run", glyph = running and "player-stop" or "wand", text = running and "Stop" or "Recolor", variant = running and "destructive" or "primary", onClick = run }),
       done and not running and ui.button({ key = "open", glyph = "folder-open", text = "Open folder", variant = "outline", onClick = function()
-        if outDir then noctalia.runAsync({ "xdg-open", outDir }) end
+        if outDir then
+          noctalia.runAsync({ "xdg-open", outDir })
+          panel.close()
+        end
       end }) or ui.box({ height = 0 }),
     }),
     err and ui.label({ text = err, color = "error" }) or done and ui.label({ text = done .. " in " .. (outDir or ""), color = "primary", maxLines = 2 }) or ui.box({ height = 0 }),

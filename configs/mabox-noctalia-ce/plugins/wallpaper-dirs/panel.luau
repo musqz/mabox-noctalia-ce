@@ -242,7 +242,8 @@ local function setAuto(key, value, apply)
 end
 
 local function addFolder()
-  dirs.browse(current ~= "" and current or noctalia.getenv("HOME"))
+  dirs.browse(current ~= "" and current or noctalia.getenv("HOME"), true)
+  panel.close()
 end
 
 function render()
