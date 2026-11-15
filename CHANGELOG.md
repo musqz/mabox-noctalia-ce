@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Create a folder from the Places panel: the new folder button next to the terminal button of an expanded folder opens a name field; Enter or the check button creates it.
 - Notify when a disc reaches the alert level: buttons Open status and Snooze 24 h, one notification per change of the full-disc list; `mb-status-warn` checks every 5 minutes (`systemctl --user enable --now mb-status-warn.timer`).
 - Turn the updates bar button into a disc warning when a disc is full: alert icon in the warning color, tooltip lists the disc and the updates; middle click checks for updates now, right click opens the Status panel.
 - Show the numbers in the Status settings buttons: disc alert levels in two rows, package count in the label.
