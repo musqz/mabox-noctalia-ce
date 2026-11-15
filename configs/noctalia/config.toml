@@ -70,17 +70,6 @@ left = "exec mb-screenshot screenshot-region"
 middle = "none"
 right = "exec noctalia msg panel-toggle mabox/capture:main"
 
-[widget.status]
-type = "custom_button"
-glyph = "activity"
-color = "on_surface"
-tooltip = "system status"
-
-[widget.status.actions]
-left = "exec noctalia msg panel-toggle mabox/status:main"
-right = "exec noctalia msg panel-toggle mabox/status:pinned-left"
-middle = "none"
-
 [widget.colors]
 type = "custom_button"
 glyph = "color-picker"
@@ -109,7 +98,7 @@ capsule = false
 [widget.updates.actions]
 left = "exec noctalia msg panel-toggle mabox/status:updates"
 right = "exec noctalia msg panel-toggle mabox/status:main"
-middle = "exec noctalia msg panel-toggle mabox/status:updates"
+middle = "exec mb-updates-ce check"
 
 [widget.active_window]
 colorize_icons = true

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Color the noctalia bar button [widget.status] when a disc is at or over the alert level of the mabox/status plugin.
+# Turn the updates bar button into a disc warning when a disc is at or over the alert level of the mabox/status plugin.
 set -euo pipefail
 
 conf="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/status/settings"
@@ -20,13 +20,17 @@ if ((limit > 0)); then
         }')
 fi
 
+# mb-updates-ce draws the button; it reads this file (color, then text).
 set_bar() {
-    local state="$1|$2|$3" cache="${XDG_RUNTIME_DIR:-/tmp}/mb-status-warn.state"
-    [[ -f $cache && $(<"$cache") == "$state" ]] && return 0
-    noctalia msg config-set widget.status.glyph "\"$1\"" >/dev/null &&
-        noctalia msg config-set widget.status.color "\"$2\"" >/dev/null &&
-        noctalia msg config-set widget.status.tooltip "\"$3\"" >/dev/null &&
-        printf '%s' "$state" > "$cache"
+    local f="${XDG_RUNTIME_DIR:-/tmp}/mb-status-warn.full" new=""
+    [[ -n $1 ]] && new=$(printf '%s\n%s' "$1" "$2")
+    if [[ -z $new ]]; then
+        [[ -f $f ]] || return 0
+    else
+        [[ -f $f && $(<"$f") == "$new" ]] && return 0
+    fi
+    if [[ -n $new ]]; then printf '%s' "$new" > "$f"; else rm -f "$f"; fi
+    mb-updates-ce repaint || { rm -f "$f"; echo "mb-status-warn: repaint failed" >&2; }
 }
 
 # One notification per change of the full-disc list; "Snooze" mutes it for 24 h. The bar button is not muted.
@@ -54,10 +58,10 @@ notify_full() {
 
 full=${full//[\"\\&<>]/}
 if [[ -n $full ]]; then
-    set_bar alert-triangle "$warn" "disc full: ${full%; }" || echo "mb-status-warn: bar update failed" >&2
+    set_bar "$warn" "disc full: ${full%; }"
     notify_full "${full%; }"
 else
-    set_bar activity on_surface "system status" || echo "mb-status-warn: bar update failed" >&2
+    set_bar "" ""
     run="${XDG_RUNTIME_DIR:-/tmp}"
     if [[ -f $run/mb-status-warn.id ]] && command -v notify-send.sh >/dev/null; then
         notify-send.sh -s "$(<"$run/mb-status-warn.id")" >/dev/null 2>&1 || true
