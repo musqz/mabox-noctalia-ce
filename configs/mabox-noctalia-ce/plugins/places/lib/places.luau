@@ -28,6 +28,7 @@ local size = 10
 local query = ""
 local searchNonce = 0
 local render
+local listDir
 
 local ORDER = { "places", "bookmarks", "drives", "recent" }
 local TITLES = { places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
@@ -260,7 +261,7 @@ except OSError:
 for kind, _, name in sorted(out)[:300]:
     print("df"[kind] + name)]]
 
-local function listDir(path)
+listDir = function(path)
   noctalia.runAsync({ "python3", "-I", "-c", LIST, path }, function(r)
     local items = {}
     for l in string.gmatch(r.stdout or "", "[^\n]+") do
@@ -290,14 +291,14 @@ local function openTerminal(path)
   done()
 end
 
-local function dirRow(path, name, glyph, depth)
+local function dirRow(path, name, glyph, depth, tag)
   local open = expanded[path]
   local row = {}
   if depth > 0 then
     table.insert(row, ui.box({ width = depth * 10, height = 0 }))
   end
   table.insert(row, ui.button({
-    key = "t" .. path,
+    key = "t" .. tag .. path,
     glyph = open and "chevron-down" or glyph,
     text = name,
     variant = "ghost",
@@ -308,29 +309,29 @@ local function dirRow(path, name, glyph, depth)
     onRightClick = function() openFolder({ open = path }) end,
   }))
   if open then
-    table.insert(row, ui.button({ key = "tt" .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
+    table.insert(row, ui.button({ key = "tt" .. tag .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
   end
-  return ui.row({ key = "r" .. path, gap = 2, align = "center" }, row)
+  return ui.row({ key = "r" .. tag .. path, gap = 2, align = "center" }, row)
 end
 
 -- Rows under an expanded folder, subfolders first; recurses into expanded subfolders.
-local function childRows(path, depth, out)
+local function childRows(path, depth, out, tag)
   local items = listing[path]
   if not items then
     return
   end
   if #items == 0 then
-    table.insert(out, ui.row({ key = "e" .. path, gap = 0 }, { ui.box({ width = depth * 10 + 12, height = 0 }), ui.label({ text = "empty", color = "outline_variant" }) }))
+    table.insert(out, ui.row({ key = "e" .. tag .. path, gap = 0 }, { ui.box({ width = depth * 10 + 12, height = 0 }), ui.label({ text = "empty", color = "outline_variant" }) }))
   end
   for _, it in ipairs(items) do
     local full = (path == "/" and "" or path) .. "/" .. it.name
     if it.dir then
-      table.insert(out, dirRow(full, it.name, "folder", depth))
+      table.insert(out, dirRow(full, it.name, "folder", depth, tag))
       if expanded[full] then
-        childRows(full, depth + 1, out)
+        childRows(full, depth + 1, out, tag)
       end
     else
-      table.insert(out, ui.row({ key = "f" .. full, gap = 0, align = "center" }, {
+      table.insert(out, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center" }, {
         ui.box({ width = depth * 10, height = 0 }),
         ui.button({
           glyph = "file",
@@ -356,9 +357,9 @@ local function placeRows()
   for i, p in ipairs(places) do
     local list = p.std and std or marks
     if p.path and p.ok then
-      table.insert(list, dirRow(p.path, p.name, p.glyph, 0))
+      table.insert(list, dirRow(p.path, p.name, p.glyph, 0, p.std and "s" or "b"))
       if expanded[p.path] then
-        childRows(p.path, 1, list)
+        childRows(p.path, 1, list, p.std and "s" or "b")
       end
     else
       table.insert(list, ui.button({
