@@ -2,6 +2,7 @@
 # Count pending pacman/AUR/flatpak/snap/npm/pipx updates and show the result on the noctalia bar button [widget.updates].
 #   mb-updates-ce [check]    sync a temporary db, count, update the button, print the count
 #   mb-updates-ce offline    same without network (reuses the last synced db and AUR list)
+#   mb-updates-ce repaint    redraw the button from the last result (used by mb-status-warn)
 #   mb-updates-ce upgrade [all|aur|repo|flatpak|snap|npm|pipx]   upgrade in a terminal, then recount
 #   mb-updates-ce orphans    list orphaned packages in a terminal and remove them after confirmation
 #   mb-updates-ce mirrors [fasttrack|continent|all|reflector]   refresh the mirror list in a terminal (pacman-mirrors or reflector)
@@ -9,10 +10,25 @@ set -euo pipefail
 
 dir="${XDG_RUNTIME_DIR:-/tmp}/mb-updates"
 
+# The bar button shows the update state; a full disc (written by mb-status-warn) takes over icon and color.
+paint() {
+    local g=circle-check c=on_surface t="checking updates" w wc="" wt=""
+    [[ -f $dir/bar ]] && { IFS='|' read -r g c t || true; } < "$dir/bar"
+    w="${XDG_RUNTIME_DIR:-/tmp}/mb-status-warn.full"
+    if [[ -s $w ]]; then
+        { read -r wc; read -r wt || true; } < "$w"
+        [[ $wc =~ ^#[0-9a-fA-F]{6}$ ]] || wc='#ff9800'
+        g=alert-triangle; c=$wc; t="$wt | $t"
+    fi
+    noctalia msg config-set widget.updates.glyph "\"$g\"" >/dev/null || true
+    noctalia msg config-set widget.updates.color "\"$c\"" >/dev/null || true
+    noctalia msg config-set widget.updates.tooltip "\"$t\"" >/dev/null || true
+}
+
 bar_state() {
-    noctalia msg config-set widget.updates.glyph "\"$1\"" >/dev/null || true
-    noctalia msg config-set widget.updates.color "\"$2\"" >/dev/null || true
-    noctalia msg config-set widget.updates.tooltip "\"$3\"" >/dev/null || true
+    mkdir -p "$dir"
+    printf '%s|%s|%s' "$1" "$2" "$3" > "$dir/bar"
+    paint
 }
 
 count_file() { grep -c . "$1" || true; }
@@ -188,6 +204,7 @@ mirrors() {
 case ${1:-check} in
     check|offline) check "${1:-check}" ;;
     upgrade) upgrade "${2:-all}" ;;
+    repaint) paint ;;
     orphans) orphans ;;
     mirrors) mirrors "${2:-fasttrack}" ;;
     *) echo "usage: ${0##*/} [check|offline|upgrade [all|aur|repo|flatpak|snap|npm|pipx]|orphans|mirrors [fasttrack|continent|all|reflector]]" >&2; exit 2 ;;
