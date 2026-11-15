@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Notify when a disc reaches the alert level: buttons Open status and Snooze 24 h, one notification per change of the full-disc list; `mb-status-warn` checks every 5 minutes (`systemctl --user enable --now mb-status-warn.timer`).
+- Turn the updates bar button into a disc warning when a disc is full: alert icon in the warning color, tooltip lists the disc and the updates; middle click checks for updates now, right click opens the Status panel.
+- Show the numbers in the Status settings buttons: disc alert levels in two rows, package count in the label.
 - Places: left click on a folder expands it in place (subfolders, files, no dotfiles), right click opens it in the file manager; expanded folders get an open-in-terminal button that follows the Agents terminal; add Close all and a clear button for the search box.
 - Recolor Smooth mode softens the edges slightly.
 - Equalizer presets keep the Pre level: a preset or Revert changes only the ten bands, and the preset in use is highlighted by its bands.
