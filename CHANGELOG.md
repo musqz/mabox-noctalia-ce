@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Right click on the volume bar button opens the Equalizer panel.
 - List unmounted disks in the Drives card of the Places panel: every partition with a filesystem except the system mounts; click mounts and opens it, the eject button unmounts it.
 - Create a folder from the Places panel: the new folder button next to the terminal button of an expanded folder opens a name field; Enter or the check button creates it.
 - Notify when a disc reaches the alert level: buttons Open status and Snooze 24 h, one notification per change of the full-disc list; `mb-status-warn` checks every 5 minutes (`systemctl --user enable --now mb-status-warn.timer`).
