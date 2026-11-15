@@ -24,6 +24,9 @@ local drives = {}
 local recent = {}
 local expanded = {}
 local listing = {}
+local newIn = nil
+local newTag = nil
+local newName = ""
 local size = 10
 local query = ""
 local searchNonce = 0
@@ -274,6 +277,9 @@ end
 
 local function toggleDir(path)
   expanded[path] = (not expanded[path]) or nil
+  if newIn == path then
+    newIn = nil
+  end
   if expanded[path] then
     listDir(path)
   end
@@ -289,6 +295,35 @@ done]]
 local function openTerminal(path)
   noctalia.runAsync({ "sh", "-c", TERMINAL, "sh", path })
   done()
+end
+
+local function createFolder(path)
+  local name = noctalia.string.trim(newName)
+  if name == "" or string.find(name, "/", 1, true) or name == "." or name == ".." then
+    noctalia.notify("Places", "Use a folder name without a slash")
+    return
+  end
+  if string.sub(name, 1, 1) == "." or string.find(name, "\n", 1, true) then
+    noctalia.notify("Places", "Hidden names are not shown in this list")
+    return
+  end
+  noctalia.runAsync({ "mkdir", "--", path .. "/" .. name }, function(r)
+    if r.exitCode ~= 0 then
+      noctalia.notify("Places", "Could not create " .. name .. ": " .. noctalia.string.trim(r.stderr or ""))
+      return
+    end
+    newIn = nil
+    newName = ""
+    listDir(path)
+  end)
+end
+
+local function newFolderRow(path, depth, tag)
+  return ui.row({ key = "nf" .. tag .. path, gap = 4, align = "center" }, {
+    ui.box({ width = depth * 10 + 12, height = 0 }),
+    ui.input({ key = "nfi" .. tag .. path, focus = true, value = newName, placeholder = "New folder name", controlSize = "sm", flexGrow = 1, onChange = function(t) newName = t end, onSubmit = function() createFolder(path) end }),
+    ui.button({ key = "nfb" .. tag .. path, glyph = "check", variant = "ghost", controlSize = "sm", tooltip = "Create the folder", onClick = function() createFolder(path) end }),
+  })
 end
 
 local function dirRow(path, name, glyph, depth, tag)
@@ -309,6 +344,12 @@ local function dirRow(path, name, glyph, depth, tag)
     onRightClick = function() openFolder({ open = path }) end,
   }))
   if open then
+    table.insert(row, ui.button({ key = "tn" .. tag .. path, glyph = "folder-plus", variant = (newIn == path and newTag == tag) and "primary" or "ghost", controlSize = "sm", tooltip = "New folder", onClick = function()
+      newIn = (newIn ~= path or newTag ~= tag) and path or nil
+      newTag = tag
+      newName = ""
+      render()
+    end }))
     table.insert(row, ui.button({ key = "tt" .. tag .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
   end
   return ui.row({ key = "r" .. tag .. path, gap = 2, align = "center" }, row)
@@ -328,6 +369,9 @@ local function childRows(path, depth, out, tag)
     if it.dir then
       table.insert(out, dirRow(full, it.name, "folder", depth, tag))
       if expanded[full] then
+        if newIn == full and newTag == tag then
+          table.insert(out, newFolderRow(full, depth + 1, tag))
+        end
         childRows(full, depth + 1, out, tag)
       end
     else
@@ -359,6 +403,9 @@ local function placeRows()
     if p.path and p.ok then
       table.insert(list, dirRow(p.path, p.name, p.glyph, 0, p.std and "s" or "b"))
       if expanded[p.path] then
+        if newIn == p.path and newTag == (p.std and "s" or "b") then
+          table.insert(list, newFolderRow(p.path, 1, p.std and "s" or "b"))
+        end
         childRows(p.path, 1, list, p.std and "s" or "b")
       end
     else
@@ -472,6 +519,7 @@ render = function()
   end })
   local collapseButton = ui.button({ key = "collapse", glyph = "arrows-minimize", variant = "ghost", controlSize = "sm", enabled = next(expanded) ~= nil, tooltip = "Close all open folders", onClick = function()
     expanded = {}
+    newIn = nil
     render()
   end })
   if pinned then
@@ -535,6 +583,7 @@ render = function()
 end
 
 local function open()
+  newIn = nil
   editing = false
   expanded = {}
   listing = {}
