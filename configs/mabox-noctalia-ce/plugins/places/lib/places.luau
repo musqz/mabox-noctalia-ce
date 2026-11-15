@@ -1,5 +1,5 @@
 --!nonstrict
--- Places: standard folders, file manager bookmarks and recent files; opens folders in pcmanfm.
+-- Places: standard folders, file manager bookmarks and recent files; folders expand in place, right click opens pcmanfm.
 
 local pinSide = require("./side.luau")
 local logo = require("./celogo.luau")
@@ -22,9 +22,13 @@ local FOLDERS = {
 local places = {}
 local drives = {}
 local recent = {}
+local expanded = {}
+local listing = {}
 local size = 10
 local query = ""
+local searchNonce = 0
 local render
+local listDir
 
 local ORDER = { "places", "bookmarks", "drives", "recent" }
 local TITLES = { places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
@@ -176,6 +180,9 @@ end
 
 local function reload()
   loadPlaces()
+  for path in pairs(expanded) do
+    listDir(path)
+  end
   render()
   loadDrives()
   loadRecent()
@@ -241,6 +248,106 @@ local function fsearch(text)
   done()
 end
 
+-- Folder contents come from python: a script callback only gets 25 ms of CPU.
+local LIST = [[import os, sys
+out = []
+try:
+    with os.scandir(sys.argv[1]) as it:
+        for e in it:
+            if not e.name.startswith(".") and "\n" not in e.name:
+                out.append((0 if e.is_dir() else 1, e.name.lower(), e.name))
+except OSError:
+    pass
+for kind, _, name in sorted(out)[:300]:
+    print("df"[kind] + name)]]
+
+listDir = function(path)
+  noctalia.runAsync({ "python3", "-I", "-c", LIST, path }, function(r)
+    local items = {}
+    for l in string.gmatch(r.stdout or "", "[^\n]+") do
+      table.insert(items, { dir = string.sub(l, 1, 1) == "d", name = string.sub(l, 2) })
+    end
+    listing[path] = items
+    render()
+  end)
+end
+
+local function toggleDir(path)
+  expanded[path] = (not expanded[path]) or nil
+  if expanded[path] then
+    listDir(path)
+  end
+  render()
+end
+
+-- Terminal from the Agents plugin setting, then $TERMINAL, then the first installed one.
+local TERMINAL = [[t=$(sed -n 's/^terminal=//p' "${XDG_CONFIG_HOME:-$HOME/.config}/mabox/mb-agent-sessions.conf" 2>/dev/null)
+for t in "$t" ${TERMINAL%% *} foot kitty alacritty terminator xfce4-terminal xterm; do
+  if [ -n "$t" ] && command -v "$t" >/dev/null; then cd "$1" && exec setsid "$t"; fi
+done]]
+
+local function openTerminal(path)
+  noctalia.runAsync({ "sh", "-c", TERMINAL, "sh", path })
+  done()
+end
+
+local function dirRow(path, name, glyph, depth, tag)
+  local open = expanded[path]
+  local row = {}
+  if depth > 0 then
+    table.insert(row, ui.box({ width = depth * 10, height = 0 }))
+  end
+  table.insert(row, ui.button({
+    key = "t" .. tag .. path,
+    glyph = open and "chevron-down" or glyph,
+    text = name,
+    variant = "ghost",
+    contentAlign = "start",
+    flexGrow = 1,
+    tooltip = path .. "\nClick: show or hide the content, right click: open in the file manager",
+    onClick = function() toggleDir(path) end,
+    onRightClick = function() openFolder({ open = path }) end,
+  }))
+  if open then
+    table.insert(row, ui.button({ key = "tt" .. tag .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
+  end
+  return ui.row({ key = "r" .. tag .. path, gap = 2, align = "center" }, row)
+end
+
+-- Rows under an expanded folder, subfolders first; recurses into expanded subfolders.
+local function childRows(path, depth, out, tag)
+  local items = listing[path]
+  if not items then
+    return
+  end
+  if #items == 0 then
+    table.insert(out, ui.row({ key = "e" .. tag .. path, gap = 0 }, { ui.box({ width = depth * 10 + 12, height = 0 }), ui.label({ text = "empty", color = "outline_variant" }) }))
+  end
+  for _, it in ipairs(items) do
+    local full = (path == "/" and "" or path) .. "/" .. it.name
+    if it.dir then
+      table.insert(out, dirRow(full, it.name, "folder", depth, tag))
+      if expanded[full] then
+        childRows(full, depth + 1, out, tag)
+      end
+    else
+      table.insert(out, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center" }, {
+        ui.box({ width = depth * 10, height = 0 }),
+        ui.button({
+          glyph = "file",
+          text = it.name,
+          variant = "ghost",
+          contentAlign = "start",
+          flexGrow = 1,
+          tooltip = full .. "\nClick: open, right click: copy the path",
+          onClick = function() openFile({ path = full }) end,
+          onRightClick = function() copyPath({ path = full }) end,
+        }),
+      }))
+    end
+  end
+end
+
 local function card(key, children)
   return ui.column({ key = key, fill = "surface_variant", radius = 10, padding = 10, gap = 2, border = "primary", borderWidth = 1 }, children)
 end
@@ -249,17 +356,23 @@ local function placeRows()
   local std, marks = {}, {}
   for i, p in ipairs(places) do
     local list = p.std and std or marks
-    table.insert(list, ui.button({
-      key = "p" .. i,
-      glyph = p.glyph,
-      text = p.name,
-      variant = "ghost",
-      contentAlign = "start",
-      enabled = p.ok,
-      tooltip = p.ok and (p.open .. "\nClick: open" .. (string.find(p.open, "^/") and ", right click: copy the path" or "")) or (p.open .. " is not available"),
-      onClick = function() openFolder(p) end,
-      onRightClick = string.find(p.open, "^/") and function() copyPath({ path = p.open }) end or nil,
-    }))
+    if p.path and p.ok then
+      table.insert(list, dirRow(p.path, p.name, p.glyph, 0, p.std and "s" or "b"))
+      if expanded[p.path] then
+        childRows(p.path, 1, list, p.std and "s" or "b")
+      end
+    else
+      table.insert(list, ui.button({
+        key = "p" .. i,
+        glyph = p.glyph,
+        text = p.name,
+        variant = "ghost",
+        contentAlign = "start",
+        enabled = p.ok,
+        tooltip = p.ok and (p.open .. "\nClick: open") or (p.open .. " is not available"),
+        onClick = function() openFolder(p) end,
+      }))
+    end
   end
   local cards = { places = card("places", std) }
   if #marks > 0 then
@@ -327,15 +440,26 @@ end
 local function searchRow()
   return ui.row({ gap = 6, align = "center" }, {
     ui.input({
-      key = "search",
+      key = "search" .. searchNonce,
       focus = not pinned,
       value = query,
       placeholder = "FSearch",
       controlSize = "sm",
       flexGrow = 1,
-      onChange = function(text) query = text end,
+      onChange = function(text)
+        local flip = (query == "") ~= (text == "")
+        query = text
+        if flip then
+          render()
+        end
+      end,
       onSubmit = function() fsearch(query) end,
     }),
+    ui.button({ key = "clear", glyph = "backspace", variant = "ghost", controlSize = "sm", enabled = query ~= "", tooltip = "Clear the search", onClick = function()
+      query = ""
+      searchNonce += 1
+      render()
+    end }),
     ui.button({ glyph = "search", variant = "ghost", controlSize = "sm", tooltip = "Open FSearch (Enter: search for the typed text)", onClick = function() fsearch(query) end }),
   })
 end
@@ -344,6 +468,10 @@ render = function()
   local head
   local editButton = ui.button({ key = "edit", glyph = "adjustments", variant = editing and "primary" or "ghost", controlSize = "sm", tooltip = "Show, hide and move the cards", onClick = function()
     editing = not editing
+    render()
+  end })
+  local collapseButton = ui.button({ key = "collapse", glyph = "arrows-minimize", variant = "ghost", controlSize = "sm", enabled = next(expanded) ~= nil, tooltip = "Close all open folders", onClick = function()
+    expanded = {}
     render()
   end })
   if pinned then
@@ -356,6 +484,7 @@ render = function()
       ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
         editButton,
+        collapseButton,
         ui.spacer({ flexGrow = 1 }),
         pinSide.dockButton("places", pinned, render),
         ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("places", pinned) end }),
@@ -374,6 +503,7 @@ render = function()
     }
     table.insert(head, 2, ui.row({ gap = 6, align = "center" }, {
       editButton,
+      collapseButton,
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
       ui.button({ glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = function()
@@ -406,6 +536,8 @@ end
 
 local function open()
   editing = false
+  expanded = {}
+  listing = {}
   loadLayout()
   loadSize()
   reload()
