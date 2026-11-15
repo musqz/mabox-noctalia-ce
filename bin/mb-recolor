@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth] [-g GROUP] [-o OUTDIR] [-w WIDTH] PALETTE SRC...
+# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] PALETTE SRC...
+# -x takes comma separated hex colors to leave out of the palette.
+# BLUR softens the source before mapping: 0 to 20, in tenths of a percent of the image width.
 # SRC is files or a directory. Output goes to ~/Pictures/<palette>/<group>/, never overwriting.
 set -euo pipefail
 
-mode=clut group=all out=
+mode=clut group=all out= blur=0 skip=
 here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 dirs=("$HOME/.local/share/mabox-noctalia-ce/palettes" /usr/share/mabox-noctalia-ce/palettes "$here/../lists/palettes")
 
-usage() { echo "usage: mb-recolor [-m clut|remap|smooth] [-g GROUP] [-o OUTDIR] [-w WIDTH] PALETTE SRC..." >&2
+usage() { echo "usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-x COLORS] PALETTE SRC..." >&2
           echo "       mb-recolor --list" >&2
           echo "       mb-recolor --colors [-g GROUP] PALETTE" >&2; exit 2; }
 find_pal() { local d; for d in "${dirs[@]}"; do [[ -f $d/$1.pal ]] && { echo "$d/$1.pal"; return 0; }; done; return 1; }
@@ -25,18 +27,21 @@ fi
 show=0
 [[ ${1:-} == --colors ]] && { show=1; shift; }
 width=0
-while getopts m:g:o:w: opt; do
+while getopts m:g:o:w:b:x: opt; do
     case $opt in
         m) mode=$OPTARG ;;
         g) group=$OPTARG ;;
         o) out=$OPTARG ;;
         w) width=$OPTARG ;;
+        b) blur=$OPTARG ;;
+        x) skip=$OPTARG ;;
         *) usage ;;
     esac
 done
 shift $((OPTIND - 1))
+[[ $blur =~ ^[0-9]+$ ]] && ((blur <= 20)) || { echo "bad blur: $blur" >&2; exit 2; }
 ((show && $# >= 1 || $# >= 2)) || usage
-[[ $mode == clut || $mode == remap || $mode == smooth ]] || { echo "unknown mode: $mode" >&2; exit 2; }
+[[ $mode == clut || $mode == remap || $mode == smooth || $mode == lut ]] || { echo "unknown mode: $mode" >&2; exit 2; }
 command -v magick >/dev/null || { echo "magick is not installed" >&2; exit 1; }
 
 palette=$1; shift
@@ -50,6 +55,11 @@ mapfile -t colors < <(echo "${line#*:}" | tr -s ' ' '\n' | awk 'NF {
     h=substr($1,2); r=strtonum("0x" substr(h,1,2)); g=strtonum("0x" substr(h,3,2)); b=strtonum("0x" substr(h,5,2))
     printf "%.2f %s\n", 0.2126*r+0.7152*g+0.0722*b, $1 }' | sort -n | cut -d' ' -f2)
 
+if [[ -n $skip ]]; then
+    mapfile -t colors < <(printf '%s\n' "${colors[@]}" | grep -vixF -f <(tr ',' '\n' <<<"$skip") || true)
+    ((${#colors[@]} > 0)) || { echo "no colors left" >&2; exit 1; }
+fi
+
 if ((show)); then printf '%s\n' "${colors[@]}"; exit 0; fi
 
 [[ -n $out ]] || out=$HOME/Pictures/$palette/$group
@@ -60,6 +70,19 @@ trap 'rm -rf "$tmp"' EXIT
 trap 'exit 143' TERM INT
 args=(); for c in "${colors[@]}"; do args+=("xc:$c"); done
 magick "${args[@]}" +append "$tmp/pal.png"
+
+# lut: gaussian blend of the palette colors over a 36-step color cube, applied with -hald-clut
+if [[ $mode == lut ]]; then
+    printf '%s\n' "${colors[@]}" | awk -v L=6 -v s=0.15 '
+        { h=substr($1,2); R[NR]=strtonum("0x" substr(h,1,2))/255; G[NR]=strtonum("0x" substr(h,3,2))/255; B[NR]=strtonum("0x" substr(h,5,2))/255 }
+        END { n=L*L; N=n*L; print "P3"; print N, N; print 255
+              for (i=0; i<N*N; i++) {
+                  r=(i%n)/(n-1); g=(int(i/n)%n)/(n-1); b=int(i/(n*n))/(n-1); sw=sr=sg=sb=0
+                  for (k=1; k<=NR; k++) { w=exp(-((r-R[k])^2+(g-G[k])^2+(b-B[k])^2)/(2*s*s)); sw+=w; sr+=w*R[k]; sg+=w*G[k]; sb+=w*B[k] }
+                  if (sw < 1e-12) { sr=r; sg=g; sb=b; sw=1 }
+                  printf "%d %d %d\n", sr/sw*255+.5, sg/sw*255+.5, sb/sw*255+.5 } }' |
+        magick - -depth 8 "$tmp/lut.png"
+fi
 
 files=()
 for s in "$@"; do
@@ -82,8 +105,15 @@ for f in "${files[@]}"; do
     dest=$out/$name.$ext; n=1
     while [[ -e $dest ]]; do dest=$out/$name-$n.$ext; ((n++)); done
     pre=(); ((width > 0)) && pre=(-resize "${width}x>")
+    if ((blur > 0)); then
+        bw=$(magick identify -format %w "${f}[0]" 2>/dev/null) || bw=
+        [[ $bw =~ ^[0-9]+$ ]] || bw=1920
+        ((width > 0 && bw > width)) && bw=$width
+        pre+=(-blur "0x$(awk -v w="$bw" -v b="$blur" 'BEGIN{printf "%.2f", w*b/1000}')")
+    fi
     case $mode in
         clut)   magick "$f" "${pre[@]}" -colorspace Gray "$tmp/pal.png" -clut "$dest" || ok=0 ;;
+        lut)    magick "$f" "${pre[@]}" "$tmp/lut.png" -hald-clut "$dest" || ok=0 ;;
         remap)  magick "$f" "${pre[@]}" +dither -remap "$tmp/pal.png" "$dest" || ok=0 ;;
         smooth) # flat areas with clean edges; filter sizes follow the image width
                 w=$(magick identify -format %w "${f}[0]" 2>/dev/null) || w=
