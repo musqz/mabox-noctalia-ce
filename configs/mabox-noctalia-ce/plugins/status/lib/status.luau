@@ -530,10 +530,13 @@ local function choice(label, key, values)
     stop(id, row, i, pick)
     table.insert(buttons, ring(id, ui.button({ text = v, variant = S[key] == v and "primary" or "ghost", controlSize = "sm", flexGrow = 1, onClick = pick }), { flexGrow = 1 }))
   end
-  return ui.column({ gap = 2 }, {
-    ui.label({ text = label, fontSize = 11, color = "on_surface_variant" }),
-    ui.row({ gap = 4 }, buttons),
-  })
+  -- Rows of three keep the numbers readable in the narrow pinned panel.
+  local rows = { ui.label({ text = label, fontSize = 11, color = "on_surface_variant" }) }
+  local per = #buttons > 5 and 3 or #buttons
+  for i = 1, #buttons, per do
+    table.insert(rows, ui.row({ gap = 4 }, { table.unpack(buttons, i, math.min(i + per - 1, #buttons)) }))
+  end
+  return ui.column({ gap = 2 }, rows)
 end
 
 local function toggle(label, key)
@@ -568,11 +571,10 @@ local function settingsCards()
     end
     card({
       heading("Biggest packages"),
-      ui.label({ text = "How many to list (0 hides the list, max 100)", fontSize = 11, color = "on_surface_variant" }),
+      ui.label({ text = `List {count} packages (0 hides the list, max 100)`, fontSize = 11, color = "on_surface_variant" }),
       ui.row({ gap = 4, align = "center" }, {
         stepButton("-10", -10, step, 1),
         stepButton("-1", -1, step, 2),
-        ui.label({ text = tostring(count), flexGrow = 1, textAlign = "center" }),
         stepButton("+1", 1, step, 3),
         stepButton("+10", 10, step, 4),
       }),
