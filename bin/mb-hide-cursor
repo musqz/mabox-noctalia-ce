@@ -3,7 +3,7 @@
 #   mb-hide-cursor            start when enabled (autostart)
 #   mb-hide-cursor on [secs]  enable (default: the last value, else 5) and start now
 #   mb-hide-cursor off        disable and stop
-# Sends F20 once per idle period; the key press hides the pointer. A repeating key
+# Sends F20 once per idle period; rc.xml binds F20 to HideCursor. A repeating key
 # would keep resetting the idle timers of Noctalia (screen off, lock). F20 counts
 # as input there too: keep N below the screen-off and lock times.
 set -euo pipefail

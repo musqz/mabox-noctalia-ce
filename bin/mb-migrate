@@ -208,11 +208,14 @@ migrate_21() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
-# Start mb-hide-cursor at login (switched on in the Configs panel).
+# F20 hides the pointer (mb-hide-cursor, switched on in the Configs panel).
 migrate_22() {
-    local a=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/autostart
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    local a=${f%/*}/autostart
     [[ -f $a ]] && ! grep -q 'mb-hide-cursor' "$a" && { [[ -z $(tail -c1 "$a") ]] || echo >> "$a"; } && echo 'command -v mb-hide-cursor >/dev/null && mb-hide-cursor &' >> "$a"
-    return 0
+    [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
+    grep -q 'key="F20"' "$f" || sed -i 's#</keyboard>#    <keybind key="F20"><action name="HideCursor"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
 }
 
 # S-W-a opens the AI agents panel.
