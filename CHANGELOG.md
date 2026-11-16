@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+
+## 0.5.2
+- Open Recolor and Wallgen from a wand button in the header of the Wallpaper folders panel.
+- Put the recording button in the bar back to the camera after a recording (left: screenshot, right: Capture panel).
 - Show the whole playlist name in the *Add to playlist* chooser of the Music panel.
 - Open Wallgen from the root menu (Tools, next to Recolor), `/mb wallgen` in the launcher or `mb-wallgen --panel`.
 - Generate in Wallgen as a background job with a *Stop* button and a notification; a stopped run leaves no half written image; one image per run.
