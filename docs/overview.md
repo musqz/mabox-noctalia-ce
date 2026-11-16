@@ -126,7 +126,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/equalizer` | `main` panel, root menu (Tools: Equalizer), `/mb equalizer` | | `mb-eq`, `pw-cli`, `pactl`; `~/.config/pipewire/pipewire.conf.d/eq.conf`; state in the plugin data folder |
 | `mabox/recolor` | `main` panel, root menu (Tools: Recolor), `/mb recolor` | | `mb-recolor`, `magick`, `yad`; palettes in `/usr/share/mabox-noctalia-ce/palettes/` |
 | `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` |  | `mb-crypto`, `curl`, `python3`; needs internet; state in the plugin data folder |
-| `mabox/music` | `/music` launcher | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
+| `mabox/music` | `/music` launcher, music panel | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
 | `mabox/agents` | `main` panel (wide, top), `/ag` launcher | `S-W-a` | `noctalia msg panel-toggle mabox/agents:main`; `mb-agent-sessions`, `python3`, `wlrctl`, a terminal; GitHub and AUR folders, terminal (gear button) and favorite folders (`yad` or `zenity` folder chooser) in `~/.config/mabox/mb-agent-sessions.conf`; starts and resumes Claude Code, Codex, Agy; session formats from mstio/mst.agent-launchers (MIT) |
 | `mabox/install` | `main` panel (wide), root menu, `/mb install` | `W-i` | app list in `lists/install.csv` (pacman repos only); Install runs `sudo pacman -S --needed` in the terminal chosen for the Agents plugin |
 

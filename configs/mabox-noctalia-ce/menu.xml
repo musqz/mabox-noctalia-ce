@@ -127,7 +127,7 @@
     </item>
     <separator />
     <item label="Music" icon="multimedia-audio-player">
-      <action name="Execute" command="noctalia msg panel-open launcher /music" />
+      <action name="Execute" command="noctalia msg panel-toggle mabox/music:player" />
     </item>
     <item label="Play stream URL" icon="media-playback-start">
       <action name="Execute" command="mpv-play-stream" />

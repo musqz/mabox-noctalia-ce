@@ -6,7 +6,7 @@ author = "mabox"
 license = "MIT"
 icon = "music"
 description = "Play and shuffle the mb-music CSV list through mpv; controls via the MPRIS media widget."
-dependencies = ["mpv", "socat", "yt-dlp", "mpv-mpris"]
+dependencies = ["mpv", "socat", "yt-dlp", "mpv-mpris", "playerctl"]
 tags = ["launcher", "audio", "music"]
 
 [[launcher_provider]]
@@ -24,3 +24,13 @@ height = "content"
 max_height = 420
 placement = "attached"
 open_near_click = true
+
+[[panel]]
+id = "player"
+entry = "player.luau"
+width = 1200
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
