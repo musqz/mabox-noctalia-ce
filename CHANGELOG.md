@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add a Music panel (`W-m`, root menu): PyRadio stations and mb-music categories in a sidebar with search, shuffle and play per card, now playing with previous, pause, next and stop; Tools opens the visualiser, PyRadio, volume and the list files. `/music` stays in the launcher.
 - Widen the Recolor panel to two columns with the looks in a 2x2 grid; add a Blur slider (`mb-recolor -b N`), a progress bar with the time left, saved settings, and a *Use as wallpapers* button that adds the output folder to the wallpaper folders and starts it.
 - Install apps from the pacman repositories with the Install apps panel (`W-i`, root menu, right click on the launcher button, `/mb install`): categories, installed state, Install button runs `sudo pacman -S --needed` in a terminal and the panel reopens when it closes; the list is `/usr/share/mabox-noctalia-ce/install.csv`.
 - Close the Status, System, Recolor and Capture panels when they open a terminal or a file manager (pinned windows stay open); Wallpaper folders hides while the folder chooser is open.
