@@ -445,15 +445,58 @@ local function choosePalette(name)
 end
 
 -- n images at full size; the seed counts up so each one differs. Prints the written paths.
+-- Detached (setsid) like the Recolor job: ten big images take longer than runAsync allows. The paths go to a log file.
 local GENERATE = [[kind=$1; seed=$2; pal=$3; grp=$4; cust=$5; look=$6; size=$7; dest=$8; n=$9; shift 9
-pat=$1; ang=$2; bal=$3; blur=$4; solid=$5
+pat=$1; ang=$2; bal=$3; blur=$4; solid=$5; setw=$6; log=$7
 [ "$kind" = solid ] && [ -n "$solid" ] && cust=$solid
 wg() { if [ -n "$cust" ]; then mb-wallgen -c "$cust" "$@"; else mb-wallgen -p "$pal" -g "$grp" "$@"; fi; }
+: > "$log"
 i=0
 while [ "$i" -lt "$n" ]; do
-  wg -t "$kind" -s $(( seed + i )) -l "$look" ${size:+-S "$size"} ${pat:+-a "$pat"} ${ang:+-A "$ang"} -b "$bal" -B "$blur" -o "$dest" || exit 1
+  wg -t "$kind" -s $(( seed + i )) -l "$look" ${size:+-S "$size"} ${pat:+-a "$pat"} ${ang:+-A "$ang"} -b "$bal" -B "$blur" -o "$dest" >> "$log" || { notify-send -u critical -a Wallgen "Wallgen failed" "image $(( i + 1 )) of $n"; exit 1; }
   i=$(( i + 1 ))
-done]]
+done
+[ "$setw" = 1 ] && noctalia msg wallpaper-set "$(tail -n1 "$log")" >/dev/null
+notify-send -a Wallgen "Wallgen" "$n images written to $dest"]]
+
+local function logFile()
+  return noctalia.pluginDataDir() .. "/wg-gen-log"
+end
+
+local function countLines()
+  return select(2, string.gsub(noctalia.readFile(logFile()) or "", "\n", ""))
+end
+
+local totalImages = 0
+
+-- Looks every 2 s whether the job still runs (short commands only), and shows the number of images done.
+local function watchJob()
+  noctalia.runAsync({ "sh", "-c", "sleep 2; pgrep -f 'mb-wallgen-jo[b]' >/dev/null && echo busy" }, function(r)
+    if string.find(r.stdout or "", "busy", 1, true) then
+      note = "Generating " .. countLines() .. " of " .. totalImages
+      render()
+      watchJob()
+      return
+    end
+    busy = false
+    local files = {}
+    for line in string.gmatch(noctalia.readFile(logFile()) or "", "[^\n]+") do
+      table.insert(files, line)
+    end
+    if #files == 0 then
+      note = nil
+      err = "Nothing was generated"
+    else
+      lastFile = files[#files]
+      if #files < totalImages then
+        err = "Only " .. #files .. " of " .. totalImages .. " images were written (see the notification)"
+      else
+        note = #files .. (#files == 1 and " image written to " or " images written to ") .. destDir()
+      end
+    end
+    render()
+  end)
+end
 
 local function generate(thenSet)
   if busy then
@@ -461,25 +504,18 @@ local function generate(thenSet)
   end
   busy = true
   err = nil
-  note = "Generating..."
+  totalImages = count
+  note = "Generating 0 of " .. count
   render()
-  noctalia.runAsync({ "sh", "-c", GENERATE, "sh", kind, tostring(seed), palette, group, enabledList(), look, size, destDir(), tostring(count), pat and tostring(pat) or "", ang and tostring(ang) or "", tostring(bal), tostring(blur), solidColor() }, function(r)
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", GENERATE, "mb-wallgen-job", kind, tostring(seed), palette, group, enabledList(), look, size, destDir(), tostring(count), pat and tostring(pat) or "", ang and tostring(ang) or "", tostring(bal), tostring(blur), solidColor(), thenSet and "1" or "0", logFile() })
+  watchJob()
+end
+
+local function stopJob()
+  noctalia.runAsync({ "sh", "-c", "for p in $(pgrep -f 'mb-wallgen-jo[b]'); do pkill -s \"$p\"; done; true" }, function()
     busy = false
-    local files = {}
-    for line in string.gmatch(r.stdout or "", "[^\n]+") do
-      table.insert(files, line)
-    end
-    if r.exitCode ~= 0 or #files == 0 then
-      note = nil
-      err = "Generating failed"
-    else
-      lastFile = files[#files]
-      note = #files .. (#files == 1 and " image written to " or " images written to ") .. destDir()
-      if thenSet then
-        noctalia.runAsync({ "noctalia", "msg", "wallpaper-set", lastFile })
-        note = "Wallpaper set: " .. lastFile
-      end
-    end
+    note = "Stopped"
     render()
   end)
 end
@@ -714,7 +750,7 @@ function render()
     onClick = function() noctalia.runAsync({ "setsid", "-f", "sh", "-c", "noctalia msg panel-close; sleep 0.2; noctalia msg panel-open mabox/recolor:" .. other }) end })
 
   local actionRow = ui.row({ gap = 8, align = "center" }, {
-      ui.button({ key = "gen", glyph = "sparkles", text = busy and "Generating..." or "Generate", variant = "primary", enabled = not busy, onClick = function() generate(false) end }),
+      ui.button({ key = "gen" .. (busy and "1" or "0"), glyph = busy and "player-stop" or "sparkles", text = busy and "Stop" or "Generate", variant = busy and "destructive" or "primary", onClick = function() if busy then stopJob() else generate(false) end end }),
       ui.button({ key = "genset", glyph = "photo", text = "Generate and set as wallpaper", variant = "outline", enabled = not busy, onClick = function() generate(true) end }),
       lastFile and not busy and ui.button({ key = "open", glyph = "folder-open", text = "Open folder", variant = "outline", onClick = function()
         noctalia.runAsync({ "xdg-open", destDir() })
@@ -785,6 +821,13 @@ local function onOpen()
   seed = math.random(1, 999999)
   saveState()
   render()
+  noctalia.runAsync({ "sh", "-c", "pgrep -f 'mb-wallgen-jo[b]' >/dev/null && echo busy" }, function(r)
+    if string.find(r.stdout or "", "busy", 1, true) and not busy then
+      busy = true
+      totalImages = count
+      watchJob()
+    end
+  end)
   applyPick()
   loadPalettes()
   loadColors()

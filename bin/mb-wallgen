@@ -89,7 +89,7 @@ fi
 
 [[ -n $out ]] || out=$HOME/Pictures/$name/generated
 mkdir -p "$out"
-tmp=$(mktemp -d)
+tmp=$(mktemp -d "$out/.wallgen.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 trap 'exit 143' TERM INT
 
@@ -137,8 +137,10 @@ plasma() {
     magick -seed "$seed" -size "${sx}x${sy}" plasma:fractal -colorspace Gray -resize "${W}x${H}!" "${@:2}" "$tmp/f.png"
 }
 
-dest=$out/$type-$seed.png; n=1
-while [[ -e $dest ]]; do dest=$out/$type-$seed-$n.png; ((n++)); done
+final=$out/$type-$seed.png; n=1
+while [[ -e $final ]]; do final=$out/$type-$seed-$n.png; ((n++)); done
+# written in the temp folder and moved at the end, so a stopped run leaves no half image behind
+dest=$tmp/out.png
 
 case $type in
     blend)
@@ -200,4 +202,5 @@ esac
 if ((blur > 0)); then
     magick "$dest" -blur "0x$(awk -v w="$W" -v b="$blur" 'BEGIN { printf "%.2f", w * b / 1000 }')" "$dest"
 fi
-echo "$dest"
+mv -- "$dest" "$final"
+echo "$final"
