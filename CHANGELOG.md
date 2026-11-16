@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Open Wallgen from the root menu (Tools, next to Recolor), `/mb wallgen` in the launcher or `mb-wallgen --panel`.
 - Generate in Wallgen as a background job with a *Stop* button and a notification; a stopped run leaves no half written image; one image per run.
 - Show *Open folder* and *Use folder as wallpapers* in Wallgen all the time, and keep the chosen palette visible when *My palettes* is folded away.
 - Open Wallgen in a compact layout with three tabs on a small screen (narrowest output under 1900 px wide); the *Wide* and *Compact* button in the header switches by hand.
