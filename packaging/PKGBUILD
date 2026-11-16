@@ -38,7 +38,7 @@ optdepends=('pastel: wallpaper colors for the Cava panel (mb-cava-theme)'
             'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('6cbebe122c23e23b51bd1465c2b21e22763822152260e8c476ddea01e2cd50f9')
 
 package() {
   local root="$srcdir/$pkgname-$pkgver"
