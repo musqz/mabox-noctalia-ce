@@ -85,8 +85,13 @@ Recolor panel (beta): the original frame on the left, the same frame recolored t
 </tr>
 </table>
 
-Music panel (`W-m`): playlists, radio stations, search and the playing track.
+Music panel (`W-m`) on the left: playlists, radio stations, search and the playing track. Wallgen panel on the right: wallpapers made from a palette or your own colors.
 
-<a href="docs/music-panel.png"><img alt="Music panel with a playlist open and a track playing" src="docs/music-panel.png" width="860" /></a>
+<table>
+<tr>
+<td><a href="docs/music-panel.png"><img alt="Music panel with a playlist open and a track playing" src="docs/music-panel.png" width="420" /></a></td>
+<td><a href="docs/wallgen-panel.png"><img alt="Wallgen panel with the palette, the type gallery and the sliders" src="docs/wallgen-panel.png" width="420" /></a></td>
+</tr>
+</table>
 
 
