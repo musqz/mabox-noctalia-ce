@@ -86,7 +86,8 @@ gly=${gly#\'}; gly=${gly%\'}
 [[ $gly == circle-filled ]] && gly=
 bar_state circle-filled error "stop recording"
 stop_button on
-trap 'bar_state "${gly:-player-record}" on_surface "${tip:-start recording}"; stop_button off' EXIT
+# the bar button is the camera of configs/noctalia/config.toml: left screenshot, right Capture panel
+trap 'bar_state "${gly:-camera}" on_surface "${tip:-L:Area shot R:Panel}"; stop_button off' EXIT
 
 mkdir -p "$(dirname "$out")"
 if wl-screenrec "${args[@]}" -f "$out"; then
