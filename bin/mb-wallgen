@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+# Generate a wallpaper from a palette with ImageMagick.
+#   mb-wallgen [-t TYPE] [-p PALETTE] [-g GROUP] [-x COLORS] [-s SEED] [-S WxH] [-l soft|flat] [-a PATTERN] [-A ANGLE] [-b BALANCE] [-B BLUR] [-o OUTDIR]
+#   mb-wallgen -c COLORS [-t TYPE] ...     use only these colors (#rrggbb, comma separated, up to 64, in this order) instead of a palette
+#   mb-wallgen --extract FILE [N] [SEED]   print N colors from an 8-color quantization of an image (default 3)
+#   mb-wallgen --types
+# PATTERN 0-100 is the size or amount of the pattern (twist, wave count, bands, points, cells, feature size);
+# ANGLE 0-359 turns gradients and waves; blend is a plain smooth blend of the palette colors without any pattern; BALANCE 0-100 favours dark (low) or light (high) palette colors, 50 is even.
+# BLUR 0-20 softens the result, in tenths of a percent of the width. Without the others the seed picks the values.
+# Palettes, groups and -x work as in mb-recolor. The same SEED gives the same image.
+# Output goes to ~/Pictures/<palette>/generated/, never overwriting.
+set -euo pipefail
+
+TYPES="blend solid linear radial twisted bilinear waves contour plasma dither mesh voronoi"
+type=mesh palette=nord group=all look=soft
+skip='' seed='' size='' out='' pattern='' angle='' balance=50 custom='' blur=0
+
+usage() { echo "usage: mb-wallgen [-t TYPE] [-p PALETTE] [-g GROUP] [-x COLORS] [-s SEED] [-S WxH] [-l soft|flat] [-a PATTERN] [-A ANGLE] [-b BALANCE] [-B BLUR] [-o OUTDIR]" >&2
+          echo "       mb-wallgen --types" >&2; exit 2; }
+[[ ${1:-} == --types ]] && { echo "$TYPES" | tr ' ' '\n'; exit 0; }
+
+if [[ ${1:-} == --extract ]]; then
+    f=${2:-}; n=${3:-3}; sd=${4:-$RANDOM}
+    [[ -f $f && $n =~ ^[0-9]+$ ]] || usage
+    # the eight colors of an 8-color quantization, then N of them picked by the seed
+    magick "${f}[0]" -resize 200x -colors 8 -unique-colors txt:- | grep -o '#[0-9A-Fa-f]\{6\}' | head -8 |
+        awk -v n="$n" -v s="$sd" 'BEGIN { srand(s) } { c[NR] = $0 } END { for (i = NR; i > 1; i--) { j = int(rand() * i) + 1; t = c[i]; c[i] = c[j]; c[j] = t }
+            for (i = 1; i <= NR && i <= n; i++) print toupper(c[i]) }'
+    exit 0
+fi
+
+while getopts t:p:g:x:s:S:l:a:A:b:B:c:o: opt; do
+    case $opt in
+        t) type=$OPTARG ;;
+        p) palette=$OPTARG ;;
+        g) group=$OPTARG ;;
+        x) skip=$OPTARG ;;
+        s) seed=$OPTARG ;;
+        S) size=$OPTARG ;;
+        l) look=$OPTARG ;;
+        a) pattern=$OPTARG ;;
+        A) angle=$OPTARG ;;
+        b) balance=$OPTARG ;;
+        c) custom=$OPTARG ;;
+        B) blur=$OPTARG ;;
+        o) out=$OPTARG ;;
+        *) usage ;;
+    esac
+done
+[[ " $TYPES " == *" $type "* ]] || { echo "unknown type: $type (see --types)" >&2; exit 2; }
+[[ $look == soft || $look == flat ]] || { echo "look: soft or flat" >&2; exit 2; }
+[[ -z $seed || $seed =~ ^[0-9]+$ ]] || { echo "seed must be a number" >&2; exit 2; }
+# 10# keeps 08 from being read as octal; usage: range NAME VALUE MAX
+range() {
+    if [[ ! $2 =~ ^[0-9]+$ ]] || ((10#$2 > $3)); then
+        echo "$1: 0 to $3" >&2
+        exit 2
+    fi
+    R=$((10#$2))
+}
+if [[ -n $pattern ]]; then range pattern "$pattern" 100; pattern=$R; fi
+if [[ -n $angle ]]; then range angle "$angle" 359; angle=$R; fi
+range blur "$blur" 20; blur=$R
+range balance "$balance" 100; balance=$R
+command -v magick >/dev/null || { echo "magick is not installed" >&2; exit 1; }
+: "${seed:=$RANDOM$RANDOM}"
+
+# the size of the first output, else 2560x1440
+if [[ -z $size ]]; then
+    size=$(wlr-randr 2>/dev/null | awk '/current/ {print $1; exit}' | grep -E '^[0-9]+x[0-9]+$' || true)
+    : "${size:=2560x1440}"
+fi
+[[ $size =~ ^([0-9]+)x([0-9]+)$ ]] || { echo "bad size: $size" >&2; exit 2; }
+W=${BASH_REMATCH[1]} H=${BASH_REMATCH[2]}
+
+here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+recolor=$here/mb-recolor
+command -v mb-recolor >/dev/null && recolor=mb-recolor
+if [[ -n $custom ]]; then
+    IFS=, read -ra colors <<<"$custom"
+    ((${#colors[@]} >= 1 && ${#colors[@]} <= 64)) || { echo "colors: 1 to 64" >&2; exit 2; }
+    for c in "${colors[@]}"; do [[ $c =~ ^#[0-9A-Fa-f]{6}$ ]] || { echo "bad color: $c" >&2; exit 2; }; done
+    name=custom
+else
+    mapfile -t colors < <("$recolor" --colors -g "$group" ${skip:+-x "$skip"} "$palette")
+    ((${#colors[@]} > 0)) || exit 1
+    name=$palette
+fi
+
+[[ -n $out ]] || out=$HOME/Pictures/$name/generated
+mkdir -p "$out"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+trap 'exit 143' TERM INT
+
+args=(); for c in "${colors[@]}"; do args+=("xc:$c"); done
+magick "${args[@]}" +append "$tmp/pal.png"
+
+# seeded numbers: "next MAX" sets R to 0..MAX-1 (not in a subshell, so the step counts up)
+step=0
+next() { step=$((step + 1)); R=$(awk -v s="$seed" -v n="$step" -v m="$1" 'BEGIN { srand(s + n * 7919); printf "%d", rand() * m }'); }
+
+# BALANCE as a gamma: above 50 lighter, below 50 darker
+gamma=$(awk -v b="$balance" 'BEGIN { printf "%.3f", 2 ^ ((b - 50) / 35) }')
+
+# a random palette color, favouring dark or light by BALANCE
+pick() {
+    step=$((step + 1))
+    R=$(awk -v s="$seed" -v n="$step" -v m="${#colors[@]}" -v g="$gamma" 'BEGIN { srand(s + n * 7919); printf "%d", (rand() ^ (1 / g)) * m }')
+}
+
+# lerp LO HI: PATTERN (0-100) mapped to LO..HI, a seeded value when PATTERN is not set
+lerp() {
+    if [[ -n $pattern ]]; then
+        L=$(awk -v lo="$1" -v hi="$2" -v p="$pattern" 'BEGIN { printf "%.2f", lo + (hi - lo) * p / 100 }')
+    else
+        next 100
+        L=$(awk -v lo="$1" -v hi="$2" -v p="$R" 'BEGIN { printf "%.2f", lo + (hi - lo) * p / 100 }')
+    fi
+}
+
+# ANGLE in degrees, a seeded multiple of 45 when not set
+turn() {
+    if [[ -n $angle ]]; then A=$angle; else next 8; A=$((R * 45)); fi
+}
+
+# a grey field is shifted by BALANCE and mapped over the palette, dark to light
+field_to_palette() {
+    magick "$1" -colorspace Gray -auto-level -gamma "$gamma" "$tmp/pal.png" -clut "$2"
+    [[ $look == flat ]] && magick "$2" +dither -remap "$tmp/pal.png" "$2"
+    return 0
+}
+
+# plasma at 1/SCALE of the size, enlarged: a bigger SCALE gives bigger shapes
+plasma() {
+    local sx=$((W / $1)) sy=$((H / $1))
+    magick -seed "$seed" -size "${sx}x${sy}" plasma:fractal -colorspace Gray -resize "${W}x${H}!" "${@:2}" "$tmp/f.png"
+}
+
+dest=$out/$type-$seed.png; n=1
+while [[ -e $dest ]]; do dest=$out/$type-$seed-$n.png; ((n++)); done
+
+case $type in
+    blend)
+        turn
+        magick -size "${W}x${H}" -define gradient:angle="$A" gradient: "$tmp/f.png"
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    bilinear)
+        # four corners: up to four colors are used as they are (repeating around), more are picked by seed and BALANCE
+        c4=()
+        for ((i = 0; i < 4; i++)); do
+            if ((${#colors[@]} > 4)); then pick; c4+=("${colors[$R]}"); else c4+=("${colors[$((i % ${#colors[@]}))]}"); fi
+        done
+        magick -size "${W}x${H}" xc: -sparse-color Bilinear "0,0,${c4[0]} $((W - 1)),0,${c4[1]} 0,$((H - 1)),${c4[2]} $((W - 1)),$((H - 1)),${c4[3]}" "$dest" ;;
+    solid)
+        pick
+        magick -size "${W}x${H}" "xc:${colors[$R]}" "$dest" ;;
+    linear)
+        turn; lerp 0.5 4
+        magick -size "${W}x${H}" -define gradient:angle="$A" gradient: -function Sinusoid "$L",-90 "$tmp/f.png"
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    radial)
+        lerp 0.5 6
+        magick -size "${W}x${H}" -define gradient:extent=maximum radial-gradient: -negate -function Sinusoid "$L",-90 "$tmp/f.png"
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    twisted)
+        turn; lerp 40 700
+        magick -size "${W}x${H}" -define gradient:angle="$A" gradient: -swirl "$L" "$tmp/f.png"
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    waves)
+        turn; lerp 2 14; f=$L; next 120
+        magick -size "${W}x${H}" -define gradient:angle="$A" gradient: -function Sinusoid "$f",0 -swirl "$((60 + R))" "$tmp/f.png"
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    contour)
+        lerp 3 20
+        plasma 1 -blur 0x12 -auto-level -function Sinusoid "$L",0
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    plasma)
+        lerp 1 8
+        plasma "${L%.*}" -blur 0x3
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    dither)
+        lerp 1 6
+        plasma "${L%.*}" -blur 0x6 -auto-level -ordered-dither o8x8,"${#colors[@]}"
+        field_to_palette "$tmp/f.png" "$dest" ;;
+    mesh|voronoi)
+        if [[ $type == mesh ]]; then lerp 3 14; else lerp 3 30; fi
+        pts=${L%.*}; spec=''
+        for ((i = 0; i < pts; i++)); do
+            # positions as a share of the size, so a preview and the full image look alike
+            next 1000; x=$((R * W / 1000)); next 1000; y=$((R * H / 1000)); pick
+            spec+="$x,$y,${colors[$R]} "
+        done
+        if [[ $type == mesh ]]; then
+            magick -size "${W}x${H}" xc: -define shepards:power=4 -sparse-color Shepards "$spec" "$dest"
+        else
+            magick -size "${W}x${H}" xc: -sparse-color Voronoi "$spec" "$dest"
+        fi ;;
+esac
+if ((blur > 0)); then
+    magick "$dest" -blur "0x$(awk -v w="$W" -v b="$blur" 'BEGIN { printf "%.2f", w * b / 1000 }')" "$dest"
+fi
+echo "$dest"
