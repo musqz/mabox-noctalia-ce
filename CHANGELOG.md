@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Open Wallgen in a compact layout with three tabs on a small screen (narrowest output under 1900 px wide); the *Wide* and *Compact* button in the header switches by hand.
 - Make wallpapers in the Wallgen panel (second panel of Recolor, switch in the header) or with `mb-wallgen`: blend, bilinear, mesh, voronoi, plasma, contour, waves, twisted, linear, radial, dither or solid from a palette or your own colors; pattern, angle, balance and blur settings.
 - Change, switch off and add colors of a palette copy in the Wallgen panel (pick from the screen or the color chooser) and keep it with *Save as* under *My palettes*; saved palettes also work in Recolor.
 - Show the wallpaper folder in use at the top of the Wallpaper folders panel and frame only that one.
