@@ -58,7 +58,7 @@ function M.currentSync()
     if h then
       inside = h == "wallpaper"
     elseif inside then
-      local v = string.match(line, '^directory%s*=%s*"(.-)"%s*$')
+      local v = string.match(line, '^directory%s*=%s*"(.-)"') or string.match(line, "^directory%s*=%s*'(.-)'")
       if v then
         return v
       end
