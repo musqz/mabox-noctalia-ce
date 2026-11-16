@@ -19,6 +19,7 @@ local fName, fTag, fResults, fBusy, fFailed = "", "", nil, false, false
 local fGroup = 1
 local fNewGroup = ""
 local fFocus = false
+local fAdding = false
 local added = {}
 local folded = { Tools = true }
 local nowPlaying = ""
@@ -119,7 +120,12 @@ local function groupNames()
 end
 
 local function addFound(st, group)
+  if fAdding then
+    return
+  end
+  fAdding = true
   csv.addStation(group, st.name, st.url, function(ok)
+    fAdding = false
     if ok then
       added[st.url] = true
       noctalia.notify("Music", "Added " .. st.name .. " to " .. group)
@@ -141,23 +147,27 @@ local function finderBody()
   local nameFocus = fFocus
   fFocus = false
   local have = {}
-  for _, c in ipairs(radio) do
-    for _, t in ipairs(c.tracks) do
-      have[t.url] = true
+  if fResults and #fResults > 0 then
+    for _, c in ipairs(radio) do
+      for _, t in ipairs(c.tracks) do
+        have[t.url] = true
+      end
     end
   end
   local creating = fGroup == #names
   local target = creating and noctalia.string.trim(fNewGroup) or names[fGroup]
   local out = {
+    ui.label({ text = "Find new radio stations online", fontSize = 14 }),
+    ui.label({ text = "Searches radio-browser.info. Press play to try a stream, Add puts it in your PyRadio list.", fontSize = 11, color = "on_surface_variant" }),
     ui.row({ gap = 6, align = "center" }, {
-      ui.input({ key = "fname", value = fName, placeholder = "station name", controlSize = "sm", flexGrow = 1, focus = nameFocus, submitOnEnter = true,
+      ui.input({ key = "fname", value = fName, placeholder = "search online: station name", controlSize = "sm", flexGrow = 1, focus = nameFocus, submitOnEnter = true,
         onChange = function(t) fName = t end, onSubmit = function(t) fName = t runSearch() end }),
-      ui.input({ key = "ftag", value = fTag, placeholder = "genre tag", controlSize = "sm", width = 180, submitOnEnter = true,
+      ui.input({ key = "ftag", value = fTag, placeholder = "genre (optional)", controlSize = "sm", width = 180, submitOnEnter = true,
         onChange = function(t) fTag = t end, onSubmit = function(t) fTag = t runSearch() end }),
       ui.button({ text = "Search", glyph = "search", variant = "primary", controlSize = "sm", enabled = not fBusy, onClick = runSearch }),
     }),
     ui.row({ gap = 6, align = "center" }, {
-      ui.label({ text = "Add to group", fontSize = 12, color = "on_surface_variant" }),
+      ui.label({ text = "Add to PyRadio group", fontSize = 12, color = "on_surface_variant" }),
       ui.select({ key = "fgroup", options = names, selectedIndex = fGroup - 1, onChange = function(idx) fGroup = tonumber(idx) + 1 render() end }),
       creating and ui.input({ key = "fnew", value = fNewGroup, placeholder = "new group name", controlSize = "sm", flexGrow = 1, onChange = function(t) fNewGroup = t render() end }) or ui.spacer({ flexGrow = 1 }),
     }),
@@ -296,7 +306,7 @@ local function sidebar()
   tool("Edit mpv list", "edit", "xdg-open '" .. csv.path .. "'")
   tool("Radio browser", "world", "xdg-open https://www.radio-browser.info")
   group("Tools", tools)
-  return ui.column({ width = 250, height = 502, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 6 }, items) }) })
+  return ui.column({ width = 250, height = 446, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 6 }, items) }) })
 end
 
 render = function()
