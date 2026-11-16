@@ -880,7 +880,7 @@ local function addRow()
   local names = playlistOptions()
   return ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Add to playlist", fontSize = 12, color = "on_surface_variant" }),
-    ui.select({ key = "plsel", options = names, selectedIndex = tIdx - 1, onChange = function(idx)
+    ui.select({ key = "plsel", width = 300, options = names, selectedIndex = tIdx - 1, onChange = function(idx)
       tIdx = tonumber(idx) + 1
       tName = tIdx < #names and names[tIdx] or ""
       plFocus = tIdx == #names
