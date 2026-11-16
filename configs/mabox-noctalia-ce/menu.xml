@@ -153,6 +153,9 @@
     <item label="Recolor" icon="applications-graphics">
       <action name="Execute" command="noctalia msg panel-toggle mabox/recolor:main" />
     </item>
+    <item label="Wallgen" icon="applications-graphics">
+      <action name="Execute" command="mb-wallgen --panel" />
+    </item>
     <separator />
     <item label="Status" icon="utilities-system-monitor">
       <action name="Execute" command="noctalia msg panel-toggle mabox/status:main" />
@@ -167,10 +170,6 @@
     <separator />
     <item label="Todo" icon="checkbox">
       <action name="Execute" command="noctalia msg panel-toggle mabox/todo:main" />
-    </item>
-    <separator />
-    <item label="Wallgen" icon="applications-graphics">
-      <action name="Execute" command="mb-wallgen --panel" />
     </item>
   </menu>
   <menu id="widgets-menu" label="Desktop widgets" icon="preferences-desktop" execute="mb-widget menu" />
