@@ -289,6 +289,8 @@ function render()
       logo(),
       ui.label({ text = "Wallpaper folders" }),
       ui.label({ text = hotkey("mabox/wallpaper-dirs:dirs"), color = "outline_variant", flexGrow = 1 }),
+      ui.button({ key = "recolor", glyph = "wand", variant = "ghost", controlSize = "sm", tooltip = "Recolor or generate wallpapers",
+        onClick = function() noctalia.runAsync({ "setsid", "-f", "sh", "-c", "noctalia msg panel-close; sleep 0.2; noctalia msg panel-open mabox/recolor:main" }) end }),
       ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", controlSize = "sm", selected = kbd.sel("add"), onClick = addFolder }),
     }),
     ui.column(card("inuse"), {
@@ -348,7 +350,7 @@ end
 
 function onOpen()
   revealCurrent = true
-  current = ""
+  current = dirs.currentSync()
   kbd.clear()
   draft = nil
   auto = false
