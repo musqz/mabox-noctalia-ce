@@ -29,16 +29,20 @@ if mode == "search":
             continue
     if out is None:
         sys.exit(1)
-    print(json.dumps([
-        {"name": " ".join(s["name"].split()).lstrip("# ") or "station", "url": s.get("url_resolved") or s["url"], "country": s.get("countrycode", ""), "codec": s.get("codec", ""), "bitrate": s.get("bitrate", 0)}
-        for s in out
-        if re.match(r"^https?://", s.get("url_resolved") or s.get("url", ""))
-    ]))
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    rows = []
+    for s in out:
+        url = s.get("url_resolved") or s.get("url") or ""
+        name = " ".join((s.get("name") or "").split()).lstrip("# ")
+        if name and re.match(r"^https?://\S+$", url):
+            rows.append({"name": name, "url": url, "country": s.get("countrycode") or "", "codec": s.get("codec") or "", "bitrate": s.get("bitrate") or 0})
+    print(json.dumps(rows, ensure_ascii=False))
 elif mode == "addstation":
     import csv, io
     import os
     group, name, url = sys.argv[3], sys.argv[4], sys.argv[5]
     name = name.lstrip("# ")
+    group = group.lstrip("# ")
     try:
         raw = open(path, encoding="utf-8", errors="surrogateescape", newline="").read()
     except OSError:
@@ -61,7 +65,10 @@ elif mode == "addstation":
     if start is None:
         lines += [fmt(group, "-"), entry]
     else:
-        at = next((i for i in range(start + 1, len(lines)) if lines[i].rstrip().endswith(",-")), len(lines))
+        def header(l):
+            row = next(csv.reader([l]), [])
+            return len(row) >= 2 and row[1].strip() == "-"
+        at = next((i for i in range(start + 1, len(lines)) if header(lines[i])), len(lines))
         while at - 1 > start and lines[at - 1] == "":
             at -= 1
         lines.insert(at, entry)
@@ -155,7 +162,8 @@ end
 -- onDone gets nil when no server answered, else { {name=, url=, country=, codec=, bitrate=} } sorted by votes.
 function M.search(name, tag, onDone)
   noctalia.runAsync({ "python3", "-I", "-c", PY, "search", M.radioPath, name, tag }, function(r)
-    onDone(r.exitCode == 0 and noctalia.json.decode(r.stdout or "") or nil)
+    local ok, data = pcall(noctalia.json.decode, r.stdout or "")
+    onDone(r.exitCode == 0 and ok and data or nil)
   end)
 end
 
