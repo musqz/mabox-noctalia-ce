@@ -20,6 +20,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | Crypto panel:<br>_amount in a currency converted to LTC, BTC, ETH, XMR, DOGE or SOL at the latest price, offline address check for Litecoin, Bitcoin and Dogecoin_ | root menu → Tools noctalia ce → Crypto, `/mb crypto`, `noctalia msg panel-toggle mabox/crypto:main`; pin button for a pinned window | `mb-crypto` |
 | Equalizer panel:<br>_preamp and 10 bands on a PipeWire filter-chain sink, presets, on/off, save as startup values; more presets are `*.json` files in `~/.config/mabox-noctalia-ce/eq-presets/` (`{"name": "...", "gains": [preamp trim, 10 bands]}`), the package ships Adam D3V_ | root menu → Tools noctalia ce → Equalizer, `/mb equalizer`, `noctalia msg panel-toggle mabox/equalizer:main` | `mb-eq` |
 | Recolor panel:<br>_recolor an image or a folder to Nord, Gruvbox, Catppuccin Mocha, Dracula or Solarized; soft, hard, smooth or blend look, blur slider, click a color to leave it out; `mb-recolor -b N -x COLORS` on the command line_ | root menu → Tools noctalia ce → Recolor, `/mb recolor`, `noctalia msg panel-toggle mabox/recolor:main` | `mb-recolor`, `magick`, `yad` |
+| Wallgen panel:<br>_a wallpaper from a palette or your own colors: twelve types, pattern, angle, balance and blur sliders, a copy of the palette to change, switch off or add colors, Save as your own palette; `mb-wallgen -t TYPE -c COLORS` on the command line_ | root menu → Tools noctalia ce → Wallgen, `/mb wallgen`, `mb-wallgen --panel` | `mb-wallgen`, `magick`, `yad` |
 
 ## Desktop widgets
 
