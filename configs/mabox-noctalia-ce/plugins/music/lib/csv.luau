@@ -13,12 +13,15 @@ if mode == "durations":
     from concurrent.futures import ThreadPoolExecutor
     def length(url):
         try:
-            r = subprocess.run(["yt-dlp", "--no-warnings", "--no-playlist", "--skip-download", "--socket-timeout", "10", "--print", "%(duration)s", "--", url],
+            r = subprocess.run(["yt-dlp", "--no-warnings", "--no-playlist", "--skip-download", "--socket-timeout", "10", "--print", "%(duration)s\t%(title)s\t%(artist,uploader)s", "--", url],
                                capture_output=True, text=True, timeout=30)
             out = r.stdout.strip().splitlines()
             if r.returncode != 0 or not out:
                 return None
-            return int(float(out[-1])) if out[-1] not in ("NA", "None", "") else -1
+            secs, rest = (out[-1].split("\t", 1) + [""])[:2]
+            title, artist = (rest.rsplit("\t", 1) + [""])[:2] if "\t" in rest else (rest, "")
+            return {"d": int(float(secs)) if secs not in ("NA", "None", "") else -1,
+                    "t": "" if title in ("NA", "None") else title, "a": "" if artist in ("NA", "None") else artist}
         except Exception:
             return None
     urls = json.loads(sys.argv[3])
@@ -234,7 +237,7 @@ function M.check(urls, onDone)
   end)
 end
 
--- onDone gets { [url] = seconds } for the urls yt-dlp could read; -1 marks a live stream.
+-- onDone gets { [url] = {d = seconds, t = title, a = artist} } for the urls yt-dlp could read; d = -1 marks a live stream.
 function M.durations(urls, onDone)
   noctalia.runAsync({ "python3", "-I", "-c", PY, "durations", M.radioPath, noctalia.json.encode(urls) }, function(r)
     local ok, data = pcall(noctalia.json.decode, r.stdout or "")
