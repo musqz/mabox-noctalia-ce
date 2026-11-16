@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- Show the category or radio group of the playing track in the Music panel, colour the playing row, and show the title as Artist - Title like the bar.
+- Search the Music panel with several words, also in the stream's own title and artist, so `dj 1985` finds a track; the card with the playing track comes first.
+- Add an Equalizer icon to the Music panel title row; it is blue while the equalizer is on.
+- Play one mpv at a time from the Music panel: a new track ends every mpv on its socket, so a track no longer plays twice.
 
 ## 0.5.0
 - Fold and unfold the cards of the Places panel; the fold state is saved with the card order.
