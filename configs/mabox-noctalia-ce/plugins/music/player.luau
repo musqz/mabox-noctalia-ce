@@ -118,6 +118,23 @@ local function storeMeta(path, rawTitle, artist)
   end
 end
 
+-- The radio group or category the playing url belongs to, shown next to the title.
+local function playingCategory()
+  if playingUrl == "" then
+    return ""
+  end
+  for _, list in ipairs({ radio, music }) do
+    for _, c in ipairs(list) do
+      for _, t in ipairs(c.tracks) do
+        if t.url == playingUrl then
+          return c.name
+        end
+      end
+    end
+  end
+  return ""
+end
+
 local function rememberPlaying(path)
   for _, list in ipairs({ radio, music }) do
     for _, c in ipairs(list) do
@@ -147,7 +164,13 @@ local function pollTitle(gen, delay)
       nowPlaying = ""
       changed = true
     end
-    local url = alive and path or ""
+    -- mpv answers with no path for a moment while it switches entries; keep the last url until it is gone for two polls.
+    local url = playingUrl
+    if alive and path ~= "" then
+      url = path
+    elseif deadPolls >= 2 then
+      url = ""
+    end
     if url ~= playingUrl then
       playingUrl = url
       changed = true
@@ -229,7 +252,11 @@ end
 local function syncNow()
   refreshEq()
   player.verify(0, function(alive, title, path, playing, rawTitle, artist)
-    playingUrl = alive and path or ""
+    if alive and path ~= "" then
+      playingUrl = path
+    elseif not alive then
+      playingUrl = ""
+    end
     if alive and title ~= "" then
       nowPlaying = title
     end
@@ -906,6 +933,7 @@ render = function()
     }),
     ui.row({ gap = 6, align = "center", fill = "surface_variant", radius = 8, padding = 6 }, {
       ui.label({ text = nowPlaying ~= "" and nowPlaying or "Nothing playing", flexGrow = 1, fontSize = 12 }),
+      ui.label({ text = playingCategory(), fontSize = 11, color = "primary" }),
       ui.button({ glyph = "playlist", variant = mine.opt("onward", true) and "outline" or "ghost", controlSize = "sm", tooltip = mine.opt("onward", true) and "Play on: a click starts the list from that track and skips streams that fail (on). Click to play only the track." or "Play only the clicked track (off). Click to play on and skip failing streams.", onClick = function() mine.setOpt("onward", not mine.opt("onward", true)) render() end }),
       ui.button({ text = sleepLabel(), glyph = "moon", variant = sleepLeft > 0 and "outline" or "ghost", controlSize = "sm", tooltip = "Sleep timer: click for 15, 30, 60, 90 minutes, then off", onClick = function() mine.cycleSleep(refreshSleep) end }),
       ui.button({ text = "-" .. stepLabel(stepSecs()), glyph = "rewind-backward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump back " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(-stepSecs()) end, onRightClick = nextStep }),
