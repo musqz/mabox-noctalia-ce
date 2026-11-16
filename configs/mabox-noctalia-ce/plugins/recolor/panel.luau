@@ -2,6 +2,7 @@
 -- Recolor: front end for mb-recolor (image or folder to a palette).
 local logo = require("./lib/celogo.luau")
 local hotkey = require("./lib/hotkey.luau")
+local switch = require("./lib/switch.luau")
 
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 10, border = "primary", borderWidth = 1 }
@@ -449,6 +450,7 @@ function render()
       logo(),
       ui.label({ text = "Recolor" }),
       ui.label({ text = hotkey("mabox/recolor:main"), color = "outline_variant", flexGrow = 1 }),
+      switch("main"),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ key = "columns", gap = 10, align = "start" }, {
