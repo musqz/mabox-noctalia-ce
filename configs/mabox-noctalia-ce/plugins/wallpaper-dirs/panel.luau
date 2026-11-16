@@ -264,7 +264,7 @@ function render()
     kbd.stop("p" .. i, i, 1, function() pick(p) end)
     kbd.stop("d" .. i, i, 2, function() remove(i) end)
     if p == current then
-      currentKey, currentLabel = "r" .. i, label
+      currentKey, currentLabel = "r" .. i .. "c", label
     end
     table.insert(rows, ui.row({ key = "r" .. i .. (p == current and "c" or ""), gap = 6, align = "center", padding = 4, radius = 6, border = p == current and "primary" or nil, borderWidth = p == current and 1 or nil, onHover = function(state)
       if state == "true" then
@@ -290,6 +290,11 @@ function render()
       ui.label({ text = "Wallpaper folders" }),
       ui.label({ text = hotkey("mabox/wallpaper-dirs:dirs"), color = "outline_variant", flexGrow = 1 }),
       ui.button({ key = "add", glyph = "folder-open", text = "Add folder", variant = "ghost", controlSize = "sm", selected = kbd.sel("add"), onClick = addFolder }),
+    }),
+    ui.column(card("inuse"), {
+      ui.label({ text = "Wallpaper folder in use", color = "on_surface_variant", fontSize = 12 }),
+      ui.label({ text = current == "" and "unknown" or dirs.name(current), fontSize = 18, fontWeight = "bold", color = "primary", maxLines = 1 }),
+      ui.label({ text = current, fontSize = 11, color = "on_surface_variant", maxLines = 2 }),
     }),
     transitionCard(),
     ui.column(card("slideshow"), {
@@ -366,7 +371,11 @@ function onOpen()
     minutes = m
     render()
   end)
+  current = dirs.currentSync()
   dirs.current(function(p)
+    if p == "" then
+      p = current
+    end
     current = p
     local known = false
     for _, q in ipairs(items) do

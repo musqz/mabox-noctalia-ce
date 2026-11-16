@@ -46,6 +46,27 @@ function M.browse(start, fromPanel)
   noctalia.runAsync({ "setsid", "-f", "sh", "-c", BROWSE, "sh", start, file(), fromPanel and "panel" or "" })
 end
 
+-- The folder in use, read from Noctalia's state file: no process, so it cannot fail when many config-get calls run at once.
+function M.currentSync()
+  local base = noctalia.getenv("XDG_STATE_HOME")
+  if not base or base == "" then
+    base = noctalia.getenv("HOME") .. "/.local/state"
+  end
+  local inside = false
+  for line in string.gmatch(noctalia.readFile(base .. "/noctalia/settings.toml") or "", "[^\n]+") do
+    local h = string.match(line, "^%s*%[([^%]]+)%]%s*$")
+    if h then
+      inside = h == "wallpaper"
+    elseif inside then
+      local v = string.match(line, '^directory%s*=%s*"(.-)"') or string.match(line, "^directory%s*=%s*'(.-)'")
+      if v then
+        return v
+      end
+    end
+  end
+  return ""
+end
+
 -- config-get prints the value single-quoted.
 function M.current(cb)
   noctalia.runAsync({ "noctalia", "msg", "config-get", "wallpaper.directory" }, function(r)
