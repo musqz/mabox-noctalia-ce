@@ -65,7 +65,7 @@ rm -rf ~/.config/mabox-noctalia-ce
 - [docs/keys.md](docs/keys.md): hotkeys and the Keys panel.
 - [docs/tools.md](docs/tools.md): panels, desktop widgets, music and scripts.
 - [docs/snapshot.md](docs/snapshot.md): build an ISO, then USB or VM.
-- [docs/music.md](docs/music.md): music launcher and media keys.
+- [docs/music.md](docs/music.md): music panel, playlists and media keys.
 - [docs/overview.md](docs/overview.md): files, paths and tools.
 
 ## Screenshots
@@ -84,5 +84,9 @@ Recolor panel (beta): the original frame on the left, the same frame recolored t
 <td><a href="docs/desktop-3.png"><img alt="Noctalia CE desktop with the Recolor panel, frame recolored to gruvbox" src="docs/desktop-3.png" width="420" /></a></td>
 </tr>
 </table>
+
+Music panel (`W-m`): playlists, radio stations, search and the playing track.
+
+<a href="docs/music-panel.png"><img alt="Music panel with a playlist open and a track playing" src="docs/music-panel.png" width="860" /></a>
 
 
