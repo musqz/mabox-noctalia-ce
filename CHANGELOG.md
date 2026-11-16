@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- Add playlists to the Music panel: `.m3u` files in `~/.config/mabox/mb-music/playlists/`, Favourites is one of them; *Add to playlist* with `+` on a row, move, remove and delete, total time per playlist.
+- Show *Recent* in the Music panel: the last 15 tracks that really played, with a clear button.
+- Add a sleep timer, `-30s` / `+30s` jump buttons with a settable step, a play-on switch and track lengths (clock button) to the Music panel; a click plays the list on from that track and skips streams that fail.
+- Check radio streams in the Music panel (stethoscope button): dead streams turn red, *Remove N dead* deletes them from `stations.csv` (a `.bak` stays), *Keep all* keeps them.
+- Add PyRadio, Volume and Cava icons to the Music panel title row (Cava: right click opens its settings) and a *Refresh* button.
 - Find new radio stations in the Music panel: *Find stations* searches radio-browser.info by name or genre, the play button tries a result and *Add* puts it in a PyRadio group or a new group (`~/.config/pyradio/stations.csv`).
 - Add a Music panel (`W-m`, root menu): PyRadio stations and mb-music categories in a sidebar with search, shuffle and play per card, now playing with previous, pause, next and stop; Tools opens the visualiser, PyRadio, volume and the list files. `/music` stays in the launcher.
 - Widen the Recolor panel to two columns with the looks in a 2x2 grid; add a Blur slider (`mb-recolor -b N`), a progress bar with the time left, saved settings, and a *Use as wallpapers* button that adds the output folder to the wallpaper folders and starts it.
