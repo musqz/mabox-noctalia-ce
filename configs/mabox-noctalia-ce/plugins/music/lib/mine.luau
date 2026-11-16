@@ -71,6 +71,43 @@ function M.setLengths(found)
   end
 end
 
+-- What the stream itself calls the track: { t = title, a = artist }, filled from yt-dlp and from what played, so a search finds "1985".
+local metas, metasLoaded = {}, false
+
+local function loadMetas()
+  if metasLoaded then
+    return
+  end
+  metasLoaded = true
+  local d = dir()
+  local ok, t = pcall(noctalia.json.decode, d and noctalia.readFile(d .. "/meta.json") or "")
+  if ok and type(t) == "table" then
+    metas = t
+  end
+end
+
+function M.meta(url)
+  loadMetas()
+  return metas[url]
+end
+
+function M.setMetas(found)
+  loadMetas()
+  local changed = false
+  for u, mt in pairs(found) do
+    local old = metas[u]
+    if mt.t ~= "" and (not old or old.t ~= mt.t or old.a ~= mt.a) then
+      metas[u] = { t = mt.t, a = mt.a }
+      changed = true
+    end
+  end
+  local d = dir()
+  if changed and d then
+    noctalia.mkdirAll(d)
+    noctalia.writeFile(d .. "/meta.json", noctalia.json.encode(metas))
+  end
+end
+
 function M.format(secs)
   if secs == nil then
     return ""

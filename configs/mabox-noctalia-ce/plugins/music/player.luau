@@ -26,8 +26,10 @@ local fAdding = false
 local added = {}
 local folded = { Tools = true }
 local nowPlaying = ""
+local playingUrl = "" -- url mpv has loaded, so its row can be coloured
 local dead, checking, confirmRemove = {}, {}, {}
 local fetching = {}
+local triedMeta = {} -- urls yt-dlp was asked about this session, so a failing one is not asked again at every press
 local lists = {}
 local tIdx = 1 -- index in the "Add to playlist" options; the last one is "New playlist..."
 local newName = ""
@@ -58,6 +60,18 @@ local function nextStep()
   render()
 end
 local cavaOn = false
+local eqOn = false
+
+-- `mb-eq status` prints "loaded" while the filter exists and "default" when it is the active sink, which is what on means.
+local function refreshEq()
+  noctalia.runAsync({ "mb-eq", "status" }, function(r)
+    local on = r.exitCode == 0 and string.find(r.stdout or "", "default", 1, true) ~= nil
+    if on ~= eqOn then
+      eqOn = on
+      render()
+    end
+  end)
+end
 
 local function sh(cmd)
   noctalia.runAsync({ "setsid", "-f", "sh", "-c", cmd })
@@ -86,6 +100,24 @@ end
 
 
 -- Looks the playing url up in the radio and music lists so Recent only holds what really played.
+-- Radio stations change their song title all the time, so only list tracks keep their stream title.
+local function isRadio(path)
+  for _, c in ipairs(radio) do
+    for _, t in ipairs(c.tracks) do
+      if t.url == path then
+        return true
+      end
+    end
+  end
+  return false
+end
+
+local function storeMeta(path, rawTitle, artist)
+  if path ~= "" and not isRadio(path) then
+    mine.setMetas({ [path] = { t = rawTitle, a = artist } })
+  end
+end
+
 local function rememberPlaying(path)
   for _, list in ipairs({ radio, music }) do
     for _, c in ipairs(list) do
@@ -97,6 +129,40 @@ local function rememberPlaying(path)
       end
     end
   end
+end
+
+-- While the panel is open the title is read every few seconds so it matches the bar when the track changes by itself.
+local pollGen = 0
+local deadPolls = 0
+
+local function pollTitle(gen, delay)
+  player.verify(delay, function(alive, title, path, playing, rawTitle, artist)
+    if gen ~= pollGen then
+      return
+    end
+    local changed = false
+    -- Two polls without mpv in a row: it ended, so the label goes too.
+    deadPolls = alive and 0 or deadPolls + 1
+    if deadPolls >= 2 and nowPlaying ~= "" then
+      nowPlaying = ""
+      changed = true
+    end
+    local url = alive and path or ""
+    if url ~= playingUrl then
+      playingUrl = url
+      changed = true
+    end
+    if alive and title ~= "" and title ~= nowPlaying and playing then
+      nowPlaying = title
+      changed = true
+    end
+    storeMeta(path, rawTitle, artist)
+    if changed then
+      render()
+    end
+    refreshEq()
+    pollTitle(gen, 8)
+  end)
 end
 
 local function refreshTitle(delay)
@@ -126,9 +192,12 @@ local function start(urls, shuffle, label, from)
   -- The old mpv is replaced at the start, so one check can land in the gap with no mpv; two in a row mean it really failed.
   local gone = 0
   local function check(delays, n)
-    player.verify(delays[n], function(alive, title, path, playing)
+    player.verify(delays[n], function(alive, title, path, playing, rawTitle, artist)
       if seq ~= playSeq then
         return
+      end
+      if alive and path ~= "" then
+        playingUrl = path
       end
       if not alive then
         gone += 1
@@ -145,6 +214,7 @@ local function start(urls, shuffle, label, from)
         if title ~= "" then
           nowPlaying = title
         end
+        storeMeta(path, rawTitle, artist)
         rememberPlaying(path)
         render()
       elseif delays[n + 1] then
@@ -157,11 +227,16 @@ end
 
 -- Refresh: show what plays now and remember it when it is a known track.
 local function syncNow()
-  player.verify(0, function(alive, title, path, playing)
+  refreshEq()
+  player.verify(0, function(alive, title, path, playing, rawTitle, artist)
+    playingUrl = alive and path or ""
     if alive and title ~= "" then
       nowPlaying = title
     end
     if alive and playing then
+      if path ~= "" then
+        storeMeta(path, rawTitle, artist)
+      end
       rememberPlaying(path)
     end
     render()
@@ -172,6 +247,7 @@ local function transport(action)
   noctalia.runAsync({ "noctalia", "msg", "media", action })
   if action == "stop" then
     playSeq += 1
+    playingUrl = ""
     nowPlaying = ""
     render()
   else
@@ -362,7 +438,8 @@ local function fetchLengths(c, key)
   end
   local todo = {}
   for _, t in ipairs(c.tracks) do
-    if mine.length(t.url) == nil then
+    if (mine.length(t.url) == nil or mine.meta(t.url) == nil) and not triedMeta[t.url] then
+      triedMeta[t.url] = true
       table.insert(todo, t.url)
     end
   end
@@ -383,7 +460,13 @@ local function fetchLengths(c, key)
     end
     csv.durations(part, function(found)
       if found then
-        mine.setLengths(found)
+        local secs, metas = {}, {}
+        for u, f in pairs(found) do
+          secs[u] = f.d
+          metas[u] = { t = f.t, a = f.a }
+        end
+        mine.setLengths(secs)
+        mine.setMetas(metas)
       end
       render()
       step(from + CHUNK)
@@ -459,7 +542,7 @@ local function card(c, key, forceOpen, filter, src)
         shown += 1
         -- No spacers: a spacer would share the free width with the title button and push the buttons off the edge.
         local cells = {
-          ui.button({ text = t.title, variant = dead[t.url] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = dead[t.url] and "No answer. Right click: keep this stream" or t.url, onClick = function() if filter or src == "mine" or not mine.opt("onward", true) then start({ t.url }, false, t.title) else start(c.playlist, false, t.title, i) end end, onRightClick = function() if dead[t.url] then dead[t.url] = nil lapse.disarm(confirmRemove, key) render() end end }),
+          ui.button({ text = t.title, glyph = t.url == playingUrl and "volume" or nil, variant = dead[t.url] and "destructive" or (t.url == playingUrl and "primary" or "ghost"), controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = dead[t.url] and "No answer. Right click: keep this stream" or t.url, onClick = function() if filter or src == "mine" or not mine.opt("onward", true) then start({ t.url }, false, t.title) else start(c.playlist, false, t.title, i) end end, onRightClick = function() if dead[t.url] then dead[t.url] = nil lapse.disarm(confirmRemove, key) render() end end }),
         }
         if src ~= "radio" then
           table.insert(cells, ui.label({ text = mine.format(mine.length(t.url)), width = 56, fontSize = 11, color = "on_surface_variant" }))
@@ -579,6 +662,34 @@ local function finderBody()
   return out
 end
 
+-- Every word of the search must occur in the list title, the stream's own title or artist, or the category name.
+local function words(q)
+  local list = {}
+  for w in string.gmatch(string.lower(q), "%S+") do
+    table.insert(list, w)
+  end
+  return list
+end
+
+local lowTitle = {} -- lowercased list titles, built once per url
+
+local function trackMatches(t, toks, cname)
+  local title = lowTitle[t.url]
+  if not title then
+    title = string.lower(t.title)
+    lowTitle[t.url] = title
+  end
+  local mt = mine.meta(t.url)
+  local stream = mt and string.lower(mt.t .. " " .. mt.a) or ""
+  local name = string.lower(cname)
+  for _, w in ipairs(toks) do
+    if not (string.find(title, w, 1, true) or string.find(stream, w, 1, true) or string.find(name, w, 1, true)) then
+      return false
+    end
+  end
+  return true
+end
+
 local function body()
   if finder then
     return finderBody()
@@ -602,33 +713,52 @@ local function body()
     return { ui.label({ text = "No stations or tracks found", color = "on_surface_variant" }) }
   end
   local sources = { { "radio", radio }, { "music", music } }
-  local cards, budget = {}, MAX_SEARCH_ROWS
-  for _, s in ipairs(sources) do
-    local src, list = s[1], s[2]
+  local cards, budget, totalHits = {}, MAX_SEARCH_ROWS, 0
+  local toks = words(q)
+  local found = {}
+  for _, src_list in ipairs(sources) do
+    local src, list = src_list[1], src_list[2]
     for _, c in ipairs(list) do
       local key = src .. ":" .. c.name
       if q ~= "" then
-        local nameHit = string.find(string.lower(c.name), q, 1, true) ~= nil
-        local hits = 0
+        local hits, hasPlaying = 0, false
         for _, t in ipairs(c.tracks) do
-          if string.find(string.lower(t.title), q, 1, true) then
+          if trackMatches(t, toks, c.name) then
             hits += 1
+            hasPlaying = hasPlaying or t.url == playingUrl
           end
         end
-        if (nameHit or hits > 0) and budget > 0 then
-          local filter = function(t)
-            if budget > 0 and (nameHit or string.find(string.lower(t.title), q, 1, true)) then
-              budget -= 1
-              return true
-            end
-            return false
-          end
-          local node = card(c, key, true, filter, src)
-          table.insert(cards, node)
+        totalHits += hits
+        if hits > 0 then
+          table.insert(found, { c = c, key = key, src = src, first = hasPlaying })
         end
       elseif sel == nil or (sel.src == src and sel.name == c.name) then
         table.insert(cards, (card(c, key, sel ~= nil, nil, src)))
       end
+    end
+  end
+  -- The card with the playing track is built first, so it gets rows even when the budget runs out.
+  local order = {}
+  for _, f in ipairs(found) do
+    if f.first then
+      table.insert(order, f)
+    end
+  end
+  for _, f in ipairs(found) do
+    if not f.first then
+      table.insert(order, f)
+    end
+  end
+  for _, f in ipairs(order) do
+    if budget > 0 then
+      local filter = function(t)
+        if budget > 0 and trackMatches(t, toks, f.c.name) then
+          budget -= 1
+          return true
+        end
+        return false
+      end
+      table.insert(cards, (card(f.c, f.key, true, filter, f.src)))
     end
   end
   if #cards == 0 then
@@ -646,7 +776,11 @@ local function body()
   for i = 1, columns do
     table.insert(out, ui.column({ gap = 8, flexGrow = 1, flexBasis = 0 }, cols[i]))
   end
-  return { ui.row({ gap = 8, align = "start" }, out) }
+  local result = { ui.row({ gap = 8, align = "start" }, out) }
+  if q ~= "" then
+    table.insert(result, 1, ui.label({ text = totalHits > MAX_SEARCH_ROWS and ("Showing " .. MAX_SEARCH_ROWS .. " of " .. totalHits .. " matches, add a word to narrow it") or (totalHits .. " matches"), fontSize = 11, color = "on_surface_variant" }))
+  end
+  return result
 end
 
 local function sidebar()
@@ -716,9 +850,6 @@ local function takeFocus()
 end
 
 local function addRow()
-  if finder then
-    return ui.spacer({ height = 0 })
-  end
   local names = playlistOptions()
   return ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = "Add to playlist", fontSize = 12, color = "on_surface_variant" }),
@@ -746,6 +877,7 @@ render = function()
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio in a terminal", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
       ui.button({ glyph = "volume", variant = "ghost", controlSize = "sm", tooltip = "Volume control (pavucontrol)", onClick = function() sh("pavucontrol") panel.close() end }),
+      ui.button({ glyph = "adjustments-horizontal", variant = eqOn and "primary" or "ghost", controlSize = "sm", tooltip = eqOn and "Equalizer (on)" or "Equalizer (off)", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/equalizer:main" }) panel.close() end }),
       ui.button({ glyph = "chart-bar", variant = cavaOn and "primary" or "ghost", controlSize = "sm", tooltip = "Click: visualiser on or off, right click: Cava settings", onClick = toggleCava, onRightClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/cava:main" }) end }),
     }),
     ui.row({ gap = 6, align = "center" }, {
@@ -785,7 +917,8 @@ render = function()
     }),
     ui.row({ gap = 8, flexGrow = 1 }, {
       sidebar(),
-      ui.column({ gap = 6, flexGrow = 1 }, {
+      -- No spacer for the finder: it would share the free height with the list and push it down.
+      finder and ui.scroll({ flexGrow = 1, key = "list" }, content) or ui.column({ gap = 6, flexGrow = 1 }, {
         addRow(),
         ui.scroll({ flexGrow = 1, key = "list" }, content),
       }),
@@ -793,7 +926,13 @@ render = function()
   }))
 end
 
+function onClose()
+  pollGen += 1
+end
+
 function onOpen()
+  pollGen += 1
+  pollTitle(pollGen, 0)
   query = ""
   finder = false
   render()
@@ -806,7 +945,6 @@ function onOpen()
     musicAll = all or {}
     render()
   end)
-  refreshTitle(0)
   sleepLeft = mine.sleepLeft()
   refreshCava(0)
   loadLists(function()
