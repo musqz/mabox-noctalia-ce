@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+
+## 0.5.0
+- Fold and unfold the cards of the Places panel; the fold state is saved with the card order.
+- Open terminator on `W-Return` (was foot) and open gmrun without a title bar.
 - Add playlists to the Music panel: `.m3u` files in `~/.config/mabox/mb-music/playlists/`, Favourites is one of them; *Add to playlist* with `+` on a row, move, remove and delete, total time per playlist.
 - Show *Recent* in the Music panel: the last 15 tracks that really played, with a clear button.
 - Add a sleep timer, `-30s` / `+30s` jump buttons with a settable step, a play-on switch and track lengths (clock button) to the Music panel; a click plays the list on from that track and skips streams that fail.
