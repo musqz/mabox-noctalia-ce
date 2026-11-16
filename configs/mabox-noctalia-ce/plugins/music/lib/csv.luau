@@ -8,7 +8,62 @@ try:
     raw = open(path, encoding="utf-8", errors="surrogateescape").read()
 except OSError:
     raw = ""
-if mode == "search":
+if mode == "durations":
+    import subprocess
+    from concurrent.futures import ThreadPoolExecutor
+    def length(url):
+        try:
+            r = subprocess.run(["yt-dlp", "--no-warnings", "--no-playlist", "--skip-download", "--socket-timeout", "10", "--print", "%(duration)s", "--", url],
+                               capture_output=True, text=True, timeout=30)
+            out = r.stdout.strip().splitlines()
+            if r.returncode != 0 or not out:
+                return None
+            return int(float(out[-1])) if out[-1] not in ("NA", "None", "") else -1
+        except Exception:
+            return None
+    urls = json.loads(sys.argv[3])
+    with ThreadPoolExecutor(4) as pool:
+        res = list(pool.map(length, urls))
+    print(json.dumps({u: d for u, d in zip(urls, res) if d is not None}))
+elif mode == "check":
+    import http.client, urllib.request
+    from concurrent.futures import ThreadPoolExecutor
+    def alive(url):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "mabox-noctalia-ce"})
+            with urllib.request.urlopen(req, timeout=4) as r:
+                r.read(1)
+            return True
+        except http.client.BadStatusLine:
+            return True
+        except Exception:
+            return False
+    urls = json.loads(sys.argv[3])
+    with ThreadPoolExecutor(16) as pool:
+        ok = list(pool.map(alive, urls))
+    # Nothing answered at all: offline or a VPN hiccup, not a list of dead stations.
+    if len(urls) > 1 and not any(ok):
+        sys.exit(2)
+    print(json.dumps([u for u, a in zip(urls, ok) if not a]))
+elif mode == "remove":
+    import csv, os, shutil
+    gone = set(json.loads(sys.argv[3]))
+    try:
+        raw = open(path, encoding="utf-8", errors="surrogateescape", newline="").read()
+    except OSError:
+        sys.exit(1)
+    eol = "\r\n" if "\r\n" in raw else "\n"
+    keep = []
+    for l in raw.split(eol):
+        row = next(csv.reader([l]), [])
+        if len(row) >= 2 and row[1].strip() != "-" and row[1].strip() in gone:
+            continue
+        keep.append(l)
+    shutil.copy2(path, path + ".bak")
+    with open(path + ".tmp", "w", encoding="utf-8", errors="surrogateescape", newline="") as f:
+        f.write(eol.join(keep))
+    os.replace(path + ".tmp", path)
+elif mode == "search":
     import urllib.parse, urllib.request
     name, tag = sys.argv[3], sys.argv[4]
     params = {"limit": "40", "hidebroken": "true", "order": "votes", "reverse": "true"}
@@ -164,6 +219,33 @@ function M.search(name, tag, onDone)
   noctalia.runAsync({ "python3", "-I", "-c", PY, "search", M.radioPath, name, tag }, function(r)
     local ok, data = pcall(noctalia.json.decode, r.stdout or "")
     onDone(r.exitCode == 0 and ok and data or nil)
+  end)
+end
+
+-- onDone gets the list of urls that did not answer, or nil when python failed.
+function M.check(urls, onDone)
+  noctalia.runAsync({ "python3", "-I", "-c", PY, "check", M.radioPath, noctalia.json.encode(urls) }, function(r)
+    local ok, data = pcall(noctalia.json.decode, r.stdout or "")
+    if r.exitCode == 0 and ok and data then
+      onDone(data, nil)
+    else
+      onDone(nil, "exit " .. tostring(r.exitCode) .. " " .. string.sub(noctalia.string.trim(r.stderr or ""), -120))
+    end
+  end)
+end
+
+-- onDone gets { [url] = seconds } for the urls yt-dlp could read; -1 marks a live stream.
+function M.durations(urls, onDone)
+  noctalia.runAsync({ "python3", "-I", "-c", PY, "durations", M.radioPath, noctalia.json.encode(urls) }, function(r)
+    local ok, data = pcall(noctalia.json.decode, r.stdout or "")
+    onDone(r.exitCode == 0 and ok and data or nil)
+  end)
+end
+
+-- Deletes the stations with these urls from stations.csv; the old file stays as stations.csv.bak.
+function M.removeStations(urls, onDone)
+  noctalia.runAsync({ "python3", "-I", "-c", PY, "remove", M.radioPath, noctalia.json.encode(urls) }, function(r)
+    onDone(r.exitCode == 0)
   end)
 end
 
