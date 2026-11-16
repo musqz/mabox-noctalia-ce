@@ -52,6 +52,15 @@ The sidebar Tools open the visualiser, PyRadio, the volume control and the stati
 
 Note: `mpv-mpris` exposes mpv to the media keys and bar widget.
 
+## Find new radio stations
+
+1. Click *Find stations* in the sidebar.
+2. Type a name or a genre tag and press Enter.
+3. Press the play button of a result to try it.
+4. Pick a group under *Add to group* (or *New group...* and type a name) and press *Add*.
+
+The station is appended to `~/.config/pyradio/stations.csv`. Search results come from radio-browser.info.
+
 ## Check
 
 - `playerctl -l` lists `mpv.instance-*` while playing.

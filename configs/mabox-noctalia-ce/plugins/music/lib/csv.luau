@@ -8,7 +8,68 @@ try:
     raw = open(path, encoding="utf-8", errors="surrogateescape").read()
 except OSError:
     raw = ""
-if mode == "radio":
+if mode == "search":
+    import urllib.parse, urllib.request
+    name, tag = sys.argv[3], sys.argv[4]
+    params = {"limit": "40", "hidebroken": "true", "order": "votes", "reverse": "true"}
+    if name:
+        params["name"] = name
+    if tag:
+        params["tag"] = tag
+    out = None
+    for host in ("de1", "nl1", "at1"):
+        try:
+            req = urllib.request.Request(
+                "https://" + host + ".api.radio-browser.info/json/stations/search?" + urllib.parse.urlencode(params),
+                headers={"User-Agent": "mabox-noctalia-ce"},
+            )
+            out = json.load(urllib.request.urlopen(req, timeout=6))
+            break
+        except Exception:
+            continue
+    if out is None:
+        sys.exit(1)
+    print(json.dumps([
+        {"name": " ".join(s["name"].split()).lstrip("# ") or "station", "url": s.get("url_resolved") or s["url"], "country": s.get("countrycode", ""), "codec": s.get("codec", ""), "bitrate": s.get("bitrate", 0)}
+        for s in out
+        if re.match(r"^https?://", s.get("url_resolved") or s.get("url", ""))
+    ]))
+elif mode == "addstation":
+    import csv, io
+    import os
+    group, name, url = sys.argv[3], sys.argv[4], sys.argv[5]
+    name = name.lstrip("# ")
+    try:
+        raw = open(path, encoding="utf-8", errors="surrogateescape", newline="").read()
+    except OSError:
+        raw = ""
+    eol = "\r\n" if "\r\n" in raw else "\n"
+    lines = raw.split(eol)
+    if lines and lines[-1] == "":
+        lines.pop()
+    def fmt(*fields):
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator="").writerow(fields)
+        return buf.getvalue()
+    entry = fmt(name, url)
+    start = None
+    for i, l in enumerate(lines):
+        row = next(csv.reader([l]), [])
+        if len(row) >= 2 and row[1].strip() == "-" and row[0].strip() == group:
+            start = i
+            break
+    if start is None:
+        lines += [fmt(group, "-"), entry]
+    else:
+        at = next((i for i in range(start + 1, len(lines)) if lines[i].rstrip().endswith(",-")), len(lines))
+        while at - 1 > start and lines[at - 1] == "":
+            at -= 1
+        lines.insert(at, entry)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + ".tmp", "w", encoding="utf-8", errors="surrogateescape", newline="") as f:
+        f.write(eol.join(lines) + eol)
+    os.replace(path + ".tmp", path)
+elif mode == "radio":
     import csv
     cats, cur = [], None
     for row in csv.reader(l for l in raw.splitlines() if l and not l.startswith("#")):
@@ -88,6 +149,20 @@ function M.radio(onDone)
     else
       onDone(nil, nil)
     end
+  end)
+end
+
+-- onDone gets nil when no server answered, else { {name=, url=, country=, codec=, bitrate=} } sorted by votes.
+function M.search(name, tag, onDone)
+  noctalia.runAsync({ "python3", "-I", "-c", PY, "search", M.radioPath, name, tag }, function(r)
+    onDone(r.exitCode == 0 and noctalia.json.decode(r.stdout or "") or nil)
+  end)
+end
+
+-- Appends the station to the group's end in stations.csv; an unknown group is created.
+function M.addStation(group, name, url, onDone)
+  noctalia.runAsync({ "python3", "-I", "-c", PY, "addstation", M.radioPath, group, name, url }, function(r)
+    onDone(r.exitCode == 0)
   end)
 end
 
