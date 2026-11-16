@@ -14,6 +14,12 @@ local sel = nil -- { src = "radio" | "music", name = "..." }, nil = overview
 local query = ""
 local open = {}
 local searchNonce = 0
+local finder = false
+local fName, fTag, fResults, fBusy, fFailed = "", "", nil, false, false
+local fGroup = 1
+local fNewGroup = ""
+local fFocus = false
+local added = {}
 local folded = { Tools = true }
 local nowPlaying = ""
 local render
@@ -86,7 +92,102 @@ local function card(c, key, forceOpen, filter)
   return ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 2 }, rows), shown
 end
 
+local function runSearch()
+  if fBusy then
+    return
+  end
+  if noctalia.string.trim(fName) == "" and noctalia.string.trim(fTag) == "" then
+    return
+  end
+  fBusy, fFailed = true, false
+  render()
+  csv.search(noctalia.string.trim(fName), noctalia.string.trim(fTag), function(list)
+    fBusy = false
+    fFailed = list == nil
+    fResults = list or {}
+    render()
+  end)
+end
+
+local function groupNames()
+  local names = {}
+  for _, c in ipairs(radio) do
+    table.insert(names, c.name)
+  end
+  table.insert(names, "New group...")
+  return names
+end
+
+local function addFound(st, group)
+  csv.addStation(group, st.name, st.url, function(ok)
+    if ok then
+      added[st.url] = true
+      noctalia.notify("Music", "Added " .. st.name .. " to " .. group)
+      csv.radio(function(cats)
+        radio = cats or radio
+        render()
+      end)
+    else
+      noctalia.notify("Music", "Could not write " .. csv.radioPath)
+    end
+  end)
+end
+
+local function finderBody()
+  local names = groupNames()
+  if fGroup > #names then
+    fGroup = 1
+  end
+  local nameFocus = fFocus
+  fFocus = false
+  local have = {}
+  for _, c in ipairs(radio) do
+    for _, t in ipairs(c.tracks) do
+      have[t.url] = true
+    end
+  end
+  local creating = fGroup == #names
+  local target = creating and noctalia.string.trim(fNewGroup) or names[fGroup]
+  local out = {
+    ui.row({ gap = 6, align = "center" }, {
+      ui.input({ key = "fname", value = fName, placeholder = "station name", controlSize = "sm", flexGrow = 1, focus = nameFocus, submitOnEnter = true,
+        onChange = function(t) fName = t end, onSubmit = function(t) fName = t runSearch() end }),
+      ui.input({ key = "ftag", value = fTag, placeholder = "genre tag", controlSize = "sm", width = 180, submitOnEnter = true,
+        onChange = function(t) fTag = t end, onSubmit = function(t) fTag = t runSearch() end }),
+      ui.button({ text = "Search", glyph = "search", variant = "primary", controlSize = "sm", enabled = not fBusy, onClick = runSearch }),
+    }),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.label({ text = "Add to group", fontSize = 12, color = "on_surface_variant" }),
+      ui.select({ key = "fgroup", options = names, selectedIndex = fGroup - 1, onChange = function(idx) fGroup = tonumber(idx) + 1 render() end }),
+      creating and ui.input({ key = "fnew", value = fNewGroup, placeholder = "new group name", controlSize = "sm", flexGrow = 1, onChange = function(t) fNewGroup = t render() end }) or ui.spacer({ flexGrow = 1 }),
+    }),
+  }
+  if fBusy then
+    table.insert(out, ui.label({ text = "Searching radio-browser.info", color = "on_surface_variant" }))
+  elseif fFailed then
+    table.insert(out, ui.label({ text = "No answer from radio-browser.info", color = "on_surface_variant" }))
+  elseif fResults and #fResults == 0 then
+    table.insert(out, ui.label({ text = "No stations found", color = "on_surface_variant" }))
+  elseif fResults then
+    local rows = {}
+    for i, st in ipairs(fResults) do
+      local info = st.country .. (st.codec ~= "" and ("  " .. st.codec) or "") .. (st.bitrate > 0 and (" " .. st.bitrate .. "k") or "")
+      table.insert(rows, ui.row({ key = "f" .. i, gap = 4, align = "center" }, {
+        ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = st.url, onClick = function() start({ st.url }, false, st.name) end }),
+        ui.label({ text = st.name, flexGrow = 1, fontSize = 12 }),
+        ui.label({ text = info, fontSize = 11, color = "on_surface_variant" }),
+        ui.button({ text = (added[st.url] or have[st.url]) and "Added" or "Add", glyph = (added[st.url] or have[st.url]) and "check" or "plus", variant = "outline", controlSize = "sm", enabled = not (added[st.url] or have[st.url]) and target ~= "", tooltip = target ~= "" and ("Add to " .. target) or "Type a group name first", onClick = function() addFound(st, target) end }),
+      }))
+    end
+    table.insert(out, ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 2 }, rows))
+  end
+  return out
+end
+
 local function body()
+  if finder then
+    return finderBody()
+  end
   local q = string.lower(noctalia.string.trim(query))
   if #radio == 0 and #music == 0 then
     return { ui.label({ text = "No stations or tracks found", color = "on_surface_variant" }) }
@@ -142,6 +243,7 @@ end
 local function sidebar()
   local items = {}
   local function pick(src, name)
+    finder = false
     sel = name and { src = src, name = name } or nil
     query = ""
     render()
@@ -172,7 +274,8 @@ local function sidebar()
   local function entry(label, active, action)
     return ui.button({ text = label, glyph = active and "point-filled" or "point", variant = active and "outline" or "ghost", controlSize = "sm", contentAlign = "start", onClick = action })
   end
-  table.insert(items, ui.button({ text = "All", variant = (sel == nil and query == "") and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() pick(nil, nil) end }))
+  table.insert(items, ui.button({ text = "All", variant = (sel == nil and query == "" and not finder) and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() pick(nil, nil) end }))
+  table.insert(items, ui.button({ text = "Find stations", glyph = "search", variant = finder and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() finder, sel, query, fFocus = true, nil, "", true render() end }))
   for _, g in ipairs({ { "Radio", "radio", radio }, { "Music", "music", music } }) do
     if #g[3] > 0 then
       local rows = {}
@@ -208,12 +311,15 @@ render = function()
       ui.input({
         key = "search" .. searchNonce,
         value = query,
-        focus = true,
+        focus = not finder,
         placeholder = "search tracks and stations",
         controlSize = "sm",
         flexGrow = 1,
         onChange = function(text)
           query = text
+          if text ~= "" then
+            finder = false
+          end
           render()
         end,
       }),
@@ -241,6 +347,7 @@ end
 
 function onOpen()
   query = ""
+  finder = false
   render()
   csv.radio(function(cats)
     radio = cats or {}
