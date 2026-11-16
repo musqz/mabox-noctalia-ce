@@ -3,26 +3,7 @@
 -- Transport (pause/next/prev/stop) goes through MPRIS: `noctalia msg media <action>`.
 
 local csv = require("./lib/csv.luau")
-local RUNTIME = noctalia.getenv("XDG_RUNTIME_DIR")
-if not RUNTIME or RUNTIME == "" then
-  RUNTIME = "/tmp"
-end
-local SOCK = RUNTIME .. "/mpvsocket"
-local LIST = RUNTIME .. "/mb-music-playlist.txt"
-
-local function sq(s)
-  return "'" .. string.gsub(s, "'", "'\\''") .. "'"
-end
-
-local function play(urls, shuffle, label)
-  noctalia.writeFile(LIST, table.concat(urls, "\n") .. "\n")
-  local cmd = "(echo '{\"command\":[\"quit\"]}' | socat - " .. sq(SOCK) .. " >/dev/null 2>&1 || true); "
-    .. "for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do [ -S " .. sq(SOCK) .. " ] || break; sleep 0.1; done; rm -f " .. sq(SOCK) .. "; "
-    .. "nohup mpv --no-video --force-window=no --input-ipc-server=" .. sq(SOCK)
-    .. (shuffle and " --shuffle" or "") .. " --playlist=" .. sq(LIST) .. " >/dev/null 2>&1 &"
-  noctalia.runAsync(cmd)
-  noctalia.notify("Music", label)
-end
+local play = require("./lib/play.luau").play
 
 local function trackRow(t, score)
   return { id = "play:" .. t.url, title = t.title, subtitle = "Enter to play", glyph = "player-play", score = score }

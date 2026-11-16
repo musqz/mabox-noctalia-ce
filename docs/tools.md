@@ -37,7 +37,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 
 | Tool | Key | Setup |
 |---|---|---|
-| `/music` launcher player | `W-m` | [music.md](music.md) |
+| music panel | `W-m` | [music.md](music.md) |
 | Music:<br>_add track_ | `C-S-2` | [music.md](music.md) |
 | `mpv-play-stream` play URL | `C-S-1` | [music.md](music.md) |
 | Media keys | `XF86Audio*` | [music.md](music.md) |

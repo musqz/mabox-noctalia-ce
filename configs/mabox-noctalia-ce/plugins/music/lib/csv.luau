@@ -8,7 +8,22 @@ try:
     raw = open(path, encoding="utf-8", errors="surrogateescape").read()
 except OSError:
     raw = ""
-if mode == "list":
+if mode == "radio":
+    import csv
+    cats, cur = [], None
+    for row in csv.reader(l for l in raw.splitlines() if l and not l.startswith("#")):
+        if len(row) < 2:
+            continue
+        name, url = row[0].strip(), row[1].strip()
+        if url == "-":
+            cur = {"name": name, "tracks": []}
+            cats.append(cur)
+        elif cur is not None and re.match(r"^https?://", url):
+            cur["tracks"].append({"title": name, "url": url})
+    for c in cats:
+        c["playlist"] = [t["url"] for t in c["tracks"]]
+    print(json.dumps({"cats": cats, "all": [u for c in cats for u in c["playlist"]]}))
+elif mode == "list":
     cats, cur = [], None
     for line in re.split(r"[\r\n]+", raw):
         m = re.match(r"^(.*),([^,]*)$", line)
@@ -53,6 +68,20 @@ M.path = noctalia.getenv("HOME") .. "/.config/mabox/mb-music/yt_music_list.csv"
 -- and the list of all playable urls.
 function M.list(onDone)
   noctalia.runAsync({ "python3", "-I", "-c", PY, "list", M.path }, function(r)
+    local data = r.exitCode == 0 and noctalia.json.decode(r.stdout or "") or nil
+    if data then
+      onDone(data.cats, data.all)
+    else
+      onDone(nil, nil)
+    end
+  end)
+end
+
+-- PyRadio's stations.csv: same result as list.
+M.radioPath = noctalia.getenv("HOME") .. "/.config/pyradio/stations.csv"
+
+function M.radio(onDone)
+  noctalia.runAsync({ "python3", "-I", "-c", PY, "radio", M.radioPath }, function(r)
     local data = r.exitCode == 0 and noctalia.json.decode(r.stdout or "") or nil
     if data then
       onDone(data.cats, data.all)

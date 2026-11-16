@@ -4,7 +4,7 @@ The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-musi
 
 | Key | Tool |
 |---|---|
-| `W-m` | `/music` in the Noctalia launcher |
+| `W-m` | music panel; `/music` in the launcher does the same search |
 | `C-S-2` | add a track to the playlist |
 | `C-S-1` | `mpv-play-stream`: play a copied URL in mpv |
 | `XF86AudioPlay` / `Stop` / `Next` / `Prev` | `noctalia msg media toggle / stop / next / previous` |
@@ -44,9 +44,11 @@ The category stays selected until you pick another. Choose "+ New category" to c
 ## Use
 
 1. Press `W-m`.
-2. Pick a category, or "Shuffle all".
-3. Inside a category: "Shuffle <category>", "Play <category>" or a single track.
-4. Pause, skip and stop with the media keys or the bar media widget.
+2. Pick a radio group or category in the sidebar, or type to search stations and tracks.
+3. Press a row to play it; the shuffle and play buttons on a card start the whole group.
+4. Pause, skip and stop with the buttons under the search field, the media keys or the bar media widget.
+
+The sidebar Tools open the visualiser, PyRadio, the volume control and the station and playlist files.
 
 Note: `mpv-mpris` exposes mpv to the media keys and bar widget.
 

@@ -22,7 +22,7 @@ W-A-i,Panels,1,System info and report
 W-A-k,Panels,0,Fittsmon zone commands on each monitor
 C-W-s,Panels,0,Status as pinned window
 W-=,Panels,0,Wallpaper picker
-W-m,Panels,0,Music launcher
+W-m,Panels,0,Music panel
 C-S-2,Panels,0,Add a track to the music list
 W-slash,Apps,0,File search (fsearch)
 C-KP_7,Apps,0,Obsidian
