@@ -266,14 +266,14 @@ function render()
     if p == current then
       currentKey, currentLabel = "r" .. i, label
     end
-    table.insert(rows, ui.row({ key = "r" .. i, gap = 6, align = "center", padding = 4, radius = 6, border = p == current and "primary" or nil, borderWidth = p == current and 1 or nil, onHover = function(state)
+    table.insert(rows, ui.row({ key = "r" .. i .. (p == current and "c" or ""), gap = 6, align = "center", padding = 4, radius = 6, border = p == current and "primary" or nil, borderWidth = p == current and 1 or nil, onHover = function(state)
       if state == "true" then
         hoverPath = p
         showPreview(p)
       end
     end }, {
       ui.label({ text = label, flexGrow = 1, maxLines = 1, color = p == current and "primary" or "on_surface" }),
-      ui.button({ key = "p" .. i, glyph = p == current and "circle-check" or "circle", variant = p == current and "primary" or "ghost", controlSize = "sm", selected = kbd.sel("p" .. i), tooltip = "Select as wallpaper folder", onClick = function() pick(p) end }),
+      ui.button({ key = "p" .. i .. (p == current and "c" or ""), glyph = p == current and "circle-check" or "circle", variant = p == current and "primary" or "ghost", controlSize = "sm", selected = kbd.sel("p" .. i), tooltip = "Select as wallpaper folder", onClick = function() pick(p) end }),
       ui.button({ key = "d" .. i, glyph = "trash", selected = kbd.sel("d" .. i), text = armed == i and "Click again" or nil, variant = armed == i and "destructive" or "ghost", controlSize = "sm", tooltip = "Remove from list", onClick = function() remove(i) end }),
     }))
   end
