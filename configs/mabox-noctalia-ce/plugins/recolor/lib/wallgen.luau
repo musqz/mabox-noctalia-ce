@@ -8,7 +8,6 @@ return function(compact)
 
 local TYPES = { "blend", "bilinear", "mesh", "voronoi", "plasma", "contour", "waves", "twisted", "linear", "radial", "dither", "solid" }
 local SIZES = { { "", "Auto" }, { "1920x1080", "1920x1080" }, { "2560x1440", "2560x1440" }, { "3840x2160", "3840x2160" } }
-local COUNTS = { 1, 5, 10 }
 -- What the Pattern slider means per type, and whether the angle applies.
 local PATTERN = { mesh = "Points", voronoi = "Cells", plasma = "Shape size", contour = "Bands", waves = "Waves", twisted = "Twist", linear = "Stripes", radial = "Rings", dither = "Grain size" }
 local TURNS = { blend = true, linear = true, twisted = true, waves = true }
@@ -23,7 +22,6 @@ local group = "all"
 local kind = "mesh"
 local look = "soft"
 local size = ""
-local count = 1
 local out = ""
 local work = {}
 local dis = {}
@@ -46,7 +44,6 @@ local pvGen = 0
 local busy = false
 local err = nil
 local note = nil
-local lastFile = nil
 local pat, ang = nil, nil
 local bal = 50
 local gen = 0
@@ -84,7 +81,7 @@ end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(dataFile("wg-state"), string.format("palette=%s\ngroup=%s\nkind=%s\nlook=%s\nsize=%s\ncount=%d\nout=%s\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nsolid=%s\nopen=%d\nblur=%d\npat=%s\nang=%s\nbal=%d\n", palette, group, kind, look, size, count, out, table.concat(work, ","), disList(), edited and 1 or 0, sel and tostring(sel) or "", solidHex or "", customOpen and 1 or 0, blur, pat and tostring(pat) or "", ang and tostring(ang) or "", bal))
+  noctalia.writeFile(dataFile("wg-state"), string.format("palette=%s\ngroup=%s\nkind=%s\nlook=%s\nsize=%s\nout=%s\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nsolid=%s\nopen=%d\nblur=%d\npat=%s\nang=%s\nbal=%d\n", palette, group, kind, look, size, out, table.concat(work, ","), disList(), edited and 1 or 0, sel and tostring(sel) or "", solidHex or "", customOpen and 1 or 0, blur, pat and tostring(pat) or "", ang and tostring(ang) or "", bal))
 end
 
 local function loadState()
@@ -95,7 +92,6 @@ local function loadState()
     elseif k == "kind" then kind = v
     elseif k == "look" then look = v == "flat" and "flat" or "soft"
     elseif k == "size" then size = v
-    elseif k == "count" then count = tonumber(v) or 1
     elseif k == "out" then out = v
     elseif k == "pat" then pat = tonumber(v)
     elseif k == "ang" then ang = tonumber(v)
@@ -473,7 +469,7 @@ local totalImages = 0
 local function watchJob()
   noctalia.runAsync({ "sh", "-c", "sleep 2; pgrep -f 'mb-wallgen-jo[b]' >/dev/null && echo busy" }, function(r)
     if string.find(r.stdout or "", "busy", 1, true) then
-      note = "Generating " .. countLines() .. " of " .. totalImages
+      note = "Generating..."
       render()
       watchJob()
       return
@@ -487,7 +483,6 @@ local function watchJob()
       note = nil
       err = "Nothing was generated"
     else
-      lastFile = files[#files]
       if #files < totalImages then
         err = "Only " .. #files .. " of " .. totalImages .. " images were written (see the notification)"
       else
@@ -504,11 +499,11 @@ local function generate(thenSet)
   end
   busy = true
   err = nil
-  totalImages = count
-  note = "Generating 0 of " .. count
+  totalImages = 1
+  note = "Generating..."
   render()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.runAsync({ "setsid", "-f", "sh", "-c", GENERATE, "mb-wallgen-job", kind, tostring(seed), palette, group, enabledList(), look, size, destDir(), tostring(count), pat and tostring(pat) or "", ang and tostring(ang) or "", tostring(bal), tostring(blur), solidColor(), thenSet and "1" or "0", logFile() })
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", GENERATE, "mb-wallgen-job", kind, tostring(seed), palette, group, enabledList(), look, size, destDir(), "1", pat and tostring(pat) or "", ang and tostring(ang) or "", tostring(bal), tostring(blur), solidColor(), thenSet and "1" or "0", logFile() })
   watchJob()
 end
 
@@ -539,7 +534,7 @@ local function chip(key, text, on, onClick)
 end
 
 function render()
-  local pal, mine = {}, {}
+  local pal, mine, mineBy = {}, {}, {}
   for _, p in ipairs(palettes) do
     if custom[p.name] then
       -- the colors in small, for a quick look at the range; every row has the same columns so the trash lines up
@@ -549,13 +544,15 @@ function render()
       for i, c in ipairs(cols) do
         table.insert(strip, ui.box({ key = "mini" .. p.name .. i .. c, fill = c, width = w, height = 18, radius = 1 }))
       end
-      table.insert(mine, ui.row({ key = "my" .. p.name, gap = 6, align = "center" }, {
+      local row = ui.row({ key = "my" .. p.name, gap = 6, align = "center" }, {
         ui.button({ key = "p" .. p.name .. (p.name == palette and "1" or "0"), text = p.name, glyph = p.name == palette and "check" or nil, variant = p.name == palette and "primary" or "outline", controlSize = "sm", width = 130, maxLines = 1,
           tooltip = p.name, onClick = function() armedDel = nil; choosePalette(p.name) end }),
         ui.row({ key = "strip" .. p.name, gap = 0, width = 195 }, strip),
         ui.box({ flexGrow = 1, height = 1 }),
         ui.button({ key = "del" .. p.name .. (armedDel == p.name and "1" or "0"), glyph = "trash", text = armedDel == p.name and "Sure?" or nil, variant = armedDel == p.name and "destructive" or "ghost", controlSize = "sm", tooltip = armedDel == p.name and "Click again to delete" or "Delete this palette", onClick = function() deletePalette(p.name) end }),
-      }))
+      })
+      table.insert(mine, row)
+      mineBy[p.name] = row
     else
       table.insert(pal, chip("p" .. p.name, p.name, p.name == palette, function() choosePalette(p.name) end))
     end
@@ -643,11 +640,6 @@ function render()
   for _, s in ipairs(SIZES) do
     table.insert(sizeChips, chip("sz" .. s[1], s[2], s[1] == size, function() size = (s[1] == size) and "" or s[1]; saveState(); render() end))
   end
-  local countChips = {}
-  for _, n in ipairs(COUNTS) do
-    table.insert(countChips, chip("n" .. n, tostring(n), n == count, function() count = n; saveState(); render() end))
-  end
-
   local palCard = ui.column(card("pal"), {
     ui.label({ text = "Palette", fontWeight = "bold" }),
     ui.column({ gap = 6 }, chunk(pal, "pr", compact and 5 or 3)),
@@ -656,7 +648,7 @@ function render()
     (myCount > 0 and customOpen) and ui.column({ key = "mypals", gap = 4 }, {
       ui.column({ gap = 4 }, mine),
       ui.label({ text = "Saved in ~/.local/share/mabox-noctalia-ce/palettes/", color = "on_surface_variant", fontSize = 11, maxLines = 2 }),
-    }) or ui.box({ height = 0 }),
+    }) or ((myCount > 0 and not customOpen and mineBy[palette]) and ui.column({ key = "mysel", gap = 4 }, { mineBy[palette] }) or ui.box({ height = 0 })),
     ui.column({ gap = 6 }, chunk(grp, "gr", compact and 6 or 4)),
     ui.row({ gap = 8, align = "center" }, {
       ui.label({ text = edited and "Colors (changed copy)" or "Colors", fontWeight = "bold", flexGrow = 1 }),
@@ -679,8 +671,6 @@ function render()
     ui.label({ text = "Size", fontWeight = "bold" }),
     ui.row({ key = "sizes", gap = 6 }, sizeChips),
     ui.label({ text = "Auto uses the size of the first monitor.", color = "on_surface_variant", fontSize = 11 }),
-    ui.label({ text = "How many", fontWeight = "bold" }),
-    ui.row({ key = "counts", gap = 6 }, countChips),
   })
   local outCard = ui.column(card("out"), {
     ui.label({ text = "Output folder", fontWeight = "bold" }),
@@ -752,14 +742,14 @@ function render()
   local actionRow = ui.row({ gap = 8, align = "center" }, {
       ui.button({ key = "gen" .. (busy and "1" or "0"), glyph = busy and "player-stop" or "sparkles", text = busy and "Stop" or "Generate", variant = busy and "destructive" or "primary", onClick = function() if busy then stopJob() else generate(false) end end }),
       ui.button({ key = "genset", glyph = "photo", text = "Generate and set as wallpaper", variant = "outline", enabled = not busy, onClick = function() generate(true) end }),
-      lastFile and not busy and ui.button({ key = "open", glyph = "folder-open", text = "Open folder", variant = "outline", onClick = function()
-        noctalia.runAsync({ "xdg-open", destDir() })
+      ui.button({ key = "open", glyph = "folder-open", text = "Open folder", variant = "outline", tooltip = "Show the output folder in pcmanfm", onClick = function()
+        noctalia.runAsync({ "sh", "-c", 'mkdir -p "$1" && exec pcmanfm "$1"', "sh", destDir() })
         panel.close()
-      end }) or ui.box({ height = 0 }),
-      lastFile and not busy and ui.button({ key = "use", glyph = "photo-up", text = "Use folder as wallpapers", variant = "outline", tooltip = "Add the output folder to the wallpaper folders and start it", onClick = function()
+      end }),
+      ui.button({ key = "use", glyph = "photo-up", text = "Use folder as wallpapers", variant = "outline", tooltip = "Add the output folder to the wallpaper folders and start it", onClick = function()
         noctalia.runAsync({ "sh", "-c", USE, "sh", destDir() })
         panel.close()
-      end }) or ui.box({ height = 0 }),
+      end }),
     })
 
   local body
@@ -824,7 +814,7 @@ local function onOpen()
   noctalia.runAsync({ "sh", "-c", "pgrep -f 'mb-wallgen-jo[b]' >/dev/null && echo busy" }, function(r)
     if string.find(r.stdout or "", "busy", 1, true) and not busy then
       busy = true
-      totalImages = count
+      totalImages = 1
       watchJob()
     end
   end)
