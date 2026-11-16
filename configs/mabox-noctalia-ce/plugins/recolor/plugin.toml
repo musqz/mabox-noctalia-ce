@@ -26,3 +26,12 @@ height = "content"
 max_height = 1100
 placement = "floating"
 position = "top_center"
+
+[[panel]]
+id = "wallgen-compact"
+entry = "wallgen-compact.luau"
+width = 1260
+height = "content"
+max_height = 760
+placement = "floating"
+position = "top_center"
