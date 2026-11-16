@@ -5,6 +5,9 @@ local csv = require("./lib/csv.luau")
 local player = require("./lib/play.luau")
 local logo = require("./lib/celogo.luau")
 local hotkey = require("./lib/hotkey.luau")
+local mine = require("./lib/mine.luau")
+local lapse = require("./lib/lapse.luau")
+local playlists = require("./lib/playlists.luau")
 
 local MAX_SEARCH_ROWS = 60
 
@@ -23,10 +26,77 @@ local fAdding = false
 local added = {}
 local folded = { Tools = true }
 local nowPlaying = ""
+local dead, checking, confirmRemove = {}, {}, {}
+local fetching = {}
+local lists = {}
+local tIdx = 1 -- index in the "Add to playlist" options; the last one is "New playlist..."
+local newName = ""
+local tName = "" -- name of the target playlist, so a changed list order keeps the choice
+local plFocus = false
 local render
+
+local sleepLeft = 0
+local STEPS = { 10, 30, 60, 300 }
+
+local function stepSecs()
+  return mine.opt("step", 30)
+end
+
+local function stepLabel(n)
+  return n >= 60 and (n // 60 .. "m") or (n .. "s")
+end
+
+local function nextStep()
+  local cur = stepSecs()
+  local nxt = STEPS[1]
+  for i, v in ipairs(STEPS) do
+    if v == cur then
+      nxt = STEPS[i % #STEPS + 1]
+    end
+  end
+  mine.setOpt("step", nxt)
+  render()
+end
+local cavaOn = false
 
 local function sh(cmd)
   noctalia.runAsync({ "setsid", "-f", "sh", "-c", cmd })
+end
+
+local function refreshCava(delay)
+  noctalia.runAsync({ "sh", "-c", (delay > 0 and ("sleep " .. delay .. "; ") or "") .. "wlrctl toplevel find app_id:cava-transparent" }, function(r)
+    cavaOn = r.exitCode == 0
+    render()
+  end)
+end
+
+local function toggleCava()
+  sh("mb-cava toggle")
+  refreshCava(1)
+end
+
+local function refreshSleep()
+  sleepLeft = mine.sleepLeft()
+  render()
+end
+
+local function sleepLabel()
+  return sleepLeft > 0 and ("Sleep " .. sleepLeft .. "m") or "Sleep"
+end
+
+
+-- Looks the playing url up in the radio and music lists so Recent only holds what really played.
+local function rememberPlaying(path)
+  for _, list in ipairs({ radio, music }) do
+    for _, c in ipairs(list) do
+      for _, t in ipairs(c.tracks) do
+        if t.url == path then
+          mine.addRecent(t.title, t.url)
+          return
+        end
+      end
+    end
+  end
 end
 
 local function refreshTitle(delay)
@@ -39,19 +109,69 @@ local function refreshTitle(delay)
   end)
 end
 
-local function start(urls, shuffle, label)
+local playSeq = 0
+
+-- from: 1-based start in the list.
+local function start(urls, shuffle, label, from)
   if #urls == 0 then
     return
   end
-  player.play(urls, shuffle, label, true)
+  player.play(urls, shuffle, label, true, from)
   nowPlaying = label
   render()
-  refreshTitle(3)
+  playSeq += 1
+  local seq = playSeq
+  -- mpv skips an entry that fails and goes on, so the playing state is polled a few times at the start;
+  -- the entry that really plays goes into Recent, and when mpv is gone nothing could be played.
+  -- The old mpv is replaced at the start, so one check can land in the gap with no mpv; two in a row mean it really failed.
+  local gone = 0
+  local function check(delays, n)
+    player.verify(delays[n], function(alive, title, path, playing)
+      if seq ~= playSeq then
+        return
+      end
+      if not alive then
+        gone += 1
+        if gone >= 2 or not delays[n + 1] then
+          nowPlaying = "Could not play: " .. label
+          render()
+        else
+          check(delays, n + 1)
+        end
+        return
+      end
+      gone = 0
+      if playing then
+        if title ~= "" then
+          nowPlaying = title
+        end
+        rememberPlaying(path)
+        render()
+      elseif delays[n + 1] then
+        check(delays, n + 1)
+      end
+    end)
+  end
+  check({ 2, 2, 3, 4, 6, 8 }, 1)
+end
+
+-- Refresh: show what plays now and remember it when it is a known track.
+local function syncNow()
+  player.verify(0, function(alive, title, path, playing)
+    if alive and title ~= "" then
+      nowPlaying = title
+    end
+    if alive and playing then
+      rememberPlaying(path)
+    end
+    render()
+  end)
 end
 
 local function transport(action)
   noctalia.runAsync({ "noctalia", "msg", "media", action })
   if action == "stop" then
+    playSeq += 1
     nowPlaying = ""
     render()
   else
@@ -59,11 +179,226 @@ local function transport(action)
   end
 end
 
-local function card(c, key, forceOpen, filter)
+local function checkGroup(c, key)
+  if checking[key] then
+    return
+  end
+  checking[key] = true
+  render()
+  csv.check(c.playlist, function(list, why)
+    checking[key] = nil
+    for _, u in ipairs(list or {}) do
+      dead[u] = true
+    end
+    if list == nil then
+      noctalia.notify("Music", "Stream check failed: " .. tostring(why))
+    end
+    render()
+  end)
+end
+
+local function removeDead(c, key, urls)
+  if not lapse.armed(confirmRemove, key) then
+    lapse.arm(confirmRemove, key, 5, render)
+    render()
+    return
+  end
+  lapse.disarm(confirmRemove, key)
+  csv.removeStations(urls, function(ok)
+    if ok then
+      for _, u in ipairs(urls) do
+        dead[u] = nil
+      end
+      noctalia.notify("Music", "Removed " .. #urls .. " streams, the old list is stations.csv.bak")
+      csv.radio(function(cats)
+        radio = cats or radio
+        render()
+      end)
+    else
+      noctalia.notify("Music", "Could not write " .. csv.radioPath)
+    end
+  end)
+end
+
+local function loadLists(after)
+  playlists.load(function(l)
+    lists = l or lists
+    if tName == "" and lists[tIdx] and tIdx <= #lists then
+      tName = lists[tIdx].name
+    end
+    for i, pl in ipairs(lists) do
+      if pl.name == tName then
+        tIdx = i
+      end
+    end
+    if after then
+      after()
+    end
+    render()
+  end)
+end
+
+local function findList(name)
+  for _, l in ipairs(lists) do
+    if l.name == name then
+      return l
+    end
+  end
+  return nil
+end
+
+local function inList(name, url)
+  local l = findList(name)
+  for _, t in ipairs(l and l.tracks or {}) do
+    if t.url == url then
+      return true
+    end
+  end
+  return false
+end
+
+local function playlistOptions()
+  local names = {}
+  for _, l in ipairs(lists) do
+    table.insert(names, l.name)
+  end
+  table.insert(names, "New playlist...")
+  if tIdx > #names then
+    tIdx = 1
+  end
+  return names
+end
+
+local function toggleFav(t)
+  if inList("Favourites", t.url) then
+    playlists.remove("Favourites", t.url, function() loadLists() end)
+  else
+    playlists.add("Favourites", { t }, function() loadLists() end)
+  end
+end
+
+local function addToTarget(t, moveFrom)
+  local names = playlistOptions()
+  local creating = tIdx == #names
+  local name = creating and noctalia.string.trim(newName) or names[tIdx]
+  if name == "" then
+    return
+  end
+  playlists.add(name, { t }, function(ok, used)
+    if not ok then
+      noctalia.notify("Music", "Could not write " .. playlists.dir)
+      return
+    end
+    local function afterLoad()
+      if creating then
+        newName = ""
+        tName = used
+      end
+    end
+    if moveFrom then
+      -- Moving: the track leaves the source only after it is safe in the target.
+      playlists.remove(moveFrom, t.url, function() loadLists(afterLoad) end)
+    else
+      loadLists(afterLoad)
+    end
+  end)
+end
+
+-- Enter in the name field creates an empty playlist and makes it the target.
+local function createList()
+  local name = noctalia.string.trim(newName)
+  if name == "" then
+    return
+  end
+  playlists.add(name, {}, function(ok, used)
+    if not ok then
+      noctalia.notify("Music", "Could not write " .. playlists.dir)
+      return
+    end
+    loadLists(function()
+      newName = ""
+      tName = used
+    end)
+  end)
+end
+
+local function removeFrom(name, url)
+  playlists.remove(name, url, function() loadLists() end)
+end
+
+local function deleteList(name, key)
+  if not lapse.armed(confirmRemove, key) then
+    lapse.arm(confirmRemove, key, 5, render)
+    render()
+    return
+  end
+  lapse.disarm(confirmRemove, key)
+  playlists.delete(name, function()
+    if sel ~= nil and sel.src == "list" and sel.name == name then
+      sel = nil
+    end
+    loadLists()
+  end)
+end
+
+local function total(c)
+  local sum = 0
+  for _, t in ipairs(c.tracks) do
+    local secs = mine.length(t.url)
+    if secs == nil or secs < 0 then
+      return ""
+    end
+    sum += secs
+  end
+  return #c.tracks > 0 and (", " .. mine.format(sum)) or ""
+end
+
+local CHUNK = 6
+
+-- yt-dlp reads the lengths a few urls at a time so one slow video does not stall the rest.
+local function fetchLengths(c, key)
+  if fetching[key] then
+    return
+  end
+  local todo = {}
+  for _, t in ipairs(c.tracks) do
+    if mine.length(t.url) == nil then
+      table.insert(todo, t.url)
+    end
+  end
+  if #todo == 0 then
+    return
+  end
+  fetching[key] = true
+  render()
+  local function step(from)
+    if from > #todo then
+      fetching[key] = nil
+      render()
+      return
+    end
+    local part = {}
+    for i = from, math.min(from + CHUNK - 1, #todo) do
+      table.insert(part, todo[i])
+    end
+    csv.durations(part, function(found)
+      if found then
+        mine.setLengths(found)
+      end
+      render()
+      step(from + CHUNK)
+    end)
+  end
+  step(1)
+end
+
+local function card(c, key, forceOpen, filter, src)
   local isOpen = forceOpen or open[key]
+  local names = playlistOptions()
+  local target = tIdx < #names and names[tIdx] or (noctalia.string.trim(newName) ~= "" and noctalia.string.trim(newName) or nil)
   local head = {
     ui.button({
-      text = c.name .. "  (" .. #c.tracks .. ")",
+      text = c.name .. "  (" .. #c.tracks .. (src == "list" and total(c) or "") .. ")",
       glyph = isOpen and "chevron-down" or "chevron-right",
       variant = "ghost",
       controlSize = "sm",
@@ -78,15 +413,65 @@ local function card(c, key, forceOpen, filter)
     ui.button({ glyph = "arrows-shuffle", variant = "ghost", controlSize = "sm", tooltip = "Shuffle " .. c.name, onClick = function() start(c.playlist, true, "Shuffling " .. c.name) end }),
     ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Play " .. c.name, onClick = function() start(c.playlist, false, "Playing " .. c.name) end }),
   }
+  local deadUrls = {}
+  if src == "mine" and c.name == "Recent" then
+    table.insert(head, 2, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Clear Recent", onClick = function() mine.clearRecent() render() end }))
+  end
+  if src ~= "radio" then
+    table.insert(head, 2, ui.button({ glyph = "clock", variant = "ghost", controlSize = "sm", enabled = not fetching[key], tooltip = fetching[key] and "Reading lengths" or "Read the track lengths with yt-dlp (about a minute)", onClick = function() fetchLengths(c, key) end }))
+  end
+  if src == "radio" then
+    for _, t in ipairs(c.tracks) do
+      if dead[t.url] then
+        table.insert(deadUrls, t.url)
+      end
+    end
+    table.insert(head, 2, ui.button({ glyph = "stethoscope", variant = "ghost", controlSize = "sm", enabled = not checking[key], tooltip = checking[key] and "Checking" or "Check which streams still answer", onClick = function() checkGroup(c, key) end }))
+  end
+  if src == "list" then
+    table.insert(head, 2, ui.button({ glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Delete this playlist", onClick = function() deleteList(c.name, key) end }))
+  end
   local rows = { ui.row({ gap = 4, align = "center" }, head) }
+  if src == "list" and lapse.armed(confirmRemove, key) then
+    table.insert(rows, ui.row({ gap = 4, align = "center" }, {
+      ui.button({ text = "Really delete " .. c.name .. "?", glyph = "trash", variant = "destructive", controlSize = "sm", flexGrow = 1, tooltip = "Deletes " .. c.name .. ".m3u", onClick = function() deleteList(c.name, key) end }),
+      ui.button({ text = "Cancel", glyph = "x", variant = "outline", controlSize = "sm", onClick = function() lapse.disarm(confirmRemove, key) render() end }),
+    }))
+  end
+  if #deadUrls > 0 then
+    table.insert(rows, ui.row({ gap = 4, align = "center" }, {
+      ui.button({ text = lapse.armed(confirmRemove, key) and ("Really remove " .. #deadUrls .. "?") or ("Remove " .. #deadUrls .. " dead"), glyph = "trash", variant = "destructive", controlSize = "sm", flexGrow = 1, tooltip = "Deletes them from stations.csv, a .bak copy stays", onClick = function() removeDead(c, key, deadUrls) end }),
+      ui.button({ text = lapse.armed(confirmRemove, key) and "Cancel" or "Keep all", glyph = "x", variant = "outline", controlSize = "sm", tooltip = "Cancel: nothing is removed. Keep all: clear the red marks", onClick = function()
+        if not lapse.armed(confirmRemove, key) then
+          for _, u in ipairs(deadUrls) do
+            dead[u] = nil
+          end
+        end
+        lapse.disarm(confirmRemove, key)
+        render()
+      end }),
+    }))
+  end
   local shown = 0
   if isOpen then
     for i, t in ipairs(c.tracks) do
       if not filter or filter(t) then
         shown += 1
-        table.insert(rows, ui.row({ key = key .. ":" .. i, gap = 4, align = "center" }, {
-          ui.button({ text = t.title, variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = t.url, onClick = function() start({ t.url }, false, t.title) end }),
-        }))
+        -- No spacers: a spacer would share the free width with the title button and push the buttons off the edge.
+        local cells = {
+          ui.button({ text = t.title, variant = dead[t.url] and "destructive" or "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = dead[t.url] and "No answer. Right click: keep this stream" or t.url, onClick = function() if filter or src == "mine" or not mine.opt("onward", true) then start({ t.url }, false, t.title) else start(c.playlist, false, t.title, i) end end, onRightClick = function() if dead[t.url] then dead[t.url] = nil lapse.disarm(confirmRemove, key) render() end end }),
+        }
+        if src ~= "radio" then
+          table.insert(cells, ui.label({ text = mine.format(mine.length(t.url)), width = 56, fontSize = 11, color = "on_surface_variant" }))
+        end
+        if src == "list" then
+          table.insert(cells, ui.button({ glyph = "arrows-exchange", variant = "ghost", controlSize = "sm", enabled = target ~= nil and target ~= c.name, tooltip = target ~= nil and target ~= c.name and ("Move to " .. target) or "Pick another playlist above to move it", onClick = function() addToTarget(t, c.name) end }))
+          table.insert(cells, ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Remove from " .. c.name, onClick = function() removeFrom(c.name, t.url) end }))
+        else
+          table.insert(cells, ui.button({ glyph = "playlist-add", variant = "ghost", controlSize = "sm", enabled = target ~= nil and not inList(target, t.url), tooltip = target ~= nil and ("Add to " .. target) or "Type a playlist name above", onClick = function() addToTarget(t) end }))
+          table.insert(cells, ui.button({ glyph = inList("Favourites", t.url) and "star-filled" or "star", variant = "ghost", controlSize = "sm", tooltip = inList("Favourites", t.url) and "Remove from Favourites" or "Add to Favourites", onClick = function() toggleFav(t) end }))
+        end
+        table.insert(rows, ui.row({ key = key .. ":" .. i, gap = 4, align = "center" }, cells))
       end
     end
   end
@@ -199,6 +584,20 @@ local function body()
     return finderBody()
   end
   local q = string.lower(noctalia.string.trim(query))
+  if sel ~= nil and sel.src == "mine" and q == "" then
+    local c = mine.recent()
+    if #c.tracks == 0 then
+      return { ui.label({ text = "Nothing played yet", color = "on_surface_variant" }) }
+    end
+    return { (card(c, "mine:" .. c.name, true, nil, "mine")) }
+  end
+  if sel ~= nil and sel.src == "list" and q == "" then
+    local c = findList(sel.name)
+    if not c then
+      return { ui.label({ text = "Playlist not found", color = "on_surface_variant" }) }
+    end
+    return { (card(c, "list:" .. c.name, true, nil, "list")) }
+  end
   if #radio == 0 and #music == 0 then
     return { ui.label({ text = "No stations or tracks found", color = "on_surface_variant" }) }
   end
@@ -224,11 +623,11 @@ local function body()
             end
             return false
           end
-          local node = card(c, key, true, filter)
+          local node = card(c, key, true, filter, src)
           table.insert(cards, node)
         end
       elseif sel == nil or (sel.src == src and sel.name == c.name) then
-        table.insert(cards, (card(c, key, sel ~= nil, nil)))
+        table.insert(cards, (card(c, key, sel ~= nil, nil, src)))
       end
     end
   end
@@ -286,7 +685,9 @@ local function sidebar()
   end
   table.insert(items, ui.button({ text = "All", variant = (sel == nil and query == "" and not finder) and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() pick(nil, nil) end }))
   table.insert(items, ui.button({ text = "Find stations", glyph = "search", variant = finder and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() finder, sel, query, fFocus = true, nil, "", true render() end }))
-  for _, g in ipairs({ { "Radio", "radio", radio }, { "Music", "music", music } }) do
+  local recentActive = sel ~= nil and sel.src == "mine"
+  table.insert(items, ui.button({ text = "Recent", glyph = "history", variant = recentActive and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() pick("mine", "Recent") end }))
+  for _, g in ipairs({ { "Playlists", "list", lists }, { "Radio", "radio", radio }, { "Music", "music", music } }) do
     if #g[3] > 0 then
       local rows = {}
       for _, c in ipairs(g[3]) do
@@ -299,14 +700,38 @@ local function sidebar()
   local function tool(label, glyph, cmd)
     table.insert(tools, ui.button({ text = label, glyph = glyph, variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = function() sh(cmd) panel.close() end }))
   end
-  tool("Visualiser", "chart-bar", "jumpapp -m -c cava-transparent mb-cava")
-  tool("PyRadio", "radio", "jumpapp -m -c pyradio kitty --class pyradio -e pyradio")
-  tool("Volume", "volume", "pavucontrol")
+  tool("Playlists folder", "folder", "xdg-open '" .. playlists.dir .. "'")
   tool("Edit radio list", "edit", "xdg-open '" .. csv.radioPath .. "'")
   tool("Edit mpv list", "edit", "xdg-open '" .. csv.path .. "'")
   tool("Radio browser", "world", "xdg-open https://www.radio-browser.info")
   group("Tools", tools)
   return ui.column({ width = 250, height = 446, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 6 }, items) }) })
+end
+
+-- "Add to playlist" chooser above the cards; the + on a row adds to the choice.
+local function takeFocus()
+  local f = plFocus
+  plFocus = false
+  return f
+end
+
+local function addRow()
+  if finder then
+    return ui.spacer({ height = 0 })
+  end
+  local names = playlistOptions()
+  return ui.row({ gap = 6, align = "center" }, {
+    ui.label({ text = "Add to playlist", fontSize = 12, color = "on_surface_variant" }),
+    ui.select({ key = "plsel", options = names, selectedIndex = tIdx - 1, onChange = function(idx)
+      tIdx = tonumber(idx) + 1
+      tName = tIdx < #names and names[tIdx] or ""
+      plFocus = tIdx == #names
+      render()
+    end }),
+    tIdx == #names and ui.input({ key = "plnew", value = newName, placeholder = "new playlist name, Enter creates it", controlSize = "sm", flexGrow = 1, focus = takeFocus(), submitOnEnter = true,
+      onChange = function(t) newName = t render() end, onSubmit = function(t) newName = t createList() end }) or ui.spacer({ flexGrow = 1 }),
+    tIdx == #names and ui.button({ glyph = "check", variant = "outline", controlSize = "sm", enabled = noctalia.string.trim(newName) ~= "", tooltip = "Create the playlist", onClick = createList }) or ui.spacer({ width = 0 }),
+  })
 end
 
 render = function()
@@ -315,7 +740,13 @@ render = function()
     ui.row({ gap = 8, align = "center" }, {
       logo(),
       ui.label({ text = "Music" }),
-      ui.label({ text = hotkey("mabox/music:player"), color = "outline_variant", flexGrow = 1 }),
+      ui.label({ text = hotkey("mabox/music:player"), color = "outline_variant" }),
+      ui.spacer({ flexGrow = 1 }),
+      ui.button({ text = "Refresh", glyph = "refresh", variant = "outline", tooltip = "Show what plays now and add it to Recent", onClick = function() syncNow() end }),
+      ui.spacer({ flexGrow = 1 }),
+      ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio in a terminal", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
+      ui.button({ glyph = "volume", variant = "ghost", controlSize = "sm", tooltip = "Volume control (pavucontrol)", onClick = function() sh("pavucontrol") panel.close() end }),
+      ui.button({ glyph = "chart-bar", variant = cavaOn and "primary" or "ghost", controlSize = "sm", tooltip = "Click: visualiser on or off, right click: Cava settings", onClick = toggleCava, onRightClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/cava:main" }) end }),
     }),
     ui.row({ gap = 6, align = "center" }, {
       ui.input({
@@ -343,6 +774,10 @@ render = function()
     }),
     ui.row({ gap = 6, align = "center", fill = "surface_variant", radius = 8, padding = 6 }, {
       ui.label({ text = nowPlaying ~= "" and nowPlaying or "Nothing playing", flexGrow = 1, fontSize = 12 }),
+      ui.button({ glyph = "playlist", variant = mine.opt("onward", true) and "outline" or "ghost", controlSize = "sm", tooltip = mine.opt("onward", true) and "Play on: a click starts the list from that track and skips streams that fail (on). Click to play only the track." or "Play only the clicked track (off). Click to play on and skip failing streams.", onClick = function() mine.setOpt("onward", not mine.opt("onward", true)) render() end }),
+      ui.button({ text = sleepLabel(), glyph = "moon", variant = sleepLeft > 0 and "outline" or "ghost", controlSize = "sm", tooltip = "Sleep timer: click for 15, 30, 60, 90 minutes, then off", onClick = function() mine.cycleSleep(refreshSleep) end }),
+      ui.button({ text = "-" .. stepLabel(stepSecs()), glyph = "rewind-backward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump back " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(-stepSecs()) end, onRightClick = nextStep }),
+      ui.button({ text = "+" .. stepLabel(stepSecs()), glyph = "rewind-forward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump forward " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(stepSecs()) end, onRightClick = nextStep }),
       ui.button({ glyph = "player-skip-back", variant = "ghost", controlSize = "sm", tooltip = "Previous", onClick = function() transport("previous") end }),
       ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
       ui.button({ glyph = "player-skip-forward", variant = "ghost", controlSize = "sm", tooltip = "Next", onClick = function() transport("next") end }),
@@ -350,7 +785,10 @@ render = function()
     }),
     ui.row({ gap = 8, flexGrow = 1 }, {
       sidebar(),
-      ui.scroll({ flexGrow = 1, key = "list" }, content),
+      ui.column({ gap = 6, flexGrow = 1 }, {
+        addRow(),
+        ui.scroll({ flexGrow = 1, key = "list" }, content),
+      }),
     }),
   }))
 end
@@ -369,4 +807,18 @@ function onOpen()
     render()
   end)
   refreshTitle(0)
+  sleepLeft = mine.sleepLeft()
+  refreshCava(0)
+  loadLists(function()
+    -- Favourites from before playlists existed move into Favourites.m3u once.
+    local old = mine.oldFavs()
+    if #old > 0 then
+      playlists.add("Favourites", old, function(ok)
+        if ok then
+          mine.clearFavs()
+          loadLists()
+        end
+      end)
+    end
+  end)
 end
