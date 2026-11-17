@@ -116,6 +116,8 @@ Open the Configs panel and expand *Power*: set the minutes until the screens tur
 - Input runs `mb-screen-on`: brightness, contrast and the black layer are restored.
 - The *Lockscreen* card below it sets background, blur, tint and transition of the lock screen.
 
+The *Text size* card in the Configs panel sets the size of text and widgets for the whole shell: `<` and `>` step from 80% to 150%.
+
 ## Monitors
 
 - `kanshi` sets positions per profile: `~/.config/kanshi/config`.
