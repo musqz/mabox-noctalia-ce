@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
 - Fix the Music panel showing the title of another mpv window (for example one opened with `C-S-1`) instead of its own track.
 
 ## 0.5.2
