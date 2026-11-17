@@ -1,9 +1,11 @@
 --!nonstrict
--- Quick fixes: when to use, what it does, a read-only check and the command run in a terminal.
+-- Quick fixes: topic (a filter button), keywords (extra search words), when to use, what it does, a read-only check and the command run in a terminal.
 -- arch_fix replaces fix when pacman-mirrors is missing (plain Arch).
 return {
   {
     title = "Update is blocked: unable to lock database",
+    topic = "Packages",
+    keywords = "pacman db.lck lock stuck blocked update installer",
     when = "pacman or the updater says the database is locked, but nothing is updating.",
     how = "Removes the lock file left by an interrupted update, only when no pacman is running.",
     check = [==[pgrep -a pacman || echo 'no pacman running'; ls -l /var/lib/pacman/db.lck 2>/dev/null || echo 'no lock file']==],
@@ -11,6 +13,8 @@ return {
   },
   {
     title = "Signature or keyring errors during update",
+    topic = "Packages",
+    keywords = "pgp signature key gpg trust corrupted invalid package keyring",
     when = "invalid or corrupted package (PGP signature), or unknown trust.",
     how = "Updates the keyrings, refreshes the trusted keys, then updates.",
     fix = [==[sudo pacman -Sy --needed archlinux-keyring manjaro-keyring && sudo pacman-key --populate archlinux manjaro && sudo pacman -Su]==],
@@ -18,6 +22,8 @@ return {
   },
   {
     title = "Downloads are slow or mirrors fail",
+    topic = "Packages",
+    keywords = "mirror slow download 404 timeout retrieving file",
     when = "failed retrieving file, 404 errors, or very slow updates.",
     how = "Picks the fastest up-to-date mirrors and refreshes the package lists.",
     check = [==[grep -E '^Server' /etc/pacman.d/mirrorlist | head -n 5]==],
@@ -26,6 +32,8 @@ return {
   },
   {
     title = "Full system update",
+    topic = "Packages",
+    keywords = "upgrade update syu outdated",
     when = "Before asking on the forum: many problems are fixed by updates.",
     how = "Arch and Manjaro only support fully updated systems.",
     check = [==[checkupdates 2>/dev/null | wc -l | xargs echo 'packages waiting:']==],
@@ -33,6 +41,8 @@ return {
   },
   {
     title = "No sound",
+    topic = "Sound",
+    keywords = "audio speakers headphones silent pipewire volume mute",
     when = "Speakers or headphones are silent, or devices are missing in the volume menu.",
     how = "Restarts the sound server (PipeWire) for your user.",
     check = [==[wpctl status | sed -n '/Sinks:/,/Sources:/p']==],
@@ -40,6 +50,8 @@ return {
   },
   {
     title = "Wi-Fi or network gone",
+    topic = "Network",
+    keywords = "wifi wlan internet no connection networkmanager dns offline",
     when = "No networks listed, or connected but no internet.",
     how = "Unblocks the radio switch and restarts NetworkManager.",
     check = [==[rfkill list; nmcli device status]==],
@@ -47,6 +59,8 @@ return {
   },
   {
     title = "Bluetooth will not turn on",
+    topic = "Network",
+    keywords = "bluetooth adapter rfkill headset mouse pairing",
     when = "The Bluetooth switch does nothing or no adapter is found.",
     how = "Unblocks the radio, enables the Bluetooth service at boot and restarts it.",
     check = [==[rfkill list bluetooth; systemctl is-active bluetooth]==],
@@ -54,6 +68,8 @@ return {
   },
   {
     title = "Disk is full",
+    topic = "System",
+    keywords = "space storage cache journal full pacman cache",
     when = "Updates fail with not enough free disk space, or the system feels stuck.",
     how = "Keeps the 2 newest versions of each cached package, deletes cached files of uninstalled packages and shrinks the system log to 200 MB. Needs pacman-contrib.",
     check = [==[df -h / /home | uniq; du -sh /var/cache/pacman/pkg 2>/dev/null; journalctl --disk-usage]==],
@@ -61,6 +77,8 @@ return {
   },
   {
     title = "Remove orphan packages",
+    topic = "Packages",
+    keywords = "unused dependencies cleanup leftover",
     when = "Leftover dependencies nothing uses any more.",
     how = "pacman shows the list and asks before removing.",
     check = [==[pacman -Qdtq || echo 'no orphans']==],
@@ -68,6 +86,8 @@ return {
   },
   {
     title = "Merge .pacnew config files",
+    topic = "Packages",
+    keywords = "pacnew pacsave config merge pacdiff etc",
     when = "Updates left new versions of config files that were never merged.",
     how = "Opens pacdiff to view, merge or remove each one.",
     check = [==[find /etc -name '*.pacnew' 2>/dev/null || true]==],
@@ -75,6 +95,8 @@ return {
   },
   {
     title = "Noctalia bar or panels look wrong",
+    topic = "Noctalia",
+    keywords = "bar widgets colours theme config reload panels",
     when = "Widgets missing, wrong colours, or settings changes not applied.",
     how = "Checks the Noctalia config and reloads it without logging out.",
     check = [==[noctalia config validate]==],
@@ -82,6 +104,8 @@ return {
   },
   {
     title = "Noctalia bar frozen or gone",
+    topic = "Noctalia",
+    keywords = "bar missing frozen crashed restart launcher unresponsive",
     when = "The bar, panels or launcher stopped responding or disappeared.",
     how = "Stops Noctalia, waits until it has exited, then starts it again.",
     check = [==[pgrep -a -x noctalia || echo 'Noctalia is not running']==],
@@ -89,6 +113,8 @@ return {
   },
   {
     title = "Graphics driver check (Manjaro)",
+    topic = "System",
+    keywords = "gpu nvidia amd intel mhwd black screen resolution games slow",
     when = "Black screen, low resolution or games running slowly.",
     how = "Lists installed and available drivers. The fix installs the proprietary (nonfree) driver, which is meant for NVIDIA; on AMD or Intel it fails or does nothing useful.",
     check = [==[mhwd -li; echo; mhwd -l]==],
@@ -97,6 +123,8 @@ return {
   },
   {
     title = "Clear old failed-service warnings",
+    topic = "System",
+    keywords = "systemd failed units reset-failed polkit services",
     when = "Failed services are listed that you already fixed, or leftovers like polkit-agent-helper@.",
     how = "Forgets the failed state of all services. Broken ones fail again on the next start.",
     check = [==[systemctl --failed --no-pager; systemctl --user --failed --no-pager]==],
@@ -104,6 +132,8 @@ return {
   },
   {
     title = "Audit rules fail to load (audit-rules.service)",
+    topic = "System",
+    keywords = "audit auditd rules failed service",
     when = "audit-rules.service is listed as failed.",
     how = "Reloads the audit rules from /etc/audit/audit.rules and shows the error and whether audit is locked (enabled 2 = locked until reboot).",
     check = [==[systemctl status audit-rules --no-pager -n 15; ls /etc/audit/rules.d/]==],

@@ -67,6 +67,14 @@ return function()
   local checks = {}
   local cmdNonce = 0
   local openFix = nil
+  local fixQuery = ""
+  local fixTopic = "" -- "" shows every topic
+  local TOPICS = {}
+  for _, f in ipairs(FIXES) do
+    if f.topic and not table.find(TOPICS, f.topic) then
+      table.insert(TOPICS, f.topic)
+    end
+  end
   local manjaro = true
   local note = ""
   local render
@@ -430,17 +438,75 @@ exec xdg-open "$d"]]
     return ui.row({ key = key, padding = 3, radius = 8, border = "primary", borderWidth = kbd.sel(key) and 3 or 0 }, { child })
   end
 
+  -- Every word of the search must occur in the title, the symptoms, the description or the extra keywords.
+  local function fixMatches(f)
+    if fixTopic ~= "" and f.topic ~= fixTopic then
+      return false
+    end
+    local hay = string.lower(f.title .. " " .. f.when .. " " .. f.how .. " " .. (f.keywords or "") .. " " .. (f.topic or ""))
+    for w in string.gmatch(string.lower(fixQuery), "%S+") do
+      if not string.find(hay, w, 1, true) then
+        return false
+      end
+    end
+    return true
+  end
+
+  local function fixesFilter()
+    local chips = {}
+    local x = 0
+    local function chip(label, topic)
+      local on = fixTopic == topic
+      local id = "ft-" .. label
+      local action = function()
+        fixTopic = topic
+        openFix = nil
+        render()
+      end
+      kbd.stop(id, 0, x, action)
+      x += 1
+      table.insert(chips, ring(id, ui.button({ text = label, variant = on and "primary" or "outline", controlSize = "sm", onClick = action })))
+    end
+    chip("All", "")
+    for _, t in ipairs(TOPICS) do
+      chip(t, t)
+    end
+    local clear = function()
+      fixQuery = ""
+      openFix = nil
+      render()
+    end
+    kbd.stop("fixclear", 0, x, clear)
+    return ui.column({ gap = 6 }, {
+      ui.row({ gap = 6, align = "center" }, {
+        ui.input({ key = "fixq", value = fixQuery, placeholder = "Search a problem: sound, wifi, update, bar...", controlSize = "sm", flexGrow = 1, frameVisible = true,
+          onChange = function(v)
+            fixQuery = v
+            openFix = nil
+            render()
+          end }),
+        ring("fixclear", ui.button({ key = "fixclear-btn", glyph = "backspace", variant = "ghost", controlSize = "sm", enabled = fixQuery ~= "", tooltip = "Clear the search", onClick = clear })),
+      }),
+      ui.row({ gap = 6, align = "center" }, chips),
+    })
+  end
+
   -- Titles only; the open one shows when/how, the command and the buttons.
   local function fixesBody()
     local rows = {}
+    local shown = 0
     for i, f in ipairs(FIXES) do
+      if not fixMatches(f) then
+        continue
+      end
+      shown += 1
       local open = openFix == i
       local hid = "fh" .. i
       local toggle = function()
         openFix = if open then nil else i
         render()
       end
-      kbd.stop(hid, i * 2, 0, toggle)
+      kbd.stop(hid, shown * 2, 0, toggle)
       local card = {
         ui.row({ key = hid, gap = 6, align = "center", padding = 3, radius = 8, border = "primary", borderWidth = kbd.sel(hid) and 3 or 0 }, {
           ui.label({ text = f.title, fontWeight = "bold", fontSize = 14, flexGrow = 1 }),
@@ -453,11 +519,11 @@ exec xdg-open "$d"]]
         local runAction = function() runFix(i) end
         local buttons = {}
         if f.check then
-          kbd.stop(cid, i * 2 + 1, 0, checkAction)
+          kbd.stop(cid, shown * 2 + 1, 0, checkAction)
           table.insert(buttons, ring(cid, ui.button({ text = "Check", glyph = "search", variant = "outline", controlSize = "sm", onClick = checkAction })))
         end
         table.insert(buttons, ui.button({ text = "Copy command", glyph = "copy", variant = "outline", controlSize = "sm", onClick = function() copy(fixCommand(f), "Command") end }))
-        kbd.stop(rid, i * 2 + 1, 1, runAction)
+        kbd.stop(rid, shown * 2 + 1, 1, runAction)
         table.insert(buttons, ring(rid, ui.button({ text = "Run in terminal", glyph = "terminal-2", variant = "outline", controlSize = "sm", onClick = runAction })))
         table.insert(card, ui.label({ text = f.when, fontSize = 11, color = "on_surface_variant" }))
         table.insert(card, ui.label({ text = f.how, fontSize = 11, color = "on_surface_variant" }))
@@ -481,6 +547,10 @@ exec xdg-open "$d"]]
         end
       end
       table.insert(rows, ui.column({ key = "fix" .. i, fill = "surface_variant", radius = 10, padding = 12, gap = 8, border = "primary", borderWidth = 1 }, card))
+    end
+    if shown == 0 then
+      table.insert(rows, ui.label({ text = "No fix matches. The Report tab collects the details to ask for help.", color = "on_surface_variant" }))
+      table.insert(rows, ui.button({ text = "Open Report", glyph = "file-text", variant = "outline", controlSize = "sm", onClick = function() setTab("report") end }))
     end
     return rows
   end
@@ -524,8 +594,12 @@ exec xdg-open "$d"]]
     table.insert(head, ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }))
     local body
     if tab == "fixes" then
-      body = ui.scroll({ flexGrow = 1, key = "textfixes", revealKey = kbd.reveal() }, {
-        ui.column({ gap = 10 }, fixesBody()),
+      -- The search and topic buttons stay in place while the list scrolls.
+      body = ui.column({ gap = 8, flexGrow = 1 }, {
+        fixesFilter(),
+        ui.scroll({ flexGrow = 1, key = "textfixes", revealKey = kbd.reveal() }, {
+          ui.column({ gap = 10 }, fixesBody()),
+        }),
       })
     elseif tab == "services" then
       body = services.body()
@@ -623,6 +697,7 @@ exec xdg-open "$d"]]
     private = false
     choosing = false
     openFix = nil
+    fixQuery, fixTopic = "", ""
     services.reset()
     session += 1
     noctalia.runAsync({ "sh", "-c", "command -v pacman-mirrors >/dev/null" }, function(result)
