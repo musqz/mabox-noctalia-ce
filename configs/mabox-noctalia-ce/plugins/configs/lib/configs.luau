@@ -7,6 +7,7 @@ local kbd = require("./kbd.luau")
 local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 local lockscreen = require("./lockscreen.luau")
+local uiscale = require("./uiscale.luau")
 local toml = require("./tomlsection.luau")
 
 return function(pinned)
@@ -1206,6 +1207,29 @@ render = function()
     end
   end
   table.insert(cards, card(lockRows, sync))
+
+  local scaleOpen = expanded["Text size"]
+  row += 1
+  stop("h-scale", 1, function() toggle("Text size") end)
+  local scaleRows = {
+    ui.button({
+      key = "h-scale",
+      selected = kbd.sel("h-scale"),
+      text = "Text size",
+      glyph = scaleOpen and "chevron-down" or "chevron-right",
+      variant = "outline",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "Make text and widgets of the whole shell smaller or larger",
+      onClick = function() toggle("Text size") end,
+    }),
+  }
+  if scaleOpen then
+    for _, w in ipairs(uiscale.rows(render)) do
+      table.insert(scaleRows, w)
+    end
+  end
+  table.insert(cards, card(scaleRows, sync))
 
   local btnOpen = expanded["Bar buttons"]
   row += 1
