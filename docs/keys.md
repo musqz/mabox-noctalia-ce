@@ -4,6 +4,8 @@ Binds live in `rc.xml`. Edit it, then reload with `C-S-r`.
 
 `W-k` opens the hotkey list: search, Basics or All, play button runs a bind's command. `/keys` in the launcher searches the binds and runs the one you pick.
 
+<p align="center"><a href="img/keys.png"><img src="img/thumb/keys.png" alt="Hotkey list"></a></p>
+
 The list on the left filters the binds: *Panels*, *Mabox tools*, *Windows*, *Apps*, then the hotkeys of each installed application (Firefox, Geany, GIMP, Inkscape, ...). The panel always opens on *All binds* with the search focused.
 
 Edit `lists/keys-profiles.csv` (`name,kind,source[,app ids]`) to add or reorder entries. An app entry shows only when its command is installed. App lists are `lists/appkeys/NAME.csv` (`section,keys,description`); Geany, Kitty, Yazi and Double Commander also read their own config.

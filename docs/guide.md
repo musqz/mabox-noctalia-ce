@@ -22,6 +22,8 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 
 *Fixes* lists common problems with a short description. *Check* shows read-only output (scrubbed); *Run in terminal* shows the command, asks before it runs and asks for your password when it needs root.
 
+<p align="center"><a href="img/system-overview.png"><img src="img/thumb/system-overview.png" alt="System panel, Overview tab" style="margin: 8px"></a> <a href="img/system-fixes.png"><img src="img/thumb/system-fixes.png" alt="System panel, Fixes tab" style="margin: 8px"></a></p>
+
 *Public* (default) hides names, addresses and ids, plus the words listed in *Settings*. *Private* shows everything; keep that text to yourself.
 
 ## Bar
@@ -51,19 +53,13 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 1. Open the Configs panel (or pinned window) and expand *Bar buttons*.
 2. Pick a button, edit *Tooltip* or the *Left*, *Middle* and *Right click* fields, press *Save*.
 
+<p align="center"><a href="img/configs.png"><img src="img/thumb/configs.png" alt="Configs panel"></a></p>
+
 Pinned window: press `alt+s` first, then click a field.
 
 - *Reset* fills the fields from `config.toml`, *Undo* switches back. Nothing changes until *Save*.
 - *+ Add button*: fill name, icon and click commands, press *Add to the bar*. The button lands at the end of the bar; reorder it in the Noctalia settings.
 - *Remove*: takes the button out of the bar. Its settings stay; *+ Add button* with the same name brings it back.
-
-### Change the bar
-
-1. Check the live list: `noctalia msg config-get bar.default.end`.
-2. Set it: `noctalia msg config-set bar.default.end "['group:g1','sysmon-ram','updates', ...]"`.
-3. Keep `group:g1`: it holds the audio visualizer and media widgets.
-
-Add a monitor widget: define `[widget.<name>]` with `type = "sysmon"` and `stat` (`cpu`, `cpu-temp`, `ram`, `swap`, `download`, `upload`, `gpu-usage`, `gpu-temp`, `disk-used-pct`), then add `<name>` to the bar list. `[system.monitor] enabled = true` must be set.
 
 ## Theme
 
@@ -82,7 +78,25 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 
 `A-Space`. Entries: favorites, Mabox Config (settings, control center, wallpaper, edit and reload labwc), applications, running windows, screenshot, screen recording, converter.
 
+<p align="center"><a href="img/root-menu.png"><img src="img/thumb/root-menu.png" alt="Root menu with the Tools noctalia ce submenu"></a></p>
+
 Converter: pick a preset, then files; output lands next to the source and never overwrites. Video to MP4 / WebM / MKV / GIF, audio extraction, image formats. Command line: `mb-convert <preset> [file...]`.
+
+## Launcher
+
+`W-space`. Type to search apps. A prefix limits the search to one provider:
+
+| Prefix | Opens |
+|---|---|
+| `/mb` | the Mabox tools and panels |
+| `/keys` | the hotkey list; Enter runs a bind |
+| `/wp` | wallpaper folders |
+| `/hist`, `/es` | shell history, Espanso snippets |
+| `/music` | music search |
+| `/ag` | AI agent sessions |
+| `/autostart` | the Autostart panel |
+
+<p align="center"><a href="img/launcher.png"><img src="img/thumb/launcher.png" alt="Launcher with /mb typed"></a></p>
 
 ## Interval screenshots and GIF
 
@@ -104,9 +118,11 @@ Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallp
 
 Saved folders: `W-A-w`, the bar photo button, the *Wallpaper folders* entry in the root menu Mabox Config or `/wp` in the launcher (`/wp list`, `/wp add`). *Add folder* opens a chooser; select a circle to switch. The current folder is listed automatically.
 
+<p align="center"><a href="img/wallpaper-folders.png"><img src="img/thumb/wallpaper-folders.png" alt="Wallpaper folders panel"></a></p>
+
 ## Power
 
-![Power card in the Configs panel](power.png)
+<p align="center"><img src="power.png" alt="Power card in the Configs panel"></p>
 
 Open the Configs panel and expand *Power*: set the minutes until the screens turn off and until the screen locks, and switch each on or off.
 
@@ -127,6 +143,12 @@ The *Text size* card in the Configs panel sets the size of text and widgets for 
 ## Music
 
 See [music.md](music.md).
+
+## Autostart
+
+Add, edit, delay, switch off and remove startup programs, and switch off the shipped defaults. Open it from the root menu or `/autostart`. Changes apply at next login.
+
+<p align="center"><a href="img/autostart.png"><img src="img/thumb/autostart.png" alt="Autostart panel"></a></p>
 
 ## Tips
 

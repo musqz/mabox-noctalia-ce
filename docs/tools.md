@@ -22,6 +22,21 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | Recolor panel:<br>_recolor an image or a folder to Nord, Gruvbox, Catppuccin Mocha, Dracula or Solarized; soft, hard, smooth or blend look, blur slider, click a color to leave it out; `mb-recolor -b N -x COLORS` on the command line_ | root menu → Tools noctalia ce → Recolor, `/mb recolor`, `noctalia msg panel-toggle mabox/recolor:main` | `mb-recolor`, `magick`, `yad` |
 | Wallgen panel:<br>_a wallpaper from a palette or your own colors: twelve types, pattern, angle, balance and blur sliders, a copy of the palette to change, switch off or add colors, Save as your own palette; `mb-wallgen -t TYPE -c COLORS` on the command line_ | root menu → Tools noctalia ce → Wallgen, `/mb wallgen`, `mb-wallgen --panel` | `mb-wallgen`, `magick`, `yad` |
 
+### Previews
+
+<table>
+<tr>
+<td><a href="img/colors.png"><img src="img/thumb/colors.png" alt="Colors panel"></a><br>Colors</td>
+<td><a href="img/notes.png"><img src="img/thumb/notes.png" alt="Notes panel"></a><br>Notes</td>
+<td><a href="img/todo.png"><img src="img/thumb/todo.png" alt="Todo panel"></a><br>Todo</td>
+</tr>
+<tr>
+<td><a href="img/cava.png"><img src="img/thumb/cava.png" alt="Cava panel"></a><br>Cava</td>
+<td><a href="img/recolor.png"><img src="img/thumb/recolor.png" alt="Recolor panel"></a><br>Recolor</td>
+<td><a href="img/wallgen.png"><img src="img/thumb/wallgen.png" alt="Wallgen panel"></a><br>Wallgen</td>
+</tr>
+</table>
+
 ## Desktop widgets
 
 | Tool | Key | Setup |
@@ -33,6 +48,8 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | Switch the Mabox logo | `mb-logo round`, `square`, `3d`, `ce` or `mb-logo FILE.svg` for your own; `mb-logo` prints the current one | round, square, 3D and CE follow the theme colours; `~/.icons/mabox-logo.svg` points to the chosen file |
 | Wallpaper slideshow on or off | root menu → Mabox noctalia ce → Wallpaper slideshow, `W-A-a`, or `mb-slideshow [toggle\|on\|off]` | interval: `noctalia msg config-set wallpaper.automation.interval_seconds <s>` |
 | Todo desktop widget:<br>_open tasks that are overdue or due today; click the header to open the panel_ | `noctalia msg desktop-widgets-toggle-edit`, then add *Todo today* | number of tasks in the widget settings |
+
+<p align="center"><a href="img/widgets.png"><img src="img/thumb/widgets.png" alt="Desktop widgets panel"></a></p>
 
 ## Music and media
 
