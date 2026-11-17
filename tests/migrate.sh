@@ -106,4 +106,21 @@ printf '[widget.launcher]\n\n[widget.launcher.actions]\nright = "mine"\n' > "$co
 migrate
 [[ $(grep -c 'mine' "$conf/noctalia/config.toml") == 1 && $(grep -c 'install:main' "$conf/noctalia/config.toml") == 0 ]] || { echo "FAIL migrate_25: overwrote the user's action"; exit 1; }
 
+# migrate_27: the on() helper and the wrapped default lines are added once; the menu entry opens the panel.
+cat > "$conf/mabox-noctalia-ce/autostart" <<'EOT'
+systemctl --user import-environment WAYLAND_DISPLAY
+command -v skippy-wl >/dev/null && systemctl --user --no-block start skippy-wl.service
+command -v kanshi >/dev/null && kanshi &
+command -v mb-updates-ce >/dev/null && systemctl --user --no-block start mb-updates-ce.timer mb-updates-ce.path
+command -v mb-status-warn >/dev/null && systemctl --user --no-block start mb-status-warn.timer
+command -v mb-hide-cursor >/dev/null && mb-hide-cursor &
+(sleep 3 && [ "$(cat /sys/class/leds/*numlock/brightness 2>/dev/null | head -1)" = "0" ] && wtype -k Num_Lock) &
+EOT
+printf '<item label="Edit autostart" icon="edit">\n<action name="Execute" command="xdg-open ~/.config/mabox-noctalia-ce/autostart" />\n</item>\n' > "$conf/mabox-noctalia-ce/menu.xml"
+migrate; migrate
+a=$conf/mabox-noctalia-ce/autostart
+[[ $(grep -c '^on() {' "$a") == 1 && $(grep -c '^on [a-z-]* &&' "$a") == 6 ]] || { echo "FAIL migrate_27: expected the helper and six wrapped lines"; exit 1; }
+bash -n "$a" || { echo "FAIL migrate_27: autostart no longer parses"; exit 1; }
+[[ $(grep -c 'panel-toggle mabox/autostart:main' "$conf/mabox-noctalia-ce/menu.xml") == 1 ]] || { echo "FAIL migrate_27: menu entry"; exit 1; }
+
 echo ok

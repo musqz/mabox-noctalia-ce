@@ -6,15 +6,18 @@
 # notification daemons, etc.) start in sync with the labwc session. Enable
 # individual services with: systemctl --user enable <unit>
 #
+# Entries listed in autostart.skip (one name per line, set in the Autostart panel) do not start.
+on() { ! grep -qx "$1" ~/.config/mabox-noctalia-ce/autostart.skip 2>/dev/null; }
+
 systemctl --user import-environment WAYLAND_DISPLAY
 systemctl --user --no-block start labwc-session.target
-command -v skippy-wl >/dev/null && systemctl --user --no-block start skippy-wl.service
-command -v kanshi >/dev/null && kanshi &
-command -v mb-updates-ce >/dev/null && systemctl --user --no-block start mb-updates-ce.timer mb-updates-ce.path
-command -v mb-status-warn >/dev/null && systemctl --user --no-block start mb-status-warn.timer
-command -v mb-hide-cursor >/dev/null && mb-hide-cursor &
+on skippy-wl && command -v skippy-wl >/dev/null && systemctl --user --no-block start skippy-wl.service
+on kanshi && command -v kanshi >/dev/null && kanshi &
+on mb-updates-ce && command -v mb-updates-ce >/dev/null && systemctl --user --no-block start mb-updates-ce.timer mb-updates-ce.path
+on mb-status-warn && command -v mb-status-warn >/dev/null && systemctl --user --no-block start mb-status-warn.timer
+on mb-hide-cursor && command -v mb-hide-cursor >/dev/null && mb-hide-cursor &
 
-(sleep 3 && [ "$(cat /sys/class/leds/*numlock/brightness 2>/dev/null | head -1)" = "0" ] && wtype -k Num_Lock) &
+on numlock && (sleep 3 && [ "$(cat /sys/class/leds/*numlock/brightness 2>/dev/null | head -1)" = "0" ] && wtype -k Num_Lock) &
 
 # Personal startup programs go in autostart.local (see the template there).
 [ -f ~/.config/mabox-noctalia-ce/autostart.local ] && bash ~/.config/mabox-noctalia-ce/autostart.local &

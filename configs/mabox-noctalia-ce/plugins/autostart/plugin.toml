@@ -1,0 +1,26 @@
+id = "mabox/autostart"
+name = "Autostart"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "rocket"
+description = "Startup programs of the labwc session: add, delay, switch off and remove entries of autostart.local, switch off the shipped defaults. /autostart in the launcher opens it."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 1200
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+
+[[launcher_provider]]
+id = "finder"
+entry = "finder.luau"
+prefix = "autostart"
+glyph = "rocket"
+include_in_global_search = false

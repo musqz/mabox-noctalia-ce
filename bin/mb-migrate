@@ -262,6 +262,25 @@ migrate_26() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# The Autostart panel: default entries can be switched off through autostart.skip, and the menu opens the panel.
+migrate_27() {
+    local d=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce n
+    local a=$d/autostart m=$d/menu.xml
+    if [[ -f $a ]] && ! grep -q '^on() {' "$a"; then
+        sed -i '1i # Entries listed in autostart.skip (one name per line, set in the Autostart panel) do not start.\non() { ! grep -qx "$1" ~/.config/mabox-noctalia-ce/autostart.skip 2>/dev/null; }\n' "$a"
+        if grep -q '^on() {' "$a"; then
+            for n in skippy-wl kanshi mb-updates-ce mb-status-warn mb-hide-cursor; do
+                sed -i "s#^command -v $n >/dev/null#on $n \&\& &#" "$a"
+            done
+            sed -i 's#^(sleep 3 && \[ "\$(cat /sys/class/leds#on numlock \&\& &#' "$a"
+        fi
+    fi
+    if [[ -f $m ]] && grep -q 'xdg-open ~/.config/mabox-noctalia-ce/autostart"' "$m"; then
+        sed -i 's#<item label="Edit autostart"#<item label="Autostart"#; s#command="xdg-open ~/.config/mabox-noctalia-ce/autostart"#command="noctalia msg panel-toggle mabox/autostart:main"#' "$m"
+        labwc --reconfigure >/dev/null 2>&1 || true
+    fi
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

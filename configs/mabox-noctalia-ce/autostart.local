@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Your own startup programs. Started by autostart; delete this file if unused.
-# Keep your changes here so updates to autostart don't touch them.
-# Examples (remove the leading # to enable):
+# The Autostart panel (root menu, /autostart) manages the lines in this format:
+#   (sleep 5 && command) &      starts after 5 seconds
+#   #(sleep 5 && command) &     switched off
+# Other lines are left as they are.
 
 # fittsmon-wl: use your output names from wlr-randr
 #(sleep 7 && fittsmon-wl --monitor HDMI-A-1 DP-1) &
