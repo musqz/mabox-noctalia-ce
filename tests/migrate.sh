@@ -51,11 +51,11 @@ sed -i 's#</keyboard>#<keybind key="W-A-c"><action name="Execute" command="mine"
 migrate
 [[ $(count 'mb-pinned colors') == 1 && $(count 'command="mine"') == 1 ]] || { echo "FAIL migrate_14: removed the Colors key without moving configs"; exit 1; }
 
-# migrate_12: the Calamares launcher gets DISPLAY=:0, and an existing user copy is left alone.
+# migrate_12 and 28: the Calamares launcher runs through sudo -E with an empty DISPLAY, and an existing user copy is left alone.
 if [[ -f /usr/share/applications/calamares.desktop ]]; then
     desk=$tmp/.local/share/applications/calamares.desktop
     migrate
-    grep -q '^Exec=env DISPLAY=:0 /usr/bin/calamares_polkit' "$desk" || { echo "FAIL migrate_12: Exec not rewritten"; exit 1; }
+    grep -qx 'Exec=sudo -E env DISPLAY= /usr/bin/calamares' "$desk" || { echo "FAIL migrate_28: Exec not rewritten"; exit 1; }
     echo mine > "$desk"; migrate
     [[ $(<"$desk") == mine ]] || { echo "FAIL migrate_12: overwrote the user's launcher"; exit 1; }
 fi
@@ -122,5 +122,15 @@ a=$conf/mabox-noctalia-ce/autostart
 [[ $(grep -c '^on() {' "$a") == 1 && $(grep -c '^on [a-z-]* &&' "$a") == 6 ]] || { echo "FAIL migrate_27: expected the helper and six wrapped lines"; exit 1; }
 bash -n "$a" || { echo "FAIL migrate_27: autostart no longer parses"; exit 1; }
 [[ $(grep -c 'panel-toggle mabox/autostart:main' "$conf/mabox-noctalia-ce/menu.xml") == 1 ]] || { echo "FAIL migrate_27: menu entry"; exit 1; }
+
+# migrate_28: the old DISPLAY=:0 launcher of migrate_12 is rewritten once, other launchers stay.
+desk=$tmp/.local/share/applications/calamares.desktop
+mkdir -p "${desk%/*}" "$tmp/state/mabox-noctalia-ce"
+printf '[Desktop Entry]\nExec=env DISPLAY=:0 /usr/bin/calamares_polkit %%f\nName=Calamares\n' > "$desk"
+echo 27 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(grep -c '^Exec=sudo -E env DISPLAY= /usr/bin/calamares$' "$desk") == 1 && $(grep -c 'Name=Calamares' "$desk") == 1 ]] || { echo "FAIL migrate_28: old launcher not rewritten"; exit 1; }
+printf 'Exec=mine\n' > "$desk"; echo 27 > "$tmp/state/mabox-noctalia-ce/config-version"; migrate
+[[ $(<"$desk") == Exec=mine ]] || { echo "FAIL migrate_28: overwrote the user's launcher"; exit 1; }
 
 echo ok
