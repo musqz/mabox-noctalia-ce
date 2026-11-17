@@ -12,3 +12,4 @@ pkg/
 CLAUDE.md
 claude.md
 *.bak*
+_site/

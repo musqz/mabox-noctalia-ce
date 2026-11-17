@@ -1,13 +1,10 @@
-# Snapshot ISO with the latest changes
+# Snapshot ISO
 
-The ISO carries what is installed on the build host, not the repo. To build a reset ISO with the newest menu, panels and tools:
+Build an ISO of your system with the Snapshot panel (`mabox-snapshot`). Open it from the root menu → Mabox noctalia ce → Snapshot, or `/mb snapshot` in the launcher.
 
-0. Optional: on a feature branch run `lib/mb-promote`, pick which live bar, widget and look settings become the default, then commit and merge.
-1. `git pull` in `mabox-noctalia-ce`.
-2. `./install.sh`. It builds the working tree and installs it.
-3. Check the install: `tests/iso-check.sh --host`. Build only when it prints `ok:`; exit code 2 means a tool is missing, not a wrong install.
-4. Build the snapshot: `mabox-snapshot create reset`, or use the Snapshot panel.
-   After a build in the panel, the panel reopens on the ISO list: `USB` writes the ISO to a stick, `VM` starts it in quickbox-qt 1.4 or newer. Use the back or close button to cancel.
-5. Check the image: `tests/iso-check.sh <workdir>/iso/mabox/x86_64/rootfs.sfs`. It lists every checked file that is missing or differs in the image.
+<p align="center"><a href="img/snapshot-panel.png"><img src="img/thumb/snapshot-panel.png" alt="Snapshot panel" style="margin: 8px"></a> <a href="img/snapshot-isos.png"><img src="img/thumb/snapshot-isos.png" alt="ISO list with USB and VM buttons" style="margin: 8px"></a></p>
 
-`mb-plugins-enable` enables each Mabox plugin once for a user, on login. The plugins it has handled are in `~/.local/state/mabox-noctalia-ce/plugins-seen`: delete a line to get that plugin enabled again.
+1. Pick the kernels for the ISO at the top.
+2. Pick a profile: *Share with others* (clean copy, login demo/demo), *Personal snapshot* (full clone with your files and passwords, keep it private), *Smallest ISO* or *Quick test build*.
+3. *Explain* shows what the profile does. *Build* runs it in a terminal and asks for your sudo password.
+4. *Open the ISO list* shows the finished ISOs. *USB* writes one to a stick (this erases the stick and adds a persistence partition). *VM* starts it in quickbox-qt. The trash button deletes the ISO.

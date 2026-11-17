@@ -1,5 +1,7 @@
 # Music
 
+![Music panel with a playlist open and a track playing](music-panel.png)
+
 The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-music/yt_music_list.csv`.
 
 | Key | Tool |
@@ -32,6 +34,8 @@ END,-
 1. Copy a YouTube or stream URL.
 2. Press `C-S-2`.
 3. Check Artist and Title (filled from `yt-dlp`), pick a category, press Enter or Add.
+
+<p align="center"><a href="img/add-track.png"><img src="img/thumb/add-track.png" alt="Add track dialog"></a></p>
 
 The category stays selected until you pick another. Choose "+ New category" to create one.
 

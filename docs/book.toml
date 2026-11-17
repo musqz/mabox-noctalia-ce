@@ -1,0 +1,14 @@
+[book]
+title = "Mabox Noctalia CE manual"
+description = "Panels, tools and hotkeys of the Mabox Noctalia CE session"
+language = "en"
+src = "."
+
+[build]
+build-dir = "../_site"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/musqz/mabox-noctalia-ce"
+edit-url-template = "https://github.com/musqz/mabox-noctalia-ce/edit/main/docs/{path}"
