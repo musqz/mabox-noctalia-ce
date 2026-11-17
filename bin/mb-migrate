@@ -116,7 +116,7 @@ migrate_12() {
     local src=/usr/share/applications/calamares.desktop dst=${XDG_DATA_HOME:-$HOME/.local/share}/applications/calamares.desktop
     [[ -f $src && ! -e $dst ]] || return 0
     mkdir -p "${dst%/*}"
-    sed 's#^Exec=/usr/bin/calamares_polkit#Exec=env DISPLAY=:0 /usr/bin/calamares_polkit#' "$src" > "$dst.tmp"
+    sed 's#^Exec=/usr/bin/calamares_polkit.*#Exec=sudo -E env DISPLAY= /usr/bin/calamares#' "$src" > "$dst.tmp"
     mv "$dst.tmp" "$dst"
 }
 
@@ -279,6 +279,13 @@ migrate_27() {
         sed -i 's#<item label="Edit autostart"#<item label="Autostart"#; s#command="xdg-open ~/.config/mabox-noctalia-ce/autostart"#command="noctalia msg panel-toggle mabox/autostart:main"#' "$m"
         labwc --reconfigure >/dev/null 2>&1 || true
     fi
+}
+
+# Calamares needs the wayland session variables: sudo -E keeps them, the empty DISPLAY makes Qt use wayland (as in manjaro-sway).
+migrate_28() {
+    local dst=${XDG_DATA_HOME:-$HOME/.local/share}/applications/calamares.desktop
+    [[ -f $dst ]] && grep -q '^Exec=env DISPLAY=:0 /usr/bin/calamares_polkit' "$dst" || return 0
+    sed 's#^Exec=env DISPLAY=:0 /usr/bin/calamares_polkit.*#Exec=sudo -E env DISPLAY= /usr/bin/calamares#' "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"
 }
 
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
