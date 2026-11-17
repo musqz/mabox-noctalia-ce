@@ -18,7 +18,7 @@ local DIRS = {
 }
 local PROFILES = { "Recent", "My palettes", "Built-in", "Wallpaper", "Settings" }
 local FORMATS = { "hex", "rgb", "rgba" }
-local COLUMNS = pinned and 3 or 6
+local COLUMNS = pinned and 4 or 8
 local MAX_RECENT = 50
 
 -- Sidebar buttons and swatches sit side by side, so each counts its own rows from the top bar.
@@ -362,14 +362,14 @@ local function grid(colors)
         end
         stop(`c{position}`, rightRow + (i - 1) // COLUMNS, 2 + c, pick)
         table.insert(cells, ui.column({ gap = 2, flexGrow = 1, key = `c{position}`, padding = 3, radius = 8, border = "on_surface", borderWidth = kbd.sel(`c{position}`) and 3 or 0 }, {
-          ui.box({ fill = hex, radius = 6, height = 44, tooltip = format(hex), onClick = pick }),
-          ui.label({ text = hex, fontSize = 11, color = "on_surface_variant", textAlign = "center" }),
+          ui.box({ fill = hex, radius = 5, height = 28, tooltip = format(hex), onClick = pick }),
+          ui.label({ text = hex, fontSize = 10, color = "on_surface_variant", textAlign = "center" }),
         }))
       else
         table.insert(cells, ui.spacer({ flexGrow = 1 }))
       end
     end
-    table.insert(rows, ui.row({ gap = 8, key = `r{i}` }, cells))
+    table.insert(rows, ui.row({ gap = 6, key = `r{i}` }, cells))
     i += COLUMNS
   end
   if #rows == 0 then
