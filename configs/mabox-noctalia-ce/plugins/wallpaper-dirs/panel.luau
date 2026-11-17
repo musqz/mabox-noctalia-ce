@@ -325,10 +325,10 @@ function render()
     err and ui.label({ text = err, color = "error" }) or note and ui.label({ text = note, color = "primary" }) or ui.box({ height = 0 }),
     ui.column(card("folders"), {
       current == "" and ui.box({ height = 0 }) or ui.label({ text = currentLabel and ("In use: " .. currentLabel) or "In use: a folder that is not in this list", color = "primary", fontSize = 12, maxLines = 1 }),
-      ui.column({ key = "listbox", height = 240 }, {
+      ui.column({ key = "listbox", height = 220 }, {
         ui.scroll({ key = "list", gap = 0, flexGrow = 1, revealKey = reveal }, rows),
       }),
-      ui.label({ text = hoverPath or "", fontSize = 12, color = "on_surface_variant", maxLines = 2 }),
+      ui.label({ text = hoverPath or "", fontSize = 12, color = "on_surface_variant", maxLines = 1 }),
       preview and ui.image({ path = preview, width = 300, height = 170, fit = "contain", radius = 6 }) or ui.box({ height = 0 }),
     }),
   }))
