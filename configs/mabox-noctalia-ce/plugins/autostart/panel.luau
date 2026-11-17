@@ -18,18 +18,26 @@ local armed = nil
 local confirm = {}
 local newCmd, newDelay = "", "3"
 local drafts = {}
+local cmdDrafts = {}
 local formGen = 0
 
 local render
 
-local function reload()
+local rev = 0
+
+-- keep: unsaved edits survive (line numbers did not change).
+local function reload(keep)
   entries, lines = store.load()
   skipped = store.skipped()
-  drafts = {}
+  if not keep then
+    drafts = {}
+    cmdDrafts = {}
+  end
+  rev += 1
   armed = nil
 end
 
-local function persist(msg)
+local function persist(msg, keep)
   local ok, why = store.save(entries, lines)
   if ok then
     err = nil
@@ -38,24 +46,13 @@ local function persist(msg)
     err = why == "changed" and "autostart.local changed on disk, nothing written. Read again and retry" or "Could not write autostart.local"
     note = nil
   end
-  reload()
+  reload(keep)
   render()
 end
 
 local function toggle(e)
   e.on = not e.on
-  persist("Saved. Applies at next login")
-end
-
-local function setDelay(e)
-  local n = tonumber(string.match(noctalia.string.trim(drafts[e.line] or ""), "^%d+$"))
-  if not n or n > 3600 then
-    err = "Delay is whole seconds, 0 to 3600"
-    render()
-    return
-  end
-  e.delay = n
-  persist("Saved. Applies at next login")
+  persist("Saved. Applies at next login", true)
 end
 
 local function remove(e)
@@ -82,26 +79,22 @@ local function cancel()
   render()
 end
 
-local function add()
-  local cmd = noctalia.string.trim(newCmd)
-  local n = tonumber(string.match(noctalia.string.trim(newDelay), "^%d+$"))
+-- Checks a command and delay; calls done(cmd, seconds) when both are fine.
+local function validate(cmdText, delayText, done)
+  local cmd = noctalia.string.trim(cmdText)
+  local n = tonumber(string.match(noctalia.string.trim(delayText), "^%d+$"))
+  local bad = nil
   if cmd == "" then
-    err = "Enter a command"
-    render()
-    return
+    bad = "Enter a command"
+  elseif string.find(cmd, "[\n\r]") then
+    bad = "One line only"
+  elseif string.find(cmd, "&$") or string.find(cmd, "^#") then
+    bad = "No trailing & or leading #"
+  elseif not n or n > 3600 then
+    bad = "Delay is whole seconds, 0 to 3600"
   end
-  if string.find(cmd, "[\n\r]") then
-    err = "One line only"
-    render()
-    return
-  end
-  if string.find(cmd, "&$") or string.find(cmd, "^#") then
-    err = "No trailing & or leading #"
-    render()
-    return
-  end
-  if not n or n > 3600 then
-    err = "Delay is whole seconds, 0 to 3600"
+  if bad then
+    err = bad
     render()
     return
   end
@@ -111,11 +104,49 @@ local function add()
       render()
       return
     end
+    done(cmd, n)
+  end)
+end
+
+local function add()
+  validate(newCmd, newDelay, function(cmd, n)
     table.insert(entries, { on = true, delay = n, cmd = cmd })
     newCmd = ""
     formGen += 1
     persist("Added. Starts at next login")
   end)
+end
+
+local function dirty(e)
+  local d, c = drafts[e.line], cmdDrafts[e.line]
+  return (d ~= nil and noctalia.string.trim(d) ~= tostring(e.delay)) or (c ~= nil and noctalia.string.trim(c) ~= e.cmd)
+end
+
+-- The command is only checked when it was edited, so a hand-written entry keeps its delay editable.
+local function saveRow(e)
+  local line = e.line
+  local newText = cmdDrafts[line] and noctalia.string.trim(cmdDrafts[line]) or e.cmd
+  local function apply(cmd, n)
+    for _, x in ipairs(entries) do
+      if x.line == line then
+        x.cmd, x.delay = cmd, n
+        drafts[line], cmdDrafts[line] = nil, nil
+        persist("Saved. Applies at next login", true)
+        return
+      end
+    end
+  end
+  if newText == e.cmd then
+    local n = tonumber(string.match(noctalia.string.trim(drafts[line] or tostring(e.delay)), "^%d+$"))
+    if not n or n > 3600 then
+      err = "Delay is whole seconds, 0 to 3600"
+      render()
+      return
+    end
+    apply(e.cmd, n)
+  else
+    validate(newText, drafts[line] or tostring(e.delay), apply)
+  end
 end
 
 local function toggleDefault(name)
@@ -148,10 +179,22 @@ function render()
     local isArmed = armed == e.line and lapse.armed(confirm, "rm")
     table.insert(rows, ui.row({ key = "e" .. e.line, gap = 8, align = "center", padding = 4 }, {
       ui.toggle({ key = "t" .. e.line .. (e.on and "1" or "0"), checked = e.on, onChange = function() toggle(e) end }),
-      ui.input({ key = "dl" .. e.line .. "_" .. e.delay, value = drafts[e.line] or tostring(e.delay), width = 56, controlSize = "sm", frameVisible = true, tooltip = "Delay in seconds",
-        onChange = function(t) drafts[e.line] = t end, onSubmit = function() setDelay(e) end }),
+      ui.input({ key = "dl" .. e.line .. "_" .. rev, value = drafts[e.line] or tostring(e.delay), width = 56, controlSize = "sm", frameVisible = true, tooltip = "Delay in seconds",
+        onChange = function(t)
+          local was = dirty(e)
+          drafts[e.line] = t
+          err = nil
+          if dirty(e) ~= was then render() end
+        end, onSubmit = function() saveRow(e) end }),
       ui.label({ text = "s", color = "on_surface_variant" }),
-      ui.label({ text = e.cmd, flexGrow = 1, maxLines = 1, color = e.on and "on_surface" or "on_surface_variant" }),
+      ui.input({ key = "cm" .. e.line .. "_" .. rev, value = cmdDrafts[e.line] or e.cmd, flexGrow = 1, controlSize = "sm", frameVisible = true,
+        onChange = function(t)
+          local was = dirty(e)
+          cmdDrafts[e.line] = t
+          err = nil
+          if dirty(e) ~= was then render() end
+        end, onSubmit = function() saveRow(e) end }),
+      dirty(e) and ui.button({ key = "sv" .. e.line, glyph = "device-floppy", text = "Save", variant = "primary", controlSize = "sm", onClick = function() saveRow(e) end }) or ui.box({ width = 0 }),
       isArmed and ui.button({ key = "c" .. e.line, text = "Cancel", variant = "ghost", controlSize = "sm", onClick = cancel }) or ui.box({ width = 0 }),
       ui.button({ key = "d" .. e.line .. (isArmed and "a" or ""), glyph = "trash", text = isArmed and "Click again" or nil, variant = isArmed and "destructive" or "ghost", controlSize = "sm", tooltip = "Remove", onClick = function() remove(e) end }),
     }))
