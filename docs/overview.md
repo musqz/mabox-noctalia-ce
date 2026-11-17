@@ -119,6 +119,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Services, Fixes, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
 | `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
 | `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
+| `mabox/autostart` | `main` panel, root menu (Autostart), `/autostart` | | `~/.config/mabox-noctalia-ce/autostart.local` (entries as `(sleep N && cmd) &`), `autostart.skip` for the shipped defaults |
 | `mabox/info` | `info` desktop widget |  | `mb-keys`; `[desktop_widgets] enabled = true` |
 | `mabox/polaroids` | `polaroids` desktop widget |  | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
 | `mabox/snapshot` | `main` panel, root menu (Mabox noctalia ce), `/mb snapshot` | | `mabox-snapshot`; Explain runs in the panel, Build in a `foot` terminal with sudo |

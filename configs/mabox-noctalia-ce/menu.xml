@@ -92,8 +92,8 @@
       <action name="Execute" command="noctalia msg panel-toggle mabox/reset:main" />
     </item>
     <separator />
-    <item label="Edit autostart" icon="edit">
-      <action name="Execute" command="xdg-open ~/.config/mabox-noctalia-ce/autostart" />
+    <item label="Autostart" icon="edit">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/autostart:main" />
     </item>
     <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />

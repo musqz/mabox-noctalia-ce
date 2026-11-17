@@ -135,6 +135,6 @@ See [music.md](music.md).
 - Scripts in `bin/` run from `/usr/bin` after a package install. While testing, copy: `sudo install -Dm755 bin/<script> /usr/bin/<script>`.
 - Bar widget shows `--`: enable `[system.monitor]`.
 - `snap` hangs: start `snapd`, or ignore it; the update check skips it.
-- Add your own programs, one per line: `echo 'myapp &' >> ~/.config/mabox-noctalia-ce/autostart.local`. `autostart` stays the shared default.
-- Autostart: `~/.config/mabox-noctalia-ce/autostart`. Personal programs (tabdock, Vorta, PIA VPN, `fittsmon-wl --monitor`) go in `~/.config/mabox-noctalia-ce/autostart.local`; copy the template from `/etc/skel/.config/mabox-noctalia-ce/`.
+- Add, delay, switch off and remove startup programs in the Autostart panel (root menu or `/autostart`). Changes apply at next login. The panel edits `~/.config/mabox-noctalia-ce/autostart.local`; the same file opens in Geany.
+- Autostart: `~/.config/mabox-noctalia-ce/autostart`. Personal programs, one per line as `(sleep 5 && tabdock) &` (tabdock, Vorta, PIA VPN, `fittsmon-wl --monitor`) go in `~/.config/mabox-noctalia-ce/autostart.local`; copy the template from `/etc/skel/.config/mabox-noctalia-ce/`.
 - Session PATH does not include `~/bin`. Use `~/.local/bin` or an absolute path in binds.
