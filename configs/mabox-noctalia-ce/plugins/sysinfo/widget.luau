@@ -47,6 +47,7 @@ for s in repo aur flatpak snap npm pipx; do echo "U $s $(cat "$d/$s" 2>/dev/null
 ]]
 
 local celogo = require("./lib/celogo.luau")
+local fs = require("./lib/fs.luau")
 
 local function push(hist, value)
   table.insert(hist, math.max(0, math.min(1, value / 100)))
@@ -153,16 +154,16 @@ end
 
 local function row(left, right, rightColor)
   return ui.row({ gap = 6 }, {
-    ui.label({ text = left, fontSize = 11, color = "on_surface", flexGrow = 1, maxLines = 1 }),
-    ui.label({ text = right, fontSize = 11, color = rightColor or "primary" }),
+    ui.label({ text = left, fontSize = fs(11), color = "on_surface", flexGrow = 1, maxLines = 1 }),
+    ui.label({ text = right, fontSize = fs(11), color = rightColor or "primary" }),
   })
 end
 
 local function section(title, value, children)
   local items = {
     ui.row({ gap = 6 }, {
-      ui.label({ text = title, fontSize = 11, color = "primary", flexGrow = 1 }),
-      ui.label({ text = value, fontSize = 11, color = "on_surface" }),
+      ui.label({ text = title, fontSize = fs(11), color = "primary", flexGrow = 1 }),
+      ui.label({ text = value, fontSize = fs(11), color = "on_surface" }),
     }),
   }
   for _, c in ipairs(children) do
@@ -184,10 +185,10 @@ local function render()
   local body = {
     ui.row({ align = "center", gap = 8 }, {
       ui.column({ flexGrow = 1, gap = 0 }, {
-        ui.label({ text = os.date("%A", now), fontSize = 13, color = "primary" }),
-        ui.label({ text = tostring(tonumber(os.date("%d", now))) .. os.date(" %B", now), fontSize = 12, color = "on_surface_variant" }),
+        ui.label({ text = os.date("%A", now), fontSize = fs(13), color = "primary" }),
+        ui.label({ text = tostring(tonumber(os.date("%d", now))) .. os.date(" %B", now), fontSize = fs(12), color = "on_surface_variant" }),
       }),
-      celogo(48),
+      celogo(fs(48)),
     }),
     ui.separator({ color = "outline_variant" }),
     row(info.distro, info.release, "on_surface_variant"),
@@ -197,7 +198,7 @@ local function render()
   }
   local utext, ucolor = updatesText()
   table.insert(body, row("updates", utext, ucolor))
-  table.insert(body, ui.box({ height = 4 }))
+  table.insert(body, ui.box({ height = fs(4) }))
 
   local function add(items)
     for _, n in ipairs(items) do
@@ -206,13 +207,13 @@ local function render()
   end
 
   add(section("CPU", string.format("%d%%", cpu), {
-    ui.graph({ values = { table.unpack(cpuHist) }, color = "tertiary", lineWidth = 1.5, fillOpacity = 0.15, height = 36 }),
+    ui.graph({ values = { table.unpack(cpuHist) }, color = "tertiary", lineWidth = 1.5, fillOpacity = 0.15, height = fs(36) }),
   }))
   add(procRows(topCpu))
-  table.insert(body, ui.box({ height = 4 }))
+  table.insert(body, ui.box({ height = fs(4) }))
 
   add(section("RAM", string.format("%s / %s  %d%%", formatMem(ramUsed), formatMem(ramTotal), ramPct), {
-    ui.graph({ values = { table.unpack(ramHist) }, color = "tertiary", lineWidth = 1.5, fillOpacity = 0.15, height = 36 }),
+    ui.graph({ values = { table.unpack(ramHist) }, color = "tertiary", lineWidth = 1.5, fillOpacity = 0.15, height = fs(36) }),
   }))
   add(procRows(topMem))
   table.insert(body, ui.separator({ color = "outline_variant" }))
@@ -223,13 +224,13 @@ local function render()
       break
     end
     table.insert(body, row(dsc.name, string.format("%s / %s  %d%%", dsc.used, dsc.size, dsc.pct), "on_surface"))
-    table.insert(body, ui.progress({ progress = dsc.pct / 100, fill = "tertiary", track = "surface_variant", height = 4, radius = 2 }))
+    table.insert(body, ui.progress({ progress = dsc.pct / 100, fill = "tertiary", track = "surface_variant", height = fs(4), radius = 2 }))
   end
 
   if bat then
     table.insert(body, ui.separator({ color = "outline_variant" }))
     table.insert(body, row("battery", string.format("%d%% %s", bat.pct, bat.status), "on_surface"))
-    table.insert(body, ui.progress({ progress = bat.pct / 100, fill = "tertiary", track = "surface_variant", height = 6, radius = 3 }))
+    table.insert(body, ui.progress({ progress = bat.pct / 100, fill = "tertiary", track = "surface_variant", height = fs(6), radius = 3 }))
   end
 
   desktopWidget.render(ui.column({
@@ -262,6 +263,10 @@ function update()
     loadSlow()
   end
   ticks += 1
+  render()
+end
+
+function onConfigChanged()
   render()
 end
 

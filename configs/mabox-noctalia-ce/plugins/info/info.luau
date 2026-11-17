@@ -2,6 +2,7 @@
 -- Info desktop widget: logo, About line and the basic hotkeys from mb-keys (same rows as the keys plugin).
 
 local celogo = require("./lib/celogo.luau")
+local fs = require("./lib/fs.luau")
 
 local TICK_MS = 5000
 local RELOAD_TICKS = 36
@@ -49,27 +50,27 @@ end
 render = function()
   local body = {
     ui.row({ align = "center", gap = 8 }, {
-      celogo(40),
-      ui.label({ text = "Mabox CE", fontSize = 18, color = "primary", flexGrow = 1 }),
+      celogo(fs(40)),
+      ui.label({ text = "Mabox CE", fontSize = fs(18), color = "primary", flexGrow = 1 }),
     }),
     ui.label({
       text = "An experiment on Noctalia and labwc, based on the work of napcok.",
-      fontSize = 10,
+      fontSize = fs(10),
       color = "on_surface_variant",
     }),
     ui.separator({ color = "outline_variant" }),
   }
   for _, name in ipairs(order) do
-    table.insert(body, ui.label({ text = name, fontSize = 11, color = "primary" }))
+    table.insert(body, ui.label({ text = name, fontSize = fs(11), color = "primary" }))
     for _, b in ipairs(groups[name]) do
       table.insert(body, ui.row({ gap = 6 }, {
-        ui.column({ width = 80 }, { ui.label({ text = b.spec, fontSize = 11, color = "primary", maxLines = 1 }) }),
-        ui.label({ text = b.desc, fontSize = 11, color = "on_surface", flexGrow = 1, maxLines = 1 }),
+        ui.column({ width = fs(80) }, { ui.label({ text = b.spec, fontSize = fs(11), color = "primary", maxLines = 1 }) }),
+        ui.label({ text = b.desc, fontSize = fs(11), color = "on_surface", flexGrow = 1, maxLines = 1 }),
       }))
     end
   end
   table.insert(body, ui.separator({ color = "outline_variant" }))
-  table.insert(body, ui.label({ text = "W-k: all hotkeys", fontSize = 11, color = "on_surface_variant" }))
+  table.insert(body, ui.label({ text = "W-k: all hotkeys", fontSize = fs(11), color = "on_surface_variant" }))
 
   desktopWidget.render(ui.column({
     gap = 3,
@@ -90,6 +91,10 @@ function update()
   else
     render()
   end
+end
+
+function onConfigChanged()
+  render()
 end
 
 noctalia.setUpdateInterval(TICK_MS)

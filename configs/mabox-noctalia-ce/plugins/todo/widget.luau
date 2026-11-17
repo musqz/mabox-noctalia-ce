@@ -2,6 +2,7 @@
 -- Todo desktop widget: open tasks that are overdue or due today. Click the header to open the panel.
 
 local today = require("./lib/today.luau")
+local fs = require("./lib/fs.luau")
 
 local COLORS = { overdue = "#e5534b", today = "#f0883e" }
 
@@ -9,11 +10,11 @@ local data = { overdue = {}, today = {}, lists = 0 }
 
 local function row(t, color)
   local cells = {
-    ui.box({ width = 10, height = 10, radius = 5, fill = color }),
-    ui.label({ text = t.text, fontSize = 12, color = "on_surface", maxLines = 1, flexGrow = 1 }),
+    ui.box({ width = fs(10), height = fs(10), radius = 5, fill = color }),
+    ui.label({ text = t.text, fontSize = fs(12), color = "on_surface", maxLines = 1, flexGrow = 1 }),
   }
   if data.lists > 1 then
-    table.insert(cells, ui.label({ text = t.list, fontSize = 10, color = "on_surface_variant" }))
+    table.insert(cells, ui.label({ text = t.list, fontSize = fs(10), color = "on_surface_variant" }))
   end
   return ui.row({ gap = 6, align = "center" }, cells)
 end
@@ -32,13 +33,13 @@ local function render()
     }),
   }
   if total == 0 then
-    table.insert(body, ui.label({ text = "Nothing due today", fontSize = 12, color = "on_surface_variant" }))
+    table.insert(body, ui.label({ text = "Nothing due today", fontSize = fs(12), color = "on_surface_variant" }))
   end
   local shown = 0
   for _, sec in ipairs({ { "overdue", "Overdue" }, { "today", "Today" } }) do
     local items = data[sec[1]]
     if #items > 0 and shown < max then
-      table.insert(body, ui.label({ text = sec[2], fontSize = 11, color = COLORS[sec[1]] }))
+      table.insert(body, ui.label({ text = sec[2], fontSize = fs(11), color = COLORS[sec[1]] }))
       for _, t in ipairs(items) do
         if shown >= max then
           break
@@ -49,12 +50,12 @@ local function render()
     end
   end
   if total > shown then
-    table.insert(body, ui.label({ text = "+" .. (total - shown) .. " more", fontSize = 11, color = "on_surface_variant" }))
+    table.insert(body, ui.label({ text = "+" .. (total - shown) .. " more", fontSize = fs(11), color = "on_surface_variant" }))
   end
   desktopWidget.render(ui.column({
     gap = 6,
     padding = 12,
-    width = 320,
+    width = fs(320),
     fill = "surface/0.85",
     radius = 8,
     border = "outline",

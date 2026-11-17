@@ -11,3 +11,12 @@ tags = ["desktop"]
 [[desktop_widget]]
 id = "info"
 entry = "info.luau"
+
+  [[desktop_widget.setting]]
+  key = "size"
+  type = "int"
+  label_key = "settings.size.label"
+  description_key = "settings.size.description"
+  default = 100
+  min = 50
+  max = 200
