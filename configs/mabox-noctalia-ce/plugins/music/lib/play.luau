@@ -54,32 +54,17 @@ local function label(artist, title)
   return title
 end
 
-local function split(line)
-  local artist, title = string.match(line or "", "^([^\t]*)\t(.*)$")
-  return noctalia.string.trim(artist or ""), noctalia.string.trim(title or line or "")
-end
-
--- onDone gets the label MPRIS gives (what the bar shows), "" when nothing plays, and the raw title and artist. delay waits for mpv to open the stream.
-function M.title(delay, onDone)
-  local cmd = (delay > 0 and ("sleep " .. delay .. "; ") or "") .. "playerctl -p mpv metadata --format '{{artist}}\t{{title}}' 2>/dev/null"
-  noctalia.runAsync({ "sh", "-c", cmd }, function(r)
-    if r.exitCode ~= 0 then
-      onDone("", "", "")
-      return
-    end
-    local artist, title = split(string.match(r.stdout or "", "^([^\n]*)"))
-    onDone(label(artist, title), title, artist)
-  end)
-end
-
--- After delay seconds: onDone(alive, label, path, playing, rawTitle, artist). alive is false when mpv is gone, which means every entry failed;
--- path is the url mpv has loaded and playing is true once it really makes sound (time-pos exists), not while yt-dlp still resolves it.
+-- After delay seconds: onDone(alive, label, path, playing, rawTitle, artist). alive is false when our mpv is gone, which means every entry failed;
+-- path is the url it has loaded and playing is true once it really makes sound (time-pos exists), not while yt-dlp still resolves it.
+-- Other mpv windows (a copied url from C-S-1) have an MPRIS player too, so the player is picked by the title our own mpv reports.
 function M.verify(delay, onDone)
   local function ask(prop, tag)
     return "echo '{\"command\":[\"get_property\",\"" .. prop .. "\"]}' | socat - " .. sq(SOCK) .. " 2>/dev/null | sed 's/^/" .. tag .. "/'"
   end
-  local cmd = "sleep " .. delay .. "; pgrep -x mpv >/dev/null || { echo __DEAD__; exit 0; }; "
-    .. "playerctl -p mpv metadata --format '{{artist}}\t{{title}}' 2>/dev/null; echo; " .. ask("path", "__PATH__") .. "; " .. ask("time-pos", "__POS__")
+  local cmd = "sleep " .. delay .. "; pgrep -f " .. sq(PATTERN) .. " >/dev/null || { echo __DEAD__; exit 0; }; "
+    .. ask("path", "__PATH__") .. "; " .. ask("time-pos", "__POS__") .. "; " .. ask("media-title", "__MT__") .. "; "
+    .. "for p in $(playerctl -l 2>/dev/null | grep '^mpv'); do printf '__PL__%s\t' \"$p\"; "
+    .. "playerctl -p \"$p\" metadata --format '{{status}}\t{{artist}}\t{{title}}' 2>/dev/null; echo; done"
   noctalia.runAsync({ "sh", "-c", cmd }, function(r)
     local out = r.stdout or ""
     if string.find(out, "__DEAD__", 1, true) then
@@ -90,9 +75,30 @@ function M.verify(delay, onDone)
       local ok, data = pcall(noctalia.json.decode, string.match(out, tag .. "([^\n]*)") or "")
       return ok and type(data) == "table" and data.error == "success" and data.data or nil
     end
-    local path = prop("__PATH__")
-    local artist, title = split(string.match(out, "^([^\n]*)"))
-    onDone(true, label(artist, title), type(path) == "string" and path or "", prop("__POS__") ~= nil, title, artist)
+    local path, mediaTitle = prop("__PATH__"), prop("__MT__")
+    local chosen, playingOne, first
+    for line in string.gmatch(out, "__PL__([^\n]*)") do
+      local _, status, artist, title = string.match(line, "^([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+      if status then
+        local entry = { artist = noctalia.string.trim(artist), title = noctalia.string.trim(title) }
+        first = first or entry
+        if status == "Playing" then
+          playingOne = playingOne or entry
+        end
+        if type(mediaTitle) == "string" and entry.title == noctalia.string.trim(mediaTitle) then
+          chosen = chosen or entry
+        end
+      end
+    end
+    chosen = chosen or playingOne or first or { artist = "", title = "" }
+    onDone(true, label(chosen.artist, chosen.title), type(path) == "string" and path or "", prop("__POS__") ~= nil, chosen.title, chosen.artist)
+  end)
+end
+
+-- onDone gets the label (what the bar shows), "" when nothing plays, and the raw title and artist. delay waits for mpv to open the stream.
+function M.title(delay, onDone)
+  M.verify(delay, function(alive, text, _, _, title, artist)
+    onDone(alive and text or "", title, artist)
   end)
 end
 
