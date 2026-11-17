@@ -31,3 +31,12 @@ entry = "widget.luau"
   default = 8
   min = 3
   max = 15
+
+  [[desktop_widget.setting]]
+  key = "size"
+  type = "int"
+  label_key = "settings.size.label"
+  description_key = "settings.size.description"
+  default = 100
+  min = 50
+  max = 200

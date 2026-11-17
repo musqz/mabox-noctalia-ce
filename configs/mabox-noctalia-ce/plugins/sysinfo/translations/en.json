@@ -1,0 +1,8 @@
+{
+  "settings": {
+    "size": {
+      "label": "Text size",
+      "description": "Text size in percent. The global Text size of the shell does not change this widget."
+    }
+  }
+}
