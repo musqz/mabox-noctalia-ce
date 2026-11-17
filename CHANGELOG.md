@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Fix the Music panel showing the title of another mpv window (for example one opened with `C-S-1`) instead of its own track.
 
 ## 0.5.2
 - Open Recolor and Wallgen from a wand button in the header of the Wallpaper folders panel.
