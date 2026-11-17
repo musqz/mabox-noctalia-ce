@@ -4,6 +4,8 @@
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
 - Fix the Music panel showing the title of another mpv window (for example one opened with `C-S-1`) instead of its own track.
 - Add an Autostart panel (root menu, `/autostart`): add, edit, delay, switch off and remove the entries of `autostart.local`, switch off the shipped defaults, and see what the session always starts.
+- Add 20 more fixes to the System panel Fixes tab (microphone, Bluetooth audio, monitor layout, DNS, clock, printer, Flatpak, AUR builds, fonts, USB drives, old kernel, hotkeys, plugin reload, notifications).
+- Add a Text size card to the Configs panel: `<` and `>` step the size of text and widgets of the whole shell from 80% to 150%.
 
 ## 0.5.2
 - Open Recolor and Wallgen from a wand button in the header of the Wallpaper folders panel.
