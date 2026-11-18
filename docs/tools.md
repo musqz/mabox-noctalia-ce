@@ -35,6 +35,9 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 <td><a href="img/recolor.png"><img src="img/thumb/recolor.png" alt="Recolor panel"></a><br>Recolor</td>
 <td><a href="img/wallgen.png"><img src="img/thumb/wallgen.png" alt="Wallgen panel"></a><br>Wallgen</td>
 </tr>
+<tr>
+<td><a href="img/places.png"><img src="img/thumb/places.png" alt="Places panel"></a><br>Places</td>
+</tr>
 </table>
 
 ## Desktop widgets
