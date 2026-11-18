@@ -8,6 +8,7 @@
 - Add a Text size card to the Configs panel: `<` and `>` step the size of text and widgets of the whole shell from 80% to 150%.
 - Start Calamares from the launcher with `sudo -E env DISPLAY= calamares`, so it opens in the Wayland session (migration rewrites the `DISPLAY=:0` launcher).
 - Add a Text size setting (50% to 200%) to the Info, Sysinfo and Todo today desktop widgets; the global Text size no longer shrinks them.
+- Add a Corner radius setting (0 to 32) to the Info, Sysinfo and Todo today widgets, and in Configs → Widgets an Edit layout button and a Corner radius section (all widgets together or one kind at a time).
 - Add an Exclude list view to the Snapshot panel: add and remove patterns of `/etc/mabox-snapshot/excludes.list`, keep a path inside an excluded folder, and pick a folder with a chooser; changes ask for your password in the Noctalia prompt.
 - Publish the manual (`docs/`) as a website with mdBook on GitHub Pages.
 
