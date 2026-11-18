@@ -9,6 +9,7 @@
 - [Install apps](install.md)
 - [Music](music.md)
 - [Tools](tools.md)
+- [Custom plugins](custom-plugins.md)
 
 # Reference
 
