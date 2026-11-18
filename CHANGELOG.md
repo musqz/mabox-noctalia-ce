@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.6.0
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
 - Fix the Music panel showing the title of another mpv window (for example one opened with `C-S-1`) instead of its own track.
 - Add an Autostart panel (root menu, `/autostart`): add, edit, delay, switch off and remove the entries of `autostart.local`, switch off the shipped defaults, and see what the session always starts.
