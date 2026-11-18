@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- Show the path of the marked folder under the Places folder search, with a copy button.
+- Cycle the Places drive button between folders only, folders and drives, and drives only.
+- Click the now-playing title in the Music panel to jump to the list and the row of the playing track.
+- Keep the selected list and the list with the playing track visible when a Music sidebar group is folded.
 
 ## 0.6.0
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
