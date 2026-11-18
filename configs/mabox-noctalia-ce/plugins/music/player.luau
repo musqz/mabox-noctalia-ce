@@ -26,6 +26,7 @@ local fAdding = false
 local added = {}
 local folded = { Tools = true }
 local nowPlaying = ""
+local revealRow, revealSide = nil, nil -- keys of the playing row and its sidebar entry, so both lists scroll to them
 local playingUrl = "" -- url mpv has loaded, so its row can be coloured
 local dead, checking, confirmRemove = {}, {}, {}
 local fetching = {}
@@ -133,6 +134,64 @@ local function playingCategory()
     end
   end
   return ""
+end
+
+-- Jumps the panel to the list the playing track is in: the open list first, then radio, music and playlists.
+local function showPlaying()
+  if playingUrl == "" then
+    return
+  end
+  local groups = {
+    { "radio", radio, "Radio" },
+    { "music", music, "Music" },
+    { "list", lists, "Playlists" },
+  }
+  local function at(g, c)
+    for i, t in ipairs(c.tracks) do
+      if t.url == playingUrl then
+        return i
+      end
+    end
+  end
+  local function go(g, c, i)
+    finder, query = false, ""
+    sel = { src = g[1], name = c.name }
+    folded[g[3]] = false
+    revealRow = g[1] .. ":" .. c.name .. ":" .. i
+    revealSide = "side:" .. g[1] .. ":" .. c.name
+    render()
+  end
+  if sel ~= nil and sel.src == "mine" then
+    for i, tr in ipairs(mine.recent().tracks) do
+      if tr.url == playingUrl then
+        revealRow = "mine:Recent:" .. i
+        render()
+        return
+      end
+    end
+  end
+  if sel ~= nil then
+    for _, g in ipairs(groups) do
+      if g[1] == sel.src then
+        for _, c in ipairs(g[2]) do
+          local i = c.name == sel.name and at(g, c)
+          if i then
+            go(g, c, i)
+            return
+          end
+        end
+      end
+    end
+  end
+  for _, g in ipairs(groups) do
+    for _, c in ipairs(g[2]) do
+      local i = at(g, c)
+      if i then
+        go(g, c, i)
+        return
+      end
+    end
+  end
 end
 
 local function rememberPlaying(path)
@@ -841,8 +900,8 @@ local function sidebar()
     end
     table.insert(items, ui.column({ fill = "surface_variant", radius = 10, padding = 8, gap = 4, border = "primary", borderWidth = 1 }, card))
   end
-  local function entry(label, active, action)
-    return ui.button({ text = label, glyph = active and "point-filled" or "point", variant = active and "outline" or "ghost", controlSize = "sm", contentAlign = "start", onClick = action })
+  local function entry(label, active, action, key)
+    return ui.button({ key = key, text = label, glyph = active and "point-filled" or "point", variant = active and "outline" or "ghost", controlSize = "sm", contentAlign = "start", onClick = action })
   end
   table.insert(items, ui.button({ text = "All", variant = (sel == nil and query == "" and not finder) and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() pick(nil, nil) end }))
   table.insert(items, ui.button({ text = "Find stations", glyph = "search", variant = finder and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() finder, sel, query, fFocus = true, nil, "", true render() end }))
@@ -852,7 +911,7 @@ local function sidebar()
     if #g[3] > 0 then
       local rows = {}
       for _, c in ipairs(g[3]) do
-        table.insert(rows, entry(c.name, sel ~= nil and sel.src == g[2] and sel.name == c.name, function() pick(g[2], c.name) end))
+        table.insert(rows, entry(c.name, sel ~= nil and sel.src == g[2] and sel.name == c.name, function() pick(g[2], c.name) end, "side:" .. g[2] .. ":" .. c.name))
       end
       group(g[1], rows)
     end
@@ -866,7 +925,7 @@ local function sidebar()
   tool("Edit mpv list", "edit", "xdg-open '" .. csv.path .. "'")
   tool("Radio browser", "world", "xdg-open https://www.radio-browser.info")
   group("Tools", tools)
-  return ui.column({ width = 250, height = 446, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 6 }, items) }) })
+  return ui.column({ width = 250, height = 446, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = revealSide }, { ui.column({ gap = 6 }, items) }) })
 end
 
 -- "Add to playlist" chooser above the cards; the + on a row adds to the choice.
@@ -932,7 +991,7 @@ render = function()
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ gap = 6, align = "center", fill = "surface_variant", radius = 8, padding = 6 }, {
-      ui.label({ text = nowPlaying ~= "" and nowPlaying or "Nothing playing", flexGrow = 1, fontSize = 12 }),
+      ui.button({ text = nowPlaying ~= "" and nowPlaying or "Nothing playing", variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, enabled = playingUrl ~= "", tooltip = "Show where it is in the lists", onClick = showPlaying }),
       ui.label({ text = playingCategory(), fontSize = 11, color = "primary" }),
       ui.button({ glyph = "playlist", variant = mine.opt("onward", true) and "outline" or "ghost", controlSize = "sm", tooltip = mine.opt("onward", true) and "Play on: a click starts the list from that track and skips streams that fail (on). Click to play only the track." or "Play only the clicked track (off). Click to play on and skip failing streams.", onClick = function() mine.setOpt("onward", not mine.opt("onward", true)) render() end }),
       ui.button({ text = sleepLabel(), glyph = "moon", variant = sleepLeft > 0 and "outline" or "ghost", controlSize = "sm", tooltip = "Sleep timer: click for 15, 30, 60, 90 minutes, then off", onClick = function() mine.cycleSleep(refreshSleep) end }),
@@ -948,10 +1007,11 @@ render = function()
       -- No spacer for the finder: it would share the free height with the list and push it down.
       finder and ui.scroll({ flexGrow = 1, key = "list" }, content) or ui.column({ gap = 6, flexGrow = 1 }, {
         addRow(),
-        ui.scroll({ flexGrow = 1, key = "list" }, content),
+        ui.scroll({ flexGrow = 1, key = "list", revealKey = revealRow }, content),
       }),
     }),
   }))
+  revealRow, revealSide = nil, nil
 end
 
 function onClose()
@@ -960,6 +1020,7 @@ end
 
 function onOpen()
   pollGen += 1
+  revealRow, revealSide = nil, nil
   pollTitle(pollGen, 0)
   query = ""
   finder = false
