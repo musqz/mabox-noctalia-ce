@@ -424,6 +424,7 @@ render = function()
   local top = ui.row({ gap = 6, align = "center" }, {
     ui.spacer({ flexGrow = 1 }),
     pinned and pinSide.dockButton("capture", pinned, render) or ui.spacer({ width = 0 }),
+    pinned and pinSide.panelButton("capture", "main") or ui.spacer({ width = 0 }),
     pinned and kbtn("swap", 1, 1, { glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
     kbtn("pin", 1, 2, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       pinSide.close("capture", pinned)

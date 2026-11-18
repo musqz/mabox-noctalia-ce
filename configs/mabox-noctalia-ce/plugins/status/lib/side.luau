@@ -105,6 +105,22 @@ function M.swap(plugin, current)
   noctalia.runAsync({ "sh", "-c", command(plugin, other, "show") })
 end
 
+-- From a pinned window: close it and open the same plugin as the dropdown panel (panelId is its [[panel]] id).
+function M.toPanel(plugin, panelId)
+  noctalia.runAsync({ "sh", "-c", pinCmd(plugin, "hide") .. "; sleep 0.2; noctalia msg panel-open mabox/" .. plugin .. ":" .. panelId .. " >/dev/null 2>&1" })
+end
+
+function M.panelButton(plugin, panelId)
+  return ui.button({
+    key = "to-panel",
+    glyph = "layout-navbar",
+    variant = "ghost",
+    controlSize = "sm",
+    tooltip = "Open as the top panel and close this window",
+    onClick = function() M.toPanel(plugin, panelId) end,
+  })
+end
+
 -- Closes the window this script runs in: the pinned layer through the pin service, else the panel.
 function M.close(plugin, pinned)
   if pinned then

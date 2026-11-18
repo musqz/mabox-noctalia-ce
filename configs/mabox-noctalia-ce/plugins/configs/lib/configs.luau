@@ -868,6 +868,7 @@ render = function()
     ui.button({ key = "collapse", selected = kbd.sel("collapse"), glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Collapse all sections", onClick = collapseAll }),
     ui.button({ key = "refresh", selected = kbd.sel("refresh"), glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = function() staticLoaded = false; refresh() end }),
     pinned and pinSide.dockButton("configs", pinned, render) or ui.spacer({ width = 0 }),
+    pinned and pinSide.panelButton("configs", "main") or ui.spacer({ width = 0 }),
     pinned and ui.button({ key = "swap", selected = kbd.sel("swap"), glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = moveSide }) or ui.spacer({ width = 0 }),
     ui.button({ key = "pin", selected = kbd.sel("pin"), glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose }),
   })

@@ -769,6 +769,7 @@ render = function()
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
         pinSide.dockButton("notes", pinned, render),
+        pinSide.panelButton("notes", "main"),
         ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 5, tooltip = "Close", onClick = function() pinSide.close("notes", pinned) end }),
       }),
@@ -787,9 +788,6 @@ render = function()
   table.insert(side, ui.button({ text = "New note", glyph = "plus", variant = "ghost", contentAlign = "start", selected = onSide(1), onClick = createNote }))
   table.insert(side, ui.button({ text = "Select", glyph = "square-check", variant = selecting and "primary" or "ghost", contentAlign = "start", selected = onSide(2), onClick = toggleSelect }))
   table.insert(side, ui.button({ text = openMode == "editor" and "Open: editor" or "Open: list", glyph = openMode == "editor" and "pencil" or "list", variant = "ghost", contentAlign = "start", selected = onSide(3), tooltip = "Click on a note: edit it or show its text in the list", onClick = toggleMode }))
-  table.insert(side, ui.spacer({ flexGrow = 1 }))
-  table.insert(side, ui.button({ text = "Reload", glyph = "refresh", variant = "ghost", contentAlign = "start", selected = onSide(4), tooltip = "Re-read notes from disk", onClick = reload }))
-  table.insert(side, ui.button({ text = "Pin window", glyph = "pin", variant = "ghost", contentAlign = "start", selected = onSide(5), onClick = pinWindow }))
 
   local right
   if current then
@@ -811,6 +809,9 @@ render = function()
       logo(),
       ui.label({ text = "Notes" }),
       ui.label({ text = hotkey("mabox/notes:main"), color = "outline_variant", flexGrow = 1 }),
+      ui.button({ key = "reload", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Re-read notes from disk", onClick = reload }),
+      ui.button({ key = "pin", glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = pinWindow }),
+      ui.button({ key = "close", glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ gap = 12, flexGrow = 1 }, {
       ui.column({ gap = 4, width = 160 }, side),
@@ -973,7 +974,7 @@ local function onKey(chord)
       acts = a
     end
     if zone == "side" then
-      sideCursor = math.max(1, math.min(5, sideCursor + step))
+      sideCursor = math.max(1, math.min(3, sideCursor + step))
     elseif #acts > 0 and ((step == 1 and itemRow == 1) or (step == -1 and itemRow == 2)) then
       if step == 1 then
         itemRow = 2
@@ -1054,7 +1055,7 @@ local function onKey(chord)
       actions[topCursor]()
       return
     elseif zone == "side" then
-      local actions = { createNote, toggleSelect, toggleMode, reload, pinWindow }
+      local actions = { createNote, toggleSelect, toggleMode }
       actions[sideCursor]()
       return
     elseif zone == "sel" then

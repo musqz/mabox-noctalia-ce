@@ -671,6 +671,7 @@ render = function()
     ring("t-view", ui.button({ glyph = settingsView and "arrow-left" or "settings", variant = "ghost", controlSize = "sm", tooltip = settingsView and "Back" or "Settings", onClick = switchView })),
     ring("t-refresh", ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = doRefresh })),
     pinned and pinSide.dockButton("status", pinned, render) or ui.spacer({ width = 0 }),
+    pinned and pinSide.panelButton("status", "main") or ui.spacer({ width = 0 }),
     pinned and ring("t-swap", ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("status", pinned) end })) or ui.spacer({ width = 0 }),
     ring("t-pin", ui.button({ glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = pinOrClose })),
   })
