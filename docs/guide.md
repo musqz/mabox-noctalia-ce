@@ -119,6 +119,10 @@ Converter: pick a preset, then files; output lands next to the source and never 
 
 ## Interval screenshots and GIF
 
+`W-A-r` opens the Capture panel: screenshot, interval and record cards, and the recent files. The commands below do the same from a terminal.
+
+<p align="center"><a href="img/capture.png"><img src="img/thumb/capture.png" alt="Capture panel"></a></p>
+
 - `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT` or the first), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.
 - `mb-shots-interval -b` moves the images to `backup/DATE`; `-x` deletes them; `-n` counts them.
 - `mb-gifmaker [-s PIXELS]` turns the images into a GIF in `~/Pictures/Mabox-Animations`. Settings: `~/.config/mabox/mb-gifmaker.conf`.

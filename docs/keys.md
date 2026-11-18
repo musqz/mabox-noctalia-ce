@@ -14,6 +14,8 @@ Edit `lists/keys-profiles.csv` (`name,kind,source[,app ids]`) to add or reorder 
 
 The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete snippets. They are saved in `~/.config/espanso/match/mabox.yml` (backup: `mabox.yml.bak`); other Espanso files are not touched.
 
+<p align="center"><a href="img/espanso.png"><img src="img/thumb/espanso.png" alt="The /es launcher with the snippets list"></a></p>
+
 | Key | Action |
 |---|---|
 | `W-k` | hotkey list |
