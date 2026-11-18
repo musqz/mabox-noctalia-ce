@@ -136,6 +136,8 @@ local function playingCategory()
   return ""
 end
 
+local listsLoaded = { radio = false, music = false } -- the log is only read once both lists can name its urls
+
 -- Jumps the panel to the list the playing track is in: the open list first, then radio, music and playlists.
 local function showPlaying()
   if playingUrl == "" then
@@ -192,6 +194,19 @@ local function showPlaying()
       end
     end
   end
+  -- A station played from Find stations without adding it: the search result is the only place it is listed.
+  if not (listsLoaded.radio and listsLoaded.music) or fBusy then
+    return
+  end
+  for i, st in ipairs(fResults or {}) do
+    if st.url == playingUrl then
+      finder, sel, query = true, nil, ""
+      revealRow = "f" .. i
+      render()
+      return
+    end
+  end
+  noctalia.notify("Music", "This one is not in your lists")
 end
 
 local lastRemembered = nil -- url last put in Recent, so the poll does not write it again
@@ -211,7 +226,6 @@ local function rememberPlaying(path)
 end
 
 -- Tracks mpv started while the panel was closed (or between two polls) come from its own log.
-local listsLoaded = { radio = false, music = false } -- the log is only read once both lists can name its urls
 
 local function mergeRecent()
   if not (listsLoaded.radio and listsLoaded.music) then
@@ -1082,7 +1096,7 @@ render = function()
     ui.row({ gap = 8, flexGrow = 1 }, {
       sidebar(),
       -- No spacer for the finder: it would share the free height with the list and push it down.
-      finder and ui.scroll({ flexGrow = 1, key = "list" }, content) or ui.column({ gap = 6, flexGrow = 1 }, {
+      finder and ui.scroll({ flexGrow = 1, key = "list", revealKey = revealRow }, content) or ui.column({ gap = 6, flexGrow = 1 }, {
         addRow(),
         ui.scroll({ flexGrow = 1, key = "list", revealKey = revealRow }, content),
       }),
