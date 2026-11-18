@@ -552,6 +552,7 @@ render = function()
         render()
       end, 1, 4),
       pinned and ui.row({ gap = 2 }, {
+        pinSide.panelButton("colors", "picker"),
         ui.button({ glyph = "arrows-left-right", variant = "ghost", tooltip = "Move to the other side", onClick = function() pinSide.swap("colors", pinned) end }),
         ui.button({ glyph = "x", variant = "ghost", tooltip = "Close", onClick = function() panel.close() end }),
       })

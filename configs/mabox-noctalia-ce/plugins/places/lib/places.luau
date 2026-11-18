@@ -29,6 +29,13 @@ local newTag = nil
 local newName = ""
 local size = 10
 local query = ""
+local treeQuery = ""
+local treeIdx = 1
+local hitKey = nil
+local forceOpen = {}
+local withDrives = false
+local autoOpened = {}
+local hitCount = 0
 local searchNonce = 0
 local render
 local listDir
@@ -114,7 +121,11 @@ local function toggleCard(id)
 end
 
 local function toggleFold(id)
-  folded[id] = (not folded[id]) or nil
+  if forceOpen[id] then
+    forceOpen[id] = nil
+  else
+    folded[id] = (not folded[id]) or nil
+  end
   saveLayout()
 end
 
@@ -293,6 +304,7 @@ listDir = function(path)
 end
 
 local function toggleDir(path)
+  autoOpened[path] = nil
   expanded[path] = (not expanded[path]) or nil
   if newIn == path then
     newIn = nil
@@ -351,6 +363,7 @@ local function dirRow(path, name, glyph, depth, tag)
   end
   table.insert(row, ui.button({
     key = "t" .. tag .. path,
+    selected = hitKey == "r" .. tag .. path,
     glyph = open and "chevron-down" or glyph,
     text = name,
     variant = "ghost",
@@ -395,6 +408,7 @@ local function childRows(path, depth, out, tag)
       table.insert(out, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center" }, {
         ui.box({ width = depth * 10, height = 0 }),
         ui.button({
+          selected = hitKey == "f" .. tag .. full,
           glyph = "file",
           text = it.name,
           variant = "ghost",
@@ -410,7 +424,7 @@ local function childRows(path, depth, out, tag)
 end
 
 local function card(key, children, extra)
-  local closed = folded[key]
+  local closed = folded[key] and not forceOpen[key]
   local top = { ui.button({
     key = "fold-" .. key,
     glyph = closed and "chevron-right" or "chevron-down",
@@ -474,7 +488,9 @@ local function driveCard()
   for i, d in ipairs(drives) do
     local mounted = d.mount ~= ""
     table.insert(rows, ui.row({ key = "d" .. i, gap = 4, align = "center" }, {
+      mounted and ui.button({ key = "dx" .. i, glyph = expanded[d.mount] and "chevron-down" or "chevron-right", variant = "ghost", controlSize = "sm", tooltip = "Show or hide the folders of this drive", onClick = function() toggleDir(d.mount) end }) or ui.box({ key = "dx" .. i, width = 0, height = 0 }),
       ui.button({
+        selected = hitKey == "d" .. i,
         glyph = d.hot and "device-floppy" or "database",
         text = d.name .. "  " .. d.size,
         variant = "ghost",
@@ -485,6 +501,9 @@ local function driveCard()
       }),
       mounted and ui.button({ key = "ej" .. i, glyph = "player-eject", variant = "ghost", controlSize = "sm", tooltip = "Unmount", onClick = function() unmountDrive(d) end }) or ui.box({ key = "ej" .. i, height = 0 }),
     }))
+    if mounted and expanded[d.mount] then
+      childRows(d.mount, 1, rows, "d")
+    end
   end
   return card("drives", rows)
 end
@@ -514,6 +533,194 @@ local function recentCard()
     table.insert(rows, ui.label({ text = "No recent files", color = "on_surface_variant" }))
   end
   return card("recent", rows, ui.row({ gap = 4, align = "center" }, sizes))
+end
+
+-- Tree search: every folder below the places is indexed once (python, breadth first, hidden folders left out);
+-- a match opens the folders above it and scrolls to its row.
+local INDEX = [[import os, sys, time
+out = open(sys.argv[1], "w")
+t0 = time.monotonic()
+seen = set()
+queue = []
+for r in sys.argv[2:]:
+    r = os.path.abspath(r)
+    if r not in seen:
+        seen.add(r)
+        queue.append((r, 0))
+n = 0
+i = 0
+while i < len(queue) and n < 60000 and time.monotonic() - t0 < 8:
+    path, d = queue[i]
+    i += 1
+    out.write(path + "\n")
+    n += 1
+    if d >= 6:
+        continue
+    try:
+        with os.scandir(path) as it:
+            for e in it:
+                if e.name.startswith(".") or "\n" in e.name:
+                    continue
+                if e.is_dir(follow_symlinks=False):
+                    queue.append((path + "/" + e.name, d + 1))
+    except OSError:
+        pass
+out.close()]]
+
+-- A script callback gets 25 ms of CPU, so the list never reaches Lua: python writes it to a file and answers each
+-- query with at most 300 paths, shallow ones first.
+local QUERY = [[import sys
+q = sys.argv[2].casefold()
+out = []
+try:
+    with open(sys.argv[1], errors="replace") as f:
+        for line in f:
+            p = line.rstrip("\n")
+            if q in p.rsplit("/", 1)[-1].casefold():
+                out.append((p.count("/"), p))
+except OSError:
+    pass
+out.sort()
+for _, p in out[:300]:
+    print(p)]]
+
+local indexReady = false
+local indexing = false
+local jump
+local queryGen = 0
+
+local function indexPath()
+  return noctalia.pluginDataDir() .. "/dirindex"
+end
+
+local indexGen = 0
+local function loadIndex()
+  indexGen += 1
+  local gen = indexGen
+  indexing = true
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  local args = { "python3", "-I", "-c", INDEX, indexPath() }
+  for _, p in ipairs(places) do
+    if p.path and p.ok then
+      table.insert(args, p.path)
+    end
+  end
+  if withDrives then
+    for _, d in ipairs(drives) do
+      if d.mount ~= "" then
+        table.insert(args, d.mount)
+      end
+    end
+  end
+  noctalia.runAsync(args, function()
+    if gen ~= indexGen then
+      return
+    end
+    indexing = false
+    indexReady = true
+    jump()
+  end)
+end
+
+-- First place row, in screen order, whose folder is the match or lies above it.
+local function rowFor(path)
+  for _, id in ipairs(order) do
+    if id == "drives" and withDrives and not hidden[id] then
+      for i, d in ipairs(drives) do
+        if d.mount ~= "" and (path == d.mount or string.sub(path, 1, #d.mount + 1) == d.mount .. "/") then
+          return { path = d.mount, key = "d" .. i }, "d", id
+        end
+      end
+    elseif (id == "places" or id == "bookmarks") and not hidden[id] then
+      for _, p in ipairs(places) do
+        if (id == "places") == (p.std == true) and p.path and p.ok and (path == p.path or string.sub(path, 1, #p.path + 1) == p.path .. "/") then
+          return p, p.std and "s" or "b", id
+        end
+      end
+    end
+  end
+end
+
+-- Finds the matches for the typed text, opens the folders above the chosen one and marks its row.
+jump = function()
+  hitKey, hitCount = nil, 0
+  forceOpen = {}
+  for path in pairs(autoOpened) do
+    expanded[path] = nil
+  end
+  autoOpened = {}
+  local q = noctalia.string.trim(treeQuery)
+  if q == "" then
+    render()
+    return
+  end
+  if not indexReady then
+    loadIndex()
+    render()
+    return
+  end
+  queryGen += 1
+  local gen = queryGen
+  noctalia.runAsync({ "python3", "-I", "-c", QUERY, indexPath(), q }, function(r)
+    if gen ~= queryGen then
+      return
+    end
+    local hits = {}
+    for l in string.gmatch(r.stdout or "", "[^\n]+") do
+      if rowFor(l) then
+        table.insert(hits, l)
+      end
+    end
+    hitCount = #hits
+    if hitCount > 0 then
+      local path = hits[((treeIdx - 1) % hitCount) + 1]
+      local p, tag, cardId = rowFor(path)
+      forceOpen[cardId] = true
+      local at = p.path
+      while at and at ~= path do
+        if not expanded[at] then
+          autoOpened[at] = true
+        end
+        expanded[at] = true
+        if not listing[at] then
+          listDir(at)
+        end
+        local nextPart = string.match(string.sub(path, #at + 2), "^([^/]+)")
+        at = at .. "/" .. nextPart
+      end
+      hitKey = (tag == "d" and path == p.path) and p.key or ("r" .. tag .. path)
+    end
+    render()
+  end)
+end
+
+local function treeSearchRow()
+  return ui.row({ gap = 6, align = "center" }, {
+    ui.input({
+      key = "treeq",
+      value = treeQuery,
+      placeholder = "Jump to a folder in the tree",
+      controlSize = "sm",
+      flexGrow = 1,
+      onChange = function(text)
+        treeQuery = text
+        treeIdx = 1
+        jump()
+      end,
+      onSubmit = function()
+        treeIdx += 1
+        jump()
+      end,
+    }),
+    ui.button({ key = "tdrv", glyph = "database", text = pinned and "Drives" or nil, variant = withDrives and "primary" or "ghost", controlSize = "sm", tooltip = withDrives and "Searching your folders and the mounted drives (click: folders only)" or "Searching your folders only (click: add the mounted drives)", onClick = function()
+      withDrives = not withDrives
+      indexReady = false
+      jump()
+    end }),
+    ui.row({ key = "tcount", tooltip = (treeQuery ~= "" and hitCount > 0) and ("Folder " .. (((treeIdx - 1) % hitCount) + 1) .. " of " .. hitCount .. " found. Enter: next one.") or (indexing and "Reading the folders..." or "Number of folders found. Enter: next one."), align = "center" }, {
+      ui.label({ text = (treeQuery ~= "" and indexing) and "..." or (treeQuery ~= "" and hitCount > 0) and (((treeIdx - 1) % hitCount) + 1 .. (pinned and " of " or "/") .. hitCount) or (treeQuery ~= "" and "0" or ""), fontSize = 11, color = "on_surface_variant" }),
+    }),
+  })
 end
 
 local function searchRow()
@@ -567,10 +774,12 @@ render = function()
         collapseButton,
         ui.spacer({ flexGrow = 1 }),
         pinSide.dockButton("places", pinned, render),
+        pinSide.panelButton("places", "main"),
         ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("places", pinned) end }),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() pinSide.close("places", pinned) end }),
       }),
       searchRow(),
+      treeSearchRow(),
     }
   else
     head = {
@@ -580,6 +789,7 @@ render = function()
         ui.label({ text = hotkey("mabox/places:main"), color = "outline_variant", flexGrow = 1 }),
       }),
       searchRow(),
+      treeSearchRow(),
     }
     table.insert(head, 2, ui.row({ gap = 6, align = "center" }, {
       editButton,
@@ -610,13 +820,14 @@ render = function()
       table.insert(cards, byId[id])
     end
   end
-  table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list" }, cards))
+  table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = hitKey }, cards))
   pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 712 or nil }, head))
 end
 
 local function open()
   newIn = nil
   editing = false
+  treeQuery, treeIdx, hitKey, indexReady, forceOpen, autoOpened = "", 1, nil, false, {}, {}
   expanded = {}
   listing = {}
   loadLayout()

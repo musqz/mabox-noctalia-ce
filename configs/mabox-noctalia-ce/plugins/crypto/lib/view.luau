@@ -162,6 +162,7 @@ local function header()
       onClick = function() noctalia.runAsync({ "setsid", "-f", "xdg-open", "https://www.kraken.com/prices" }) end }) }
   if pinned then
     table.insert(btns, pinSide.dockButton("crypto", pinned, render))
+    table.insert(btns, pinSide.panelButton("crypto", "main"))
     table.insert(btns, ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("crypto", pinned) end }))
   else
     table.insert(btns, ui.button({ glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = function()
