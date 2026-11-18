@@ -32,8 +32,15 @@ local query = ""
 local treeQuery = ""
 local treeIdx = 1
 local hitKey = nil
+local hitPath = nil
 local forceOpen = {}
-local withDrives = false
+local driveMode = 0
+-- Search scope, index 1-3: folders only, folders and drives, drives only.
+local DRIVE_MODES = {
+  { glyph = "folder", text = "Folders", tooltip = "Searching your folders only (click: add the mounted drives)" },
+  { glyph = "database", text = "Folders + drives", tooltip = "Searching your folders and the mounted drives (click: drives only)" },
+  { glyph = "server", text = "Drives", tooltip = "Searching the mounted drives only (click: folders only)" },
+}
 local autoOpened = {}
 local hitCount = 0
 local searchNonce = 0
@@ -601,11 +608,11 @@ local function loadIndex()
   noctalia.mkdirAll(noctalia.pluginDataDir())
   local args = { "python3", "-I", "-c", INDEX, indexPath() }
   for _, p in ipairs(places) do
-    if p.path and p.ok then
+    if p.path and p.ok and driveMode ~= 2 then
       table.insert(args, p.path)
     end
   end
-  if withDrives then
+  if driveMode > 0 then
     for _, d in ipairs(drives) do
       if d.mount ~= "" then
         table.insert(args, d.mount)
@@ -625,13 +632,13 @@ end
 -- First place row, in screen order, whose folder is the match or lies above it.
 local function rowFor(path)
   for _, id in ipairs(order) do
-    if id == "drives" and withDrives and not hidden[id] then
+    if id == "drives" and driveMode > 0 and not hidden[id] then
       for i, d in ipairs(drives) do
         if d.mount ~= "" and (path == d.mount or string.sub(path, 1, #d.mount + 1) == d.mount .. "/") then
           return { path = d.mount, key = "d" .. i }, "d", id
         end
       end
-    elseif (id == "places" or id == "bookmarks") and not hidden[id] then
+    elseif (id == "places" or id == "bookmarks") and driveMode ~= 2 and not hidden[id] then
       for _, p in ipairs(places) do
         if (id == "places") == (p.std == true) and p.path and p.ok and (path == p.path or string.sub(path, 1, #p.path + 1) == p.path .. "/") then
           return p, p.std and "s" or "b", id
@@ -651,6 +658,7 @@ jump = function()
   autoOpened = {}
   local q = noctalia.string.trim(treeQuery)
   if q == "" then
+    hitPath = nil
     render()
     return
   end
@@ -672,6 +680,7 @@ jump = function()
       end
     end
     hitCount = #hits
+    hitPath = nil
     if hitCount > 0 then
       local path = hits[((treeIdx - 1) % hitCount) + 1]
       local p, tag, cardId = rowFor(path)
@@ -688,6 +697,7 @@ jump = function()
         local nextPart = string.match(string.sub(path, #at + 2), "^([^/]+)")
         at = at .. "/" .. nextPart
       end
+      hitPath = path
       hitKey = (tag == "d" and path == p.path) and p.key or ("r" .. tag .. path)
     end
     render()
@@ -712,14 +722,33 @@ local function treeSearchRow()
         jump()
       end,
     }),
-    ui.button({ key = "tdrv", glyph = "database", text = pinned and "Drives" or nil, variant = withDrives and "primary" or "ghost", controlSize = "sm", tooltip = withDrives and "Searching your folders and the mounted drives (click: folders only)" or "Searching your folders only (click: add the mounted drives)", onClick = function()
-      withDrives = not withDrives
+    ui.button({ key = "tdrv", glyph = DRIVE_MODES[driveMode + 1].glyph, text = pinned and DRIVE_MODES[driveMode + 1].text or nil, variant = driveMode == 0 and "ghost" or "primary", controlSize = "sm", tooltip = DRIVE_MODES[driveMode + 1].tooltip, onClick = function()
+      driveMode = (driveMode + 1) % 3
       indexReady = false
       jump()
     end }),
     ui.row({ key = "tcount", tooltip = (treeQuery ~= "" and hitCount > 0) and ("Folder " .. (((treeIdx - 1) % hitCount) + 1) .. " of " .. hitCount .. " found. Enter: next one.") or (indexing and "Reading the folders..." or "Number of folders found. Enter: next one."), align = "center" }, {
       ui.label({ text = (treeQuery ~= "" and indexing) and "..." or (treeQuery ~= "" and hitCount > 0) and (((treeIdx - 1) % hitCount) + 1 .. (pinned and " of " or "/") .. hitCount) or (treeQuery ~= "" and "0" or ""), fontSize = 11, color = "on_surface_variant" }),
     }),
+  })
+end
+
+-- Where the marked folder lives, under the tree search.
+local function pathLine()
+  if not hitPath then
+    return nil
+  end
+  local home = noctalia.getenv("HOME")
+  local shown = hitPath
+  if home and string.sub(shown, 1, #home + 1) == home .. "/" then
+    shown = "~" .. string.sub(shown, #home + 1)
+  end
+  return ui.row({ key = "hitpath", gap = 6, align = "center" }, {
+    ui.glyph({ name = "folder", size = 14, color = "hover" }),
+    ui.label({ text = shown, tooltip = hitPath, fontSize = 11, color = "hover", maxLines = 1, flexGrow = 1 }),
+    ui.button({ key = "hitcopy", glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy the path", onClick = function()
+      copyPath({ path = hitPath })
+    end }),
   })
 end
 
@@ -780,6 +809,7 @@ render = function()
       }),
       searchRow(),
       treeSearchRow(),
+      pathLine(),
     }
   else
     head = {
@@ -790,6 +820,7 @@ render = function()
       }),
       searchRow(),
       treeSearchRow(),
+      pathLine(),
     }
     table.insert(head, 2, ui.row({ gap = 6, align = "center" }, {
       editButton,
@@ -827,7 +858,7 @@ end
 local function open()
   newIn = nil
   editing = false
-  treeQuery, treeIdx, hitKey, indexReady, forceOpen, autoOpened = "", 1, nil, false, {}, {}
+  treeQuery, treeIdx, hitKey, hitPath, indexReady, forceOpen, autoOpened = "", 1, nil, nil, false, {}, {}
   expanded = {}
   listing = {}
   loadLayout()
