@@ -12,6 +12,22 @@ What the Noctalia CE session adds on top of Mabox, and how to use it. Hotkeys: [
 
 The repo copy under `configs/` is only the default. Edit the live files under `~/.config/`, or copy the repo version over by hand.
 
+## Configs panel
+
+`C-W-c` opens the Configs panel: quick access to the settings and config files of the session. Each card opens and closes with its header.
+
+<p align="center"><a href="img/configs.png"><img src="img/thumb/configs.png" alt="Configs panel"></a></p>
+
+- *labwc* and *Noctalia* at the top reload that config.
+- *Pinned windows*: pick Left or Right for the panels you pin (Colors, Notes, Status, Configs, Places, Crypto).
+- *Plugins*: the Mabox plugins; *Reload all* reloads them.
+- *Widgets*: show or hide the desktop widgets.
+- *Logo*: switch the Mabox logo.
+- *Power*, *Lockscreen*, *Text size*: screen off and lock times, lock screen look, size of text and widgets (see below).
+- *Bar buttons*: edit the buttons in the bar (see [Change a bar button](#change-a-bar-button)).
+- *labwc*, *Noctalia*, *Terminals*, *Tools*: the config files; the folder icon opens the folder, the pencil opens the file in your editor.
+- *Custom*: add your own files to the list.
+
 ## System info
 
 `W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* (this and the previous boot, kernel, failed services, crashes), *Report*, *Services* and *Fixes*.
@@ -57,8 +73,6 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 
 1. Open the Configs panel (or pinned window) and expand *Bar buttons*.
 2. Pick a button, edit *Tooltip* or the *Left*, *Middle* and *Right click* fields, press *Save*.
-
-<p align="center"><a href="img/configs.png"><img src="img/thumb/configs.png" alt="Configs panel"></a></p>
 
 Pinned window: press `alt+s` first, then click a field.
 
