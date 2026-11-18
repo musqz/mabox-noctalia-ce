@@ -9,6 +9,8 @@ local function card(key)
 end
 
 local palettes = {}
+local mineNames = {} -- palettes saved by the user, shown in a fold of their own
+local mineOpen = false
 local palette = "nord"
 local group = "all"
 local mode = "clut"
@@ -18,7 +20,11 @@ local out = ""
 local gen = 0
 local running = false
 local swatches = {}
-local off = {}
+local work, dis = {}, {} -- the colors of the palette group as a working copy, and the indexes switched off
+local sel, hexDraft = nil, nil
+local edited = false
+local saveName = ""
+local note = nil
 local colGen = 0
 local previews = {}
 local pvGen = 0
@@ -30,7 +36,7 @@ local done = nil
 local outDir = nil
 local prog = nil
 local runStart = nil
-local render
+local render, loadPreviews
 
 local function pickFile(name)
   return noctalia.pluginDataDir() .. "/" .. name
@@ -38,23 +44,55 @@ end
 
 -- The panel script restarts on every open; the settings live in a file so a running job keeps its path and look.
 local function offList()
+  -- A changed copy is written with only the colors that are on.
+  if edited then
+    return ""
+  end
   local t = {}
-  for c in pairs(off) do
-    table.insert(t, c)
+  for i, c in ipairs(work) do
+    if dis[i] then
+      table.insert(t, c)
+    end
+  end
+  return table.concat(t, ",")
+end
+
+local function disIdx()
+  local t = {}
+  for i in pairs(dis) do
+    table.insert(t, tostring(i))
   end
   table.sort(t)
   return table.concat(t, ",")
 end
 
-local function offCount()
-  local n = 0
-  for _ in pairs(off) do n = n + 1 end
-  return n
+-- mb-recolor finds a changed copy as a palette of its own; the dot keeps it out of the palette lists.
+local function writeWork()
+  if not edited then
+    return
+  end
+  local dir = noctalia.getenv("HOME") .. "/.local/share/mabox-noctalia-ce/palettes"
+  noctalia.mkdirAll(dir)
+  local on = {}
+  for i, c in ipairs(work) do
+    if not dis[i] then
+      table.insert(on, c)
+    end
+  end
+  noctalia.writeFile(dir .. "/.work.pal", "all: " .. table.concat(on, " ") .. "\n")
+end
+
+local function effPalette()
+  return edited and ".work" or palette
+end
+
+local function effGroup()
+  return edited and "all" or group
 end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\noff=%s\n", src, out, palette, group, mode, blur, offList()))
+  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\n", src, out, palette, group, mode, blur, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0))
 end
 
 local function loadState()
@@ -66,15 +104,28 @@ local function loadState()
     elseif k == "group" then group = v
     elseif k == "mode" then mode = v
     elseif k == "blur" then blur = tonumber(v) or 0
-    elseif k == "off" then
-      off = {}
-      for c in string.gmatch(v, "#%x+") do off[c] = true end
+    elseif k == "mineopen" then mineOpen = v == "1"
+    elseif k == "work" then
+      work = {}
+      for c in string.gmatch(v, "#%x+") do table.insert(work, c) end
+    elseif k == "dis" then
+      dis = {}
+      for n in string.gmatch(v, "%d+") do dis[tonumber(n)] = true end
+    elseif k == "edited" then edited = v == "1"
+    elseif k == "sel" then sel = tonumber(v)
     end
   end
 end
 
 -- "name: group group ..." per line.
 local function loadPalettes()
+  noctalia.runAsync({ "sh", "-c", 'for f in "$HOME"/.local/share/mabox-noctalia-ce/palettes/*.pal; do [ -f "$f" ] && basename "$f" .pal; done' }, function(r)
+    mineNames = {}
+    for l in string.gmatch(r.stdout or "", "[^\n]+") do
+      mineNames[l] = true
+    end
+    render()
+  end)
   noctalia.runAsync({ "mb-recolor", "--list" }, function(r)
     palettes = {}
     for line in string.gmatch((r.stdout or "") .. "\n", "([^\n]*)\n") do
@@ -113,7 +164,7 @@ end
 local function destDir()
   local dest = expand(out)
   if dest == "" then
-    dest = noctalia.getenv("HOME") .. "/Pictures/" .. palette .. "/" .. group
+    dest = noctalia.getenv("HOME") .. "/Pictures/" .. (edited and "custom/all" or (palette .. "/" .. group))
   end
   return dest
 end
@@ -129,7 +180,18 @@ local function loadColors()
     for c in string.gmatch(r.stdout or "", "#%x+") do
       table.insert(swatches, c)
     end
+    -- a fresh copy of the palette unless the copy was changed by hand
+    if not edited or #work == 0 then
+      work = {}
+      for _, c in ipairs(swatches) do
+        table.insert(work, c)
+      end
+      dis = {}
+      sel = nil
+    end
+    saveState()
     render()
+    loadPreviews()
   end)
 end
 
@@ -149,7 +211,7 @@ wait
 echo "src=$src"; echo "dir=$dir"
 ls "$1"/*/*]]
 
-local function loadPreviews(random)
+function loadPreviews(random)
   local path = expand(src)
   if path == "" then
     previews = {}
@@ -160,8 +222,9 @@ local function loadPreviews(random)
   end
   pvGen = pvGen + 1
   local mine = pvGen
+  writeWork()
   local base = noctalia.pluginDataDir() .. "/pv"
-  noctalia.runAsync({ "sh", "-c", PREVIEW, "sh", base .. "/" .. mine, palette, group, path, random and "1" or "0", tostring(blur), offList(), pvFile or "" }, function(r)
+  noctalia.runAsync({ "sh", "-c", PREVIEW, "sh", base .. "/" .. mine, effPalette(), effGroup(), path, random and "1" or "0", tostring(blur), offList(), pvFile or "" }, function(r)
     if mine ~= pvGen then
       return
     end
@@ -200,7 +263,7 @@ end
 
 local function choosePalette(name)
   palette = name
-  off = {}
+  edited = false
   local ok = false
   for _, g in ipairs(groupsOf(name)) do
     ok = ok or g == group
@@ -212,7 +275,6 @@ local function choosePalette(name)
   done = nil
   render()
   loadColors()
-  loadPreviews()
 end
 
 -- Runs detached (setsid) so the dialog survives the panel closing; the pick goes to a file and the panel reopens.
@@ -305,6 +367,159 @@ local function eta(sec)
   return math.floor(sec / 60) .. " min " .. sec % 60 .. " s"
 end
 
+local MAXC = 64
+
+local function changed()
+  edited = true
+  note = nil
+  done = nil
+  saveState()
+  render()
+  loadPreviews()
+end
+
+local function addColor(c)
+  if #work >= MAXC then
+    note = "At most " .. MAXC .. " colors"
+    render()
+    return
+  end
+  table.insert(work, string.upper(c))
+  sel = #work
+  changed()
+end
+
+local function setColorAt(i, c)
+  work[i] = string.upper(c)
+  hexDraft = nil
+  changed()
+end
+
+local function removeColor(i)
+  local on = 0
+  for k = 1, #work do
+    if k ~= i and not dis[k] then on = on + 1 end
+  end
+  if on < 1 then
+    note = "Keep at least one color on"
+    render()
+    return
+  end
+  table.remove(work, i)
+  local d = {}
+  for k in pairs(dis) do
+    if k < i then
+      d[k] = true
+    elseif k > i then
+      d[k - 1] = true
+    end
+  end
+  dis = d
+  sel = nil
+  changed()
+end
+
+-- At least one color stays switched on.
+local function toggleColor(i)
+  if dis[i] then
+    dis[i] = nil
+  else
+    local on = 0
+    for k = 1, #work do
+      if not dis[k] then on = on + 1 end
+    end
+    if on <= 1 then
+      note = "Keep at least one color on"
+      render()
+      return
+    end
+    dis[i] = true
+  end
+  -- Switching a color off leaves the palette itself in use (-x); only a changed color makes a copy.
+  note = nil
+  done = nil
+  saveState()
+  render()
+  loadPreviews()
+end
+
+-- Back to the colors of the chosen palette.
+local function resetColors()
+  edited = false
+  note = nil
+  loadColors()
+end
+
+-- The panel closes while a picker is open (the eyedropper must see the screen, the chooser is a window of its own)
+-- and opens again with the result in a file; onOpen applies it.
+local PICK = [[noctalia msg panel-close
+sleep 0.3
+if [ "$3" = screen ]; then c=$(mb-colorpick); else c=$(yad --color --center --title="Recolor color" --init-color="$4"); fi
+[ -n "$c" ] && printf "%s" "$c" > "$1"
+noctalia msg panel-open mabox/recolor:main]]
+
+-- source: screen (eyedropper) or dialog (color chooser); mode: replace the selected color or add one.
+local function pickColor(source, mode)
+  local replace = mode == "replace" and sel ~= nil
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.writeFile(pickFile("colorpick"), "")
+  noctalia.writeFile(pickFile("colorpickmode"), replace and "replace" or "add")
+  local start = (replace and work[sel]) or "#88C0D0"
+  saveState()
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", PICK, "sh", pickFile("colorpick"), "", source, start })
+end
+
+local function applyPick()
+  local c = string.match(noctalia.readFile(pickFile("colorpick")) or "", "#%x%x%x%x%x%x")
+  if not c then
+    return
+  end
+  local mode = noctalia.string.trim(noctalia.readFile(pickFile("colorpickmode")) or "")
+  noctalia.writeFile(pickFile("colorpick"), "")
+  if mode == "replace" and sel and work[sel] then
+    setColorAt(sel, c)
+  else
+    addColor(c)
+  end
+end
+
+-- Keeps the colors that are on as a palette of your own; the packaged palettes are never overwritten.
+local function savePalette()
+  local name = string.match(noctalia.string.trim(saveName), "^[%w_-]+$")
+  if not name then
+    err = "Name the palette with letters, digits, - or _"
+    render()
+    return
+  end
+  for _, p in ipairs(palettes) do
+    if p.name == name then
+      err = "A palette called " .. name .. " exists"
+      render()
+      return
+    end
+  end
+  local colors = {}
+  for i, c in ipairs(work) do
+    if not dis[i] then
+      table.insert(colors, c)
+    end
+  end
+  local dir = noctalia.getenv("HOME") .. "/.local/share/mabox-noctalia-ce/palettes"
+  noctalia.mkdirAll(dir)
+  noctalia.writeFile(dir .. "/" .. name .. ".pal", "all: " .. table.concat(colors, " ") .. "\n")
+  err = nil
+  note = "Saved palette " .. name
+  palette = name
+  group = "all"
+  edited = false
+  saveName = ""
+  mineOpen = true
+  gen = gen + 1
+  saveState()
+  loadPalettes()
+  loadColors()
+end
+
 local function run()
   if running then
     stop()
@@ -318,14 +533,15 @@ local function run()
   end
   err = nil
   done = nil
-  local argv = { "setsid", "-f", "sh", "-c", RUN, "mb-recolor-job", mode, group }
+  local argv = { "setsid", "-f", "sh", "-c", RUN, "mb-recolor-job", mode, effGroup() }
   local dest = destDir()
   table.insert(argv, dest)
-  table.insert(argv, palette)
+  table.insert(argv, effPalette())
   table.insert(argv, path)
   table.insert(argv, tostring(blur))
   table.insert(argv, offList())
   table.insert(argv, progressDir())
+  writeWork()
   outDir = dest
   prog = nil
   runStart = os.time()
@@ -345,49 +561,90 @@ local function idle(fn)
 end
 
 local function chip(key, text, on, onClick)
-  return ui.button({ key = key, text = text, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm", enabled = not running, onClick = idle(onClick) })
+  return ui.button({ key = key .. (on and "-on" or ""), text = text, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm", enabled = not running, onClick = idle(onClick) })
 end
 
 function render()
-  local pal = {}
+  local pal, mine, mineCount = {}, {}, 0
   for _, p in ipairs(palettes) do
-    table.insert(pal, chip("p" .. p.name, p.name, p.name == palette, function() choosePalette(p.name) end))
+    local c = chip("p" .. p.name, p.name, p.name == palette, function() choosePalette(p.name) end)
+    if mineNames[p.name] then
+      mineCount += 1
+      -- A folded list still shows the palette in use.
+      if mineOpen or p.name == palette then
+        table.insert(mine, c)
+      end
+    else
+      table.insert(pal, c)
+    end
   end
   local grp = {}
   for _, g in ipairs(groupsOf(palette)) do
-    table.insert(grp, chip("g" .. g, g, g == group, function() group = g; off = {}; saveState(); done = nil; render(); loadColors(); loadPreviews() end))
+    table.insert(grp, chip("g" .. g, g, g == group, function() group = g; edited = false; saveState(); done = nil; render(); loadColors() end))
   end
-  -- Five chips per row: the wide panel fits the whole palette list in one line.
-  local function chunk(items, prefix)
+  -- Chips per row: 5 by default, 4 for the palettes.
+  local function chunk(items, prefix, per)
+    per = per or 5
     local rows = {}
-    for i = 1, #items, 5 do
+    for i = 1, #items, per do
       local cells = {}
-      for k = i, math.min(i + 4, #items) do
+      for k = i, math.min(i + per - 1, #items) do
         table.insert(cells, items[k])
       end
       table.insert(rows, ui.row({ key = prefix .. i, gap = 6 }, cells))
     end
     return rows
   end
-  local palRows = chunk(pal, "pr")
+  local palRows = chunk(pal, "pr", 4)
+  local mineRows = chunk(mine, "mr", 4)
   local grpRows = chunk(grp, "gr")
 
+  -- The working copy: a click selects a color, a dimmed one is switched off.
   local swatchBoxes = {}
-  for i, c in ipairs(swatches) do
-    local skipped = off[c]
-    table.insert(swatchBoxes, ui.box({ key = "sw" .. i, fill = c, flexGrow = 1, height = 26, radius = 3, opacity = skipped and 0.2 or 1,
-      tooltip = c .. (skipped and " (off)" or ""),
-      onClick = idle(function()
-        if skipped then
-          off[c] = nil
-        elseif #swatches - offCount() > 1 then
-          off[c] = true
-        end
-        saveState(); done = nil; render(); loadPreviews()
-      end) }))
+  for i, c in ipairs(work) do
+    local isOff = dis[i]
+    local on = sel == i
+    table.insert(swatchBoxes, ui.box({ key = "sw" .. i .. c .. (isOff and "x" or "") .. (on and "s" or ""), fill = c, width = 34, height = 34, radius = 6, opacity = isOff and 0.2 or 1,
+      border = on and "primary" or "on_surface_variant", borderWidth = on and 3 or 1,
+      tooltip = c .. (isOff and "  (off)" or "") .. "  - click to change it",
+      onClick = idle(function() if sel == i then sel = nil else sel = i end; hexDraft = nil; saveState(); render() end) }))
   end
   if #swatchBoxes == 0 then
-    table.insert(swatchBoxes, ui.box({ key = "sw0", height = 26 }))
+    table.insert(swatchBoxes, ui.box({ key = "sw0", height = 34 }))
+  end
+  local swatchRows = {}
+  for i = 1, #swatchBoxes, 8 do
+    table.insert(swatchRows, ui.row({ key = "swr" .. i, gap = 6 }, { table.unpack(swatchBoxes, i, math.min(i + 7, #swatchBoxes)) }))
+  end
+
+  local editor
+  if sel and work[sel] then
+    local i = sel
+    local c = work[i]
+    editor = ui.column({ key = "editor", gap = 6 }, {
+      ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = "Color " .. i, color = "on_surface_variant" }),
+        ui.input({ key = "hex" .. i .. c, value = c, width = 110, controlSize = "sm", frameVisible = true, tooltip = "Type #RRGGBB and press Enter",
+          onChange = idle(function(t) hexDraft = t end),
+          onSubmit = idle(function()
+            local h = string.match(noctalia.string.trim(hexDraft or c), "^#?(%x%x%x%x%x%x)$")
+            if h then
+              setColorAt(i, "#" .. h)
+            else
+              err = "Use a color like #88C0D0"
+              render()
+            end
+          end) }),
+      }),
+      ui.row({ gap = 6 }, {
+        ui.button({ key = "editscreen", glyph = "color-picker", text = "From screen", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Click a color anywhere on the screen", onClick = idle(function() pickColor("screen", "replace") end) }),
+        ui.button({ key = "editchoose", glyph = "palette", text = "Choose", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Open the color chooser", onClick = idle(function() pickColor("dialog", "replace") end) }),
+        ui.button({ key = "editoff", text = dis[i] and "Switch on" or "Switch off", variant = "outline", controlSize = "sm", enabled = not running, onClick = idle(function() toggleColor(i) end) }),
+        ui.button({ key = "editrm", glyph = "trash", text = "Remove", variant = "ghost", controlSize = "sm", enabled = not running, onClick = idle(function() removeColor(i) end) }),
+      }),
+    })
+  else
+    editor = ui.label({ text = "Click a color to change it or switch it off.", color = "on_surface_variant", fontSize = 11 })
   end
 
   local lookCols = {}
@@ -409,7 +666,7 @@ function render()
   })
   local outCard = ui.column(card("out"), {
     ui.label({ text = "Output folder", fontWeight = "bold" }),
-    ui.input({ key = "out" .. gen, value = out, placeholder = "~/Pictures/" .. palette .. "/" .. group, frameVisible = true, onChange = idle(function(t) out = t; saveState() end), onSubmit = idle(run) }),
+    ui.input({ key = "out" .. gen, value = out, placeholder = "~/Pictures/" .. (edited and "custom/all" or (palette .. "/" .. group)), frameVisible = true, onChange = idle(function(t) out = t; saveState() end), onSubmit = idle(run) }),
     ui.row({ gap = 6 }, {
       ui.button({ key = "outdir", glyph = "folder-open", text = "Folder", variant = "outline", controlSize = "sm", enabled = not running, onClick = idle(function() browse("out") end) }),
       ui.button({ key = "outclear", glyph = "x", text = "Default", variant = "ghost", controlSize = "sm", enabled = not running, onClick = idle(function() out = ""; saveState(); render() end) }),
@@ -418,9 +675,26 @@ function render()
   local palCard = ui.column(card("pal"), {
     ui.label({ text = "Palette", fontWeight = "bold" }),
     ui.column({ gap = 6 }, palRows),
-    ui.label({ text = "Colors", fontWeight = "bold" }),
+    mineCount > 0 and ui.button({ key = "minehead", glyph = mineOpen and "chevron-down" or "chevron-right", text = "My palettes (" .. mineCount .. ")", variant = "outline", controlSize = "sm", contentAlign = "start",
+      tooltip = "Palettes you saved in the Wallgen panel", onClick = function() mineOpen = not mineOpen; saveState(); render() end }) or ui.box({ height = 0 }),
+    #mineRows > 0 and ui.column({ key = "mine", gap = 6 }, mineRows) or ui.box({ height = 0 }),
+    ui.row({ gap = 8, align = "center" }, {
+      ui.label({ text = edited and "Colors (changed copy)" or "Colors", fontWeight = "bold", flexGrow = 1 }),
+      ui.button({ key = "reset", glyph = "refresh", text = "Reset", variant = "ghost", controlSize = "sm", enabled = not running, tooltip = "Back to the colors of the palette", onClick = idle(resetColors) }),
+    }),
     ui.column({ gap = 6 }, grpRows),
-    ui.row({ key = "sw", gap = 2 }, swatchBoxes),
+    ui.column({ gap = 6 }, swatchRows),
+    editor,
+    ui.row({ gap = 6 }, {
+      ui.button({ key = "addchoose", glyph = "plus", text = "Add", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Add a color from the color chooser", onClick = idle(function() pickColor("dialog", "add") end) }),
+      ui.button({ key = "addscreen", glyph = "color-picker", text = "Add from screen", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Click a color anywhere on the screen to add it", onClick = idle(function() pickColor("screen", "add") end) }),
+    }),
+    ui.label({ text = "Changes stay in this copy; the palette itself is not touched.", color = "on_surface_variant", fontSize = 11 }),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.input({ key = "savename" .. gen, value = saveName, placeholder = "name of a new palette", controlSize = "sm", frameVisible = true, flexGrow = 1, onChange = function(t) saveName = t end, onSubmit = idle(savePalette) }),
+      ui.button({ key = "savepal", glyph = "device-floppy", text = "Save as", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Keep the colors that are on as a palette of your own", onClick = idle(savePalette) }),
+    }),
+    note and ui.label({ text = note, color = "primary", fontSize = 11 }) or ui.box({ height = 0 }),
   })
   local lookCard = ui.column(card("mode"), {
     ui.row({ gap = 8, align = "center" }, {
@@ -494,11 +768,13 @@ function onOpen()
       noctalia.writeFile(pickFile(name), "")
     end
   end
+  if not running then
+    applyPick()
+  end
   saveState()
   render()
   loadPalettes()
   loadColors()
-  loadPreviews()
   check()
   panel.setWantsSecondTicks(true)
 end
