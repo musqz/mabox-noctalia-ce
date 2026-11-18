@@ -12,6 +12,7 @@
 - Find a station played from Find stations with the now-playing title of the Music panel: the click shows its row in the results, or says it is not in your lists.
 - Fix the Equalizer staying on a stream after it is switched off: `mb-eq off` moves streams left on the Equalizer back to the output.
 - Add a folder set with the pcmanfm action *Set wallpaper dir* to the Wallpaper folders panel list.
+- Fix the Recolor panel stopping during a run over a large folder: the progress count no longer goes over the panel time budget.
 
 ## 0.6.0
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
