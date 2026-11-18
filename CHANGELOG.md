@@ -9,6 +9,8 @@
 - Start Calamares from the launcher with `sudo -E env DISPLAY= calamares`, so it opens in the Wayland session (migration rewrites the `DISPLAY=:0` launcher).
 - Add a Text size setting (50% to 200%) to the Info, Sysinfo and Todo today desktop widgets; the global Text size no longer shrinks them.
 - Add a Corner radius setting (0 to 32) to the Info, Sysinfo and Todo today widgets, and in Configs → Widgets an Edit layout button and a Corner radius section (all widgets together or one kind at a time).
+- Add a folder search to the Places panel: type a name and it opens the section and folders above the match and jumps to it, Enter for the next match; a drive button includes the mounted drives, and mounted drives open their folders in place.
+- Add a button to every pinned window that closes it and opens the same panel from the bar; the Notes panel has Reload, Pin and Close as icons at the top right.
 - Add an Exclude list view to the Snapshot panel: add and remove patterns of `/etc/mabox-snapshot/excludes.list`, keep a path inside an excluded folder, and pick a folder with a chooser; changes ask for your password in the Noctalia prompt.
 - Publish the manual (`docs/`) as a website with mdBook on GitHub Pages.
 
