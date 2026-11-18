@@ -11,6 +11,15 @@ conf=${XDG_CONFIG_HOME:-$HOME/.config}/pipewire/pipewire.conf.d/eq.conf
 prev=${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/eq-prev
 nodes=(preamp eq1 eq2 eq3 eq4 eq5 eq6 eq7 eq8 eq9 eq10)
 
+# Moves the streams on sink index $2 to sink $1: a stream that was moved by hand stays where it is when the default changes.
+# Never used for "all streams": the equalizer's own output stream would be moved onto its input.
+move_streams() {
+    local id
+    for id in $(pactl list short sink-inputs | awk -v s="$2" '$2 == s { print $1 }'); do
+        pactl move-sink-input "$id" "$1" 2>/dev/null || true
+    done
+}
+
 node_id() { pactl list sinks short | awk -v s="$sink" '$2 == s { print $1; exit }'; }
 
 # Preamp trim minus the largest boost, counting about a third of each neighbouring band (they overlap at Q 1.4),
@@ -47,15 +56,17 @@ on)
     pactl set-default-sink "$sink"
     ;;
 off)
-    [[ $(pactl get-default-sink) == "$sink" ]] || exit 0
-    old=$(cat "$prev" 2>/dev/null || true)
-    if [[ -n $old ]] && pactl list sinks short | awk '{ print $2 }' | grep -qxF "$old"; then
-        pactl set-default-sink "$old"
-    else
-        # No usable previous sink: take the first real one.
-        old=$(pactl list sinks short | awk -v s="$sink" '$2 != s { print $2; exit }')
+    if [[ $(pactl get-default-sink) == "$sink" ]]; then
+        old=$(cat "$prev" 2>/dev/null || true)
+        if [[ -z $old ]] || ! pactl list sinks short | awk '{ print $2 }' | grep -qxF "$old"; then
+            # No usable previous sink: take the first real one.
+            old=$(pactl list sinks short | awk -v s="$sink" '$2 != s { print $2; exit }')
+        fi
         if [[ -n $old ]]; then pactl set-default-sink "$old"; fi
     fi
+    # Streams left on the equalizer sink would still be filtered (and quiet) after the switch is off.
+    id=$(node_id)
+    if [[ -n $id ]]; then move_streams "$(pactl get-default-sink)" "$id"; fi
     ;;
 status)
     [[ -n $(node_id) ]] && echo loaded
