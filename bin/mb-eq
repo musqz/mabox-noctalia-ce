@@ -42,6 +42,8 @@ on)
         mkdir -p "${prev%/*}"
         printf '%s\n' "$cur" > "$prev"
     fi
+    # The equalizer sink has a volume of its own on top of the hardware sink; at 100% the level stays what the hardware sink sets.
+    pactl set-sink-volume "$sink" 100%
     pactl set-default-sink "$sink"
     ;;
 off)
