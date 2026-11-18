@@ -225,7 +225,19 @@ local function loadFilePresets()
     for line in string.gmatch(result.stdout or "", "[^\n]+") do
       local p = noctalia.json.decode(line)
       if type(p) == "table" then
-        table.insert(filePresets, p)
+        -- The same name in the shipped and the user folder is one preset; the user's file wins.
+        local at = nil
+        for i, q in ipairs(filePresets) do
+          if q.name == p.name then
+            at = i
+            break
+          end
+        end
+        if at then
+          filePresets[at] = p
+        else
+          table.insert(filePresets, p)
+        end
       end
     end
     render()
