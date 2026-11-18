@@ -30,10 +30,15 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 
 The bar is noctalia's. Extra buttons:
 
+<p align="center"><img src="img/bar.png" alt="Right side of the bar"></p>
+
 | Button | Left click | Right click |
 |---|---|---|
-| Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), mirrors (pacman-mirrors fasttrack, continent, choose; reflector on plain Arch), check now; `?` button explains the checker, `i` button opens the System panel | check now |
-| Screen recording | start / stop | |
+| <img src="img/icon-updates.png" width="34" alt=""> Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), mirrors (pacman-mirrors fasttrack, continent, choose; reflector on plain Arch), check now; `?` button explains the checker, `i` button opens the System panel | check now |
+| <img src="img/icon-screenrec.png" width="34" alt=""> Screenshot and recording | area screenshot | Capture panel |
+| <img src="img/icon-calendar.png" width="34" alt=""> Calendar | opens rencal | |
+
+A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed). While a recording runs, a stop button appears.
 
 Click the updates button again to close the panel. Flatpak, Snap, npm and pipx entries show only when they have updates.
 
