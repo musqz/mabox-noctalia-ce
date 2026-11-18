@@ -37,6 +37,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 </tr>
 <tr>
 <td><a href="img/places.png"><img src="img/thumb/places.png" alt="Places panel"></a><br>Places</td>
+<td><a href="img/colors-pinned.png"><img src="img/thumb/colors-pinned.png" alt="Colors panel as a pinned window"></a><br>Colors, pinned</td>
 </tr>
 </table>
 
