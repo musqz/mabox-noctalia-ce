@@ -40,3 +40,12 @@ entry = "widget.luau"
   default = 100
   min = 50
   max = 200
+
+  [[desktop_widget.setting]]
+  key = "radius"
+  type = "int"
+  label_key = "settings.radius.label"
+  description_key = "settings.radius.description"
+  default = 8
+  min = 0
+  max = 32

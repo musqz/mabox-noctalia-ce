@@ -3,6 +3,10 @@
     "size": {
       "label": "Text size",
       "description": "Text size in percent. The global Text size of the shell does not change this widget."
+    },
+    "radius": {
+      "label": "Corner radius",
+      "description": "Corner radius of the widget card in pixels. The background rectangle of the editor has its own radius."
     }
   }
 }

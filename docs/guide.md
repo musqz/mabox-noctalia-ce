@@ -157,6 +157,8 @@ Open the Configs panel and expand *Power*: set the minutes until the screens tur
 
 The *Text size* card in the Configs panel sets the size of text and widgets for the whole shell: `<` and `>` step from 80% to 150%.
 
+In *Configs* → *Widgets*, *Edit layout* opens the desktop widget editor. *Corner radius* (click to open) sets the corner radius of the Mabox desktop widgets: *All* together, or Info, Sysinfo and Todo today one by one with `<` and `>`. Each of those widgets also has *Text size* and *Corner radius* in its own settings. The background rectangle in the widget editor has its own radius.
+
 ## Monitors
 
 - `kanshi` sets positions per profile: `~/.config/kanshi/config`.
