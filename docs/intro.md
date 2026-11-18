@@ -1,6 +1,12 @@
 # Mabox Noctalia CE
 
-Mabox Noctalia CE is a labwc session for Mabox Linux with the Noctalia shell: a bar, a launcher and panels for the Mabox tools.
+Mabox Noctalia CE is musqz' interpretation of the Mabox openbox desktop, translated to a Noctalia desktop on labwc (Wayland). Pick *Noctalia CE* at the login screen of Mabox Linux.
+
+- The Mabox tools are used where they fit, for example `mabox-snapshot` for the ISO.
+- New tools are added as Noctalia panels: Music, Notes, Todo, Places, Keys, System, Autostart, Recolor, Wallgen and more.
+- The panels, bar and launcher come from the Noctalia shell; the plugins and scripts are in this repo.
+
+It is a community edition and work in progress. Take what you like, or install it as is.
 
 ![The desktop with the Colors, Notes and Configs panels open](desktop.png)
 
