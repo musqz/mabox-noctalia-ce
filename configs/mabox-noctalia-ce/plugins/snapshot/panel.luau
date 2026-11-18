@@ -1,6 +1,7 @@
 --!nonstrict
 -- Snapshot: front end for mabox-snapshot. Explain runs in the panel; the build runs in a terminal (sudo, passphrase).
 local logo = require("./lib/celogo.luau")
+local lapse = require("./lib/lapse.luau")
 
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 6, border = "primary", borderWidth = 1 }
@@ -389,6 +390,288 @@ local function settingsView()
   })
 end
 
+-- Exclude list: the file the build reads (--exclude-list from the config; yours when it lives in $HOME, else /etc).
+-- Rules in /etc/mabox-snapshot/overrides.list need root, so they go through pkexec (Noctalia's polkit prompt).
+local RULES_FILE = "/etc/mabox-snapshot/overrides.list"
+local excl = false
+local exList, rules = {}, {}
+local exFilter, exDraft, exGen = "", "", 0
+local ruleAction, ruleDraft = "exclude", ""
+local exNote, exBusy = nil, false
+local exConfirm = {}
+local exBacked = false
+
+local function exPath()
+  return cfg.exclude_list or "/etc/mabox-snapshot/excludes.list"
+end
+
+local function exMine()
+  local home = noctalia.getenv("HOME")
+  return home ~= nil and home ~= "" and string.sub(exPath(), 1, #home + 1) == home .. "/"
+end
+
+local function parseLines(text)
+  local out = {}
+  for line in string.gmatch(text or "", "[^\n]+") do
+    line = string.gsub(string.gsub(line, "^%s+", ""), "%s+$", "")
+    if line ~= "" and string.sub(line, 1, 1) ~= "#" then
+      table.insert(out, line)
+    end
+  end
+  return out
+end
+
+-- Read through cat: /etc is outside the plugin's own folders.
+local function loadExcludes()
+  noctalia.runAsync({ "sh", "-c", 'cat "$1" 2>/dev/null; printf "\\n@@@\\n"; cat "$2" 2>/dev/null', "sh", exPath(), RULES_FILE }, function(result)
+    local text = result.stdout or ""
+    local at = string.find(text, "\n@@@\n", 1, true)
+    local listText = at and string.sub(text, 1, at - 1) or text
+    local rulesText = at and string.sub(text, at + 5) or ""
+    exList = parseLines(listText)
+    rules = {}
+    for _, line in ipairs(parseLines(rulesText)) do
+      local action, pattern = string.match(line, "^(%a+)%s+(.+)$")
+      if action == "exclude" or action == "include" then
+        table.insert(rules, { action = action, pattern = pattern })
+      end
+    end
+    render()
+  end)
+end
+
+-- Same checks as the tool: relative to /, no ~, ./ or ../.
+local function cleanPattern(text)
+  local p = string.gsub(string.gsub(text or "", "^%s+", ""), "%s+$", "")
+  if string.find(p, "[\n\r]") then
+    return nil, "One line only."
+  end
+  if string.sub(p, 1, 1) == "~" then
+    return nil, "No ~. Write the path from the root, for example home/NAME/Downloads."
+  end
+  if string.sub(p, 1, 2) == "./" or string.sub(p, 1, 3) == "../" then
+    return nil, "No ./ or ../. Write the path from the root."
+  end
+  p = string.gsub(p, "^/+", "")
+  if p == "" then
+    return nil, "Enter a path."
+  end
+  return p
+end
+
+local function pkexec(args, done, onOk)
+  if exBusy then
+    exNote = "Waiting for the password prompt..."
+    render()
+    return
+  end
+  exBusy = true
+  exNote = "Waiting for the password prompt..."
+  render()
+  noctalia.runAsync({ "sh", "-c", 'pkexec /usr/bin/mabox-snapshot "$@" 2>&1', "sh", table.unpack(args) }, function(result)
+    exBusy = false
+    loadExcludes()
+    if result.exitCode == nil or result.exitCode == 0 then
+      exNote = done
+      if onOk then
+        onOk()
+      end
+    elseif result.exitCode == 126 or result.exitCode == 127 then
+      exNote = "No change: the password prompt was closed or refused."
+    else
+      local msg = string.gsub(string.gsub(result.stdout or "", "^%s+", ""), "%s+$", "")
+      exNote = msg ~= "" and msg or "The change failed."
+    end
+    render()
+  end)
+end
+
+local function backupOnce(text)
+  if not exBacked then
+    exBacked = true
+    noctalia.writeFile(exPath() .. ".bak", text)
+  end
+end
+
+local function exAdd()
+  local p, why = cleanPattern(exDraft)
+  if not p then
+    exNote = why
+    render()
+    return
+  end
+  for _, x in ipairs(exList) do
+    if x == p then
+      exNote = "Already in the list."
+      render()
+      return
+    end
+  end
+  if exMine() then
+    local text = noctalia.readFile(exPath())
+    if text == nil then
+      exNote = "Could not read the list. Nothing changed."
+      render()
+      return
+    end
+    exDraft = ""
+    exGen = exGen + 1
+    backupOnce(text)
+    if text ~= "" and string.sub(text, -1) ~= "\n" then
+      text = text .. "\n"
+    end
+    noctalia.writeFile(exPath(), text .. p .. "\n")
+    loadExcludes()
+    exNote = "Added. Used by the next build."
+    render()
+  else
+    pkexec({ "excludes", "add", p }, "Added. Used by the next build.", function()
+      exDraft = ""
+      exGen = exGen + 1
+    end)
+  end
+end
+
+local function exRemove(p)
+  lapse.disarm(exConfirm, p)
+  if exMine() then
+    local text = noctalia.readFile(exPath())
+    if text == nil then
+      exNote = "Could not read the list. Nothing changed."
+      render()
+      return
+    end
+    backupOnce(text)
+    local keep = {}
+    for line in string.gmatch(text, "([^\n]*)\n?") do
+      if string.gsub(string.gsub(line, "^%s+", ""), "%s+$", "") ~= p then
+        table.insert(keep, line)
+      end
+    end
+    while keep[#keep] == "" do
+      table.remove(keep)
+    end
+    noctalia.writeFile(exPath(), #keep > 0 and (table.concat(keep, "\n") .. "\n") or "")
+    loadExcludes()
+    exNote = "Removed."
+    render()
+  else
+    pkexec({ "excludes", "remove", p }, "Removed.")
+  end
+end
+
+local function ruleAdd()
+  local p, why = cleanPattern(ruleDraft)
+  if not p then
+    exNote = why
+    render()
+    return
+  end
+  pkexec({ "excludes", "rules", "add", ruleAction, p }, "Rule added. Used by the next build.", function()
+    ruleDraft = ""
+    exGen = exGen + 1
+  end)
+end
+
+local function ruleRemove(r)
+  lapse.disarm(exConfirm, "r:" .. r.action .. " " .. r.pattern)
+  pkexec({ "excludes", "rules", "remove", r.action, r.pattern }, "Rule removed.")
+end
+
+local EX_ROW, EX_GAP, EX_SHOWN = 30, 2, 9
+
+local function trashButton(key, name, doIt)
+  local sure = lapse.armed(exConfirm, key)
+  local btns = {}
+  if sure then
+    table.insert(btns, ui.button({ key = "c-" .. key, glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Cancel", onClick = function()
+      lapse.disarm(exConfirm, key)
+      render()
+    end }))
+  end
+  table.insert(btns, ui.button({ key = "d-" .. key .. (sure and "!" or ""), glyph = (not sure) and "trash" or nil, text = sure and "Click again" or nil, variant = sure and "destructive" or "ghost", controlSize = "sm", tooltip = "Remove " .. name, onClick = function()
+    if lapse.armed(exConfirm, key) then
+      doIt()
+    else
+      lapse.arm(exConfirm, key, 5, render)
+      render()
+    end
+  end }))
+  return ui.row({ gap = 4, align = "center" }, btns)
+end
+
+local function excludesView()
+  local shown = {}
+  local f = string.lower(exFilter)
+  for _, p in ipairs(exList) do
+    if f == "" or string.find(string.lower(p), f, 1, true) then
+      table.insert(shown, p)
+    end
+  end
+  local list = {}
+  for i, p in ipairs(shown) do
+    table.insert(list, ui.row({ key = "ex-" .. p, gap = 6, align = "center", height = EX_ROW }, {
+      ui.label({ text = p, fontSize = 11, flexGrow = 1, maxLines = 1 }),
+      trashButton(p, p, function() exRemove(p) end),
+    }))
+  end
+  local listBox
+  if #list == 0 then
+    listBox = ui.label({ text = #exList == 0 and "The list is empty." or "Nothing matches.", color = "on_surface_variant" })
+  elseif #list > EX_SHOWN then
+    listBox = ui.column({ key = "ex-box", height = EX_SHOWN * EX_ROW + (EX_SHOWN - 1) * EX_GAP }, { ui.scroll({ key = "ex-scroll", gap = EX_GAP, flexGrow = 1 }, list) })
+  else
+    listBox = ui.column({ gap = EX_GAP }, list)
+  end
+  local ruleRows = {}
+  for _, r in ipairs(rules) do
+    local key = "r:" .. r.action .. " " .. r.pattern
+    table.insert(ruleRows, ui.row({ key = "rl-" .. key, gap = 6, align = "center", height = EX_ROW }, {
+      ui.label({ text = r.action, fontSize = 11, width = 50, color = r.action == "include" and "primary" or "on_surface_variant" }),
+      ui.label({ text = r.pattern, fontSize = 11, flexGrow = 1, maxLines = 1 }),
+      trashButton(key, r.pattern, function() ruleRemove(r) end),
+    }))
+  end
+  if #ruleRows == 0 then
+    table.insert(ruleRows, ui.label({ text = "No rules.", color = "on_surface_variant" }))
+  end
+  return ui.column({ gap = 10 }, {
+    ui.column(card("exlist"), {
+      ui.label({ text = "Not in the ISO", fontWeight = "bold", fontSize = 14 }),
+      ui.label({ text = exPath() .. (exMine() and "" or "  (changes ask for your password)"), fontSize = 10, color = "on_surface_variant", maxLines = 2 }),
+      ui.input({ key = "ex-filter", value = exFilter, placeholder = "filter", controlSize = "sm", frameVisible = true, onChange = function(t)
+        exFilter = t
+        render()
+      end }),
+      listBox,
+      ui.row({ gap = 6, align = "center" }, {
+        ui.input({ key = "ex-new" .. exGen, value = exDraft, placeholder = "home/*/Downloads", flexGrow = 1, controlSize = "sm", frameVisible = true, onChange = function(t) exDraft = t end, onSubmit = exAdd }),
+        ui.button({ glyph = "plus", text = "Add", variant = "outline", controlSize = "sm", onClick = exAdd }),
+      }),
+    }),
+    ui.column(card("exrules"), {
+      ui.label({ text = "Keep a path inside an excluded folder", fontWeight = "bold", fontSize = 14 }),
+      ui.label({ text = "Rules run in order. Exclude a folder, then include a path inside it, for example exclude home/*/Documents and include home/*/Documents/Enpass. Changes ask for your password.", fontSize = 11, color = "on_surface_variant" }),
+      ui.column({ gap = EX_GAP }, ruleRows),
+      ui.row({ gap = 6, align = "center" }, {
+        ui.button({ key = "ra-ex", text = (ruleAction == "exclude" and "✓ " or "") .. "Exclude", variant = ruleAction == "exclude" and "outline" or "ghost", controlSize = "sm", onClick = function()
+          ruleAction = "exclude"
+          render()
+        end }),
+        ui.button({ key = "ra-in", text = (ruleAction == "include" and "✓ " or "") .. "Include", variant = ruleAction == "include" and "outline" or "ghost", controlSize = "sm", onClick = function()
+          ruleAction = "include"
+          render()
+        end }),
+      }),
+      ui.row({ gap = 6, align = "center" }, {
+        ui.input({ key = "rule-new" .. exGen, value = ruleDraft, placeholder = "home/*/Documents/keep-this", flexGrow = 1, controlSize = "sm", frameVisible = true, onChange = function(t) ruleDraft = t end, onSubmit = ruleAdd }),
+        ui.button({ glyph = "plus", text = "Add", variant = "outline", controlSize = "sm", onClick = ruleAdd }),
+      }),
+    }),
+    ui.label({ text = exNote or "", fontSize = 11, color = "primary" }),
+  })
+end
+
 local function kernelRow()
   local btns = {}
   for _, k in ipairs(kernels) do
@@ -463,6 +746,29 @@ local function profileCard(p)
 end
 
 render = function()
+  if excl and not explain and not settings and not usb then
+    panel.render(ui.column({ key = "root-excl", gap = 8, padding = 12, height = 780 }, {
+      ui.row({ gap = 6, align = "center" }, {
+        logo(),
+        ui.label({ text = "Exclude list", flexGrow = 1 }),
+        ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Read the files again", onClick = function()
+          exNote = nil
+          loadExcludes()
+          render()
+        end }),
+        ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function()
+          excl = false
+          for k in pairs(exConfirm) do
+            exConfirm[k] = nil
+          end
+          render()
+        end }),
+        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
+      }),
+      ui.scroll({ key = "ex-page", gap = 10, flexGrow = 1 }, { excludesView() }),
+    }))
+    return
+  end
   if usb and not explain and not settings then
     panel.render(ui.column({ key = "root-usb", gap = 8, padding = 12 }, {
       ui.row({ gap = 6, align = "center" }, {
@@ -524,13 +830,20 @@ render = function()
         table.insert(rows, profileCard(p))
       end
       table.insert(rows, ui.column(card("usb-card"), {
-        ui.label({ text = "Finished ISOs", fontWeight = "bold", fontSize = 14 }),
-        ui.label({ text = "Write an ISO to a USB stick, start it in a VM or delete it.", fontSize = 11, color = "on_surface_variant" }),
-        ui.button({ key = "usb", text = "Open the ISO list", glyph = "arrow-right", variant = "outline", controlSize = "sm", onClick = function()
-          usb = true
-          loadIsos()
-          render()
-        end }),
+        ui.label({ text = "Finished ISOs and exclude list", fontWeight = "bold", fontSize = 14 }),
+        ui.label({ text = "Write an ISO to USB, start it in a VM or delete it. See and change what stays out of the ISO.", fontSize = 11, color = "on_surface_variant" }),
+        ui.row({ gap = 6, align = "center" }, {
+          ui.button({ key = "usb", text = "ISO list", glyph = "arrow-right", variant = "outline", controlSize = "sm", onClick = function()
+            usb = true
+            loadIsos()
+            render()
+          end }),
+          ui.button({ key = "excl", text = "Exclude list", glyph = "arrow-right", variant = "outline", controlSize = "sm", onClick = function()
+            excl, exNote = true, nil
+            loadExcludes()
+            render()
+          end }),
+        }),
       }))
       table.insert(rows, ui.label({ text = note or (busy and "Reading plan..." or "Build asks for your sudo password in the terminal."), fontSize = 11, color = note and "primary" or "on_surface_variant" }))
     end
@@ -548,6 +861,10 @@ function onOpen()
     noctalia.removeFile(done)
   end
   armed, explain, busy, settings, saved, note, usb, doomed = nil, nil, false, false, nil, nil, false, nil
+  excl, exNote, exBacked = false, nil, false
+  for k in pairs(exConfirm) do
+    exConfirm[k] = nil
+  end
   render()
   probe()
 end
