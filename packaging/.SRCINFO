@@ -1,6 +1,6 @@
 pkgbase = mabox-noctalia-ce
 	pkgdesc = Mabox labwc + Noctalia session and default configs (CE)
-	pkgver = 0.6.0
+	pkgver = 0.6.1
 	pkgrel = 1
 	url = https://github.com/musqz/mabox-noctalia-ce
 	install = mabox-noctalia-ce.install
@@ -61,7 +61,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = python-pywalfox: Firefox theme template
-	source = mabox-noctalia-ce-0.6.0.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.6.0.tar.gz
-	sha256sums = b2a5e2db5d4d743db7a4acebc609ff8751be5b6392533aa0574974596da96634
+	source = mabox-noctalia-ce-0.6.1.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.6.1.tar.gz
+	sha256sums = SKIP
 
 pkgname = mabox-noctalia-ce
