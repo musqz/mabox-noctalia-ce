@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.6.1
 - Show the path of the marked folder under the Places folder search, with a copy button.
 - Cycle the Places drive button between folders only, folders and drives, and drives only.
 - Click the now-playing title in the Music panel to jump to the list and the row of the playing track.
