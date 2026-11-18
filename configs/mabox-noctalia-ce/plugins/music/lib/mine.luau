@@ -159,6 +159,24 @@ function M.clearRecent()
   save()
 end
 
+-- items: { title, url } pairs, oldest first; one save for all.
+function M.addRecentMany(items)
+  load()
+  for _, it in ipairs(items) do
+    for i, t in ipairs(recent) do
+      if t.url == it.url then
+        table.remove(recent, i)
+        break
+      end
+    end
+    table.insert(recent, 1, { title = it.title, url = it.url })
+  end
+  while #recent > MAX_RECENT do
+    table.remove(recent)
+  end
+  save()
+end
+
 function M.addRecent(title, url)
   load()
   for i, t in ipairs(recent) do
