@@ -1,6 +1,6 @@
 <img alt="Mabox Noctalia CE logo" src="docs/logo.png" width="128" />
 
-# mabox-noctalia-ce
+# [mabox-noctalia-ce](https://musqz.github.io/mabox-noctalia-ce/intro.html)
 
 Noctalia session on labwc for Mabox Linux Community Edition. Pick **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and packages.
 
