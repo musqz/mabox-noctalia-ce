@@ -7,6 +7,31 @@ if not RUNTIME or RUNTIME == "" then
 end
 local SOCK = RUNTIME .. "/mpvsocket"
 local LIST = RUNTIME .. "/mb-music-playlist.txt"
+-- mpv runs the script, so it only goes in the private runtime dir, never in /tmp.
+local SAFE = RUNTIME ~= "/tmp"
+local RECENT_LOG = RUNTIME .. "/mb-music-recent.log"
+local RECENT_SCRIPT = RUNTIME .. "/mb-music-recent.lua"
+
+-- mpv script: an entry that is still playing after 4 s is appended to the log, also while the panel is closed
+-- (a track skipped at once is not logged).
+local RECENT_LUA = [[local log = mp.get_opt("mbrecent-log")
+local timer
+mp.register_event("file-loaded", function()
+  local p = mp.get_property("path")
+  if timer then
+    timer:kill()
+  end
+  timer = mp.add_timeout(4, function()
+    if log and p and p ~= "" then
+      local f = io.open(log, "a")
+      if f then
+        f:write(p, "\n")
+        f:close()
+      end
+    end
+  end)
+end)
+]]
 
 local function sq(s)
   return "'" .. string.gsub(s, "'", "'\\''") .. "'"
@@ -25,6 +50,9 @@ function M.play(urls, shuffle, label, quiet, from)
   playGen += 1
   local gen = playGen
   noctalia.writeFile(LIST, table.concat(urls, "\n") .. "\n")
+  if SAFE then
+    noctalia.writeFile(RECENT_SCRIPT, RECENT_LUA)
+  end
   local stop = "pkill -f " .. sq(PATTERN) .. "; for i in $(seq 1 30); do pgrep -f " .. sq(PATTERN) .. " >/dev/null || break; sleep 0.1; done; "
     .. "pkill -9 -f " .. sq(PATTERN) .. "; rm -f " .. sq(SOCK) .. "; true"
   noctalia.runAsync({ "sh", "-c", stop }, function()
@@ -33,11 +61,28 @@ function M.play(urls, shuffle, label, quiet, from)
       return
     end
     noctalia.runAsync("nohup mpv --no-video --force-window=no --input-ipc-server=" .. sq(SOCK)
+      .. (SAFE and (" --script=" .. sq(RECENT_SCRIPT) .. " --script-opts=mbrecent-log=" .. sq(RECENT_LOG)) or "")
       .. (shuffle and " --shuffle" or "") .. (from and from > 1 and (" --playlist-start=" .. (from - 1)) or "") .. " --playlist=" .. sq(LIST) .. " >/dev/null 2>&1 &")
   end)
   if not quiet then
     noctalia.notify("Music", label)
   end
+end
+
+-- The urls mpv loaded since the last call, oldest first; the log is emptied.
+function M.drainRecent(onDone)
+  if not SAFE then
+    onDone({})
+    return
+  end
+  local cmd = 'f=$1; [ -s "$f" ] && mv "$f" "$f.$$" && { tail -n 15 "$f.$$"; rm -f "$f.$$"; }; true'
+  noctalia.runAsync({ "sh", "-c", cmd, "sh", RECENT_LOG }, function(r)
+    local urls = {}
+    for l in string.gmatch(r.stdout or "", "[^\n]+") do
+      table.insert(urls, l)
+    end
+    onDone(urls)
+  end)
 end
 
 -- Jumps secs forward (negative: back) in the running mpv; a live stream just ignores it.

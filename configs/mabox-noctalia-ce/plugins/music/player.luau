@@ -210,6 +210,44 @@ local function rememberPlaying(path)
   end
 end
 
+-- Tracks mpv started while the panel was closed (or between two polls) come from its own log.
+local listsLoaded = { radio = false, music = false } -- the log is only read once both lists can name its urls
+
+local function mergeRecent()
+  if not (listsLoaded.radio and listsLoaded.music) then
+    return
+  end
+  player.drainRecent(function(urls)
+    if #urls == 0 then
+      return
+    end
+    local want = {}
+    for _, u in ipairs(urls) do
+      want[u] = true
+    end
+    local title = {}
+    for _, list in ipairs({ radio, music }) do
+      for _, c in ipairs(list) do
+        for _, t in ipairs(c.tracks) do
+          if want[t.url] and not title[t.url] then
+            title[t.url] = t.title
+          end
+        end
+      end
+    end
+    local items = {}
+    for _, u in ipairs(urls) do
+      if title[u] then
+        table.insert(items, { title = title[u], url = u })
+      end
+    end
+    if #items > 0 then
+      mine.addRecentMany(items)
+      render()
+    end
+  end)
+end
+
 -- While the panel is open the title is read every few seconds so it matches the bar when the track changes by itself.
 local pollGen = 0
 local deadPolls = 0
@@ -255,6 +293,9 @@ local function pollTitle(gen, delay)
       render()
     end
     refreshEq()
+    if alive then
+      mergeRecent()
+    end
     pollTitle(gen, 8)
   end)
 end
@@ -996,6 +1037,10 @@ render = function()
       ui.label({ text = hotkey("mabox/music:player"), color = "outline_variant" }),
       ui.spacer({ flexGrow = 1 }),
       ui.button({ text = "Refresh", glyph = "refresh", variant = "outline", tooltip = "Show what plays now and add it to Recent", onClick = function() syncNow() end }),
+      ui.button({ glyph = "player-skip-back", variant = "ghost", controlSize = "sm", tooltip = "Previous", onClick = function() transport("previous") end }),
+      ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
+      ui.button({ glyph = "player-skip-forward", variant = "ghost", controlSize = "sm", tooltip = "Next", onClick = function() transport("next") end }),
+      ui.button({ glyph = "player-stop", variant = "ghost", controlSize = "sm", tooltip = "Stop", onClick = function() transport("stop") end }),
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
       ui.button({ glyph = "volume", variant = "ghost", controlSize = "sm", tooltip = "Volume control", onClick = function() sh("pavucontrol") panel.close() end }),
@@ -1033,10 +1078,6 @@ render = function()
       ui.button({ text = sleepLabel(), glyph = "moon", variant = sleepLeft > 0 and "outline" or "ghost", controlSize = "sm", tooltip = "Sleep timer: click for 15, 30, 60, 90 minutes, then off", onClick = function() mine.cycleSleep(refreshSleep) end }),
       ui.button({ text = "-" .. stepLabel(stepSecs()), glyph = "rewind-backward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump back " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(-stepSecs()) end, onRightClick = nextStep }),
       ui.button({ text = "+" .. stepLabel(stepSecs()), glyph = "rewind-forward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump forward " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(stepSecs()) end, onRightClick = nextStep }),
-      ui.button({ glyph = "player-skip-back", variant = "ghost", controlSize = "sm", tooltip = "Previous", onClick = function() transport("previous") end }),
-      ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
-      ui.button({ glyph = "player-skip-forward", variant = "ghost", controlSize = "sm", tooltip = "Next", onClick = function() transport("next") end }),
-      ui.button({ glyph = "player-stop", variant = "ghost", controlSize = "sm", tooltip = "Stop", onClick = function() transport("stop") end }),
     }),
     ui.row({ gap = 8, flexGrow = 1 }, {
       sidebar(),
@@ -1057,6 +1098,7 @@ end
 function onOpen()
   pollGen += 1
   lastRemembered = nil
+  listsLoaded.radio, listsLoaded.music = false, false
   revealRow, revealSide = nil, nil
   pollTitle(pollGen, 0)
   query = ""
@@ -1064,11 +1106,15 @@ function onOpen()
   render()
   csv.radio(function(cats)
     radio = cats or {}
+    listsLoaded.radio = true
+    mergeRecent()
     render()
   end)
   csv.list(function(cats, all)
     music = cats or {}
     musicAll = all or {}
+    listsLoaded.music = true
+    mergeRecent()
     render()
   end)
   sleepLeft = mine.sleepLeft()
