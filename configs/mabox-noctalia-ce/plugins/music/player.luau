@@ -869,6 +869,28 @@ local function body()
   return result
 end
 
+-- "src:name" of the first list holding the playing url (radio, music, playlists), cached until the url or the lists change.
+local homeFor, homeCount, homeKey = "", -1, nil
+local function playingHome()
+  local n = #radio + #music + #lists
+  if homeKey ~= playingUrl or homeCount ~= n then
+    homeKey, homeCount, homeFor = playingUrl, n, ""
+    if playingUrl ~= "" then
+      for _, g in ipairs({ { "radio", radio }, { "music", music }, { "list", lists } }) do
+        for _, c in ipairs(g[2]) do
+          for _, tr in ipairs(c.tracks) do
+            if tr.url == playingUrl then
+              homeFor = g[1] .. ":" .. c.name
+              return homeFor
+            end
+          end
+        end
+      end
+    end
+  end
+  return homeFor
+end
+
 local function sidebar()
   local items = {}
   local function pick(src, name)
@@ -878,7 +900,8 @@ local function sidebar()
     render()
   end
   -- A card with an outlined head that folds; rows are bullet entries like the Configs plugin list.
-  local function group(name, rows)
+  -- A folded group still shows the rows in keep (the selected list and the one with the playing track).
+  local function group(name, rows, keep)
     local isOpen = not folded[name]
     local card = {
       ui.button({
@@ -893,8 +916,8 @@ local function sidebar()
         end,
       }),
     }
-    if isOpen then
-      for _, r in ipairs(rows) do
+    for i, r in ipairs(rows) do
+      if isOpen or (keep and keep[i]) then
         table.insert(card, r)
       end
     end
@@ -909,11 +932,12 @@ local function sidebar()
   table.insert(items, ui.button({ text = "Recent", glyph = "history", variant = recentActive and "primary" or "ghost", controlSize = "sm", contentAlign = "start", onClick = function() pick("mine", "Recent") end }))
   for _, g in ipairs({ { "Playlists", "list", lists }, { "Radio", "radio", radio }, { "Music", "music", music } }) do
     if #g[3] > 0 then
-      local rows = {}
+      local rows, keep = {}, {}
       for _, c in ipairs(g[3]) do
+        keep[#rows + 1] = playingHome() == g[2] .. ":" .. c.name or (sel ~= nil and sel.src == g[2] and sel.name == c.name)
         table.insert(rows, entry(c.name, sel ~= nil and sel.src == g[2] and sel.name == c.name, function() pick(g[2], c.name) end, "side:" .. g[2] .. ":" .. c.name))
       end
-      group(g[1], rows)
+      group(g[1], rows, keep)
     end
   end
   local tools = {}
