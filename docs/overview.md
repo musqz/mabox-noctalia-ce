@@ -1,10 +1,9 @@
 # Overview: files, paths and tools
 
-Where everything lives: in the repo, after install, and in your home folder.
+Where everything lives: after install and in your home folder.
 
 | Jump to | |
 |---|---|
-| [Repo tree](#repo-tree) | what is in this repo |
 | [Install map](#install-map) | repo path → installed path |
 | [Live paths](#live-paths) | config, state, data, logs in `$HOME` |
 | [Tools in `bin/`](#tools-in-bin) | every helper, what calls it |
@@ -12,38 +11,6 @@ Where everything lives: in the repo, after install, and in your home folder.
 | [Services](#services) | systemd user units |
 | [Packages](#packages) | where the package lists live |
 | [Handy commands](#handy-commands) | paste-ready checks |
-
-## Repo tree
-
-```text
-mabox-noctalia-ce/
-├── install.sh                  installs packages, builds and installs the package, enables plugins
-├── README.md
-├── bin/                        helper scripts → /usr/bin
-├── lib/mabox-noctalia-ce       session launcher → /usr/bin/mabox-noctalia-ce
-├── configs/
-│   ├── noctalia-ce.desktop     login-screen entry → /usr/share/wayland-sessions/
-│   ├── mabox-noctalia-ce/      labwc config set → /etc/skel/.config/
-│   │   ├── rc.xml              keybinds and window rules
-│   │   ├── menu.xml            root menu
-│   │   ├── autostart           shared startup; add your own programs to autostart.local
-│   │   ├── autostart.local     your startup programs (template)
-│   │   ├── environment         session environment variables
-│   │   ├── shutdown            runs when labwc exits
-│   │   ├── themerc, themerc-override, noctalia.conf   window theme
-│   │   ├── rc.xml.all          reference: every labwc option
-│   │   └── plugins/            Noctalia plugins: colors, music, notes, status (installed to `/usr/share/mabox-noctalia-ce/plugins`)
-│   ├── noctalia/               Noctalia config and templates → /usr/share/mabox-noctalia-ce/noctalia/
-│   │   ├── config.toml         bar, widgets, hooks
-│   │   ├── templates/          labwc.conf
-│   │   ├── Geany/, PyRadio/, Pywalfox/   theme templates
-│   │   └── palettes/           color palette JSON
-│   └── file-manager/actions/   file manager action → /usr/share/file-manager/actions/
-├── systemd/user/               mb-updates-ce .service .timer .path → /usr/lib/systemd/user/
-├── lists/                      pacman.txt, aur.txt, github.txt (what install.sh installs)
-├── packaging/                  PKGBUILD, .SRCINFO, .install
-└── docs/                       guide.md, keys.md, tools.md, snapshot.md, music.md, overview.md, screenshots
-```
 
 ## Install map
 
