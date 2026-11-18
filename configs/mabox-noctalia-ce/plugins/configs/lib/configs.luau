@@ -8,6 +8,7 @@ local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 local lockscreen = require("./lockscreen.luau")
 local uiscale = require("./uiscale.luau")
+local widgetradius = require("./widgetradius.luau")
 local toml = require("./tomlsection.luau")
 
 return function(pinned)
@@ -1034,6 +1035,9 @@ render = function()
     }),
   }
   if widOpen then
+    for _, w in ipairs(widgetradius.rows(render, pinned)) do
+      table.insert(widRows, w)
+    end
     pluginRows(widgetList, widRows)
   end
   table.insert(cards, card(widRows))

@@ -57,7 +57,7 @@ local function render()
     padding = 12,
     width = fs(320),
     fill = "surface/0.85",
-    radius = 8,
+    radius = math.max(0, math.min(32, tonumber(noctalia.getConfig("radius")) or 8)),
     border = "outline",
     borderWidth = 1,
   }, body))
