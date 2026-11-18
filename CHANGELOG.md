@@ -7,6 +7,8 @@
 - Keep the selected list and the list with the playing track visible when a Music sidebar group is folded.
 - Fix the Equalizer being very quiet when switched on: its sink volume no longer multiplies with the hardware volume.
 - List an Equalizer preset once when the shipped and the user folder hold the same name.
+- Fix the Music panel skipping tracks in Recent: a track that plays on by itself is added too, also while the panel is closed (an mpv script logs tracks that play for 4 seconds).
+- Move the previous, play/pause, next and stop buttons of the Music panel to the header next to Refresh.
 
 ## 0.6.0
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
