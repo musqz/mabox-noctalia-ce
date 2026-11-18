@@ -5,6 +5,8 @@
 - Cycle the Places drive button between folders only, folders and drives, and drives only.
 - Click the now-playing title in the Music panel to jump to the list and the row of the playing track.
 - Keep the selected list and the list with the playing track visible when a Music sidebar group is folded.
+- Fix the Equalizer being very quiet when switched on: its sink volume no longer multiplies with the hardware volume.
+- List an Equalizer preset once when the shipped and the user folder hold the same name.
 
 ## 0.6.0
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
