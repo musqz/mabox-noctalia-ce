@@ -194,7 +194,10 @@ local function showPlaying()
   end
 end
 
+local lastRemembered = nil -- url last put in Recent, so the poll does not write it again
+
 local function rememberPlaying(path)
+  lastRemembered = path
   for _, list in ipairs({ radio, music }) do
     for _, c in ipairs(list) do
       for _, t in ipairs(c.tracks) do
@@ -234,11 +237,20 @@ local function pollTitle(gen, delay)
       playingUrl = url
       changed = true
     end
+
     if alive and title ~= "" and title ~= nowPlaying and playing then
       nowPlaying = title
       changed = true
     end
     storeMeta(path, rawTitle, artist)
+    -- The list moved on to the next track by itself: that one belongs in Recent too. The first answer after opening only sets the baseline.
+    if alive and playing and path ~= "" then
+      if lastRemembered == nil then
+        lastRemembered = path
+      elseif path ~= lastRemembered then
+        rememberPlaying(path)
+      end
+    end
     if changed then
       render()
     end
@@ -1044,6 +1056,7 @@ end
 
 function onOpen()
   pollGen += 1
+  lastRemembered = nil
   revealRow, revealSide = nil, nil
   pollTitle(pollGen, 0)
   query = ""
