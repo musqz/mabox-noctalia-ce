@@ -13,6 +13,8 @@
 - Fix the Equalizer staying on a stream after it is switched off: `mb-eq off` moves streams left on the Equalizer back to the output.
 - Add a folder set with the pcmanfm action *Set wallpaper dir* to the Wallpaper folders panel list.
 - Fix the Recolor panel stopping during a run over a large folder: the progress count no longer goes over the panel time budget.
+- Change, add, remove and switch off the colors of a palette in the Recolor panel and keep them with *Save as*; saved palettes are in a folded *My palettes* list.
+- Add the palettes vibrant, cyberpunk, tokyo-night, rose-pine and monochrome to Recolor and Wallgen.
 
 ## 0.6.0
 - Search the System panel Fixes tab and filter it with topic buttons (Packages, Sound, Network, Noctalia, System); a search matches the title, symptoms, description and keywords of a fix.
