@@ -90,7 +90,6 @@ local function cmdline(p)
   if comp == "zstd" or comp == "gzip" or comp == "lzo" then
     flag("--compression-level", cfg.compression_level)
   end
-  flag("--exclude-list", cfg.exclude_list)
   flag("--change-threshold-mb", cfg.change_threshold_mb)
   flag("--profile", cfg.profile)
   local picked, total = {}, #kernels
@@ -390,8 +389,7 @@ local function settingsView()
   })
 end
 
--- Exclude list: the file the build reads (--exclude-list from the config; yours when it lives in $HOME, else /etc).
--- Rules in /etc/mabox-snapshot/overrides.list need root, so they go through pkexec (Noctalia's polkit prompt).
+-- Exclude list and rules live in /etc/mabox-snapshot (root only), so changes go through pkexec (Noctalia's polkit prompt).
 local RULES_FILE = "/etc/mabox-snapshot/overrides.list"
 local excl = false
 local exList, rules = {}, {}
@@ -399,16 +397,7 @@ local exFilter, exDraft, exGen = "", "", 0
 local ruleAction, ruleDraft = "exclude", ""
 local exNote, exBusy = nil, false
 local exConfirm = {}
-local exBacked = false
-
-local function exPath()
-  return cfg.exclude_list or "/etc/mabox-snapshot/excludes.list"
-end
-
-local function exMine()
-  local home = noctalia.getenv("HOME")
-  return home ~= nil and home ~= "" and string.sub(exPath(), 1, #home + 1) == home .. "/"
-end
+local EXCLUDES_FILE = "/etc/mabox-snapshot/excludes.list"
 
 local function parseLines(text)
   local out = {}
@@ -423,7 +412,7 @@ end
 
 -- Read through cat: /etc is outside the plugin's own folders.
 local function loadExcludes()
-  noctalia.runAsync({ "sh", "-c", 'cat "$1" 2>/dev/null; printf "\\n@@@\\n"; cat "$2" 2>/dev/null', "sh", exPath(), RULES_FILE }, function(result)
+  noctalia.runAsync({ "sh", "-c", 'cat "$1" 2>/dev/null; printf "\\n@@@\\n"; cat "$2" 2>/dev/null', "sh", EXCLUDES_FILE, RULES_FILE }, function(result)
     local text = result.stdout or ""
     local at = string.find(text, "\n@@@\n", 1, true)
     local listText = at and string.sub(text, 1, at - 1) or text
@@ -459,38 +448,63 @@ local function cleanPattern(text)
   return p
 end
 
+-- The password prompt takes focus and closes the panel, so pkexec runs detached; the script writes its result to the
+-- plugin data folder and opens the panel again. onOpen reads the result (takeResult).
+local PK = [[f=$1; shift
+out=$(pkexec /usr/bin/mabox-snapshot "$@" 2>&1)
+printf '%s\n%s\n' "$?" "$out" > "$f"
+noctalia msg panel-close; noctalia msg panel-open mabox/snapshot:main]]
+local pending = nil
+
+local function resultPath()
+  return noctalia.pluginDataDir() .. "/pk-result"
+end
+
 local function pkexec(args, done, onOk)
+  if exBusy and pending and os.time() - pending.time > 120 then
+    exBusy = false
+  end
   if exBusy then
     exNote = "Waiting for the password prompt..."
     render()
     return
   end
   exBusy = true
+  pending = { done = done, onOk = onOk, time = os.time() }
   exNote = "Waiting for the password prompt..."
   render()
-  noctalia.runAsync({ "sh", "-c", 'pkexec /usr/bin/mabox-snapshot "$@" 2>&1', "sh", table.unpack(args) }, function(result)
-    exBusy = false
-    loadExcludes()
-    if result.exitCode == nil or result.exitCode == 0 then
-      exNote = done
-      if onOk then
-        onOk()
-      end
-    elseif result.exitCode == 126 or result.exitCode == 127 then
-      exNote = "No change: the password prompt was closed or refused."
-    else
-      local msg = string.gsub(string.gsub(result.stdout or "", "^%s+", ""), "%s+$", "")
-      exNote = msg ~= "" and msg or "The change failed."
-    end
-    render()
-  end)
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.removeFile(resultPath())
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", PK, "sh", resultPath(), table.unpack(args) })
 end
 
-local function backupOnce(text)
-  if not exBacked then
-    exBacked = true
-    noctalia.writeFile(exPath() .. ".bak", text)
+local function takeResult()
+  local text = noctalia.readFile(resultPath())
+  if not text then
+    if exBusy and pending and os.time() - pending.time > 120 then
+      exBusy = false
+      pending = nil
+    end
+    return
   end
+  noctalia.removeFile(resultPath())
+  exBusy = false
+  excl = true
+  local status, out = string.match(text, "^(%d+)\n(.*)$")
+  status = tonumber(status)
+  if status == 0 then
+    exNote = pending and pending.done or "Done."
+    if pending and pending.onOk then
+      pending.onOk()
+    end
+  elseif status == 126 or status == 127 then
+    exNote = "No change: the password prompt was closed or refused."
+  else
+    local msg = string.gsub(string.gsub(out or "", "^%s+", ""), "%s+$", "")
+    exNote = msg ~= "" and msg or "The change failed."
+  end
+  pending = nil
+  loadExcludes()
 end
 
 local function exAdd()
@@ -507,57 +521,18 @@ local function exAdd()
       return
     end
   end
-  if exMine() then
-    local text = noctalia.readFile(exPath())
-    if text == nil then
-      exNote = "Could not read the list. Nothing changed."
-      render()
-      return
-    end
-    exDraft = ""
-    exGen = exGen + 1
-    backupOnce(text)
-    if text ~= "" and string.sub(text, -1) ~= "\n" then
-      text = text .. "\n"
-    end
-    noctalia.writeFile(exPath(), text .. p .. "\n")
-    loadExcludes()
-    exNote = "Added. Used by the next build."
-    render()
-  else
-    pkexec({ "excludes", "add", p }, "Added. Used by the next build.", function()
+  local typed = exDraft
+  pkexec({ "excludes", "add", p }, "Added. Used by the next build.", function()
+    if exDraft == typed then
       exDraft = ""
       exGen = exGen + 1
-    end)
-  end
+    end
+  end)
 end
 
 local function exRemove(p)
   lapse.disarm(exConfirm, p)
-  if exMine() then
-    local text = noctalia.readFile(exPath())
-    if text == nil then
-      exNote = "Could not read the list. Nothing changed."
-      render()
-      return
-    end
-    backupOnce(text)
-    local keep = {}
-    for line in string.gmatch(text, "([^\n]*)\n?") do
-      if string.gsub(string.gsub(line, "^%s+", ""), "%s+$", "") ~= p then
-        table.insert(keep, line)
-      end
-    end
-    while keep[#keep] == "" do
-      table.remove(keep)
-    end
-    noctalia.writeFile(exPath(), #keep > 0 and (table.concat(keep, "\n") .. "\n") or "")
-    loadExcludes()
-    exNote = "Removed."
-    render()
-  else
-    pkexec({ "excludes", "remove", p }, "Removed.")
-  end
+  pkexec({ "excludes", "remove", p }, "Removed.")
 end
 
 local function ruleAdd()
@@ -567,15 +542,63 @@ local function ruleAdd()
     render()
     return
   end
+  local typed = ruleDraft
   pkexec({ "excludes", "rules", "add", ruleAction, p }, "Rule added. Used by the next build.", function()
-    ruleDraft = ""
-    exGen = exGen + 1
+    if ruleDraft == typed then
+      ruleDraft = ""
+      exGen = exGen + 1
+    end
   end)
 end
 
 local function ruleRemove(r)
   lapse.disarm(exConfirm, "r:" .. r.action .. " " .. r.pattern)
   pkexec({ "excludes", "rules", "remove", r.action, r.pattern }, "Rule removed.")
+end
+
+-- The folder dialog runs detached (setsid), because the panel closes when the dialog takes focus; the pick is
+-- left in the plugin data folder and read when the panel opens again.
+local PICK = [[p=$(yad --file --directory --center --width=900 --height=600 --title="Folder" --filename="$HOME/")
+if [ -n "$p" ]; then printf '%s\n%s\n' "$2" "$p" > "$1"; fi
+noctalia msg panel-close; noctalia msg panel-open mabox/snapshot:main]]
+
+local function pickPath()
+  return noctalia.pluginDataDir() .. "/pick"
+end
+
+local function browse(target)
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.runAsync({ "setsid", "-f", "sh", "-c", PICK, "sh", pickPath(), target })
+end
+
+-- Patterns start at the root; a folder in your home becomes home/*/NAME so it also fits other users.
+local function toPattern(path)
+  path = (string.gsub(path, "(.)/+$", "%1"))
+  local home = noctalia.getenv("HOME")
+  if home and home ~= "" and string.sub(path, 1, #home + 1) == home .. "/" then
+    return "home/*/" .. string.sub(path, #home + 2)
+  end
+  return (string.gsub(path, "^/+", ""))
+end
+
+local function takePick()
+  local text = noctalia.readFile(pickPath())
+  if not text then
+    return
+  end
+  noctalia.removeFile(pickPath())
+  local target, path = string.match(text, "^(%a+)\n([^\n]+)")
+  if not path then
+    return
+  end
+  excl = true
+  if target == "rule" then
+    ruleDraft = toPattern(path)
+  else
+    exDraft = toPattern(path)
+  end
+  exGen = exGen + 1
+  loadExcludes()
 end
 
 local EX_ROW, EX_GAP, EX_SHOWN = 30, 2, 9
@@ -638,7 +661,7 @@ local function excludesView()
   return ui.column({ gap = 10 }, {
     ui.column(card("exlist"), {
       ui.label({ text = "Not in the ISO", fontWeight = "bold", fontSize = 14 }),
-      ui.label({ text = exPath() .. (exMine() and "" or "  (changes ask for your password)"), fontSize = 10, color = "on_surface_variant", maxLines = 2 }),
+      ui.label({ text = EXCLUDES_FILE .. "  (changes ask for your password)", fontSize = 10, color = "on_surface_variant", maxLines = 2 }),
       ui.input({ key = "ex-filter", value = exFilter, placeholder = "filter", controlSize = "sm", frameVisible = true, onChange = function(t)
         exFilter = t
         render()
@@ -646,6 +669,7 @@ local function excludesView()
       listBox,
       ui.row({ gap = 6, align = "center" }, {
         ui.input({ key = "ex-new" .. exGen, value = exDraft, placeholder = "home/*/Downloads", flexGrow = 1, controlSize = "sm", frameVisible = true, onChange = function(t) exDraft = t end, onSubmit = exAdd }),
+        ui.button({ glyph = "folder-open", variant = "ghost", controlSize = "sm", tooltip = "Pick a folder", onClick = function() browse("ex") end }),
         ui.button({ glyph = "plus", text = "Add", variant = "outline", controlSize = "sm", onClick = exAdd }),
       }),
     }),
@@ -665,6 +689,7 @@ local function excludesView()
       }),
       ui.row({ gap = 6, align = "center" }, {
         ui.input({ key = "rule-new" .. exGen, value = ruleDraft, placeholder = "home/*/Documents/keep-this", flexGrow = 1, controlSize = "sm", frameVisible = true, onChange = function(t) ruleDraft = t end, onSubmit = ruleAdd }),
+        ui.button({ glyph = "folder-open", variant = "ghost", controlSize = "sm", tooltip = "Pick a folder", onClick = function() browse("rule") end }),
         ui.button({ glyph = "plus", text = "Add", variant = "outline", controlSize = "sm", onClick = ruleAdd }),
       }),
     }),
@@ -861,10 +886,12 @@ function onOpen()
     noctalia.removeFile(done)
   end
   armed, explain, busy, settings, saved, note, usb, doomed = nil, nil, false, false, nil, nil, false, nil
-  excl, exNote, exBacked = false, nil, false
+  excl, exNote = false, nil
   for k in pairs(exConfirm) do
     exConfirm[k] = nil
   end
+  takePick()
+  takeResult()
   render()
   probe()
 end
