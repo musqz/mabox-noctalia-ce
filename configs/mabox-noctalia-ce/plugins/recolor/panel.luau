@@ -282,14 +282,13 @@ local function progressDir()
 end
 
 -- Images written so far, out of the total, and the time left from the pace so far.
-local function readProgress()
+local function readProgress(count)
   local pd = progressDir()
   local total = tonumber(noctalia.string.trim(noctalia.readFile(pd .. "/total") or ""))
   local start = tonumber(noctalia.string.trim(noctalia.readFile(pd .. "/start") or ""))
   if not (total and start and total > 0) or (runStart and start < runStart) then
     return
   end
-  local count = select(2, string.gsub(noctalia.readFile(pd .. "/out") or "", "\n", ""))
   local left = nil
   if count > 0 then
     left = math.floor((os.time() - start) / count * math.max(0, total - count))
@@ -504,11 +503,22 @@ function onOpen()
   panel.setWantsSecondTicks(true)
 end
 
+-- The images written so far are counted by wc: a folder of tens of thousands of images makes an out file Luau cannot scan within its CPU budget.
+local counting = false
+
 function update()
   if running then
     check()
-    if readProgress() then
-      render()
+    if counting then
+      return
     end
+    counting = true
+    noctalia.runAsync({ "wc", "-l", progressDir() .. "/out" }, function(r)
+      counting = false
+      local n = tonumber(string.match(r.stdout or "", "^%s*(%d+)"))
+      if running and n and readProgress(n) then
+        render()
+      end
+    end)
   end
 end
