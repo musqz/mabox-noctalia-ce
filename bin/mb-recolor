@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-r] PALETTE SRC...
+# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-B BALANCE] [-r] PALETTE SRC...
 # -r resumes: an image whose result is already in OUTDIR is skipped (printed as "skip: path").
 # -x takes comma separated hex colors to leave out of the palette.
+# BALANCE 0 to 100 favours dark (low) or light (high) palette colors, 50 changes nothing.
 # BLUR softens the source before mapping: 0 to 20, in tenths of a percent of the image width.
 # SRC is files or a directory. Output goes to ~/Pictures/<palette>/<group>/, never overwriting.
 set -euo pipefail
 
-mode=clut group=all out= blur=0 skip= resume=0
+mode=clut group=all out= blur=0 balance=50 skip= resume=0
 here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 dirs=("$HOME/.local/share/mabox-noctalia-ce/palettes" /usr/share/mabox-noctalia-ce/palettes "$here/../lists/palettes")
 
-usage() { echo "usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-x COLORS] [-r] PALETTE SRC..." >&2
+usage() { echo "usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-B BALANCE] [-x COLORS] [-r] PALETTE SRC..." >&2
           echo "       mb-recolor --list" >&2
           echo "       mb-recolor --colors [-g GROUP] PALETTE" >&2; exit 2; }
 find_pal() { local d; for d in "${dirs[@]}"; do [[ -f $d/$1.pal ]] && { echo "$d/$1.pal"; return 0; }; done; return 1; }
@@ -28,13 +29,14 @@ fi
 show=0
 [[ ${1:-} == --colors ]] && { show=1; shift; }
 width=0
-while getopts m:g:o:w:b:x:r opt; do
+while getopts m:g:o:w:b:B:x:r opt; do
     case $opt in
         m) mode=$OPTARG ;;
         g) group=$OPTARG ;;
         o) out=$OPTARG ;;
         w) width=$OPTARG ;;
         b) blur=$OPTARG ;;
+        B) balance=$OPTARG ;;
         x) skip=$OPTARG ;;
         r) resume=1 ;;
         *) usage ;;
@@ -42,6 +44,9 @@ while getopts m:g:o:w:b:x:r opt; do
 done
 shift $((OPTIND - 1))
 [[ $blur =~ ^[0-9]+$ ]] && ((blur <= 20)) || { echo "bad blur: $blur" >&2; exit 2; }
+[[ $balance =~ ^[0-9]+$ ]] && ((balance <= 100)) || { echo "bad balance: $balance" >&2; exit 2; }
+# BALANCE as a gamma on the source, the same curve as mb-wallgen: above 50 lighter, below 50 darker
+gamma=$(awk -v b="$balance" 'BEGIN { printf "%.3f", 2 ^ ((b - 50) / 35) }')
 ((show && $# >= 1 || $# >= 2)) || usage
 [[ $mode == clut || $mode == remap || $mode == smooth || $mode == lut ]] || { echo "unknown mode: $mode" >&2; exit 2; }
 command -v magick >/dev/null || { echo "magick is not installed" >&2; exit 1; }
@@ -112,6 +117,7 @@ for f in "${files[@]}"; do
     # written under a hidden name and renamed, so a stopped run never leaves a half image that resume would trust
     final=$dest; dest=$out/.$name.part.$ext; part=$dest
     pre=(); ((width > 0)) && pre=(-resize "${width}x>")
+    ((balance != 50)) && pre+=(-gamma "$gamma")
     if ((blur > 0)); then
         bw=$(magick identify -format %w "${f}[0]" 2>/dev/null) || bw=
         [[ $bw =~ ^[0-9]+$ ]] || bw=1920
