@@ -221,7 +221,11 @@ local function deleteQProfile()
   end
 end
 
+-- Stars only show while a project is active: they go into that project.
 local function starButton(kind, path, tag)
+  if not qActive then
+    return ui.box({ key = "st" .. tag .. path, width = 0, height = 0 })
+  end
   local on = isQuick(path)
   return ui.button({
     key = "st" .. tag .. path,
@@ -818,7 +822,7 @@ local function quickCard()
       }))
     end
   end
-  if #quick == 0 then
+  if #quick == 0 and qActive then
     table.insert(items, ui.label({ text = "Click the star on a folder or file to keep it here", color = "on_surface_variant", fontSize = 11 }))
   end
   for _, it in ipairs(items) do
