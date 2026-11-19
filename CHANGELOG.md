@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Add a Quick card to Places: star folders and files to keep them at the top, and save them as named projects; the active project takes the stars directly.
+- Draw a frame around every open folder in Places and alternate the row background.
 - Add a Balance slider to Recolor that favours darker or lighter palette colors.
 - Fix the Recolor Soft look saving JPEG files in gray.
 - Draw a frame around an expanded bookmark in the Places panel.
