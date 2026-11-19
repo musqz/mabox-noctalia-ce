@@ -77,13 +77,6 @@ Wallpapers in the screenshots are stills from animated series. They belong to th
 
 Recolor panel (beta): the original frame on the left, the same frame recolored to gruvbox on the right.
 
-<table>
-<tr>
-<td><a href="docs/recolor-original.jpg"><img alt="Original frame" src="docs/recolor-original.jpg" width="420" /></a></td>
-<td><a href="docs/desktop-3.png"><img alt="Noctalia CE desktop with the Recolor panel, frame recolored to gruvbox" src="docs/desktop-3.png" width="420" /></a></td>
-</tr>
-</table>
-
 Music panel (`W-m`) on the left: playlists, radio stations, search and the playing track. Wallgen panel on the right: wallpapers made from a palette or your own colors.
 
 <table>
