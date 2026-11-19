@@ -101,7 +101,6 @@
     <keybind key="W-x"><action name="Execute"><command>noctalia msg panel-toggle session</command></action></keybind>
     <keybind key="F1" name.action="Execute" command.action="jumpapp -m firefox"/>
     <keybind key="F2" name.action="Execute" command.action="jumpapp -m doublecmd"/>
-    <keybind key="F3" name.action="Execute" command.action="jumpapp -m geany"/>
     <keybind key="C-A-v" name.action="Execute" command.action="jumpapp -m -c cava-transparent mb-cava"/>
     <keybind key="W-A-v" name.action="Execute" command.action="noctalia msg panel-open mabox/cava:main"/>
     <keybind key="W-p"><action name="Execute" command="noctalia msg panel-toggle mabox/places:main"/></keybind>
