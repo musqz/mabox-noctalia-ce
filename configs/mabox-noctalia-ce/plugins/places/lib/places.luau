@@ -368,7 +368,7 @@ local function dirRow(path, name, glyph, depth, tag)
   if depth > 0 then
     table.insert(row, ui.box({ width = depth * 10, height = 0 }))
   end
-  table.insert(row, ui.button({
+  local title = ui.button({
     key = "t" .. tag .. path,
     selected = hitKey == "r" .. tag .. path,
     glyph = open and "chevron-down" or glyph,
@@ -379,7 +379,24 @@ local function dirRow(path, name, glyph, depth, tag)
     tooltip = path .. "\nClick: show or hide the content, right click: open in the file manager",
     onClick = function() toggleDir(path) end,
     onRightClick = function() openFolder({ open = path }) end,
-  }))
+  })
+  if open and depth > 0 then
+    -- The name of an open subfolder takes the hover color; a button has no text color, so it is a row of glyph and label.
+    title = ui.row({
+      key = "to" .. tag .. path,
+      gap = 6,
+      align = "center",
+      padding = 6,
+      flexGrow = 1,
+      tooltip = path .. "\nClick: hide the content, right click: open in the file manager",
+      onClick = function() toggleDir(path) end,
+      onRightClick = function() openFolder({ open = path }) end,
+    }, {
+      ui.glyph({ name = "chevron-down", size = 14, color = "hover" }),
+      ui.label({ text = name, color = "hover", maxLines = 1, flexGrow = 1 }),
+    })
+  end
+  table.insert(row, title)
   if open then
     table.insert(row, ui.button({ key = "tn" .. tag .. path, glyph = "folder-plus", variant = (newIn == path and newTag == tag) and "primary" or "ghost", controlSize = "sm", tooltip = "New folder", onClick = function()
       newIn = (newIn ~= path or newTag ~= tag) and path or nil
@@ -401,18 +418,27 @@ local function childRows(path, depth, out, tag)
   if #items == 0 then
     table.insert(out, ui.row({ key = "e" .. tag .. path, gap = 0 }, { ui.box({ width = depth * 10 + 12, height = 0 }), ui.label({ text = "empty", color = "outline_variant" }) }))
   end
-  for _, it in ipairs(items) do
+  -- Every second row of a folder's content gets a slightly darker background. Both fills are explicit: a retained widget
+  -- would keep an old one when the rows move after a fold.
+  local function striped(i, key, row)
+    return ui.column({ key = "z" .. key, fill = i % 2 == 1 and "surface" or "surface_variant", radius = 6 }, { row })
+  end
+  for i, it in ipairs(items) do
     local full = (path == "/" and "" or path) .. "/" .. it.name
     if it.dir then
-      table.insert(out, dirRow(full, it.name, "folder", depth, tag))
       if expanded[full] then
+        -- An open folder at any level sits in a frame of its own with its content; the key differs from the closed row.
+        local group = { striped(i, tag .. full, dirRow(full, it.name, "folder", depth, tag)) }
         if newIn == full and newTag == tag then
-          table.insert(out, newFolderRow(full, depth + 1, tag))
+          table.insert(group, newFolderRow(full, depth + 1, tag))
         end
-        childRows(full, depth + 1, out, tag)
+        childRows(full, depth + 1, group, tag)
+        table.insert(out, ui.column({ key = "frame" .. tag .. full, gap = 2, padding = 4, radius = 8, border = "outline_variant", borderWidth = 1 }, group))
+      else
+        table.insert(out, striped(i, tag .. full, dirRow(full, it.name, "folder", depth, tag)))
       end
     else
-      table.insert(out, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center" }, {
+      table.insert(out, striped(i, "f" .. tag .. full, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center" }, {
         ui.box({ width = depth * 10, height = 0 }),
         ui.button({
           selected = hitKey == "f" .. tag .. full,
@@ -425,7 +451,7 @@ local function childRows(path, depth, out, tag)
           onClick = function() openFile({ path = full }) end,
           onRightClick = function() copyPath({ path = full }) end,
         }),
-      }))
+      })))
     end
   end
 end
