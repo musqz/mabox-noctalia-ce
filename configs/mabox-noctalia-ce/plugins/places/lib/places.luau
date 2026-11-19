@@ -460,12 +460,18 @@ local function placeRows()
   for i, p in ipairs(places) do
     local list = p.std and std or marks
     if p.path and p.ok then
-      table.insert(list, dirRow(p.path, p.name, p.glyph, 0, p.std and "s" or "b"))
+      local tag = p.std and "s" or "b"
+      local head = dirRow(p.path, p.name, p.glyph, 0, tag)
       if expanded[p.path] then
-        if newIn == p.path and newTag == (p.std and "s" or "b") then
-          table.insert(list, newFolderRow(p.path, 1, p.std and "s" or "b"))
+        -- The frame is its own node with its own key: retained widgets would keep the border after a fold.
+        local group = { head }
+        if newIn == p.path and newTag == tag then
+          table.insert(group, newFolderRow(p.path, 1, tag))
         end
-        childRows(p.path, 1, list, p.std and "s" or "b")
+        childRows(p.path, 1, group, tag)
+        table.insert(list, ui.column({ key = "frame" .. tag .. p.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
+      else
+        table.insert(list, head)
       end
     else
       table.insert(list, ui.button({
