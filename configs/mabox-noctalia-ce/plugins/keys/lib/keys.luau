@@ -6,7 +6,8 @@ local kbd = require("./kbd.luau")
 local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 
-return function(wide)
+return function(wide, stay)
+  local KEEP = require("./keep.luau")
   local columns = 2
   local keyWidth = 190
   local binds = {}
@@ -307,6 +308,7 @@ return function(wide)
         }),
         ui.button({ text = "Basics", variant = (not searching and mode == "basics") and "primary" or "ghost", controlSize = "sm", onClick = function() query = "" setMode("basics") end }),
         ui.button({ text = "All", variant = (not searching and mode == "all") and "primary" or "ghost", controlSize = "sm", onClick = function() query = "" setMode("all") end }),
+        KEEP("keys", "keys-wide", "keys-wide-keep", stay),
         ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
       }),
       ui.row({ gap = 8, flexGrow = 1 }, {

@@ -175,6 +175,15 @@ Add, edit, delay, switch off and remove startup programs, and switch off the shi
 
 <p align="center"><a href="img/autostart.png"><img src="img/thumb/autostart.png" alt="Autostart panel"></a></p>
 
+## Keep a panel open
+
+The top panels have a **Keep open** switch in the header: Recolor, Autostart, Music, Agents, Equalizer, Install, Insert, System, Todo and Keys.
+
+- Switch it on to keep the panel open when you open another panel.
+- Close it with the `x` button. Switch it off to go back to the normal panel.
+- The panel has a fixed height while it is kept open.
+- The panel hotkey closes the kept copy and opens the normal panel.
+
 ## Tips
 
 - Edited `config.toml` and nothing changed: the state file overrides it. Use `config-get` and `config-set`.

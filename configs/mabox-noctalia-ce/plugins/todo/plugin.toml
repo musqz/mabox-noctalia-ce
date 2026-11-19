@@ -19,6 +19,18 @@ position = "top_center"
 keyboard_focus = "on_demand"
 capture_keys = ["escape"]
 
+[[panel]]
+id = "main-keep"
+entry = "panel-keep.luau"
+width = 1300
+height = 860
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+capture_keys = ["escape"]
+persistent = true
+dismiss_on_outside_click = false
+
 [[desktop_widget]]
 id = "today"
 entry = "widget.luau"

@@ -18,6 +18,17 @@ placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
 
+[[panel]]
+id = "main-keep"
+entry = "panel-keep.luau"
+width = 780
+height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+persistent = true
+dismiss_on_outside_click = false
+
 [[service]]
 id = "restore"
 entry = "service.luau"
