@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Add an empty button to the Trash row in Places, with the item count and a confirmation.
+- Show the active project and its list when the Quick card in Places is folded.
 - Add a Quick card to Places: star folders and files to keep them at the top, and save them as named projects; the active project takes the stars directly.
 - Draw a frame around every open folder in Places and alternate the row background.
 - Add a Balance slider to Recolor that favours darker or lighter palette colors.
