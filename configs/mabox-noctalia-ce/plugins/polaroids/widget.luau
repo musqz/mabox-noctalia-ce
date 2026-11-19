@@ -129,8 +129,10 @@ local function poll()
   end)
 end
 
--- The thumbnails are composed into one pile image: a loose cluster, one polaroid lying apart from it, one
--- turned about upside down, the rest tilted a little. Layout and angles are drawn again for every new pile.
+-- The thumbnails are composed into one pile image: a loose cluster, one polaroid lying apart from it, the rest
+-- tilted a little, and in one pile out of UPSIDE_ODDS one polaroid turned almost upside down. Layout and angles are
+-- drawn again for every new pile.
+local UPSIDE_ODDS = 9
 -- Room around every centre for a tilted polaroid with its shadow: at most 30 degrees off square is about
 -- 136 px from the centre, plus the shadow.
 local PAD = 155
@@ -167,7 +169,8 @@ local function buildPile(list, out)
   local cols, rows = clusterGrid(n)
   local apartLeft = math.random(2) == 1
   local clusterX = PAD + JITTER + ((cols - 1) * STEP_X) / 2 + (apartLeft and APART or 0)
-  local apart, upside = math.random(1, n), math.random(1, n)
+  local apart = math.random(1, n)
+  local upside = math.random(UPSIDE_ODDS) == 1 and math.random(1, n) or nil
   local cells = {}
   for k = 0, cols * rows - 1 do
     table.insert(cells, k)
@@ -191,7 +194,7 @@ local function buildPile(list, out)
       x = clusterX + ((cell % cols) - (cols - 1) / 2) * STEP_X + math.random(-JITTER, JITTER)
       y = h / 2 + ((cell // cols) - (rows - 1) / 2) * STEP_Y + math.random(-JITTER, JITTER)
     end
-    local angle = i == upside and (180 + math.random(-30, 30)) or math.random(-18, 18)
+    local angle = i == upside and (180 + (math.random(2) == 1 and 1 or -1) * math.random(10, 30)) or math.random(-18, 18)
     spots[i] = { x = math.floor(x - w / 2), y = math.floor(y - h / 2), angle = angle }
   end
   local args = { "magick", "-size", w .. "x" .. h, "xc:none" }
