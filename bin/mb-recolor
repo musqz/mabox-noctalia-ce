@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] PALETTE SRC...
+# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-r] PALETTE SRC...
+# -r resumes: an image whose result is already in OUTDIR is skipped (printed as "skip: path").
 # -x takes comma separated hex colors to leave out of the palette.
 # BLUR softens the source before mapping: 0 to 20, in tenths of a percent of the image width.
 # SRC is files or a directory. Output goes to ~/Pictures/<palette>/<group>/, never overwriting.
 set -euo pipefail
 
-mode=clut group=all out= blur=0 skip=
+mode=clut group=all out= blur=0 skip= resume=0
 here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 dirs=("$HOME/.local/share/mabox-noctalia-ce/palettes" /usr/share/mabox-noctalia-ce/palettes "$here/../lists/palettes")
 
-usage() { echo "usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-x COLORS] PALETTE SRC..." >&2
+usage() { echo "usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-x COLORS] [-r] PALETTE SRC..." >&2
           echo "       mb-recolor --list" >&2
           echo "       mb-recolor --colors [-g GROUP] PALETTE" >&2; exit 2; }
 find_pal() { local d; for d in "${dirs[@]}"; do [[ -f $d/$1.pal ]] && { echo "$d/$1.pal"; return 0; }; done; return 1; }
@@ -27,7 +28,7 @@ fi
 show=0
 [[ ${1:-} == --colors ]] && { show=1; shift; }
 width=0
-while getopts m:g:o:w:b:x: opt; do
+while getopts m:g:o:w:b:x:r opt; do
     case $opt in
         m) mode=$OPTARG ;;
         g) group=$OPTARG ;;
@@ -35,6 +36,7 @@ while getopts m:g:o:w:b:x: opt; do
         w) width=$OPTARG ;;
         b) blur=$OPTARG ;;
         x) skip=$OPTARG ;;
+        r) resume=1 ;;
         *) usage ;;
     esac
 done
@@ -66,7 +68,8 @@ if ((show)); then printf '%s\n' "${colors[@]}"; exit 0; fi
 mkdir -p "$out"
 
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+part=
+trap 'rm -rf "$tmp"; [[ -z $part ]] || rm -f "$part"' EXIT
 trap 'exit 143' TERM INT
 args=(); for c in "${colors[@]}"; do args+=("xc:$c"); done
 magick "${args[@]}" +append "$tmp/pal.png"
@@ -103,7 +106,11 @@ for f in "${files[@]}"; do
     base=$(basename "$f"); name=${base%.*}; ext=${base##*.}
     [[ $base == *.* ]] || { echo "skipped (no extension): $f" >&2; rc=1; continue; }
     dest=$out/$name.$ext; n=1
+    if ((resume)) && [[ -s $dest ]]; then echo "skip: $dest"; continue; fi
+    ((resume)) && [[ -e $dest && ! -s $dest ]] && rm -f "$dest"
     while [[ -e $dest ]]; do dest=$out/$name-$n.$ext; ((n++)); done
+    # written under a hidden name and renamed, so a stopped run never leaves a half image that resume would trust
+    final=$dest; dest=$out/.$name.part.$ext; part=$dest
     pre=(); ((width > 0)) && pre=(-resize "${width}x>")
     if ((blur > 0)); then
         bw=$(magick identify -format %w "${f}[0]" 2>/dev/null) || bw=
@@ -124,6 +131,6 @@ for f in "${files[@]}"; do
                 b=$(awk -v w="$w" 'BEGIN{printf "%.2f", w/3000}')
                 magick "$f" "${pre[@]}" -kuwahara "$k" +dither -remap "$tmp/pal.png" -statistic Mode "${m}x${m}" -blur "0x$b" "$dest" || ok=0 ;;
     esac
-    if ((ok)); then echo "$dest"; else echo "failed: $f" >&2; rm -f "$dest"; rc=1; ok=1; fi
+    if ((ok)); then mv -f "$dest" "$final"; part=; echo "$final"; else echo "failed: $f" >&2; rm -f "$dest"; rc=1; ok=1; fi
 done
 exit $rc

@@ -11,6 +11,7 @@ end
 local palettes = {}
 local mineNames = {} -- palettes saved by the user, shown in a fold of their own
 local mineOpen = false
+local pathsOpen = true
 local palette = "nord"
 local group = "all"
 local mode = "clut"
@@ -23,6 +24,8 @@ local swatches = {}
 local work, dis = {}, {} -- the colors of the palette group as a working copy, and the indexes switched off
 local sel, hexDraft = nil, nil
 local edited = false
+local resume = false
+local delAsk, delAt = nil, 0 -- palette waiting for a delete confirmation, and when it lapses
 local saveName = ""
 local note = nil
 local colGen = 0
@@ -92,7 +95,7 @@ end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\n", src, out, palette, group, mode, blur, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0))
+  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\nresume=%d\npathsopen=%d\n", src, out, palette, group, mode, blur, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0, resume and 1 or 0, pathsOpen and 1 or 0))
 end
 
 local function loadState()
@@ -105,6 +108,8 @@ local function loadState()
     elseif k == "mode" then mode = v
     elseif k == "blur" then blur = tonumber(v) or 0
     elseif k == "mineopen" then mineOpen = v == "1"
+    elseif k == "resume" then resume = v == "1"
+    elseif k == "pathsopen" then pathsOpen = v == "1"
     elseif k == "work" then
       work = {}
       for c in string.gmatch(v, "#%x+") do table.insert(work, c) end
@@ -323,11 +328,14 @@ local RUN = [[pd=$8; mkdir -p "$pd"; rm -f "$pd/total" "$pd/start"; log=$pd/out;
 if [ -d "$5" ]; then find "$5" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.avif' -o -iname '*.bmp' \) | wc -l > "$pd/total"; else echo 1 > "$pd/total"; fi
 date +%s > "$pd/start"
 trap 'rm -f "$log" "$err"; exit 1' TERM
-mb-recolor -m "$1" -b "$6" -g "$2" -x "$7" -o "$3" "$4" "$5" > "$log" 2> "$err"
-n=$(wc -l < "$log"); f=$(grep -c '^failed' "$err")
+[ "$9" = 1 ] && rs=-r || rs=
+mb-recolor $rs -m "$1" -b "$6" -g "$2" -x "$7" -o "$3" "$4" "$5" > "$log" 2> "$err"
+n=$(grep -vc '^skip: ' "$log"); f=$(grep -c '^failed' "$err")
 if [ "$n" -gt 0 ]; then
   [ "$f" -gt 0 ] && x=" ($f failed)" || x=
   notify-send -a Recolor "Recolor" "$n images written to $3$x"
+elif [ -s "$log" ] && [ "$f" -eq 0 ]; then
+  notify-send -a Recolor "Recolor" "Nothing left to do in $3"
 else
   notify-send -a Recolor -u critical "Recolor failed" "$(tail -n1 "$err")"
 fi
@@ -343,8 +351,8 @@ local function progressDir()
   return noctalia.pluginDataDir() .. "/progress"
 end
 
--- Images written so far, out of the total, and the time left from the pace so far.
-local function readProgress(count)
+-- Images done so far (skipped ones included), out of the total; the time left follows the pace of the written ones.
+local function readProgress(count, skipped)
   local pd = progressDir()
   local total = tonumber(noctalia.string.trim(noctalia.readFile(pd .. "/total") or ""))
   local start = tonumber(noctalia.string.trim(noctalia.readFile(pd .. "/start") or ""))
@@ -352,8 +360,9 @@ local function readProgress(count)
     return
   end
   local left = nil
-  if count > 0 then
-    left = math.floor((os.time() - start) / count * math.max(0, total - count))
+  local written = count - skipped
+  if written > 0 then
+    left = math.floor((os.time() - start) / written * math.max(0, total - count))
   end
   local changed = not prog or prog.count ~= count or prog.left ~= left
   prog = { count = count, total = total, left = left }
@@ -541,6 +550,7 @@ local function run()
   table.insert(argv, tostring(blur))
   table.insert(argv, offList())
   table.insert(argv, progressDir())
+  table.insert(argv, resume and "1" or "0")
   writeWork()
   outDir = dest
   prog = nil
@@ -560,14 +570,35 @@ local function idle(fn)
   end
 end
 
-local function chip(key, text, on, onClick)
-  return ui.button({ key = key .. (on and "-on" or ""), text = text, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm", enabled = not running, onClick = idle(onClick) })
+local function deletePalette()
+  local name = delAsk
+  delAsk = nil
+  if not name or not mineNames[name] then
+    render()
+    return
+  end
+  noctalia.runAsync({ "rm", "-f", "--", noctalia.getenv("HOME") .. "/.local/share/mabox-noctalia-ce/palettes/" .. name .. ".pal" }, function()
+    if palette == name then
+      palette = "nord"
+      edited = false
+      group = "all"
+      saveState()
+    end
+    note = "Deleted palette " .. name
+    loadPalettes()
+    loadColors()
+  end)
+end
+
+local function chip(key, text, on, onClick, onRight)
+  return ui.button({ key = key .. (on and "-on" or ""), text = text, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm", enabled = not running, onClick = idle(onClick), onRightClick = onRight and idle(onRight) or nil })
 end
 
 function render()
   local pal, mine, mineCount = {}, {}, 0
   for _, p in ipairs(palettes) do
-    local c = chip("p" .. p.name, p.name, p.name == palette, function() choosePalette(p.name) end)
+    local c = chip("p" .. p.name, p.name, p.name == palette, function() choosePalette(p.name) end,
+      mineNames[p.name] and function() delAsk = p.name; delAt = os.time() + 5; panel.setWantsSecondTicks(true); render() end or nil)
     if mineNames[p.name] then
       mineCount += 1
       -- A folded list still shows the palette in use.
@@ -656,6 +687,12 @@ function render()
     table.insert(lookCols, ui.column({ key = "look" .. m, gap = 6, align = "center" }, { thumb, chip(m, label, m == mode, pick) }))
   end
 
+  local function leaf(p)
+    return string.match(p, "([^/]+)/*$") or p
+  end
+  local pathsText = (src == "" and "no source" or leaf(src)) .. "  ->  " .. (out == "" and "default folder" or leaf(out)) .. (resume and "  (resume)" or "")
+  local pathsHead = ui.button({ key = "pathshead", glyph = pathsOpen and "chevron-down" or "chevron-right", text = pathsOpen and "Folders" or ("Folders: " .. pathsText), variant = "outline", controlSize = "sm", contentAlign = "start",
+    tooltip = "Fold the source and output folders away", onClick = function() pathsOpen = not pathsOpen; saveState(); render() end })
   local srcCard = ui.column(card("src"), {
     ui.label({ text = "Image or folder", fontWeight = "bold" }),
     ui.input({ key = "src" .. gen, value = src, placeholder = "/path/to/image or folder", frameVisible = true, onChange = idle(function(t) src = t; pvFile = nil; saveState() end), onSubmit = idle(function() loadPreviews() end) }),
@@ -671,6 +708,10 @@ function render()
       ui.button({ key = "outdir", glyph = "folder-open", text = "Folder", variant = "outline", controlSize = "sm", enabled = not running, onClick = idle(function() browse("out") end) }),
       ui.button({ key = "outclear", glyph = "x", text = "Default", variant = "ghost", controlSize = "sm", enabled = not running, onClick = idle(function() out = ""; saveState(); render() end) }),
     }),
+    ui.row({ gap = 8, align = "center" }, {
+      ui.toggle({ key = "resume" .. (resume and "1" or "0"), checked = resume, enabled = not running, onChange = idle(function(v) resume = v == true or v == "true"; saveState(); render() end) }),
+      ui.label({ text = "Resume: skip images already in this folder", color = "on_surface_variant", fontSize = 11 }),
+    }),
   })
   local palCard = ui.column(card("pal"), {
     ui.label({ text = "Palette", fontWeight = "bold" }),
@@ -678,6 +719,11 @@ function render()
     mineCount > 0 and ui.button({ key = "minehead", glyph = mineOpen and "chevron-down" or "chevron-right", text = "My palettes (" .. mineCount .. ")", variant = "outline", controlSize = "sm", contentAlign = "start",
       tooltip = "Palettes you saved in the Wallgen panel", onClick = function() mineOpen = not mineOpen; saveState(); render() end }) or ui.box({ height = 0 }),
     #mineRows > 0 and ui.column({ key = "mine", gap = 6 }, mineRows) or ui.box({ height = 0 }),
+    delAsk and ui.row({ key = "delask", gap = 8, align = "center" }, {
+      ui.label({ text = "Delete " .. delAsk .. "?", color = "error", flexGrow = 1 }),
+      ui.button({ key = "delyes", glyph = "trash", text = "Delete", variant = "destructive", controlSize = "sm", onClick = idle(deletePalette) }),
+      ui.button({ key = "delno", text = "Cancel", variant = "outline", controlSize = "sm", onClick = function() delAsk = nil; render() end }),
+    }) or ui.box({ height = 0 }),
     ui.row({ gap = 8, align = "center" }, {
       ui.label({ text = edited and "Colors (changed copy)" or "Colors", fontWeight = "bold", flexGrow = 1 }),
       ui.button({ key = "reset", glyph = "refresh", text = "Reset", variant = "ghost", controlSize = "sm", enabled = not running, tooltip = "Back to the colors of the palette", onClick = idle(resetColors) }),
@@ -727,7 +773,7 @@ function render()
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ key = "columns", gap = 10, align = "start" }, {
-      ui.column({ key = "col-left", gap = 10, flexGrow = 1, minWidth = 380 }, { srcCard, outCard, palCard }),
+      ui.column({ key = "col-left", gap = 10, flexGrow = 1, minWidth = 380 }, pathsOpen and { pathsHead, srcCard, outCard, palCard } or { pathsHead, palCard }),
       ui.column({ key = "col-right", gap = 10, flexGrow = 1, minWidth = 380 }, { lookCard }),
     }),
     ui.row({ gap = 8, align = "center" }, {
@@ -755,6 +801,7 @@ end
 
 function onOpen()
   err = nil
+  delAsk = nil
   done = nil
   loadState()
   for name, set in pairs({ src = function(v) src = v end, out = function(v) out = v end }) do
@@ -783,16 +830,20 @@ end
 local counting = false
 
 function update()
+  if delAsk and os.time() >= delAt then
+    delAsk = nil
+    render()
+  end
   if running then
     check()
     if counting then
       return
     end
     counting = true
-    noctalia.runAsync({ "wc", "-l", progressDir() .. "/out" }, function(r)
+    noctalia.runAsync({ "sh", "-c", 'n=$(wc -l < "$1/out" 2>/dev/null); k=$(grep -c "^skip: " "$1/out" 2>/dev/null); echo "${n:-0} ${k:-0}"', "sh", progressDir() }, function(r)
       counting = false
-      local n = tonumber(string.match(r.stdout or "", "^%s*(%d+)"))
-      if running and n and readProgress(n) then
+      local n, k = string.match(r.stdout or "", "^%s*(%d+)%s+(%d+)")
+      if running and n and readProgress(tonumber(n), tonumber(k)) then
         render()
       end
     end)
