@@ -80,8 +80,6 @@ Wallpapers in the screenshots are stills from animated series. They belong to th
 </tr>
 </table>
 
-Recolor panel (beta): the original frame on the left, the same frame recolored to gruvbox on the right.
-
 Music panel (`W-m`) on the left: playlists, radio stations, search and the playing track. Wallgen panel on the right: wallpapers made from a palette or your own colors.
 
 <table>
