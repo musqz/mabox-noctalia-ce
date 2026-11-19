@@ -25,6 +25,17 @@ local work, dis = {}, {} -- the colors of the palette group as a working copy, a
 local sel, hexDraft = nil, nil
 local edited = false
 local resume = false
+local SHIPPED = {
+  { name = "Poster", palette = "vibrant", group = "all", mode = "smooth", blur = 0, dis = "" },
+  { name = "Dreamy", palette = "rose-pine", group = "all", mode = "lut", blur = 4, dis = "" },
+  { name = "Neon night", palette = "cyberpunk", group = "all", mode = "lut", blur = 0, dis = "" },
+  { name = "Film", palette = "gruvbox", group = "all", mode = "clut", blur = 3, dis = "" },
+  { name = "Clean", palette = "monochrome", group = "all", mode = "smooth", blur = 0, dis = "" },
+}
+local userProfiles = {} -- saved by the user, sorted by name
+local profOpen = false
+local profName = ""
+local pendingDis = nil -- off colors of a profile, applied once its palette is loaded
 local delAsk, delAt = nil, 0 -- palette waiting for a delete confirmation, and when it lapses
 local saveName = ""
 local note = nil
@@ -95,7 +106,7 @@ end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\nresume=%d\npathsopen=%d\n", src, out, palette, group, mode, blur, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0, resume and 1 or 0, pathsOpen and 1 or 0))
+  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\nresume=%d\npathsopen=%d\nprofopen=%d\n", src, out, palette, group, mode, blur, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0, resume and 1 or 0, pathsOpen and 1 or 0, profOpen and 1 or 0))
 end
 
 local function loadState()
@@ -110,6 +121,7 @@ local function loadState()
     elseif k == "mineopen" then mineOpen = v == "1"
     elseif k == "resume" then resume = v == "1"
     elseif k == "pathsopen" then pathsOpen = v == "1"
+    elseif k == "profopen" then profOpen = v == "1"
     elseif k == "work" then
       work = {}
       for c in string.gmatch(v, "#%x+") do table.insert(work, c) end
@@ -191,9 +203,10 @@ local function loadColors()
       for _, c in ipairs(swatches) do
         table.insert(work, c)
       end
-      dis = {}
+      dis = pendingDis or {}
       sel = nil
     end
+    pendingDis = nil
     saveState()
     render()
     loadPreviews()
@@ -266,7 +279,112 @@ local function groupsOf(name)
   return { "all" }
 end
 
+local function profileDir()
+  return noctalia.getenv("HOME") .. "/.local/share/mabox-noctalia-ce/recolor-profiles"
+end
+
+-- Profiles are tiny key=value files; one sh run reads them all (name, a tab, the lines joined by ";").
+local function loadProfiles()
+  noctalia.runAsync({ "sh", "-c", 'for f in "$1"/*.prof; do [ -f "$f" ] || continue; printf "%s\\t" "$(basename "$f" .prof)"; tr "\\n" ";" < "$f"; echo; done', "sh", profileDir() }, function(r)
+    userProfiles = {}
+    for line in string.gmatch(r.stdout or "", "[^\n]+") do
+      local name, rest = string.match(line, "^([^\t]+)\t(.*)$")
+      if name then
+        local p = { name = name, group = "all", mode = "clut", blur = 0, dis = "" }
+        for k, v in string.gmatch(rest, "(%a+)=([^;]*)") do
+          p[k] = (k == "blur") and math.max(0, math.min(20, math.floor(tonumber(v) or 0))) or v
+        end
+        if p.mode ~= "clut" and p.mode ~= "remap" and p.mode ~= "smooth" and p.mode ~= "lut" then
+          p.mode = "clut"
+        end
+        if p.palette then
+          table.insert(userProfiles, p)
+        end
+      end
+    end
+    table.sort(userProfiles, function(a, b) return a.name < b.name end)
+    render()
+  end)
+end
+
+local function profileOn(p)
+  return not edited and palette == p.palette and group == p.group and mode == p.mode and blur == p.blur and disIdx() == p.dis
+end
+
+local function applyProfile(p)
+  local known = false
+  for _, q in ipairs(palettes) do
+    known = known or q.name == p.palette
+  end
+  if not known then
+    err = "Palette " .. p.palette .. " of this profile is not installed"
+    render()
+    return
+  end
+  err = nil
+  palette = p.palette
+  group = p.group
+  local okGroup = false
+  for _, g in ipairs(groupsOf(palette)) do
+    okGroup = okGroup or g == group
+  end
+  if not okGroup then
+    group = "all"
+  end
+  mode = p.mode
+  blur = p.blur
+  edited = false
+  work = {}
+  pendingDis = {}
+  for n in string.gmatch(p.dis, "%d+") do
+    pendingDis[tonumber(n)] = true
+  end
+  done = nil
+  note = "Profile " .. p.name
+  saveState()
+  render()
+  loadColors()
+end
+
+local function saveProfile()
+  local name = string.match(noctalia.string.trim(profName), "^[%w _-]+$")
+  if not name then
+    err = "Name the profile with letters, digits, spaces, - or _"
+    render()
+    return
+  end
+  if edited then
+    err = "Save the changed colors as a palette first; a profile points at a palette"
+    render()
+    return
+  end
+  for _, p in ipairs(SHIPPED) do
+    if p.name == name then
+      err = "A profile called " .. name .. " exists"
+      render()
+      return
+    end
+  end
+  for _, p in ipairs(userProfiles) do
+    if p.name == name then
+      err = "A profile called " .. name .. " exists"
+      render()
+      return
+    end
+  end
+  noctalia.mkdirAll(profileDir())
+  noctalia.writeFile(profileDir() .. "/" .. name .. ".prof", string.format("palette=%s\ngroup=%s\nmode=%s\nblur=%d\ndis=%s\n", palette, group, mode, blur, disIdx()))
+  err = nil
+  note = "Saved profile " .. name
+  profName = ""
+  profOpen = true
+  gen = gen + 1
+  saveState()
+  loadProfiles()
+end
+
 local function choosePalette(name)
+  pendingDis = nil
   palette = name
   edited = false
   local ok = false
@@ -573,6 +691,15 @@ end
 local function deletePalette()
   local name = delAsk
   delAsk = nil
+  local prof = name and string.match(name, "^prof:(.+)$")
+  if prof then
+    err = nil
+    noctalia.runAsync({ "rm", "-f", "--", profileDir() .. "/" .. prof .. ".prof" }, function()
+      note = "Deleted profile " .. prof
+      loadProfiles()
+    end)
+    return
+  end
   if not name or not mineNames[name] then
     render()
     return
@@ -610,7 +737,7 @@ function render()
   end
   local grp = {}
   for _, g in ipairs(groupsOf(palette)) do
-    table.insert(grp, chip("g" .. g, g, g == group, function() group = g; edited = false; saveState(); done = nil; render(); loadColors() end))
+    table.insert(grp, chip("g" .. g, g, g == group, function() pendingDis = nil; group = g; edited = false; saveState(); done = nil; render(); loadColors() end))
   end
   -- Chips per row: 5 by default, 4 for the palettes.
   local function chunk(items, prefix, per)
@@ -718,7 +845,7 @@ function render()
     mineCount > 0 and ui.button({ key = "minehead", glyph = mineOpen and "chevron-down" or "chevron-right", text = "My palettes (" .. mineCount .. ")" .. ((not mineOpen and mineNames[palette]) and ("  -  " .. palette) or ""), variant = "outline", controlSize = "sm", contentAlign = "start",
       tooltip = "Palettes you saved in the Wallgen panel", onClick = function() mineOpen = not mineOpen; saveState(); render() end }) or ui.box({ height = 0 }),
     #mineRows > 0 and ui.column({ key = "mine", gap = 6 }, mineRows) or ui.box({ height = 0 }),
-    delAsk and ui.row({ key = "delask", gap = 8, align = "center" }, {
+    delAsk and not string.find(delAsk, "^prof:") and ui.row({ key = "delask", gap = 8, align = "center" }, {
       ui.label({ text = "Delete " .. delAsk .. "?", color = "error", flexGrow = 1 }),
       ui.button({ key = "delyes", glyph = "trash", text = "Delete", variant = "destructive", controlSize = "sm", onClick = idle(deletePalette) }),
       ui.button({ key = "delno", text = "Cancel", variant = "outline", controlSize = "sm", onClick = function() delAsk = nil; render() end }),
@@ -740,6 +867,30 @@ function render()
       ui.button({ key = "savepal", glyph = "device-floppy", text = "Save as", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Keep the colors that are on as a palette of your own", onClick = idle(savePalette) }),
     }),
     note and ui.label({ text = note, color = "primary", fontSize = 11 }) or ui.box({ height = 0 }),
+  })
+  local shippedChips, userChips = {}, {}
+  for _, p in ipairs(SHIPPED) do
+    table.insert(shippedChips, chip("pf" .. p.name, p.name, profileOn(p), function() applyProfile(p) end))
+  end
+  for _, p in ipairs(userProfiles) do
+    table.insert(userChips, chip("pu" .. p.name, p.name, profileOn(p), function() applyProfile(p) end,
+      function() delAsk = "prof:" .. p.name; delAt = os.time() + 5; panel.setWantsSecondTicks(true); render() end))
+  end
+  local profCard = ui.column(card("prof"), {
+    ui.label({ text = "Profiles", fontWeight = "bold" }),
+    ui.column({ gap = 6 }, chunk(shippedChips, "psr", 3)),
+    #userChips > 0 and ui.button({ key = "profhead", glyph = profOpen and "chevron-down" or "chevron-right", text = "My profiles (" .. #userChips .. ")", variant = "outline", controlSize = "sm", contentAlign = "start",
+      tooltip = "Right click a profile to delete it", onClick = function() profOpen = not profOpen; saveState(); render() end }) or ui.box({ height = 0 }),
+    (#userChips > 0 and profOpen) and ui.column({ key = "profmine", gap = 6 }, chunk(userChips, "pur", 3)) or ui.box({ height = 0 }),
+    (delAsk and string.find(delAsk, "^prof:")) and ui.row({ key = "profdelask", gap = 8, align = "center" }, {
+      ui.label({ text = "Delete " .. string.sub(delAsk, 6) .. "?", color = "error", flexGrow = 1 }),
+      ui.button({ key = "profdelyes", glyph = "trash", text = "Delete", variant = "destructive", controlSize = "sm", onClick = idle(deletePalette) }),
+      ui.button({ key = "profdelno", text = "Cancel", variant = "outline", controlSize = "sm", onClick = function() delAsk = nil; render() end }),
+    }) or ui.box({ height = 0 }),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.input({ key = "profname" .. gen, value = profName, placeholder = "name of a new profile", controlSize = "sm", frameVisible = true, flexGrow = 1, onChange = function(t) profName = t end, onSubmit = idle(saveProfile) }),
+      ui.button({ key = "profsave", glyph = "device-floppy", text = "Save", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Keep the palette, group, look, blur and the colors that are off", onClick = idle(saveProfile) }),
+    }),
   })
   local lookCard = ui.column(card("mode"), {
     ui.row({ gap = 8, align = "center" }, {
@@ -773,7 +924,7 @@ function render()
     }),
     ui.row({ key = "columns", gap = 10, align = "start" }, {
       ui.column({ key = "col-left", gap = 10, flexGrow = 1, minWidth = 380 }, pathsOpen and { pathsHead, srcCard, outCard, palCard } or { pathsHead, palCard }),
-      ui.column({ key = "col-right", gap = 10, flexGrow = 1, minWidth = 380 }, { lookCard }),
+      ui.column({ key = "col-right", gap = 10, flexGrow = 1, minWidth = 380 }, { profCard, lookCard }),
     }),
     ui.row({ gap = 8, align = "center" }, {
       ui.button({ key = "run", glyph = running and "player-stop" or "wand", text = running and "Stop" or "Recolor", variant = running and "destructive" or "primary", onClick = run }),
@@ -820,6 +971,7 @@ function onOpen()
   saveState()
   render()
   loadPalettes()
+  loadProfiles()
   loadColors()
   check()
   panel.setWantsSecondTicks(true)
