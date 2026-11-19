@@ -5,6 +5,7 @@
 - Delete a saved Recolor palette with a right-click and a confirmation.
 - Fold the Recolor folder cards into one line.
 - Make the Recolor My palettes fold hide the whole list; the header shows the palette in use.
+- Add a Keep open switch to the Recolor, Autostart, Music, Agents, Equalizer, Install, Insert, System, Todo and Keys panels: the panel stays open when another panel opens.
 - Add Recolor profiles (Poster, Dreamy, Neon night, Film, Clean) and your own, saved by name with palette, group, look, blur and the colors that are off.
 - Fix the Music sleep timer: it now stops the music, offers 15 to 180 minutes and your own minutes, and can shut the computer down.
 - Turn one Polaroid upside down in about one pile out of nine, not in every pile.
