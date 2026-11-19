@@ -73,7 +73,12 @@ rm -rf ~/.config/mabox-noctalia-ce
 Wallpapers in the screenshots are stills from animated series. They belong to their respective owners and are not part of this project.
 
 
-<a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="860" /></a>
+<table>
+<tr>
+<td><a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="420" /></a></td>
+<td><a href="docs/desktop-recolor.png"><img alt="Noctalia CE desktop with the Colors window, the Recolor panel and the Configs window" src="docs/desktop-recolor.png" width="420" /></a></td>
+</tr>
+</table>
 
 Recolor panel (beta): the original frame on the left, the same frame recolored to gruvbox on the right.
 
