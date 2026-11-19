@@ -42,6 +42,8 @@ local rightRow = 2
 local profile = "Recent"
 local files = {}
 local fileIndex = 1
+local wpList = true -- overview of every palette of the profile with its colors, or one palette
+local wpRows = {} -- { file = "x.clr", colors = { "#hex", ... } } in glob order
 local formatIndex = 1
 local ACTIONS = { "copy", "paste" }
 local actionIndex = 1
@@ -200,11 +202,40 @@ local function copy(hex)
   end
 end
 
+-- Reads every palette of the profile in one awk run: parsing 150 files in Luau would exceed the callback budget.
+local function loadOverview()
+  local dir = DIRS[profile]
+  noctalia.runAsync({ "sh", "-c", 'cd "$1" 2>/dev/null && awk \'FNR == 1 { printf "\\n%s\\t", FILENAME } { printf " %s", $1 } END { print "" }\' *.clr', "sh", dir }, function(r)
+    if dir ~= DIRS[profile] then
+      return
+    end
+    wpRows = {}
+    for line in string.gmatch(r.stdout or "", "[^\n]+") do
+      local file, rest = string.match(line, "^([^\t]+%.clr)\t(.*)$")
+      if file then
+        local colors = {}
+        for c in string.gmatch(rest, "#%x+") do
+          table.insert(colors, c)
+        end
+        table.insert(wpRows, { file = file, colors = colors })
+      end
+    end
+    render()
+  end)
+end
+
 local function setProfile(name, select)
   kbd.clear()
   profile = name
   fileIndex = 1
   files = DIRS[name] and listFiles(DIRS[name]) or {}
+  if DIRS[name] then
+    wpRows = {}
+    wpList = select == nil
+    if wpList then
+      loadOverview()
+    end
+  end
   for i, f in ipairs(files) do
     if f == select then
       fileIndex = i
@@ -450,6 +481,7 @@ render = function()
       table.insert(right, ui.label({ text = "Save as text writes NAME.txt with one color code per line.", fontSize = 11, color = "on_surface_variant" }))
     end
   end
+  local wpOverview = DIRS[profile] ~= nil and wpList
   if profile ~= "Recent" and profile ~= "Settings" then
     local names = {}
     for _, f in ipairs(files) do
@@ -460,12 +492,45 @@ render = function()
         kbd.clear()
       end
       fileIndex = i
+      wpList = false
       render()
     end, rightRow, 2))
     rightRow += 1
+    if not wpOverview then
+      table.insert(right, ui.button({ key = "wplistback", glyph = "list", text = "All palettes", variant = "ghost", controlSize = "sm", onClick = function() wpList = true; render(); loadOverview() end }))
+    end
+  end
+  if wpOverview then
+    local rows = {}
+    for i, w in ipairs(wpRows) do
+      local strip = {}
+      for k = 1, #w.colors, 2 do
+        table.insert(strip, ui.box({ key = "s" .. i .. "-" .. k, fill = w.colors[k], flexGrow = 1, height = 12 }))
+      end
+      table.insert(rows, ui.column({ key = "wp" .. i, gap = 3, padding = 4, radius = 6, border = "outline_variant", borderWidth = 1, onClick = function()
+        for n, f in ipairs(files) do
+          if f == w.file then
+            fileIndex = n
+            wpList = false
+          end
+        end
+        if wpList then
+          loadOverview()
+        else
+          render()
+        end
+      end }, {
+        ui.label({ text = cleanName(w.file), maxLines = 1, fontSize = 11 }),
+        ui.row({ gap = 0 }, strip),
+      }))
+    end
+    if #rows == 0 then
+      table.insert(rows, ui.label({ text = "No palettes yet", color = "on_surface_variant", fontSize = 11 }))
+    end
+    table.insert(right, ui.scroll({ key = "wplist" .. profile, gap = 6, flexGrow = 1 }, rows))
   end
   -- Build the grid first: it registers the swatch stops that reveal() looks up.
-  if profile ~= "Settings" then
+  if profile ~= "Settings" and not wpOverview then
     local swatches = grid(currentColors())
     table.insert(right, ui.scroll({ gap = 8, flexGrow = 1, key = "grid" .. profile .. fileIndex, revealKey = string.match(kbd.reveal() or "", "^c%d+$") }, swatches))
   end
@@ -505,6 +570,7 @@ render = function()
         ring("pick", ui.button({ glyph = "color-picker", text = "Pick", variant = "primary", controlSize = "sm", tooltip = "Pick from screen", onClick = pickFromScreen })),
         ring("select", ui.button({ glyph = "palette", text = "Select", variant = "ghost", controlSize = "sm", tooltip = "Add from selector", onClick = addFromSelector })),
         ui.spacer({ flexGrow = 1 }),
+        pinned and ui.button({ key = "swap", glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("colors", pinned) end }) or ui.spacer({ width = 0 }),
         pinSide.dockButton("colors", pinned, render),
         ring("close", ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() pinSide.close("colors", pinned) end })),
       }),
@@ -553,7 +619,6 @@ render = function()
       end, 1, 4),
       pinned and ui.row({ gap = 2 }, {
         pinSide.panelButton("colors", "picker"),
-        ui.button({ glyph = "arrows-left-right", variant = "ghost", tooltip = "Move to the other side", onClick = function() pinSide.swap("colors", pinned) end }),
         ui.button({ glyph = "x", variant = "ghost", tooltip = "Close", onClick = function() panel.close() end }),
       })
         or ring("pin", ui.button({ glyph = "pin", variant = "ghost", tooltip = "Pin window", onClick = function()
