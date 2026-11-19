@@ -70,9 +70,6 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 ## Screenshots
 
-Wallpapers in the screenshots are stills from animated series. They belong to their respective owners and are not part of this project.
-
-
 <table>
 <tr>
 <td><a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="420" /></a></td>
@@ -80,13 +77,9 @@ Wallpapers in the screenshots are stills from animated series. They belong to th
 </tr>
 </table>
 
-Music panel (`W-m`) on the left: playlists, radio stations, search and the playing track. Wallgen panel on the right: wallpapers made from a palette or your own colors.
-
 <table>
 <tr>
 <td><a href="docs/music-panel.png"><img alt="Music panel with a playlist open and a track playing" src="docs/music-panel.png" width="420" /></a></td>
 <td><a href="docs/wallgen-panel.png"><img alt="Wallgen panel with the palette, the type gallery and the sliders" src="docs/wallgen-panel.png" width="420" /></a></td>
 </tr>
 </table>
-
-
