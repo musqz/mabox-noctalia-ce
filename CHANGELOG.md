@@ -5,7 +5,6 @@
 - Draw a frame around every open folder in Places and alternate the row background.
 - Add a Balance slider to Recolor that favours darker or lighter palette colors.
 - Fix the Recolor Soft look saving JPEG files in gray.
-- Draw a frame around an expanded bookmark in the Places panel.
 
 ## 0.6.2
 - Add a Resume switch to Recolor that skips images already in the output folder, to continue a stopped run on a large folder.
