@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Add a Balance slider to Recolor that favours darker or lighter palette colors.
+- Fix the Recolor Soft look saving JPEG files in gray.
 - Draw a frame around an expanded bookmark in the Places panel.
 
 ## 0.6.2
