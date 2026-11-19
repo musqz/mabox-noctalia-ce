@@ -125,7 +125,7 @@ for f in "${files[@]}"; do
         pre+=(-blur "0x$(awk -v w="$bw" -v b="$blur" 'BEGIN{printf "%.2f", w*b/1000}')")
     fi
     case $mode in
-        clut)   magick "$f" "${pre[@]}" -colorspace Gray "$tmp/pal.png" -clut "$dest" || ok=0 ;;
+        clut)   magick "$f" "${pre[@]}" -colorspace Gray "$tmp/pal.png" -clut -type TrueColor "$dest" || ok=0 ;;
         lut)    magick "$f" "${pre[@]}" "$tmp/lut.png" -hald-clut "$dest" || ok=0 ;;
         remap)  magick "$f" "${pre[@]}" +dither -remap "$tmp/pal.png" "$dest" || ok=0 ;;
         smooth) # flat areas with clean edges; filter sizes follow the image width
