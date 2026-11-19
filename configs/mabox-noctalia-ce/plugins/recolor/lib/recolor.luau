@@ -18,6 +18,7 @@ local palette = "nord"
 local group = "all"
 local mode = "clut"
 local blur = 0
+local balance = 50 -- 50 keeps the source as it is; lower favours dark palette colors, higher light ones
 local src = ""
 local out = ""
 local gen = 0
@@ -108,7 +109,7 @@ end
 
 local function saveState()
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\nresume=%d\npathsopen=%d\nprofopen=%d\n", src, out, palette, group, mode, blur, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0, resume and 1 or 0, pathsOpen and 1 or 0, profOpen and 1 or 0))
+  noctalia.writeFile(pickFile("state"), string.format("src=%s\nout=%s\npalette=%s\ngroup=%s\nmode=%s\nblur=%d\nbalance=%d\nwork=%s\ndis=%s\nedited=%d\nsel=%s\nmineopen=%d\nresume=%d\npathsopen=%d\nprofopen=%d\n", src, out, palette, group, mode, blur, balance, table.concat(work, ","), disIdx(), edited and 1 or 0, sel and tostring(sel) or "", mineOpen and 1 or 0, resume and 1 or 0, pathsOpen and 1 or 0, profOpen and 1 or 0))
 end
 
 local function loadState()
@@ -120,6 +121,7 @@ local function loadState()
     elseif k == "group" then group = v
     elseif k == "mode" then mode = v
     elseif k == "blur" then blur = tonumber(v) or 0
+    elseif k == "balance" then balance = math.max(0, math.min(100, math.floor(tonumber(v) or 50)))
     elseif k == "mineopen" then mineOpen = v == "1"
     elseif k == "resume" then resume = v == "1"
     elseif k == "pathsopen" then pathsOpen = v == "1"
@@ -226,7 +228,7 @@ fi
 [ -f "$src" ] || exit 1
 rm -rf "$1"; mkdir -p "$1"
 magick "$src" -resize 400x "$1/in.png" || exit 1
-for m in clut remap smooth lut; do mb-recolor -m "$m" -b "$6" -g "$3" -x "$7" -o "$1/$m" "$2" "$1/in.png" >/dev/null 2>&1 & done
+for m in clut remap smooth lut; do mb-recolor -m "$m" -b "$6" ${9:+-B "$9"} -g "$3" -x "$7" -o "$1/$m" "$2" "$1/in.png" >/dev/null 2>&1 & done
 wait
 echo "src=$src"; echo "dir=$dir"
 ls "$1"/*/*]]
@@ -244,7 +246,7 @@ function loadPreviews(random)
   local mine = pvGen
   writeWork()
   local base = noctalia.pluginDataDir() .. "/pv"
-  noctalia.runAsync({ "sh", "-c", PREVIEW, "sh", base .. "/" .. mine, effPalette(), effGroup(), path, random and "1" or "0", tostring(blur), offList(), pvFile or "" }, function(r)
+  noctalia.runAsync({ "sh", "-c", PREVIEW, "sh", base .. "/" .. mine, effPalette(), effGroup(), path, random and "1" or "0", tostring(blur), offList(), pvFile or "", balance ~= 50 and tostring(balance) or "" }, function(r)
     if mine ~= pvGen then
       return
     end
@@ -292,9 +294,9 @@ local function loadProfiles()
     for line in string.gmatch(r.stdout or "", "[^\n]+") do
       local name, rest = string.match(line, "^([^\t]+)\t(.*)$")
       if name then
-        local p = { name = name, group = "all", mode = "clut", blur = 0, dis = "" }
+        local p = { name = name, group = "all", mode = "clut", blur = 0, balance = 50, dis = "" }
         for k, v in string.gmatch(rest, "(%a+)=([^;]*)") do
-          p[k] = (k == "blur") and math.max(0, math.min(20, math.floor(tonumber(v) or 0))) or v
+          p[k] = (k == "blur") and math.max(0, math.min(20, math.floor(tonumber(v) or 0))) or (k == "balance") and math.max(0, math.min(100, math.floor(tonumber(v) or 50))) or v
         end
         if p.mode ~= "clut" and p.mode ~= "remap" and p.mode ~= "smooth" and p.mode ~= "lut" then
           p.mode = "clut"
@@ -310,7 +312,7 @@ local function loadProfiles()
 end
 
 local function profileOn(p)
-  return not edited and palette == p.palette and group == p.group and mode == p.mode and blur == p.blur and disIdx() == p.dis
+  return not edited and palette == p.palette and group == p.group and mode == p.mode and blur == p.blur and balance == (p.balance or 50) and disIdx() == p.dis
 end
 
 local function applyProfile(p)
@@ -335,6 +337,7 @@ local function applyProfile(p)
   end
   mode = p.mode
   blur = p.blur
+  balance = p.balance or 50
   edited = false
   work = {}
   pendingDis = {}
@@ -375,7 +378,7 @@ local function saveProfile()
     end
   end
   noctalia.mkdirAll(profileDir())
-  noctalia.writeFile(profileDir() .. "/" .. name .. ".prof", string.format("palette=%s\ngroup=%s\nmode=%s\nblur=%d\ndis=%s\n", palette, group, mode, blur, disIdx()))
+  noctalia.writeFile(profileDir() .. "/" .. name .. ".prof", string.format("palette=%s\ngroup=%s\nmode=%s\nblur=%d\nbalance=%d\ndis=%s\n", palette, group, mode, blur, balance, disIdx()))
   err = nil
   note = "Saved profile " .. name
   profName = ""
@@ -449,7 +452,7 @@ if [ -d "$5" ]; then find "$5" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '
 date +%s > "$pd/start"
 trap 'rm -f "$log" "$err"; exit 1' TERM
 [ "$9" = 1 ] && rs=-r || rs=
-mb-recolor $rs -m "$1" -b "$6" -g "$2" -x "$7" -o "$3" "$4" "$5" > "$log" 2> "$err"
+mb-recolor $rs -m "$1" -b "$6" ${10:+-B "${10}"} -g "$2" -x "$7" -o "$3" "$4" "$5" > "$log" 2> "$err"
 n=$(grep -vc '^skip: ' "$log"); f=$(grep -c '^failed' "$err")
 if [ "$n" -gt 0 ]; then
   [ "$f" -gt 0 ] && x=" ($f failed)" || x=
@@ -671,6 +674,7 @@ local function run()
   table.insert(argv, offList())
   table.insert(argv, progressDir())
   table.insert(argv, resume and "1" or "0")
+  table.insert(argv, balance ~= 50 and tostring(balance) or "")
   writeWork()
   outDir = dest
   prog = nil
@@ -891,7 +895,7 @@ function render()
     }) or ui.box({ height = 0 }),
     ui.row({ gap = 6, align = "center" }, {
       ui.input({ key = "profname" .. gen, value = profName, placeholder = "name of a new profile", controlSize = "sm", frameVisible = true, flexGrow = 1, onChange = function(t) profName = t end, onSubmit = idle(saveProfile) }),
-      ui.button({ key = "profsave", glyph = "device-floppy", text = "Save", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Keep the palette, group, look, blur and the colors that are off", onClick = idle(saveProfile) }),
+      ui.button({ key = "profsave", glyph = "device-floppy", text = "Save", variant = "outline", controlSize = "sm", enabled = not running, tooltip = "Keep the palette, group, look, blur, balance and the colors that are off", onClick = idle(saveProfile) }),
     }),
   })
   local lookCard = ui.column(card("mode"), {
@@ -914,6 +918,14 @@ function render()
       ui.label({ text = blur == 0 and "off" or string.format("%.1f%%", blur / 10), width = 40 }),
     }),
     ui.label({ text = "Softens the source before the colors are mapped; the size follows the image width.", color = "on_surface_variant", fontSize = 11 }),
+    ui.row({ gap = 8, align = "center" }, {
+      ui.label({ text = "Balance", fontWeight = "bold", width = 44 }),
+      ui.slider({ key = "balance", min = 0, max = 100, step = 1, value = balance, controlSize = "sm", flexGrow = 1,
+        onChange = idle(function(v) balance = math.floor(tonumber(v) or balance); saveState(); done = nil; render() end),
+        onDragEnd = idle(function() loadPreviews() end) }),
+      ui.label({ text = balance == 50 and "even" or (balance < 50 and "darker" or "lighter"), width = 40 }),
+    }),
+    ui.label({ text = "Favours dark (left) or light (right) palette colors.", color = "on_surface_variant", fontSize = 11 }),
   })
 
   panel.render(ui.column({ gap = 10, padding = 12 }, {
