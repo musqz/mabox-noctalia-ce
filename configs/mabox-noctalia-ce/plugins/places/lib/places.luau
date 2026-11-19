@@ -47,8 +47,8 @@ local searchNonce = 0
 local render
 local listDir
 
-local ORDER = { "places", "bookmarks", "drives", "recent" }
-local TITLES = { places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
+local ORDER = { "quick", "places", "bookmarks", "drives", "recent" }
+local TITLES = { quick = "Quick", places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
 local order = { table.unpack(ORDER) }
 local hidden = {}
 local folded = {}
@@ -79,6 +79,160 @@ local function setSize(n)
   render()
 end
 
+-- Quick: a working list of folders and files kept at the top while a project is going on, saved as named project profiles.
+-- Files hold one "d<TAB>path" or "f<TAB>path" per line: the list in <data>/quick, a profile in <data>/quick-profiles/<name>.list.
+local quick = {}
+local qProfiles = {}
+local qName = ""
+local qNonce = 0
+local qDel, qDelAt = nil, 0
+
+local function quickFile()
+  return noctalia.pluginDataDir() .. "/quick"
+end
+
+local function profDir()
+  return noctalia.pluginDataDir() .. "/quick-profiles"
+end
+
+local function parseQuick(text)
+  local list = {}
+  for l in string.gmatch(text or "", "[^\n]+") do
+    local kind, path = string.match(l, "^([df])\t(.+)$")
+    if kind then
+      table.insert(list, { kind = kind, path = path })
+    end
+  end
+  return list
+end
+
+local function quickText()
+  local out = {}
+  for _, q in ipairs(quick) do
+    table.insert(out, q.kind .. "\t" .. q.path)
+  end
+  return table.concat(out, "\n") .. (#out > 0 and "\n" or "")
+end
+
+local qActive = nil -- the project stars go into; nil: the temporary list
+
+local function activeFile()
+  return noctalia.pluginDataDir() .. "/quick-active"
+end
+
+local function listFile()
+  return qActive and (profDir() .. "/" .. qActive .. ".list") or quickFile()
+end
+
+local function saveQuick()
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.mkdirAll(profDir())
+  noctalia.writeFile(listFile(), quickText())
+end
+
+local function setActive(name)
+  qActive = name
+  noctalia.mkdirAll(noctalia.pluginDataDir())
+  noctalia.writeFile(activeFile(), (name or "") .. "\n")
+end
+
+local quickSet = {}
+
+local function isQuick(path)
+  return quickSet[path] == true
+end
+
+-- The panel and the pinned window are two Lua states over the same files: the active project and its list are read again
+-- before they are changed or drawn, else the one with the older copy overwrites the other's stars.
+local function reloadQuick()
+  local name = noctalia.string.trim(noctalia.readFile(activeFile()) or "")
+  qActive = (name ~= "" and noctalia.fileExists(profDir() .. "/" .. name .. ".list")) and name or nil
+  quick = parseQuick(noctalia.readFile(listFile()))
+  quickSet = {}
+  for _, q in ipairs(quick) do
+    quickSet[q.path] = true
+  end
+end
+
+local function toggleQuick(kind, path)
+  reloadQuick()
+  for i, q in ipairs(quick) do
+    if q.path == path then
+      table.remove(quick, i)
+      saveQuick()
+      render()
+      return
+    end
+  end
+  table.insert(quick, { kind = kind, path = path })
+  saveQuick()
+  render()
+end
+
+local function loadQProfiles()
+  qProfiles = {}
+  for _, f in (noctalia.listDir(profDir()) or {}) do
+    local name = string.match(f, "^(.+)%.list$")
+    if name then
+      table.insert(qProfiles, name)
+    end
+  end
+  table.sort(qProfiles)
+end
+
+-- A new project becomes the active one. Made from the temporary list it keeps that list; made inside a project it starts empty.
+local function saveQProfile()
+  local name = noctalia.string.trim((string.gsub(qName, "[^%w _%-]", "")))
+  if name == "" then
+    return
+  end
+  reloadQuick()
+  noctalia.mkdirAll(profDir())
+  -- an existing name only becomes the active project; its list is kept
+  if not noctalia.fileExists(profDir() .. "/" .. name .. ".list") then
+    noctalia.writeFile(profDir() .. "/" .. name .. ".list", qActive and "" or quickText())
+  end
+  setActive(name)
+  qName = ""
+  qNonce += 1
+  loadQProfiles()
+  render()
+end
+
+-- Clicking the active project again goes back to the temporary list.
+local function toggleQProfile(name)
+  reloadQuick()
+  setActive(qActive ~= name and name or nil)
+  render()
+end
+
+local function deleteQProfile()
+  reloadQuick()
+  local name = qDel
+  qDel = nil
+  if name then
+    if qActive == name then
+      setActive(nil)
+    end
+    noctalia.runAsync({ "rm", "-f", "--", profDir() .. "/" .. name .. ".list" }, function()
+      loadQProfiles()
+      render()
+    end)
+  end
+end
+
+local function starButton(kind, path, tag)
+  local on = isQuick(path)
+  return ui.button({
+    key = "st" .. tag .. path,
+    glyph = on and "star-filled" or "star",
+    variant = on and "primary" or "ghost",
+    controlSize = "sm",
+    tooltip = on and "Remove from Quick" or "Add to Quick",
+    onClick = function() toggleQuick(kind, path) end,
+  })
+end
+
 local function layoutFile()
   return noctalia.pluginDataDir() .. "/layout"
 end
@@ -98,7 +252,8 @@ local function loadLayout()
   end
   for _, id in ipairs(ORDER) do
     if not seen[id] then
-      table.insert(order, id)
+      -- a card added later: Quick belongs on top, the rest goes last
+      table.insert(order, id == "quick" and 1 or #order + 1, id)
     end
   end
 end
@@ -362,13 +517,13 @@ local function newFolderRow(path, depth, tag)
   })
 end
 
-local function dirRow(path, name, glyph, depth, tag)
+local function dirRow(path, name, glyph, depth, tag, fill)
   local open = expanded[path]
   local row = {}
   if depth > 0 then
     table.insert(row, ui.box({ width = depth * 10, height = 0 }))
   end
-  table.insert(row, ui.button({
+  local title = ui.button({
     key = "t" .. tag .. path,
     selected = hitKey == "r" .. tag .. path,
     glyph = open and "chevron-down" or glyph,
@@ -379,7 +534,24 @@ local function dirRow(path, name, glyph, depth, tag)
     tooltip = path .. "\nClick: show or hide the content, right click: open in the file manager",
     onClick = function() toggleDir(path) end,
     onRightClick = function() openFolder({ open = path }) end,
-  }))
+  })
+  if open and depth > 0 then
+    -- The name of an open subfolder takes the hover color; a button has no text color, so it is a row of glyph and label.
+    title = ui.row({
+      key = "to" .. tag .. path,
+      gap = 6,
+      align = "center",
+      padding = 6,
+      flexGrow = 1,
+      tooltip = path .. "\nClick: hide the content, right click: open in the file manager",
+      onClick = function() toggleDir(path) end,
+      onRightClick = function() openFolder({ open = path }) end,
+    }, {
+      ui.glyph({ name = "chevron-down", size = 14, color = "hover" }),
+      ui.label({ text = name, color = "hover", maxLines = 1, flexGrow = 1 }),
+    })
+  end
+  table.insert(row, title)
   if open then
     table.insert(row, ui.button({ key = "tn" .. tag .. path, glyph = "folder-plus", variant = (newIn == path and newTag == tag) and "primary" or "ghost", controlSize = "sm", tooltip = "New folder", onClick = function()
       newIn = (newIn ~= path or newTag ~= tag) and path or nil
@@ -389,7 +561,8 @@ local function dirRow(path, name, glyph, depth, tag)
     end }))
     table.insert(row, ui.button({ key = "tt" .. tag .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
   end
-  return ui.row({ key = "r" .. tag .. path, gap = 2, align = "center" }, row)
+  table.insert(row, starButton("d", path, tag))
+  return ui.row({ key = "r" .. tag .. path, gap = 2, align = "center", fill = fill, radius = fill and 6 or nil }, row)
 end
 
 -- Rows under an expanded folder, subfolders first; recurses into expanded subfolders.
@@ -401,18 +574,27 @@ local function childRows(path, depth, out, tag)
   if #items == 0 then
     table.insert(out, ui.row({ key = "e" .. tag .. path, gap = 0 }, { ui.box({ width = depth * 10 + 12, height = 0 }), ui.label({ text = "empty", color = "outline_variant" }) }))
   end
-  for _, it in ipairs(items) do
+  -- Every second row of a folder's content gets a slightly darker background. Both fills are explicit: a retained widget
+  -- would keep an old one when the rows move after a fold.
+  local function stripe(i)
+    return i % 2 == 1 and "surface" or "surface_variant"
+  end
+  for i, it in ipairs(items) do
     local full = (path == "/" and "" or path) .. "/" .. it.name
     if it.dir then
-      table.insert(out, dirRow(full, it.name, "folder", depth, tag))
       if expanded[full] then
+        -- An open folder at any level sits in a frame of its own with its content; the key differs from the closed row.
+        local group = { dirRow(full, it.name, "folder", depth, tag, stripe(i)) }
         if newIn == full and newTag == tag then
-          table.insert(out, newFolderRow(full, depth + 1, tag))
+          table.insert(group, newFolderRow(full, depth + 1, tag))
         end
-        childRows(full, depth + 1, out, tag)
+        childRows(full, depth + 1, group, tag)
+        table.insert(out, ui.column({ key = "frame" .. tag .. full, gap = 2, padding = 4, radius = 8, border = "outline_variant", borderWidth = 1 }, group))
+      else
+        table.insert(out, dirRow(full, it.name, "folder", depth, tag, stripe(i)))
       end
     else
-      table.insert(out, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center" }, {
+      table.insert(out, ui.row({ key = "f" .. tag .. full, gap = 0, align = "center", fill = stripe(i), radius = 6 }, {
         ui.box({ width = depth * 10, height = 0 }),
         ui.button({
           selected = hitKey == "f" .. tag .. full,
@@ -425,6 +607,7 @@ local function childRows(path, depth, out, tag)
           onClick = function() openFile({ path = full }) end,
           onRightClick = function() copyPath({ path = full }) end,
         }),
+        starButton("f", full, tag),
       }))
     end
   end
@@ -521,6 +704,79 @@ local function driveCard()
   return card("drives", rows)
 end
 
+local function quickCard()
+  loadQProfiles()
+  local rows = {}
+  if #qProfiles > 0 then
+    local chips = {}
+    for _, name in ipairs(qProfiles) do
+      local on = qActive == name
+      table.insert(chips, ui.button({ key = "qp" .. name .. (on and "-on" or ""), text = name, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm",
+        tooltip = on and "The active project: stars go into it. Click: back to the temporary list. Right click: delete it" or "Make this the active project: its list shows here and stars go into it. Right click: delete it",
+        onClick = function() toggleQProfile(name) end,
+        onRightClick = function()
+          qDel, qDelAt = name, os.time() + 5
+          if panel then panel.setWantsSecondTicks(true) end
+          render()
+        end }))
+    end
+    for i = 1, #chips, 3 do
+      table.insert(rows, ui.row({ key = "qpr" .. i, gap = 4 }, { table.unpack(chips, i, math.min(i + 2, #chips)) }))
+    end
+  end
+  if qDel then
+    table.insert(rows, ui.row({ key = "qdel", gap = 8, align = "center" }, {
+      ui.label({ text = "Delete project " .. qDel .. "?", color = "error", flexGrow = 1 }),
+      ui.button({ key = "qdelyes", glyph = "trash", text = "Delete", variant = "destructive", controlSize = "sm", onClick = deleteQProfile }),
+      ui.button({ key = "qdelno", text = "Cancel", variant = "outline", controlSize = "sm", onClick = function() qDel = nil; render() end }),
+    }))
+  end
+  if qActive then
+    table.insert(rows, ui.label({ text = "Project: " .. qActive, color = "primary", fontSize = 11 }))
+  end
+  for i, q in ipairs(quick) do
+    local name = string.match(q.path, "([^/]+)/*$") or q.path
+    local tag = "q"
+    if q.kind == "d" then
+      local head = dirRow(q.path, name, "folder", 0, tag)
+      if expanded[q.path] then
+        local group = { head }
+        if newIn == q.path and newTag == tag then
+          table.insert(group, newFolderRow(q.path, 1, tag))
+        end
+        childRows(q.path, 1, group, tag)
+        table.insert(rows, ui.column({ key = "frame" .. tag .. q.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
+      else
+        table.insert(rows, head)
+      end
+    else
+      table.insert(rows, ui.row({ key = "f" .. tag .. q.path, gap = 2, align = "center" }, {
+        ui.button({
+          glyph = "file",
+          text = name,
+          variant = "ghost",
+          contentAlign = "start",
+          flexGrow = 1,
+          tooltip = q.path .. "\nClick: open, right click: copy the path",
+          onClick = function() openFile({ path = q.path }) end,
+          onRightClick = function() copyPath({ path = q.path }) end,
+        }),
+        starButton("f", q.path, tag),
+      }))
+    end
+  end
+  if #quick == 0 then
+    table.insert(rows, ui.label({ text = "Click the star on a folder or file to keep it here", color = "on_surface_variant", fontSize = 11 }))
+  end
+  table.insert(rows, ui.row({ gap = 4, align = "center" }, {
+    ui.input({ key = "qn" .. qNonce, value = qName, placeholder = "new project name", controlSize = "sm", frameVisible = true, flexGrow = 1,
+      onChange = function(t) qName = t end, onSubmit = saveQProfile }),
+    ui.button({ key = "qsave", glyph = "device-floppy", text = "New", variant = "outline", controlSize = "sm", tooltip = "New project, the active one from now on. From the temporary list it takes that list; from a project it starts empty", onClick = saveQProfile }),
+    ui.button({ key = "qclear", glyph = "x", variant = "ghost", controlSize = "sm", enabled = #quick > 0, tooltip = qActive and "Empty this project" or "Empty the temporary list", onClick = function() reloadQuick(); quick = {}; saveQuick(); render() end }),
+  }))
+  return card("quick", rows)
+end
+
 local function recentCard()
   local sizes = {}
   for _, n in ipairs(SIZES) do
@@ -531,15 +787,19 @@ local function recentCard()
     if i > size then
       break
     end
-    table.insert(rows, ui.button({
-      key = "r" .. i,
-      glyph = "file",
-      text = f.name,
-      variant = "ghost",
-      contentAlign = "start",
-      tooltip = f.dir .. "\nClick: open, right click: copy the path",
-      onClick = function() openFile(f) end,
-      onRightClick = function() copyPath(f) end,
+    table.insert(rows, ui.row({ key = "rr" .. i, gap = 2, align = "center" }, {
+      ui.button({
+        key = "r" .. i,
+        glyph = "file",
+        text = f.name,
+        variant = "ghost",
+        contentAlign = "start",
+        flexGrow = 1,
+        tooltip = f.dir .. "\nClick: open, right click: copy the path",
+        onClick = function() openFile(f) end,
+        onRightClick = function() copyPath(f) end,
+      }),
+      starButton("f", f.path or (f.dir .. "/" .. f.name), "rc"),
     }))
   end
   if #rows == 0 then
@@ -841,9 +1101,11 @@ render = function()
     }))
   end
   loadLayout()
+  reloadQuick()
   local byId = placeRows()
   byId.drives = driveCard()
   byId.recent = recentCard()
+  byId.quick = quickCard()
   local cards = {}
   for i, id in ipairs(order) do
     if editing and byId[id] then
@@ -869,10 +1131,16 @@ local function open()
   listing = {}
   loadLayout()
   loadSize()
+  qDel = nil
   reload()
 end
 
-local function tick() end
+local function tick()
+  if qDel and os.time() >= qDelAt then
+    qDel = nil
+    render()
+  end
+end
 
 local function close() end
 
