@@ -4,6 +4,8 @@
 - Add a Resume switch to Recolor that skips images already in the output folder, to continue a stopped run on a large folder.
 - Delete a saved Recolor palette with a right-click and a confirmation.
 - Fold the Recolor folder cards into one line.
+- Add a left/right swap button to the header of the pinned Colors window.
+- List every palette with a strip of its colors in the Colors Wallpaper, Built-in and My palettes profiles.
 
 ## 0.6.1
 - Show the path of the marked folder under the Places folder search, with a copy button.
