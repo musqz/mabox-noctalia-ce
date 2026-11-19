@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Draw a frame around an expanded bookmark in the Places panel.
 
 ## 0.6.2
 - Add a Resume switch to Recolor that skips images already in the output folder, to continue a stopped run on a large folder.
