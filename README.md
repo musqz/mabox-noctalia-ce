@@ -79,7 +79,7 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 <table>
 <tr>
-<td><a href="docs/music-panel.png"><img alt="Music panel with a playlist open and a track playing" src="docs/music-panel.png" width="420" /></a></td>
+<td><a href="docs/music-panel.png"><img alt="Music panel with the station list and a radio stream playing" src="docs/music-panel.png" width="420" /></a></td>
 <td><a href="docs/wallgen-panel.png"><img alt="Wallgen panel with the palette, the type gallery and the sliders" src="docs/wallgen-panel.png" width="420" /></a></td>
 </tr>
 </table>
