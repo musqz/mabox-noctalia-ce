@@ -291,7 +291,32 @@ local function toggleFold(id)
   saveLayout()
 end
 
+-- The trash of the home disk; gio trash --empty clears every trash it knows. Emptying asks first and the question lapses.
+local trashCount = 0
+local trashAsk, trashAt = false, 0
+
+local function countTrash()
+  local items = noctalia.listDir(HOME .. "/.local/share/Trash/files")
+  trashCount = 0
+  for _ in (items or {}) do
+    trashCount += 1
+  end
+end
+
+local function emptyTrash()
+  trashAsk = false
+  noctalia.runAsync({ "gio", "trash", "--empty" }, function(r)
+    countTrash()
+    if r.exitCode ~= 0 then
+      noctalia.notify("Places", "Could not empty the trash")
+    end
+    render()
+  end)
+  render()
+end
+
 local function loadPlaces()
+  countTrash()
   places = {}
   for _, f in ipairs(FOLDERS) do
     local target = f.open or f.path
@@ -613,7 +638,7 @@ local function childRows(path, depth, out, tag)
   end
 end
 
-local function card(key, children, extra)
+local function card(key, children, extra, whenClosed)
   local closed = folded[key] and not forceOpen[key]
   local top = { ui.button({
     key = "fold-" .. key,
@@ -632,6 +657,10 @@ local function card(key, children, extra)
   local rows = { ui.row({ gap = 4, align = "center" }, top) }
   if not closed then
     for _, c in ipairs(children) do
+      table.insert(rows, c)
+    end
+  elseif whenClosed then
+    for _, c in ipairs(whenClosed) do
       table.insert(rows, c)
     end
   end
@@ -655,6 +684,31 @@ local function placeRows()
         table.insert(list, ui.column({ key = "frame" .. tag .. p.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
       else
         table.insert(list, head)
+      end
+    elseif p.open == "trash:///" then
+      table.insert(list, ui.row({ key = "trash", gap = 2, align = "center" }, {
+        ui.button({
+          key = "p" .. i,
+          glyph = p.glyph,
+          text = trashCount > 0 and (p.name .. "  (" .. trashCount .. ")") or p.name,
+          variant = "ghost",
+          contentAlign = "start",
+          flexGrow = 1,
+          tooltip = p.open .. "\nClick: open",
+          onClick = function() openFolder(p) end,
+        }),
+        ui.button({ key = "trashempty", glyph = "trash-x", variant = "ghost", controlSize = "sm", enabled = trashCount > 0, tooltip = "Empty the trash", onClick = function()
+          trashAsk, trashAt = true, os.time() + 5
+          if panel then panel.setWantsSecondTicks(true) end
+          render()
+        end }),
+      }))
+      if trashAsk then
+        table.insert(list, ui.row({ key = "trashask", gap = 8, align = "center" }, {
+          ui.label({ text = "Empty every trash for good? " .. trashCount .. " items on this disk", color = "error", flexGrow = 1 }),
+          ui.button({ key = "trashyes", glyph = "trash-x", text = "Empty", variant = "destructive", controlSize = "sm", onClick = emptyTrash }),
+          ui.button({ key = "trashno", text = "Cancel", variant = "outline", controlSize = "sm", onClick = function() trashAsk = false; render() end }),
+        }))
       end
     else
       table.insert(list, ui.button({
@@ -734,6 +788,7 @@ local function quickCard()
   if qActive then
     table.insert(rows, ui.label({ text = "Project: " .. qActive, color = "primary", fontSize = 11 }))
   end
+  local items = {}
   for i, q in ipairs(quick) do
     local name = string.match(q.path, "([^/]+)/*$") or q.path
     local tag = "q"
@@ -745,12 +800,12 @@ local function quickCard()
           table.insert(group, newFolderRow(q.path, 1, tag))
         end
         childRows(q.path, 1, group, tag)
-        table.insert(rows, ui.column({ key = "frame" .. tag .. q.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
+        table.insert(items, ui.column({ key = "frame" .. tag .. q.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
       else
-        table.insert(rows, head)
+        table.insert(items, head)
       end
     else
-      table.insert(rows, ui.row({ key = "f" .. tag .. q.path, gap = 2, align = "center" }, {
+      table.insert(items, ui.row({ key = "f" .. tag .. q.path, gap = 2, align = "center" }, {
         ui.button({
           glyph = "file",
           text = name,
@@ -766,7 +821,10 @@ local function quickCard()
     end
   end
   if #quick == 0 then
-    table.insert(rows, ui.label({ text = "Click the star on a folder or file to keep it here", color = "on_surface_variant", fontSize = 11 }))
+    table.insert(items, ui.label({ text = "Click the star on a folder or file to keep it here", color = "on_surface_variant", fontSize = 11 }))
+  end
+  for _, it in ipairs(items) do
+    table.insert(rows, it)
   end
   table.insert(rows, ui.row({ gap = 4, align = "center" }, {
     ui.input({ key = "qn" .. qNonce, value = qName, placeholder = "new project name", controlSize = "sm", frameVisible = true, flexGrow = 1,
@@ -774,7 +832,18 @@ local function quickCard()
     ui.button({ key = "qsave", glyph = "device-floppy", text = "New", variant = "outline", controlSize = "sm", tooltip = "New project, the active one from now on. From the temporary list it takes that list; from a project it starts empty", onClick = saveQProfile }),
     ui.button({ key = "qclear", glyph = "x", variant = "ghost", controlSize = "sm", enabled = #quick > 0, tooltip = qActive and "Empty this project" or "Empty the temporary list", onClick = function() reloadQuick(); quick = {}; saveQuick(); render() end }),
   }))
-  return card("quick", rows)
+  -- Folded, only the active project stays in view: its button and its list.
+  local name = qActive
+  local whenFolded = nil
+  if name then
+    whenFolded = { ui.row({ key = "qfold", gap = 4 }, {
+      ui.button({ key = "qpf" .. name, text = name, glyph = "check", variant = "primary", controlSize = "sm", tooltip = "The active project. Click: back to the temporary list", onClick = function() toggleQProfile(name) end }),
+    }) }
+    for _, it in ipairs(items) do
+      table.insert(whenFolded, it)
+    end
+  end
+  return card("quick", rows, nil, whenFolded)
 end
 
 local function recentCard()
@@ -1138,6 +1207,10 @@ end
 local function tick()
   if qDel and os.time() >= qDelAt then
     qDel = nil
+    render()
+  end
+  if trashAsk and os.time() >= trashAt then
+    trashAsk = false
     render()
   end
 end
