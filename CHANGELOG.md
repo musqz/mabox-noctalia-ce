@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Add a Resume switch to Recolor that skips images already in the output folder, to continue a stopped run on a large folder.
+- Delete a saved Recolor palette with a right-click and a confirmation.
+- Fold the Recolor folder cards into one line.
 
 ## 0.6.1
 - Show the path of the marked folder under the Places folder search, with a copy button.
