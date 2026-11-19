@@ -39,6 +39,11 @@ local plFocus = false
 local render
 
 local sleepLeft = 0
+local sleepShut = false -- the shutdown switch; not remembered, so an old choice never powers the computer off later
+local sleepOff = false -- the running timer also shuts the computer down
+local sleepOpen = false -- the timer row under the now-playing row
+local sleepDraft = "" -- minutes typed by hand
+local sleepNonce = 0
 local STEPS = { 10, 30, 60, 300 }
 
 local function stepSecs()
@@ -91,12 +96,53 @@ local function toggleCava()
 end
 
 local function refreshSleep()
-  sleepLeft = mine.sleepLeft()
+  sleepLeft, _, sleepOff = mine.sleepLeft()
   render()
 end
 
 local function sleepLabel()
   return sleepLeft > 0 and ("Sleep " .. sleepLeft .. "m") or "Sleep"
+end
+
+local function startSleep(minutes)
+  mine.startSleep(minutes, sleepShut, refreshSleep)
+end
+
+local function sleepRow()
+  local _, setMins = mine.sleepLeft()
+  local chips = {}
+  for _, m in ipairs(mine.SLEEP_PRESETS) do
+    local on = sleepLeft > 0 and setMins == m
+    table.insert(chips, ui.button({ key = "sl" .. m .. (on and "-on" or ""), text = tostring(m), variant = on and "primary" or "outline", controlSize = "sm", onClick = function() startSleep(m) end }))
+  end
+  local function manual()
+    local m = tonumber(sleepDraft)
+    if m and m >= 1 and m <= 1440 then
+      startSleep(math.floor(m))
+      sleepDraft = ""
+      sleepNonce += 1
+    end
+  end
+  local shut = sleepShut
+  return ui.row({ key = "sleeprow", gap = 6, align = "center", fill = "surface_variant", radius = 8, padding = 6 }, {
+    ui.label({ text = "Stop after", color = "on_surface_variant", fontSize = 11 }),
+    ui.row({ gap = 4 }, chips),
+    ui.input({ key = "sleepmin" .. sleepNonce, value = sleepDraft, placeholder = "min", width = 60, controlSize = "sm", frameVisible = true,
+      onChange = function(t) sleepDraft = t end, onSubmit = manual }),
+    ui.button({ key = "sleepset", text = "Set", variant = "outline", controlSize = "sm", tooltip = "Start the timer with the minutes typed (1 to 1440)", onClick = manual }),
+    ui.spacer({ flexGrow = 1 }),
+    ui.toggle({ key = "sleepoff" .. (shut and "1" or "0"), checked = shut, onChange = function(v)
+      local on = v == true or v == "true"
+      sleepShut = on
+      if sleepLeft > 0 then
+        mine.setSleepPoweroff(on, refreshSleep)
+      else
+        render()
+      end
+    end }),
+    ui.label({ text = "Shut down the computer", fontSize = 11, color = shut and "primary" or "on_surface_variant" }),
+    sleepLeft > 0 and ui.button({ key = "sleepcancel", glyph = "x", text = "Cancel", variant = "ghost", controlSize = "sm", onClick = function() mine.cancelSleep(refreshSleep) end }) or ui.box({ height = 0 }),
+  })
 end
 
 
@@ -1089,10 +1135,11 @@ render = function()
       ui.button({ text = nowPlaying ~= "" and nowPlaying or "Nothing playing", variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, enabled = playingUrl ~= "", tooltip = "Show where it is in the lists", onClick = showPlaying }),
       ui.label({ text = playingCategory(), fontSize = 11, color = "primary" }),
       ui.button({ glyph = "playlist", variant = mine.opt("onward", true) and "outline" or "ghost", controlSize = "sm", tooltip = mine.opt("onward", true) and "Play on: a click starts the list from that track and skips streams that fail (on). Click to play only the track." or "Play only the clicked track (off). Click to play on and skip failing streams.", onClick = function() mine.setOpt("onward", not mine.opt("onward", true)) render() end }),
-      ui.button({ text = sleepLabel(), glyph = "moon", variant = sleepLeft > 0 and "outline" or "ghost", controlSize = "sm", tooltip = "Sleep timer: click for 15, 30, 60, 90 minutes, then off", onClick = function() mine.cycleSleep(refreshSleep) end }),
+      ui.button({ text = sleepLabel(), glyph = sleepLeft > 0 and sleepOff and "power" or "moon", variant = sleepLeft > 0 and "outline" or "ghost", controlSize = "sm", tooltip = "Sleep timer: choose the minutes, optionally shut down the computer", onClick = function() sleepOpen = not sleepOpen; render() end }),
       ui.button({ text = "-" .. stepLabel(stepSecs()), glyph = "rewind-backward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump back " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(-stepSecs()) end, onRightClick = nextStep }),
       ui.button({ text = "+" .. stepLabel(stepSecs()), glyph = "rewind-forward-10", variant = "ghost", controlSize = "sm", tooltip = "Jump forward " .. stepLabel(stepSecs()) .. ". Right click: change the step", onClick = function() player.seek(stepSecs()) end, onRightClick = nextStep }),
     }),
+    sleepOpen and sleepRow() or ui.box({ height = 0 }),
     ui.row({ gap = 8, flexGrow = 1 }, {
       sidebar(),
       -- No spacer for the finder: it would share the free height with the list and push it down.
@@ -1131,7 +1178,8 @@ function onOpen()
     mergeRecent()
     render()
   end)
-  sleepLeft = mine.sleepLeft()
+  sleepLeft, _, sleepOff = mine.sleepLeft()
+  sleepShut = sleepLeft > 0 and sleepOff
   refreshCava(0)
   loadLists(function()
     -- Favourites from before playlists existed move into Favourites.m3u once.

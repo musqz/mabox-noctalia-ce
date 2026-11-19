@@ -192,59 +192,93 @@ function M.addRecent(title, url)
   save()
 end
 
--- Sleep timer: the file holds "<end epoch> <minutes>".
-local PRESETS = { 15, 30, 60, 90 }
+-- Sleep timer: the file holds "<end epoch> <minutes> <1 when the computer shuts down>".
+M.SLEEP_PRESETS = { 15, 30, 45, 60, 90, 120, 180 }
 
 local function sleepFile()
   local d = dir()
   return d and d .. "/sleep" or nil
 end
 
--- Returns minutes left and the preset in use, or 0.
+-- The timer runs in the systemd user manager, which has no WAYLAND_DISPLAY: noctalia msg answers "noctalia is not running" there.
+-- So it ends the panel's mpv directly, by its IPC socket (same path as SOCK in play.luau); the [-] keeps pkill from matching its own shell.
+local function stopCmd()
+  local runtime = noctalia.getenv("XDG_RUNTIME_DIR")
+  if not runtime or runtime == "" then
+    runtime = "/tmp"
+  end
+  return "pkill -f '[-]-input-ipc-server=" .. runtime .. "/mpvsocket'; true"
+end
+
+-- Returns minutes left, the minutes it was set to, and whether the computer shuts down at the end; 0 when no timer runs.
 function M.sleepLeft()
   local f = sleepFile()
-  local endAt, mins = string.match(f and noctalia.readFile(f) or "", "^(%d+) (%d+)")
+  local endAt, mins, off = string.match(f and noctalia.readFile(f) or "", "^(%d+) (%d+) ?(%d?)")
   if not endAt then
-    return 0, 0
+    return 0, 0, false
   end
   local left = tonumber(endAt) - os.time()
   if left <= 0 then
-    return 0, 0
+    return 0, 0, false
   end
-  return math.ceil(left / 60), tonumber(mins)
+  return math.ceil(left / 60), tonumber(mins), off == "1"
 end
 
--- Next preset after the one running; past the last one the timer is cancelled. onDone runs once the timer state is final.
-function M.cycleSleep(onDone)
-  local _, current = M.sleepLeft()
-  local nextMin
-  for _, p in ipairs(PRESETS) do
-    if p > current then
-      nextMin = p
-      break
-    end
-  end
+local STOP_UNITS = "systemctl --user stop mb-music-sleep.timer mb-music-sleep.service 2>/dev/null; "
+
+-- Schedules the stop (and poweroff) in secs seconds and records it; onDone runs once the state is final.
+local function schedule(secs, mins, poweroff, onDone)
   local f = sleepFile()
-  if not f then
+  if not f or secs < 1 then
+    onDone()
     return
   end
   noctalia.mkdirAll(dir())
-  local stop = "systemctl --user stop mb-music-sleep.timer mb-music-sleep.service 2>/dev/null; "
-  if nextMin then
-    noctalia.runAsync({ "sh", "-c", stop .. "systemd-run --user --quiet --unit=mb-music-sleep --on-active=" .. nextMin .. "m \"$(command -v noctalia)\" msg media stop" }, function(r)
-      if r.exitCode == 0 then
-        noctalia.writeFile(f, (os.time() + nextMin * 60) .. " " .. nextMin)
-      else
-        noctalia.notify("Music", "Could not start the sleep timer")
-      end
-      onDone()
-    end)
-  else
-    noctalia.writeFile(f, "0 0")
-    noctalia.runAsync({ "sh", "-c", stop .. "true" }, function()
-      onDone()
-    end)
+  local job = stopCmd() .. (poweroff and "; systemctl poweroff" or "")
+  noctalia.runAsync({ "systemd-run", "--user", "--quiet", "--unit=mb-music-sleep", "--on-active=" .. secs .. "s", "sh", "-c", job }, function(r)
+    if r.exitCode == 0 then
+      noctalia.writeFile(f, (os.time() + secs) .. " " .. mins .. " " .. (poweroff and "1" or "0"))
+    else
+      noctalia.notify("Music", "Could not start the sleep timer")
+    end
+    onDone()
+  end)
+end
+
+local function replace(secs, mins, poweroff, onDone)
+  noctalia.runAsync({ "sh", "-c", STOP_UNITS .. "true" }, function()
+    schedule(secs, mins, poweroff, onDone)
+  end)
+end
+
+-- Starts (or restarts) the timer; poweroff makes it shut the computer down after the music stops.
+function M.startSleep(minutes, poweroff, onDone)
+  replace(minutes * 60, minutes, poweroff, onDone)
+end
+
+-- Changes the shutdown flag of the running timer; it keeps its end time and its preset.
+function M.setSleepPoweroff(poweroff, onDone)
+  local f = sleepFile()
+  local endAt, mins = string.match(f and noctalia.readFile(f) or "", "^(%d+) (%d+)")
+  local secs = endAt and tonumber(endAt) - os.time() or 0
+  if secs < 1 then
+    onDone()
+    return
   end
+  replace(secs, tonumber(mins), poweroff, onDone)
+end
+
+function M.cancelSleep(onDone)
+  local f = sleepFile()
+  if not f then
+    onDone()
+    return
+  end
+  noctalia.mkdirAll(dir())
+  noctalia.writeFile(f, "0 0")
+  noctalia.runAsync({ "sh", "-c", STOP_UNITS .. "true" }, function()
+    onDone()
+  end)
 end
 
 return M
