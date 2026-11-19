@@ -601,8 +601,7 @@ function render()
       mineNames[p.name] and function() delAsk = p.name; delAt = os.time() + 5; panel.setWantsSecondTicks(true); render() end or nil)
     if mineNames[p.name] then
       mineCount += 1
-      -- A folded list still shows the palette in use.
-      if mineOpen or p.name == palette then
+      if mineOpen then
         table.insert(mine, c)
       end
     else
@@ -716,7 +715,7 @@ function render()
   local palCard = ui.column(card("pal"), {
     ui.label({ text = "Palette", fontWeight = "bold" }),
     ui.column({ gap = 6 }, palRows),
-    mineCount > 0 and ui.button({ key = "minehead", glyph = mineOpen and "chevron-down" or "chevron-right", text = "My palettes (" .. mineCount .. ")", variant = "outline", controlSize = "sm", contentAlign = "start",
+    mineCount > 0 and ui.button({ key = "minehead", glyph = mineOpen and "chevron-down" or "chevron-right", text = "My palettes (" .. mineCount .. ")" .. ((not mineOpen and mineNames[palette]) and ("  -  " .. palette) or ""), variant = "outline", controlSize = "sm", contentAlign = "start",
       tooltip = "Palettes you saved in the Wallgen panel", onClick = function() mineOpen = not mineOpen; saveState(); render() end }) or ui.box({ height = 0 }),
     #mineRows > 0 and ui.column({ key = "mine", gap = 6 }, mineRows) or ui.box({ height = 0 }),
     delAsk and ui.row({ key = "delask", gap = 8, align = "center" }, {
