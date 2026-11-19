@@ -19,6 +19,16 @@ placement = "floating"
 position = "top_center"
 
 [[panel]]
+id = "main-keep"
+entry = "panel-keep.luau"
+width = 1200
+height = 900
+placement = "floating"
+position = "top_center"
+persistent = true
+dismiss_on_outside_click = false
+
+[[panel]]
 id = "wallgen"
 entry = "wallgen.luau"
 width = 1840

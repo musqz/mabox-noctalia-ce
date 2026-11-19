@@ -33,3 +33,15 @@ placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
 capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
+
+[[panel]]
+id = "snippets-keep"
+entry = "snippets-keep.luau"
+width = 520
+height = 520
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+capture_keys = ["alt+up", "alt+down", "alt+left", "alt+right", "alt+shift+up", "alt+shift+down", "alt+enter", "alt+s", "alt+q"]
+persistent = true
+dismiss_on_outside_click = false

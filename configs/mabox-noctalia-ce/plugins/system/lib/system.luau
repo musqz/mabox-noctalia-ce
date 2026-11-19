@@ -54,7 +54,8 @@ case $t in terminator|xfce4-terminal) f=-x ;; *) f=-e ;; esac
 exec setsid -f "$t" "$f" "$@"
 ]]
 
-return function()
+return function(stay)
+  local KEEP = require("./keep.luau")
   local tab = "overview"
   local cache = {}
   local session = 0
@@ -591,6 +592,7 @@ exec xdg-open "$d"]]
     if tab ~= "settings" and tab ~= "fixes" then
       table.insert(head, ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh", onClick = function() load(current(), true) end }))
     end
+    table.insert(head, KEEP("system", "system", "system-keep", stay))
     table.insert(head, ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }))
     local body
     if tab == "fixes" then
