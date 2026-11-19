@@ -168,7 +168,7 @@ local function loadPalettes()
         palette = palettes[1].name
       end
     end
-    if mode ~= "clut" and mode ~= "remap" and mode ~= "smooth" and mode ~= "lut" then
+    if mode ~= "clut" and mode ~= "remap" and mode ~= "smooth" and mode ~= "poster" and mode ~= "lut" then
       mode = "clut"
     end
     render()
@@ -226,7 +226,7 @@ fi
 [ -f "$src" ] || exit 1
 rm -rf "$1"; mkdir -p "$1"
 magick "$src" -resize 400x "$1/in.png" || exit 1
-for m in clut remap smooth lut; do mb-recolor -m "$m" -b "$6" -g "$3" -x "$7" -o "$1/$m" "$2" "$1/in.png" >/dev/null 2>&1 & done
+for m in clut remap smooth lut poster; do mb-recolor -m "$m" -b "$6" -g "$3" -x "$7" -o "$1/$m" "$2" "$1/in.png" >/dev/null 2>&1 & done
 wait
 echo "src=$src"; echo "dir=$dir"
 ls "$1"/*/*]]
@@ -296,7 +296,7 @@ local function loadProfiles()
         for k, v in string.gmatch(rest, "(%a+)=([^;]*)") do
           p[k] = (k == "blur") and math.max(0, math.min(20, math.floor(tonumber(v) or 0))) or v
         end
-        if p.mode ~= "clut" and p.mode ~= "remap" and p.mode ~= "smooth" and p.mode ~= "lut" then
+        if p.mode ~= "clut" and p.mode ~= "remap" and p.mode ~= "smooth" and p.mode ~= "poster" and p.mode ~= "lut" then
           p.mode = "clut"
         end
         if p.palette then
@@ -807,7 +807,7 @@ function render()
   end
 
   local lookCols = {}
-  for _, l in ipairs({ { "clut", "Soft" }, { "remap", "Hard" }, { "smooth", "Smooth" }, { "lut", "Blend" } }) do
+  for _, l in ipairs({ { "clut", "Soft" }, { "remap", "Hard" }, { "smooth", "Smooth" }, { "lut", "Blend" }, { "poster", "Poster" } }) do
     local m, label = l[1], l[2]
     local pick = function() mode = m; saveState(); done = nil; render() end
     local thumb = previews[m] and ui.image({ key = "pv" .. m .. pvGen, path = previews[m], width = 240, height = 140, radius = 6, fit = "cover", border = m == mode and "primary" or "on_surface_variant", borderWidth = m == mode and 3 or 1, onClick = idle(pick) })
@@ -902,9 +902,11 @@ function render()
     }),
     ui.row({ key = "look-top", gap = 12 }, { lookCols[1], lookCols[2] }),
     ui.row({ key = "look-bottom", gap = 12 }, { lookCols[3], lookCols[4] }),
+    ui.row({ key = "look-last", gap = 12 }, { lookCols[5] }),
     ui.label({ text = mode == "clut" and "Brightness mapped over the palette; keeps gradients and detail."
       or mode == "remap" and "Every pixel becomes the nearest palette color; flat areas."
       or mode == "lut" and "Colors blend smoothly between palette colors; keeps detail."
+      or mode == "poster" and "Large flat areas of palette colors, like a poster; fine detail is dropped."
       or "Flat areas of palette colors with clean edges.", color = "on_surface_variant", fontSize = 11 }),
     ui.row({ gap = 8, align = "center" }, {
       ui.label({ text = "Blur", fontWeight = "bold", width = 44 }),

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-r] PALETTE SRC...
+# Recolor images to a palette. Usage: mb-recolor [-m clut|remap|smooth|poster|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-r] PALETTE SRC...
 # -r resumes: an image whose result is already in OUTDIR is skipped (printed as "skip: path").
 # -x takes comma separated hex colors to leave out of the palette.
 # BLUR softens the source before mapping: 0 to 20, in tenths of a percent of the image width.
@@ -10,7 +10,7 @@ mode=clut group=all out= blur=0 skip= resume=0
 here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 dirs=("$HOME/.local/share/mabox-noctalia-ce/palettes" /usr/share/mabox-noctalia-ce/palettes "$here/../lists/palettes")
 
-usage() { echo "usage: mb-recolor [-m clut|remap|smooth|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-x COLORS] [-r] PALETTE SRC..." >&2
+usage() { echo "usage: mb-recolor [-m clut|remap|smooth|poster|lut] [-g GROUP] [-o OUTDIR] [-w WIDTH] [-b BLUR] [-x COLORS] [-r] PALETTE SRC..." >&2
           echo "       mb-recolor --list" >&2
           echo "       mb-recolor --colors [-g GROUP] PALETTE" >&2; exit 2; }
 find_pal() { local d; for d in "${dirs[@]}"; do [[ -f $d/$1.pal ]] && { echo "$d/$1.pal"; return 0; }; done; return 1; }
@@ -43,7 +43,7 @@ done
 shift $((OPTIND - 1))
 [[ $blur =~ ^[0-9]+$ ]] && ((blur <= 20)) || { echo "bad blur: $blur" >&2; exit 2; }
 ((show && $# >= 1 || $# >= 2)) || usage
-[[ $mode == clut || $mode == remap || $mode == smooth || $mode == lut ]] || { echo "unknown mode: $mode" >&2; exit 2; }
+[[ $mode == clut || $mode == remap || $mode == smooth || $mode == poster || $mode == lut ]] || { echo "unknown mode: $mode" >&2; exit 2; }
 command -v magick >/dev/null || { echo "magick is not installed" >&2; exit 1; }
 
 palette=$1; shift
@@ -122,12 +122,13 @@ for f in "${files[@]}"; do
         clut)   magick "$f" "${pre[@]}" -colorspace Gray "$tmp/pal.png" -clut "$dest" || ok=0 ;;
         lut)    magick "$f" "${pre[@]}" "$tmp/lut.png" -hald-clut "$dest" || ok=0 ;;
         remap)  magick "$f" "${pre[@]}" +dither -remap "$tmp/pal.png" "$dest" || ok=0 ;;
-        smooth) # flat areas with clean edges; filter sizes follow the image width
+        smooth|poster) # flat areas with clean edges; filter sizes follow the image width, poster flattens harder
                 w=$(magick identify -format %w "${f}[0]" 2>/dev/null) || w=
                 [[ $w =~ ^[0-9]+$ ]] || w=1920
                 ((width > 0 && w > width)) && w=$width
-                k=$((w / 250)); ((k < 2)) && k=2
-                m=$((w / 140 | 1)); ((m < 3)) && m=3
+                div=250 mdiv=140; [[ $mode == poster ]] && { div=130 mdiv=70; }
+                k=$((w / div)); ((k < 2)) && k=2
+                m=$((w / mdiv | 1)); ((m < 3)) && m=3
                 b=$(awk -v w="$w" 'BEGIN{printf "%.2f", w/3000}')
                 magick "$f" "${pre[@]}" -kuwahara "$k" +dither -remap "$tmp/pal.png" -statistic Mode "${m}x${m}" -blur "0x$b" "$dest" || ok=0 ;;
     esac
