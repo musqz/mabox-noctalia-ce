@@ -228,7 +228,6 @@ local function starButton(kind, path, tag)
     glyph = on and "star-filled" or "star",
     variant = on and "primary" or "ghost",
     controlSize = "sm",
-    tooltip = on and "Remove from Quick" or "Add to Quick",
     onClick = function() toggleQuick(kind, path) end,
   })
 end
@@ -697,7 +696,7 @@ local function placeRows()
           tooltip = p.open .. "\nClick: open",
           onClick = function() openFolder(p) end,
         }),
-        ui.button({ key = "trashempty", glyph = "trash-x", variant = "ghost", controlSize = "sm", enabled = trashCount > 0, tooltip = "Empty the trash", onClick = function()
+        ui.button({ key = "trashempty", glyph = "trash-x", variant = "ghost", controlSize = "sm", enabled = trashCount > 0, onClick = function()
           trashAsk, trashAt = true, os.time() + 5
           if panel then panel.setWantsSecondTicks(true) end
           render()
@@ -766,7 +765,6 @@ local function quickCard()
     for _, name in ipairs(qProfiles) do
       local on = qActive == name
       table.insert(chips, ui.button({ key = "qp" .. name .. (on and "-on" or ""), text = name, glyph = on and "check" or nil, variant = on and "primary" or "outline", controlSize = "sm",
-        tooltip = on and "The active project: stars go into it. Click: back to the temporary list. Right click: delete it" or "Make this the active project: its list shows here and stars go into it. Right click: delete it",
         onClick = function() toggleQProfile(name) end,
         onRightClick = function()
           qDel, qDelAt = name, os.time() + 5
@@ -829,15 +827,15 @@ local function quickCard()
   table.insert(rows, ui.row({ gap = 4, align = "center" }, {
     ui.input({ key = "qn" .. qNonce, value = qName, placeholder = "new project name", controlSize = "sm", frameVisible = true, flexGrow = 1,
       onChange = function(t) qName = t end, onSubmit = saveQProfile }),
-    ui.button({ key = "qsave", glyph = "device-floppy", text = "New", variant = "outline", controlSize = "sm", tooltip = "New project, the active one from now on. From the temporary list it takes that list; from a project it starts empty", onClick = saveQProfile }),
-    ui.button({ key = "qclear", glyph = "x", variant = "ghost", controlSize = "sm", enabled = #quick > 0, tooltip = qActive and "Empty this project" or "Empty the temporary list", onClick = function() reloadQuick(); quick = {}; saveQuick(); render() end }),
+    ui.button({ key = "qsave", glyph = "device-floppy", text = "New", variant = "outline", controlSize = "sm", onClick = saveQProfile }),
+    ui.button({ key = "qclear", glyph = "x", variant = "ghost", controlSize = "sm", enabled = #quick > 0, onClick = function() reloadQuick(); quick = {}; saveQuick(); render() end }),
   }))
   -- Folded, only the active project stays in view: its button and its list.
   local name = qActive
   local whenFolded = nil
   if name then
     whenFolded = { ui.row({ key = "qfold", gap = 4 }, {
-      ui.button({ key = "qpf" .. name, text = name, glyph = "check", variant = "primary", controlSize = "sm", tooltip = "The active project. Click: back to the temporary list", onClick = function() toggleQProfile(name) end }),
+      ui.button({ key = "qpf" .. name, text = name, glyph = "check", variant = "primary", controlSize = "sm", onClick = function() toggleQProfile(name) end }),
     }) }
     for _, it in ipairs(items) do
       table.insert(whenFolded, it)
