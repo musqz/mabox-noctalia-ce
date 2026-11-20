@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- Add `mb-postits`: notes as small windows on the desktop (`W-A-y` shows or hides them). Type in a note directly; position, size and text size are saved.
+- Add an On screen switch to the Notes editor; a note with it on gets a post-it.
+- Add post-its for a todo list (`--tasks LIST`: tick a task to strike it through, untick to reopen) and the agenda (`--agenda`: next events from `~/caldir`).
+- Add title buttons and a right-click menu to post-its: hide, close all, remove from screen, size and text size.
 - Start new Todo tasks as Medium, due today; the panel fills the window and the list scrolls.
 - List every folder the Places tree search finds under the field, with star, copy and a clear button.
 - Add an empty button to the Trash row in Places, with the item count and a confirmation.
