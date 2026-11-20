@@ -200,7 +200,7 @@ Pick one by name: `mb-import-openbox todo` or `mb-import-openbox notes`.
 | Section | What it does |
 |---|---|
 | `todo` | Makes the list that is active in the Mabox todo menu the active list in the Todo panel. The lists themselves are shared: both use `~/.todo`. |
-| `notes` | Makes a Notes entry of every Cherrytree node in `~/.todo/<list>.ctb`, tagged with the list. A node is imported once. |
+| `notes` | Makes a Notes entry of every Cherrytree node in `~/.todo/<list>.ctb`, tagged with the list. A node is imported once. Only the text comes along: images and tables are left out, and the script says which nodes it skipped. |
 
 Reload the Todo plugin after `todo`: `noctalia msg plugins disable mabox/todo; noctalia msg plugins enable mabox/todo`.
 

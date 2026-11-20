@@ -53,6 +53,9 @@ def import_todo():
     if not name:
         say("todo: no mabox-todo.conf, nothing to do")
         return
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+", name):
+        say(f"todo: list '{name}' has a name the CE Todo panel cannot use (letters, digits, _ - . only), skipped")
+        return
     if not os.path.exists(os.path.join(TODO_DIR, name + ".txt")):
         say(f"todo: list '{name}' has no file in ~/.todo, skipped")
         return
@@ -68,7 +71,7 @@ def import_todo():
     say(f"todo: active list '{name}', hide done {'on' if c.get('hide_done') == 'y' else 'off'}")
     if c.get("filter"):
         say(f"todo: the filter '{c['filter']}' has no setting in CE; type it in the search field of the Todo panel")
-    say("todo: reload the Todo plugin to see it: noctalia msg plugins disable mabox/todo; noctalia msg plugins enable mabox/todo")
+    say("todo: reload the Todo plugin before you use the panel, or it saves its old choice over this: noctalia msg plugins disable mabox/todo; noctalia msg plugins enable mabox/todo")
 
 
 def notes_dir():
@@ -77,13 +80,13 @@ def notes_dir():
             custom = f.read().strip()
     except OSError:
         custom = ""
-    return custom.rstrip("/") or os.path.join(PLUGINS, "notes/notes")
+    return os.path.expanduser(custom).rstrip("/") or os.path.join(PLUGINS, "notes/notes")
 
 
 def rich_text(txt):
     try:
         return "".join(ET.fromstring(txt).itertext())
-    except ET.ParseError:
+    except (ET.ParseError, ValueError):
         return txt
 
 
@@ -94,7 +97,7 @@ def import_notes():
             done = set(json.load(f))
     except (OSError, ValueError):
         done = set()
-    made, seen, planned = 0, False, set()
+    made, seen, planned, target = 0, False, set(), notes_dir()
     for name in sorted(os.listdir(TODO_DIR)) if os.path.isdir(TODO_DIR) else []:
         if not name.endswith(".ctb"):
             continue
@@ -112,12 +115,15 @@ def import_notes():
                 txt = txt.decode("utf-8", "replace")
             key = f"{path}:{node_id}"
             body = (rich_text(txt or "") if rich else (txt or "")).strip()
-            if key in done or not body:
+            if key in done:
+                continue
+            if not body:
+                say(f"notes: {name} / {title}: no text (image, table or empty), skipped")
                 continue
             stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(created or time.time()))
             n, dst = 1, ""
             while True:
-                dst = os.path.join(notes_dir(), f"{stamp}-{9000 + n}.md")
+                dst = os.path.join(target, f"{stamp}-{9000 + n}.md")
                 if not os.path.exists(dst) and dst not in planned:
                     break
                 n += 1
@@ -125,10 +131,9 @@ def import_notes():
             write(dst, head + body + "\n")
             planned.add(dst)
             done.add(key)
+            write(DONE, json.dumps(sorted(done), indent=1))
             made += 1
             say(f"notes: {name} / {title} -> {os.path.basename(dst)}")
-        if made:
-            write(DONE, json.dumps(sorted(done), indent=1))  # after each list, so an interrupted run does not repeat notes
     if not seen:
         say("notes: no Cherrytree notes (.ctb) in ~/.todo")
     elif made:
