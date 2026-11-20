@@ -30,6 +30,18 @@ cd mabox-noctalia-ce
 - Ends with a `[done]` / `[skip]` / `[todo]` summary.
 - Config lives in `~/.config/mabox-noctalia-ce/`. Other sessions are not touched.
 
+After install, from Mabox Openbox:
+
+- The Mabox todo lists and the CE Todo panel use the same files in `~/.todo`: a task added in one shows in the other. There is nothing to sync.
+- Copy the rest of the Mabox todo setup once. Run `--dry-run` first to see what it would do:
+
+```sh
+mb-import-openbox --dry-run
+mb-import-openbox
+```
+
+- Details: [manual](https://musqz.github.io/mabox-noctalia-ce/guide.html#import-from-mabox-openbox).
+
 ## Update
 
 Repo install: `sudo pacman -Syu`.
