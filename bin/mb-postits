@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Sticky notes on the desktop as small layer-shell windows. Run again to close them.
-# Usage: mb-postits [--front]
+# Usage: mb-postits [--front] [--tasks LIST]
+import datetime
 import json
 import os
 import re
@@ -30,6 +31,10 @@ COLORS = {  # same names and values as plugins/notes/lib/notes.luau
 }
 SAVE_MS = 600
 FONT_MIN, FONT_MAX, FONT_DEFAULT = 8, 28, 11
+TODO_DIR = os.path.expanduser("~/.todo")
+# Same due colours as plugins/todo/lib/todo.luau
+DUE_HEX = {"overdue": "#e5534b", "today": "#f0883e", "tomorrow": "#539bf5", "week": "#57ab5a", "later": "#986ee2", "nodate": "#888888"}
+PAPER = "#ece7d1"
 SIZES = [("Small", 200, 150), ("Medium", 300, 240), ("Large", 460, 360)]
 CSS = b"""
 .postit { background: #d4a72c; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.35); color: #222; }
@@ -37,6 +42,8 @@ CSS = b"""
 .postit textview, .postit textview text { background: transparent; color: #222; }
 .postit-close { padding: 0 6px; min-height: 0; min-width: 0; border: none; box-shadow: none; background: none; color: rgba(0,0,0,0.55); }
 .postit-close:hover { color: #000; }
+.postit check { background: #fff; border: 1px solid rgba(0,0,0,0.55); min-width: 14px; min-height: 14px; border-radius: 3px; }
+.postit check:checked { background: #57ab5a; }
 .postit-grip { color: rgba(0,0,0,0.45); padding: 0 4px; }
 """
 
@@ -236,6 +243,181 @@ def screen_notes():
     return out
 
 
+# The todo.txt rules below mirror parse/build in plugins/todo/lib/todo.luau so a tick writes what the panel writes.
+def parse_task(raw):
+    t = {"raw": raw}
+    rest = raw
+    done = rest.startswith("x ")
+    if done:
+        rest = rest[2:]
+    m = re.match(r"^\(([A-Z])\) ", rest)
+    t["pri"] = m.group(1) if m else None
+    if m:
+        rest = rest[4:]
+    m = re.match(r"^(\d{4}-\d\d-\d\d) ", rest)
+    t["created"] = None
+    if m:
+        rest = rest[11:]
+        if done:
+            m2 = re.match(r"^(\d{4}-\d\d-\d\d) ", rest)
+            t["created"] = m2.group(1) if m2 else None
+            if m2:
+                rest = rest[11:]
+        else:
+            t["created"] = m.group(1)
+    m = re.search(r"(?<!\S)due:(\d{4}-\d\d-\d\d)(?!\S)", rest)
+    t["due"] = m.group(1) if m else None
+    rest = re.sub(r"(?<!\S)due:\d{4}-\d\d-\d\d(?!\S)", "", rest)
+    m = re.search(r"(?<!\S)color:([A-Za-z]+)(?!\S)", rest)
+    t["color"] = m.group(1) if m else None
+    rest = re.sub(r"(?<!\S)color:[A-Za-z]+(?!\S)", "", rest)
+    m = re.search(r"(?<!\S)note:(\S+)", rest)
+    t["note"] = m.group(1) if m else None
+    rest = re.sub(r"(?<!\S)note:\S+", "", rest)
+    t["pinned"] = re.search(r"(?<!\S)pin:1(?!\S)", rest) is not None
+    rest = re.sub(r"(?<!\S)pin:1(?!\S)", "", rest)
+    t["tags"] = re.findall(r"(?<!\S)[+@]\S+", rest)
+    t["text"] = re.sub(r"(?<!\S)[+@]\S+", "", rest).strip()
+    t["done"] = done
+    return t
+
+
+def encode_note(text):
+    return re.sub(r"[^A-Za-z0-9_.,-]", lambda c: "".join(f"%{b:02X}" for b in c.group(0).encode()), text)
+
+
+def decode_note(text):
+    return re.sub(r"(?:%[0-9A-Fa-f]{2})+", lambda m: bytes.fromhex(m.group(0).replace("%", "")).decode("utf-8", "replace"), text)
+
+
+def build_task(t):
+    parts = []
+    if t["pri"]:
+        parts.append(f"({t['pri']})")
+    if t["created"]:
+        parts.append(t["created"])
+    parts.append(t["text"])
+    parts += t["tags"]
+    if t["pinned"]:
+        parts.append("pin:1")
+    if t["note"]:
+        parts.append("note:" + encode_note(decode_note(t["note"])))
+    if t["color"]:
+        parts.append("color:" + t["color"])
+    if t["due"]:
+        parts.append("due:" + t["due"])
+    return " ".join(parts)
+
+
+def complete_line(raw):
+    t = parse_task(raw)
+    t["pri"] = None
+    return f"x {datetime.date.today().isoformat()} {build_task(t)}"
+
+
+def due_kind(due):
+    today = datetime.date.today().isoformat()
+    if not due:
+        return "nodate"
+    if due < today:
+        return "overdue"
+    if due == today:
+        return "today"
+    if due == (datetime.date.today() + datetime.timedelta(days=1)).isoformat():
+        return "tomorrow"
+    if due <= (datetime.date.today() + datetime.timedelta(days=7)).isoformat():
+        return "week"
+    return "later"
+
+
+class Tasks:
+    """Open tasks of one todo.txt list; ticking one writes the done line back."""
+
+    def __init__(self, name):
+        self.name = name
+        self.path = os.path.join(TODO_DIR, name + ".txt")
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin=4)
+        self.widget = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        self.widget.add(self.box)
+        self.on_color = None
+        self.cls = f"tasks{id(self)}"
+        self.box.get_style_context().add_class(self.cls)
+        self.font_css = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        self.refresh()
+        self.monitor = Gio.File.new_for_path(TODO_DIR).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+        self.monitor.connect("changed", lambda _m, f, *_: f.get_basename() == name + ".txt" and self.refresh())
+        GLib.timeout_add_seconds(60, self.refresh)  # due colours follow midnight
+
+    def save(self, **_):
+        pass
+
+    def read(self):
+        try:
+            with open(self.path, encoding="utf-8") as f:
+                return [l for l in f.read().split("\n") if l.strip()]
+        except (OSError, UnicodeDecodeError):
+            return []
+
+    def set_font(self, pt):
+        self.font_css.load_from_data(f".{self.cls} label {{ font-size: {pt}pt; }}".encode())
+
+    def refresh(self):
+        if self.box.get_parent() is None:  # its window is gone: stop the minute timer
+            return False
+        everything = list(map(parse_task, self.read()))
+        tasks = [t for t in everything if not t["done"]]
+        tasks.sort(key=lambda t: (t["due"] is None, t["due"] or "", t["pri"] or "Z"))
+        for child in self.box.get_children():
+            child.destroy()
+        for t in tasks + [t for t in everything if t["done"]]:  # done ones stay below, struck through
+            self.box.pack_start(self.row(t), False, False, 0)
+        if self.on_color:
+            self.on_color(DUE_HEX[due_kind(tasks[0]["due"])] if tasks else DUE_HEX["nodate"])
+        self.box.show_all()
+        return True
+
+    def row(self, t):
+        row = Gtk.Box(spacing=6)
+        check = Gtk.CheckButton(active=t["done"], tooltip_text="Mark as open" if t["done"] else "Mark as done")
+        check.connect("toggled", lambda _c, raw=t["raw"]: GLib.idle_add(self.toggle, raw))
+        row.pack_start(check, False, False, 0)
+        label = Gtk.Label(xalign=0, wrap=True)
+        if t["done"]:
+            label.set_markup(f'<s>{GLib.markup_escape_text(t["text"])}</s>')
+            label.set_opacity(0.45)
+        else:
+            label.set_text(t["text"])
+        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        open_panel = Gtk.EventBox()
+        open_panel.add(label)
+        open_panel.connect("button-press-event", lambda *_: subprocess.Popen(["noctalia", "msg", "panel-open", "mabox/todo:main"]) and False)
+        row.pack_start(open_panel, True, True, 0)
+        if t["due"] and not t["done"]:
+            try:
+                when = datetime.date.fromisoformat(t["due"]).strftime("%x")
+            except ValueError:
+                when = t["due"]
+            dot = Gtk.Label(xalign=1)
+            dot.set_markup(f'<span foreground="{DUE_HEX[due_kind(t["due"])]}">●</span> <small>{GLib.markup_escape_text(when)}</small>')
+            row.pack_end(dot, False, False, 0)
+        return row
+
+    def toggle(self, raw):
+        lines = self.read()
+        if raw in lines:
+            # Same as the panel: done lines get "x <date> " in front, reopening strips it.
+            lines[lines.index(raw)] = re.sub(r"^x (\d{4}-\d\d-\d\d )?", "", raw, count=1) if raw.startswith("x ") else complete_line(raw)
+            tmp = self.path + ".tmp"
+            try:
+                with open(tmp, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines) + "\n")
+                os.replace(tmp, self.path)
+            except OSError as e:
+                print(f"mb-postits: {self.path}: {e}", file=sys.stderr)
+        self.refresh()
+
+
 class Postit(Gtk.Window):
     def __init__(self, key, title, content, hex_color, layout, layer, slot=0):
         super().__init__()
@@ -272,6 +454,7 @@ class Postit(Gtk.Window):
         frame.get_style_context().add_provider(tint, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         font = saved.get("font", FONT_DEFAULT)
         self.font = min(FONT_MAX, max(FONT_MIN, int(font))) if isinstance(font, (int, float)) else FONT_DEFAULT
+        self.content = content
         self.font_css = Gtk.CssProvider()
         content.get_child().get_style_context().add_provider(self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         self.apply_font()
@@ -290,6 +473,8 @@ class Postit(Gtk.Window):
         head = Gtk.EventBox()
         head.add(bar)
         head.get_style_context().add_class("postit-title")
+        self.head_css = Gtk.CssProvider()
+        head.get_style_context().add_provider(self.head_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         head.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
         head.connect("button-press-event", self.head_press)
         head.connect("motion-notify-event", self.drag_move)
@@ -345,8 +530,13 @@ class Postit(Gtk.Window):
         self.resize(w, h)
         self.save_pos()
 
+    def set_head_color(self, hex_color):
+        self.head_css.load_from_data(f".postit-title {{ background: {hex_color}; }}".encode())
+
     def apply_font(self):
         self.font_css.load_from_data(f"textview, textview text {{ font-size: {self.font}pt; }}".encode())
+        if hasattr(self.content, "set_font"):
+            self.content.set_font(self.font)
 
     def set_font(self, pt):
         self.font = min(FONT_MAX, max(FONT_MIN, pt))
@@ -433,7 +623,7 @@ def main():
             on = screen_notes()
             hidden.intersection_update(on)  # switched off elsewhere: it may come back
             want = [p for p in on if p not in hidden]
-            for path in [p for p in shown if p not in want]:
+            for path in [p for p in shown if p not in want and not p.startswith("tasks:")]:
                 note, win = shown.pop(path)
                 note.save(force=True)
                 note.monitor.cancel()
@@ -455,6 +645,18 @@ def main():
             return False
 
         sync()
+        args = sys.argv[1:]
+        for i, arg in enumerate(args):
+            if arg in ("--tasks", "--task") and i + 1 < len(args) and "/" not in args[i + 1]:
+                key = "tasks:" + args[i + 1]
+                tasks = Tasks(args[i + 1])
+                win = Postit(key, "Tasks · " + tasks.name, tasks.widget, PAPER, layout, layer, opened[0])
+                opened[0] += 1
+                tasks.on_color = win.set_head_color
+                tasks.refresh()
+                win.on_close = win.on_remove = lambda k=key: hide(k)
+                win.on_close_all = quit_all
+                shown[key] = (tasks, win)
         if not shown:
             subprocess.run(["notify-send", "mb-postits", "No note has a 'screen: true' header line"])
             return 1
