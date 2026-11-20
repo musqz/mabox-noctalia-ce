@@ -1427,11 +1427,11 @@ render = function()
     end,
   }) }
   local postable = { date = true, overdue = true, today = true, tomorrow = true, week = true, later = true, nodate = true }
-  for _, m in ipairs({ { "date", "By date (all open)", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "week" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
+  for _, m in ipairs({ { "date", "By date", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "week" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
     local mode = m[1]
     local active = sortMode == mode and not archiveView
     local pinnedNow = postable[mode] and isPinned(list, mode)
-    local btn = ui.button({ key = "s" .. mode .. (pinnedNow and "1" or "0"), glyph = m[4] == nil and m[3] or nil, text = m[2], variant = active and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = postable[mode] and "Click: show. Click again: put on the post-it. Click again: remove from it" or nil, onClick = function()
+    local btn = ui.button({ key = "s" .. mode .. (pinnedNow and "1" or "0"), glyph = m[4] == nil and m[3] or nil, text = m[2], variant = active and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = postable[mode] and ((mode == "date" and "All open tasks. " or "") .. "Click: show. Click again: put on the post-it. Click again: remove from it") or nil, onClick = function()
       if active and postable[mode] then
         setPinned(list, mode, not pinnedNow)
       end
