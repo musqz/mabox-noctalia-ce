@@ -1,6 +1,5 @@
 --!nonstrict
-return function(stay)
-local KEEP = require("./keep.luau")
+return function()
 -- Startup programs: autostart.local entries (add, delay, switch off, remove) and the shipped defaults (switch off).
 
 local store = require("./autostart.luau")
@@ -232,7 +231,6 @@ function render()
     ui.row({ gap = 8, align = "center" }, {
       logo(),
       ui.label({ text = "Autostart", flexGrow = 1 }),
-      KEEP("autostart", "main", "main-keep", stay),
       ui.button({ key = "refresh", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Read the file again", onClick = refresh }),
       ui.button({ key = "geany", glyph = "file-text", text = "Open autostart.local", variant = "ghost", controlSize = "sm", onClick = openFile }),
     }),
