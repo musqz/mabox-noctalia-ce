@@ -1,6 +1,5 @@
 --!nonstrict
-return function(stay)
-local KEEP = require("./keep.luau")
+return function()
 -- Install apps: curated pacman-only list (lists/install.csv); installs with sudo pacman -S in a terminal.
 local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
@@ -123,7 +122,6 @@ render = function()
       logo(),
       ui.label({ text = "Install apps" }),
       ui.label({ text = hotkey("mabox/install:main"), color = "outline_variant", flexGrow = 1 }),
-      KEEP("install", "main", "main-keep", stay),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ gap = 8, align = "center" }, {
