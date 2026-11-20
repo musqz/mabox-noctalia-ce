@@ -365,11 +365,12 @@ class Tasks:
     def refresh(self):
         if self.box.get_parent() is None:  # its window is gone: stop the minute timer
             return False
-        tasks = [t for t in map(parse_task, self.read()) if not t["done"]]
+        everything = list(map(parse_task, self.read()))
+        tasks = [t for t in everything if not t["done"]]
         tasks.sort(key=lambda t: (t["due"] is None, t["due"] or "", t["pri"] or "Z"))
         for child in self.box.get_children():
             child.destroy()
-        for t in tasks:
+        for t in tasks + [t for t in everything if t["done"]]:  # done ones stay below, struck through
             self.box.pack_start(self.row(t), False, False, 0)
         if self.on_color:
             self.on_color(DUE_HEX[due_kind(tasks[0]["due"])] if tasks else DUE_HEX["nodate"])
@@ -378,16 +379,21 @@ class Tasks:
 
     def row(self, t):
         row = Gtk.Box(spacing=6)
-        check = Gtk.CheckButton(tooltip_text="Mark as done")
-        check.connect("toggled", lambda _c, raw=t["raw"]: self.complete(raw))
+        check = Gtk.CheckButton(active=t["done"], tooltip_text="Mark as open" if t["done"] else "Mark as done")
+        check.connect("toggled", lambda _c, raw=t["raw"]: GLib.idle_add(self.toggle, raw))
         row.pack_start(check, False, False, 0)
-        label = Gtk.Label(label=t["text"], xalign=0, wrap=True)
+        label = Gtk.Label(xalign=0, wrap=True)
+        if t["done"]:
+            label.set_markup(f'<s>{GLib.markup_escape_text(t["text"])}</s>')
+            label.set_opacity(0.45)
+        else:
+            label.set_text(t["text"])
         label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
         open_panel = Gtk.EventBox()
         open_panel.add(label)
         open_panel.connect("button-press-event", lambda *_: subprocess.Popen(["noctalia", "msg", "panel-open", "mabox/todo:main"]) and False)
         row.pack_start(open_panel, True, True, 0)
-        if t["due"]:
+        if t["due"] and not t["done"]:
             try:
                 when = datetime.date.fromisoformat(t["due"]).strftime("%x")
             except ValueError:
@@ -397,10 +403,11 @@ class Tasks:
             row.pack_end(dot, False, False, 0)
         return row
 
-    def complete(self, raw):
+    def toggle(self, raw):
         lines = self.read()
         if raw in lines:
-            lines[lines.index(raw)] = complete_line(raw)
+            # Same as the panel: done lines get "x <date> " in front, reopening strips it.
+            lines[lines.index(raw)] = re.sub(r"^x (\d{4}-\d\d-\d\d )?", "", raw, count=1) if raw.startswith("x ") else complete_line(raw)
             tmp = self.path + ".tmp"
             try:
                 with open(tmp, "w", encoding="utf-8") as f:
