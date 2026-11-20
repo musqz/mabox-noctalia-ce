@@ -179,7 +179,7 @@ Add, edit, delay, switch off and remove startup programs, and switch off the shi
 
 ## Keep a panel open
 
-The top panels have a **Keep open** switch in the header: Autostart, Agents, Equalizer, Install, Insert, System, Todo and Keys.
+The top panels have a **Keep open** switch in the header: Autostart, Agents, Install, Insert, System, Todo and Keys.
 
 - Switch it on to keep the panel open when you open another panel.
 - Close it with the `x` button. Switch it off to go back to the normal panel.

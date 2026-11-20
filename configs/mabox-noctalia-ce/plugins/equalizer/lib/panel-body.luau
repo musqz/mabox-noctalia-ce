@@ -1,6 +1,5 @@
 --!nonstrict
-return function(stay)
-local KEEP = require("./keep.luau")
+return function()
 -- Equalizer: preamp and 10 bands on the PipeWire filter-chain sink; mb-eq does the work.
 local eq = require("./eq.luau")
 local logo = require("./celogo.luau")
@@ -213,7 +212,6 @@ render = function()
           eq.save(state)
         end)
       end }),
-      KEEP("equalizer", "main", "main-keep", stay),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     body,
