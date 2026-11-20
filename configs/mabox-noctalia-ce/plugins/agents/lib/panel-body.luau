@@ -1,6 +1,5 @@
 --!nonstrict
-return function(stay)
-local KEEP = require("./keep.luau")
+return function()
 -- AI agents: sessions of Claude Code, Codex and Agy with a detail card, and a project picker
 -- for new sessions. Data and launching come from mb-agent-sessions.
 local logo = require("./celogo.luau")
@@ -279,7 +278,6 @@ function render()
       chip("New session", tab == "new", function() tab = "new" render() end),
       ui.button({ glyph = "settings", variant = showSettings and "primary" or "ghost", controlSize = "sm", tooltip = "Terminal", onClick = function() showSettings = not showSettings render() end }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = load }),
-      KEEP("agents", "main", "main-keep", stay),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ gap = 6, align = "center" }, {
