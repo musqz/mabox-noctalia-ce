@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add `mb-import-openbox`: make the Mabox todo list active in the Todo panel and turn Cherrytree todo notes into Notes (`--dry-run` shows what it would do).
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
