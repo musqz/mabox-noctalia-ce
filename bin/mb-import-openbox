@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+# Brings Mabox Openbox data into Noctalia CE.
+# Usage: mb-import-openbox [--dry-run] [todo] [notes]    (no section: all of them)
+import json
+import os
+import pathlib
+import re
+import sqlite3
+import sys
+import time
+import xml.etree.ElementTree as ET
+
+HOME = os.path.expanduser("~")
+STATE_HOME = os.environ.get("XDG_STATE_HOME", os.path.join(HOME, ".local/state"))
+MABOX = os.path.join(HOME, ".config/mabox")
+TODO_DIR = os.path.join(HOME, ".todo")
+PLUGINS = os.path.join(STATE_HOME, "noctalia/plugins/data/mabox")
+DONE = os.path.join(STATE_HOME, "mb-import-openbox/imported.json")
+DRY = "--dry-run" in sys.argv
+
+
+def say(msg):
+    print(("[dry-run] " if DRY else "") + msg)
+
+
+def write(path, text):
+    if DRY:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def conf(path):
+    out = {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                m = re.match(r"^([A-Za-z_]+)=(.*)$", line.strip())
+                if m:
+                    out[m.group(1)] = m.group(2).strip()
+    except OSError:
+        pass
+    return out
+
+
+def import_todo():
+    """The list that is active in the Mabox todo menu becomes the active list in the CE Todo panel."""
+    c = conf(os.path.join(MABOX, "mabox-todo.conf"))
+    name = c.get("filename", "")
+    if not name:
+        say("todo: no mabox-todo.conf, nothing to do")
+        return
+    if not os.path.exists(os.path.join(TODO_DIR, name + ".txt")):
+        say(f"todo: list '{name}' has no file in ~/.todo, skipped")
+        return
+    path = os.path.join(PLUGINS, "todo/state")
+    try:
+        with open(path, encoding="utf-8") as f:
+            lines = f.read().split("\n")
+    except OSError:
+        lines = []
+    lines = [l for l in lines if l and not l.startswith(("list=", "hide_done="))]
+    lines = [f"list={name}", f"hide_done={'1' if c.get('hide_done') == 'y' else '0'}"] + lines
+    write(path, "\n".join(lines) + "\n")
+    say(f"todo: active list '{name}', hide done {'on' if c.get('hide_done') == 'y' else 'off'}")
+    if c.get("filter"):
+        say(f"todo: the filter '{c['filter']}' has no setting in CE; type it in the search field of the Todo panel")
+    say("todo: reload the Todo plugin to see it: noctalia msg plugins disable mabox/todo; noctalia msg plugins enable mabox/todo")
+
+
+def notes_dir():
+    try:
+        with open(os.path.join(PLUGINS, "notes/path")) as f:
+            custom = f.read().strip()
+    except OSError:
+        custom = ""
+    return custom.rstrip("/") or os.path.join(PLUGINS, "notes/notes")
+
+
+def rich_text(txt):
+    try:
+        return "".join(ET.fromstring(txt).itertext())
+    except ET.ParseError:
+        return txt
+
+
+def import_notes():
+    """Every Cherrytree node of a list (~/.todo/<list>.ctb) becomes a CE note tagged with the list."""
+    try:
+        with open(DONE, encoding="utf-8") as f:
+            done = set(json.load(f))
+    except (OSError, ValueError):
+        done = set()
+    made, seen, planned = 0, False, set()
+    for name in sorted(os.listdir(TODO_DIR)) if os.path.isdir(TODO_DIR) else []:
+        if not name.endswith(".ctb"):
+            continue
+        seen = True
+        lst, path = name[:-4], os.path.join(TODO_DIR, name)
+        try:
+            db = sqlite3.connect(pathlib.Path(path).as_uri() + "?mode=ro", uri=True)
+            rows = db.execute("SELECT node_id, name, txt, is_richtxt, ts_creation FROM node ORDER BY node_id").fetchall()
+            db.close()
+        except sqlite3.Error as e:
+            say(f"notes: {name}: {e}, skipped")
+            continue
+        for node_id, title, txt, rich, created in rows:
+            if isinstance(txt, bytes):
+                txt = txt.decode("utf-8", "replace")
+            key = f"{path}:{node_id}"
+            body = (rich_text(txt or "") if rich else (txt or "")).strip()
+            if key in done or not body:
+                continue
+            stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(created or time.time()))
+            n, dst = 1, ""
+            while True:
+                dst = os.path.join(notes_dir(), f"{stamp}-{9000 + n}.md")
+                if not os.path.exists(dst) and dst not in planned:
+                    break
+                n += 1
+            head = f"title: {lst}: {(title or '').strip()}".replace("\n", " ") + f"\ntags: {lst}\n\n"
+            write(dst, head + body + "\n")
+            planned.add(dst)
+            done.add(key)
+            made += 1
+            say(f"notes: {name} / {title} -> {os.path.basename(dst)}")
+        if made:
+            write(DONE, json.dumps(sorted(done), indent=1))  # after each list, so an interrupted run does not repeat notes
+    if not seen:
+        say("notes: no Cherrytree notes (.ctb) in ~/.todo")
+    elif made:
+        say(f"notes: {made} note(s) made")
+
+
+SECTIONS = {"todo": import_todo, "notes": import_notes}
+
+
+def main():
+    wanted = [a for a in sys.argv[1:] if not a.startswith("-")] or list(SECTIONS)
+    bad = [a for a in wanted if a not in SECTIONS] + [a for a in sys.argv[1:] if a.startswith("-") and a not in ("--dry-run", "-h", "--help")]
+    if bad or "-h" in sys.argv or "--help" in sys.argv:
+        print("Usage: mb-import-openbox [--dry-run] [todo] [notes]", file=sys.stderr)
+        return 1 if bad else 0
+    for name in wanted:
+        SECTIONS[name]()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
