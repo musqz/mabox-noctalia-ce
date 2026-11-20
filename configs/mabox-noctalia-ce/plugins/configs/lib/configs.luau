@@ -8,6 +8,7 @@ local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 local lockscreen = require("./lockscreen.luau")
 local uiscale = require("./uiscale.luau")
+local postits = require("./postits.luau")
 local widgetradius = require("./widgetradius.luau")
 local toml = require("./tomlsection.luau")
 
@@ -1235,6 +1236,29 @@ render = function()
     end
   end
   table.insert(cards, card(scaleRows, sync))
+
+  local postOpen = expanded["Post-its"]
+  row += 1
+  stop("h-post", 1, function() toggle("Post-its") end)
+  local postRows = {
+    ui.button({
+      key = "h-post",
+      selected = kbd.sel("h-post"),
+      text = "Post-its",
+      glyph = postOpen and "chevron-down" or "chevron-right",
+      variant = "outline",
+      controlSize = "sm",
+      contentAlign = "start",
+      tooltip = "What the post-its on the desktop show (W-A-y)",
+      onClick = function() toggle("Post-its") end,
+    }),
+  }
+  if postOpen then
+    for _, w in ipairs(postits.rows(render)) do
+      table.insert(postRows, w)
+    end
+  end
+  table.insert(cards, card(postRows, sync))
 
   local btnOpen = expanded["Bar buttons"]
   row += 1

@@ -38,6 +38,9 @@ Each filter on the desktop is its own post-it.
 
 ## Agenda
 
+1. Open the Configs panel and unfold *Post-its*.
+2. Turn on **Agenda**.
+
 - Shows the next events from `~/caldir/*/*.ics`, repeats included for 30 days.
 - The title bar has the day colour of the nearest event.
 
