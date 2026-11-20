@@ -457,31 +457,68 @@ local function clearDone()
   reload()
 end
 
--- Lists shown by mb-postits: one "tasks NAME" line each in postits.conf (the agenda line is not ours).
+-- Post-its: one "tasks NAME FILTER" line each in postits.conf (the agenda line is not ours).
+-- FILTER is a sort mode: all, overdue, today, tomorrow, week, later or nodate.
 local POSTITS_DIR = (noctalia.getenv("HOME") or "") .. "/.config/mabox-noctalia-ce"
 local POSTITS = POSTITS_DIR .. "/postits.conf"
 
-local function onScreen(name)
+local function postitLines()
+  local out = {}
   for l in string.gmatch(noctalia.readFile(POSTITS) or "", "[^\n]+") do
-    if l == "tasks " .. name then
+    if string.match(l, "%S") then
+      table.insert(out, l)
+    end
+  end
+  return out
+end
+
+local function savePostitLines(lines)
+  noctalia.mkdirAll(POSTITS_DIR)
+  noctalia.writeFile(POSTITS, table.concat(lines, "\n") .. (#lines > 0 and "\n" or ""))
+end
+
+local function filterKey(mode)
+  return mode == "date" and "all" or mode
+end
+
+local function isPinned(name, mode)
+  local f = filterKey(mode)
+  for _, l in ipairs(postitLines()) do
+    if l == "tasks " .. name .. " " .. f or (f == "all" and l == "tasks " .. name) then
       return true
     end
   end
   return false
 end
 
-local function setOnScreen(name, on)
+local function setPinned(name, mode, on)
+  local f = filterKey(mode)
   local out = {}
-  for l in string.gmatch(noctalia.readFile(POSTITS) or "", "[^\n]+") do
-    if l ~= "tasks " .. name and string.match(l, "%S") then
+  for _, l in ipairs(postitLines()) do
+    if not (l == "tasks " .. name .. " " .. f or (f == "all" and l == "tasks " .. name)) then
       table.insert(out, l)
     end
   end
   if on then
-    table.insert(out, "tasks " .. name)
+    table.insert(out, "tasks " .. name .. " " .. f)
   end
-  noctalia.mkdirAll(POSTITS_DIR)
-  noctalia.writeFile(POSTITS, table.concat(out, "\n") .. (#out > 0 and "\n" or ""))
+  savePostitLines(out)
+end
+
+-- Rename (to a name) or delete (to nil) every post-it line of a list.
+local function moveListPostits(name, to)
+  local out = {}
+  for _, l in ipairs(postitLines()) do
+    local n, f = string.match(l, "^tasks (%S+) ?(%S*)$")
+    if n == name then
+      if to then
+        table.insert(out, "tasks " .. to .. " " .. (f ~= "" and f or "all"))
+      end
+    else
+      table.insert(out, l)
+    end
+  end
+  savePostitLines(out)
 end
 
 local function newList(name)
@@ -507,17 +544,14 @@ local function renameList(name)
     writeLines(donePath(name), readLines(donePath(list)))
     noctalia.removeFile(donePath(list))
   end
-  if onScreen(list) then
-    setOnScreen(list, false)
-    setOnScreen(name, true)
-  end
+  moveListPostits(list, name)
   list = name
   saveState()
   return true
 end
 
 local function removeList()
-  setOnScreen(list, false)
+  moveListPostits(list, nil)
   noctalia.removeFile(listPath(list))
   noctalia.removeFile(donePath(list))
   list = "todo"
@@ -1193,15 +1227,6 @@ local function listPanel()
       render()
     end }))
   end
-  if not naming and not renaming then
-    table.insert(items, ui.row({ gap = 6, align = "center" }, {
-      ui.toggle({ key = "scr" .. list .. (onScreen(list) and "1" or "0"), checked = onScreen(list), tooltip = "Show this list as a post-it on the desktop (mb-postits)", onChange = function(v)
-        setOnScreen(list, v == true or v == "true")
-        render()
-      end }),
-      ui.label({ text = "On screen", color = "on_surface_variant" }),
-    }))
-  end
   if #lists > 1 and not naming and not renaming then
     local sure = confirming == "list"
     table.insert(items, ui.button({
@@ -1402,14 +1427,32 @@ render = function()
       render()
     end,
   }) }
-  for _, m in ipairs({ { "date", "By date", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "week" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
-    local btn = ui.button({ key = "s" .. m[1], glyph = m[4] == nil and m[3] or nil, text = m[2], variant = sortMode == m[1] and not archiveView and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = function()
-      sortMode = m[1]
+  local postable = { date = true, overdue = true, today = true, tomorrow = true, week = true, later = true, nodate = true }
+  for _, m in ipairs({ { "date", "By date (all open)", "calendar" }, { "az", "A to Z", "sort-ascending" }, { "priority", "By priority", "flag" }, { "pinned", "Pinned only", "pin" }, { "overdue", "Overdue only", "dot", "overdue" }, { "today", "Today only", "dot", "today" }, { "tomorrow", "Tomorrow only", "dot", "tomorrow" }, { "week", "Next 7 days", "dot", "week" }, { "later", "Later than 7 days", "dot", "later" }, { "nodate", "No date", "dot", "nodate" } }) do
+    local mode = m[1]
+    local active = sortMode == mode and not archiveView
+    local pinnedNow = postable[mode] and isPinned(list, mode)
+    local btn = ui.button({ key = "s" .. mode .. (pinnedNow and "1" or "0"), glyph = m[4] == nil and m[3] or nil, text = m[2], variant = active and "primary" or "outline", controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = postable[mode] and "Click: show. Click again: put on the post-it. Click again: remove from it" or nil, onClick = function()
+      if active and postable[mode] then
+        setPinned(list, mode, not pinnedNow)
+      end
+      sortMode = mode
       archiveView = false
       saveState()
       render()
     end })
-    table.insert(sortItems, m[4] and ui.row({ gap = 4, align = "center" }, { dot(DUE_HEX[m[4]]), btn }) or btn)
+    local cells = {}
+    if m[4] then
+      table.insert(cells, dot(DUE_HEX[m[4]]))
+    end
+    table.insert(cells, btn)
+    if pinnedNow then
+      table.insert(cells, ui.button({ key = "pn" .. mode, glyph = "note", variant = "ghost", controlSize = "sm", tooltip = "On the post-it: click to remove", onClick = function()
+        setPinned(list, mode, false)
+        render()
+      end }))
+    end
+    table.insert(sortItems, #cells > 1 and ui.row({ gap = 4, align = "center" }, cells) or btn)
   end
   local side = { card("lists", listPanel()), card("sort", sortItems) }
   local tagItems = tagPanel()

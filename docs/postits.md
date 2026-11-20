@@ -14,7 +14,7 @@ Small windows on the desktop that show a note, a todo list or the agenda. Click 
 | `--tasks LIST` | add a post-it with the open tasks of `~/.todo/LIST.txt` |
 | `--agenda` | add a post-it with the next events from `~/caldir` |
 
-Lists and the agenda switched on in `~/.config/mabox-noctalia-ce/postits.conf` open with `W-A-y` too. One line each: `tasks LIST` or `agenda`. Changes show within a second while the post-its run.
+Lists and the agenda switched on in `~/.config/mabox-noctalia-ce/postits.conf` open with `W-A-y` too. One line each: `tasks LIST FILTER` or `agenda`. FILTER is `all`, `overdue`, `today`, `tomorrow`, `week`, `later` or `nodate`. Changes show within a second while the post-its run.
 
 ## Notes
 
@@ -26,11 +26,15 @@ The post-it opens within a second. Turn the switch off to remove it. The body is
 ## Tasks
 
 1. Open the Todo panel and pick a list.
-2. Turn on **On screen** in the *Lists* column.
+2. Click a filter button (*By date*, *Today only*, *Next 7 days* ...) once to show it.
+3. Click it again to put it on the desktop; a note icon appears next to it.
+4. Click it a third time to take it off the desktop. The filter stays on.
+
+Each filter on the desktop is its own post-it.
 
 - Tick the box to mark a task done. It stays in the list, struck through; untick to reopen it.
 - Click the task text to open the Todo panel.
-- The title bar has the due colour of the most urgent task.
+- The title bar has the colour of the filter; for *By date* it is the due colour of the most urgent task.
 
 ## Agenda
 
