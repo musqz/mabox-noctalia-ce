@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # Sticky notes on the desktop as small layer-shell windows. Run again to close them.
-# Usage: mb-postits [--front] [--tasks LIST]
+# Usage: mb-postits [--front] [--tasks LIST] [--agenda]
 import datetime
+import glob
 import json
 import os
 import re
@@ -32,6 +33,9 @@ COLORS = {  # same names and values as plugins/notes/lib/notes.luau
 SAVE_MS = 600
 FONT_MIN, FONT_MAX, FONT_DEFAULT = 8, 28, 11
 TODO_DIR = os.path.expanduser("~/.todo")
+CALDIR = os.path.expanduser("~/caldir")
+AGENDA_MAX = 30
+AGENDA_DAYS = 30
 # Same due colours as plugins/todo/lib/todo.luau
 DUE_HEX = {"overdue": "#e5534b", "today": "#f0883e", "tomorrow": "#539bf5", "week": "#57ab5a", "later": "#986ee2", "nodate": "#888888"}
 PAPER = "#ece7d1"
@@ -330,27 +334,49 @@ def due_kind(due):
     return "later"
 
 
-class Tasks:
-    """Open tasks of one todo.txt list; ticking one writes the done line back."""
+class ListBody:
+    """Scrolling list of label rows for the tasks and agenda post-its."""
 
-    def __init__(self, name):
-        self.name = name
-        self.path = os.path.join(TODO_DIR, name + ".txt")
+    def __init__(self):
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin=4)
         self.widget = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
         self.widget.add(self.box)
         self.on_color = None
-        self.cls = f"tasks{id(self)}"
+        self.cls = f"list{id(self)}"
         self.box.get_style_context().add_class(self.cls)
         self.font_css = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+
+    def save(self, **_):
+        pass
+
+    def set_font(self, pt):
+        self.font_css.load_from_data(f".{self.cls} label {{ font-size: {pt}pt; }}".encode())
+
+    def line(self, text, color, when, strike=False):
+        """One row: text on the left, a due-colour dot and the date on the right."""
+        row = Gtk.Box(spacing=6)
+        label = Gtk.Label(label=text, xalign=0, wrap=True)
+        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        row.pack_start(label, True, True, 0)
+        if when:
+            dot = Gtk.Label(xalign=1)
+            dot.set_markup(f'<span foreground="{color}">●</span> <small>{GLib.markup_escape_text(when)}</small>')
+            row.pack_end(dot, False, False, 0)
+        return row
+
+
+class Tasks(ListBody):
+    """Open tasks of one todo.txt list; ticking one writes the done line back."""
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+        self.path = os.path.join(TODO_DIR, name + ".txt")
         self.refresh()
         self.monitor = Gio.File.new_for_path(TODO_DIR).monitor_directory(Gio.FileMonitorFlags.NONE, None)
         self.monitor.connect("changed", lambda _m, f, *_: f.get_basename() == name + ".txt" and self.refresh())
         GLib.timeout_add_seconds(60, self.refresh)  # due colours follow midnight
-
-    def save(self, **_):
-        pass
 
     def read(self):
         try:
@@ -358,9 +384,6 @@ class Tasks:
                 return [l for l in f.read().split("\n") if l.strip()]
         except (OSError, UnicodeDecodeError):
             return []
-
-    def set_font(self, pt):
-        self.font_css.load_from_data(f".{self.cls} label {{ font-size: {pt}pt; }}".encode())
 
     def refresh(self):
         if self.box.get_parent() is None:  # its window is gone: stop the minute timer
@@ -416,6 +439,157 @@ class Tasks:
             except OSError as e:
                 print(f"mb-postits: {self.path}: {e}", file=sys.stderr)
         self.refresh()
+
+
+def unescape(text):
+    return re.sub(r"\\(.)", lambda m: "\n" if m.group(1) in "nN" else m.group(1), text)
+
+
+def add_months(day, n):
+    month = day.month - 1 + n
+    year, month = day.year + month // 12, month % 12 + 1
+    return day.replace(year=year, month=month)  # ValueError for a missing day (31st): that month is skipped
+
+
+def occurrences(start, rule, until_day):
+    """Start times of a recurring event up to until_day (simple RRULEs: FREQ, INTERVAL, COUNT, UNTIL, BYDAY for weekly)."""
+    r = dict(p.split("=", 1) for p in rule.split(";") if "=" in p)
+    freq, step = r.get("FREQ"), int(r.get("INTERVAL", 1))
+    count = int(r["COUNT"]) if "COUNT" in r else None
+    last = None
+    if "UNTIL" in r:
+        try:
+            last = datetime.datetime.strptime(r["UNTIL"][:8], "%Y%m%d").date()
+        except ValueError:
+            pass
+    days = [WEEKDAYS[d[-2:]] for d in r.get("BYDAY", "").split(",") if d[-2:] in WEEKDAYS]
+    out, n = [], 0
+    for k in range(5000):
+        if freq == "DAILY":
+            cands = [start + datetime.timedelta(days=k * step)]
+        elif freq == "WEEKLY":
+            monday = start - datetime.timedelta(days=start.weekday()) + datetime.timedelta(weeks=k * step)
+            cands = [monday + datetime.timedelta(days=d) for d in (sorted(days) or [start.weekday()])]
+            cands = [c for c in cands if c >= start]
+        elif freq in ("MONTHLY", "YEARLY"):
+            try:
+                cands = [add_months(start, k * step * (12 if freq == "YEARLY" else 1))]
+            except ValueError:
+                cands = []
+        else:
+            return [start]
+        for c in cands:
+            if (last and c.date() > last) or c.date() > until_day or (count is not None and n >= count):
+                return out
+            n += 1
+            out.append(c)
+    return out
+
+
+WEEKDAYS = {"MO": 0, "TU": 1, "WE": 2, "TH": 3, "FR": 4, "SA": 5, "SU": 6}
+
+
+def read_events(now):
+    """Upcoming events from caldir's .ics files as (start, all_day, summary), soonest first.
+
+    Floating and TZID times are taken as local time. Recurring events are expanded for AGENDA_DAYS.
+    """
+    events = []
+    horizon = now.date() + datetime.timedelta(days=AGENDA_DAYS)
+    for path in glob.glob(os.path.join(CALDIR, "*", "*.ics")):
+        try:
+            with open(path, encoding="utf-8") as f:
+                text = re.sub(r"\r?\n[ \t]", "", f.read())
+        except (OSError, UnicodeDecodeError):
+            continue
+        for block in re.findall(r"BEGIN:VEVENT\r?\n(.*?)END:VEVENT", text, re.S):
+            block = re.sub(r"BEGIN:VALARM.*?END:VALARM", "", block, flags=re.S)
+            props = {}
+            for line in block.splitlines():
+                m = re.match(r"^([A-Z-]+)((?:;[^:]*)?):(.*)$", line)
+                if m and m.group(1) not in props:
+                    props[m.group(1)] = (m.group(2), m.group(3))
+            if props.get("STATUS", ("", ""))[1] == "CANCELLED":
+                continue
+            try:
+                start, all_day = parse_ics_time(*props["DTSTART"])
+                if "DTEND" in props:
+                    length = parse_ics_time(*props["DTEND"])[0] - start
+                else:
+                    length = datetime.timedelta(days=1) if all_day else datetime.timedelta()
+            except (KeyError, ValueError):
+                continue
+            skip = {v[:8] for k, v in re.findall(r"^EXDATE([^:]*):(.*)$", block, re.M) for v in v.split(",")}
+            summary = unescape(props.get("SUMMARY", ("", ""))[1]).strip() or "(no title)"
+            starts = occurrences(start, props["RRULE"][1], horizon) if "RRULE" in props else [start]
+            for st in starts:
+                if st.strftime("%Y%m%d") in skip:
+                    continue
+                end = st + length
+                if (end.date() > now.date()) if all_day else (end >= now):
+                    shown = datetime.datetime.combine(max(st.date(), now.date()), datetime.time()) if all_day and st.date() < now.date() else st
+                    events.append((shown, all_day, summary))
+    events.sort(key=lambda e: (e[0], not e[1]))
+    return events
+
+
+def parse_ics_time(params, value):
+    if "VALUE=DATE" in params and "T" not in value:
+        return datetime.datetime.strptime(value, "%Y%m%d"), True
+    if value.endswith("Z"):
+        utc = datetime.datetime.strptime(value, "%Y%m%dT%H%M%SZ").replace(tzinfo=datetime.timezone.utc)
+        return utc.astimezone().replace(tzinfo=None), False
+    return datetime.datetime.strptime(value, "%Y%m%dT%H%M%S"), False
+
+
+class Agenda(ListBody):
+    """Next events of the caldir calendars, read-only."""
+
+    def __init__(self):
+        super().__init__()
+        self.monitors = []
+        self.pending = 0
+        for d in [CALDIR] + glob.glob(os.path.join(CALDIR, "*", "")):
+            if os.path.isdir(d):
+                mon = Gio.File.new_for_path(d).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+                mon.connect("changed", self.on_change)
+                self.monitors.append(mon)
+        self.monitor = self  # same cancel() hook the other post-its have
+        self.refresh()
+        GLib.timeout_add_seconds(60, self.refresh)
+
+    def on_change(self, *_):
+        if not self.pending:  # a sync writes many files: refresh once afterwards
+            self.pending = GLib.timeout_add(500, self.later)
+
+    def later(self):
+        self.pending = 0
+        self.refresh()
+        return False
+
+    def cancel(self):
+        for mon in self.monitors:
+            mon.cancel()
+
+    def refresh(self):
+        if self.box.get_parent() is None:
+            return False
+        now = datetime.datetime.now()
+        events = read_events(now)[:AGENDA_MAX]
+        for child in self.box.get_children():
+            child.destroy()
+        for start, all_day, summary in events:
+            kind = due_kind(max(start.date(), now.date()).isoformat())
+            when = {"today": "Today", "tomorrow": "Tomorrow"}.get(kind) or start.strftime("%a %x")
+            if not all_day:
+                when += start.strftime(" %H:%M")
+            self.box.pack_start(self.line(summary, DUE_HEX[kind], when), False, False, 0)
+        if not events:
+            self.box.pack_start(Gtk.Label(label="No upcoming events", xalign=0), False, False, 0)
+        if self.on_color:
+            self.on_color(DUE_HEX[due_kind(max(events[0][0].date(), now.date()).isoformat())] if events else DUE_HEX["nodate"])
+        self.box.show_all()
+        return True
 
 
 class Postit(Gtk.Window):
@@ -623,7 +797,7 @@ def main():
             on = screen_notes()
             hidden.intersection_update(on)  # switched off elsewhere: it may come back
             want = [p for p in on if p not in hidden]
-            for path in [p for p in shown if p not in want and not p.startswith("tasks:")]:
+            for path in [p for p in shown if p not in want and not p.startswith("tasks:") and p != "agenda"]:
                 note, win = shown.pop(path)
                 note.save(force=True)
                 note.monitor.cancel()
@@ -657,6 +831,15 @@ def main():
                 win.on_close = win.on_remove = lambda k=key: hide(k)
                 win.on_close_all = quit_all
                 shown[key] = (tasks, win)
+        if "--agenda" in args:
+            agenda = Agenda()
+            win = Postit("agenda", "Agenda", agenda.widget, PAPER, layout, layer, opened[0])
+            opened[0] += 1
+            agenda.on_color = win.set_head_color
+            agenda.refresh()
+            win.on_close = win.on_remove = lambda: hide("agenda")
+            win.on_close_all = quit_all
+            shown["agenda"] = (agenda, win)
         if not shown:
             subprocess.run(["notify-send", "mb-postits", "No note has a 'screen: true' header line"])
             return 1
