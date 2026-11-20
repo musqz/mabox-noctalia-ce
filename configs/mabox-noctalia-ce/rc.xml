@@ -70,6 +70,7 @@
     <keybind key="S-W-a"><action name="Execute" command="noctalia msg panel-toggle mabox/agents:main"/></keybind>
     <keybind key="W-A-i"><action name="Execute" command="noctalia msg panel-toggle mabox/system:system"/></keybind>
     <keybind key="W-A-k"><action name="Execute" command="mb-fitts"/></keybind>
+    <keybind key="W-A-y"><action name="Execute" command="mb-postits --front"/></keybind>
     <keybind key="W-n"><action name="Execute" command="noctalia msg panel-open mabox/notes:main new"/></keybind>
     <keybind key="C-W-n"><action name="Execute" command="mb-pinned notes"/></keybind>
     <keybind key="W-A-s"><action name="Execute" command="noctalia msg panel-toggle mabox/status:main"/></keybind>
