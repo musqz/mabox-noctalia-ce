@@ -21,7 +21,7 @@ Lists and the agenda switched on in `~/.config/mabox-noctalia-ce/postits.conf` o
 1. Open a note in the Notes panel.
 2. Turn on **On screen**.
 
-The post-it opens within a second. Turn the switch off to remove it. The body is saved after a short pause and when you click away.
+The post-it opens within a second; its title bar has the colour of the note. Turn the switch off to remove it. The body is saved after a short pause and when you click away.
 
 ## Tasks
 
