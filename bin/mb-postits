@@ -276,13 +276,17 @@ class Postit(Gtk.Window):
         content.get_child().get_style_context().add_provider(self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         self.apply_font()
         self.title_label = Gtk.Label(label=title, ellipsize=Pango.EllipsizeMode.END)
-        self.on_close = None
-        close = Gtk.Button(label="✕", relief=Gtk.ReliefStyle.NONE, tooltip_text="Remove from screen (the note is kept)")
-        close.get_style_context().add_class("postit-close")
-        close.connect("clicked", lambda _b: self.on_close and self.on_close())
+        self.on_close = self.on_close_all = self.on_remove = None
+        buttons = []
+        for glyph, tip, name in (("–", "Hide (comes back on the next start)", "on_close"), ("✕", "Remove from screen (the note is kept)", "on_remove")):
+            btn = Gtk.Button(label=glyph, relief=Gtk.ReliefStyle.NONE, tooltip_text=tip)
+            btn.get_style_context().add_class("postit-close")
+            btn.connect("clicked", lambda _b, name=name: getattr(self, name) and getattr(self, name)())
+            buttons.append(btn)
         bar = Gtk.Box()
         bar.set_center_widget(self.title_label)
-        bar.pack_end(close, False, False, 0)
+        for btn in reversed(buttons):
+            bar.pack_end(btn, False, False, 0)
         head = Gtk.EventBox()
         head.add(bar)
         head.get_style_context().add_class("postit-title")
@@ -321,6 +325,11 @@ class Postit(Gtk.Window):
             for label, step in (("Text bigger", 1), ("Text smaller", -1)):
                 item = Gtk.MenuItem(label=f"{label}  ({self.font} pt)")
                 item.connect("activate", lambda _i, step=step: self.set_font(self.font + step))
+                menu.append(item)
+            menu.append(Gtk.SeparatorMenuItem())
+            for label, cb in (("Hide this one", self.on_close), ("Close all", self.on_close_all), ("Remove from screen", self.on_remove)):
+                item = Gtk.MenuItem(label=label)
+                item.connect("activate", lambda _i, cb=cb: cb and cb())
                 menu.append(item)
             menu.show_all()
             menu.popup_at_pointer(ev)
@@ -402,12 +411,13 @@ def main():
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
     shown = {}  # note path -> (Note, Postit)
+    hidden = set()  # closed for this session only
     pending = [0]
     opened = [0]  # cascade slot for notes without a saved position
 
     def quit_all():
         for n, _ in shown.values():
-            n.save()
+            n.save(force=True)
         Gtk.main_quit()
 
     signal_add(GLib.PRIORITY_DEFAULT, 15, quit_all)
@@ -420,7 +430,9 @@ def main():
         def sync():
             """Open a post-it for every note switched on, close the ones switched off."""
             pending[0] = 0
-            want = screen_notes()
+            on = screen_notes()
+            hidden.intersection_update(on)  # switched off elsewhere: it may come back
+            want = [p for p in on if p not in hidden]
             for path in [p for p in shown if p not in want]:
                 note, win = shown.pop(path)
                 note.save(force=True)
@@ -435,7 +447,9 @@ def main():
                     continue
                 win = Postit(os.path.basename(path), note.title(), note.widget, COLORS.get(note.fields.get("color"), COLORS["yellow"]), layout, layer, opened[0])
                 opened[0] += 1
-                win.on_close = note.switch_off
+                win.on_close = lambda p=path: hide(p)
+                win.on_close_all = quit_all
+                win.on_remove = note.switch_off
                 note.on_reload = lambda n=note, w=win: w.title_label.set_text(n.title())
                 shown[path] = (note, win)
             return False
@@ -444,6 +458,17 @@ def main():
         if not shown:
             subprocess.run(["notify-send", "mb-postits", "No note has a 'screen: true' header line"])
             return 1
+
+        def hide(path):
+            if path not in shown:
+                return
+            note, win = shown.pop(path)
+            note.save(force=True)
+            note.monitor.cancel()
+            win.destroy()
+            hidden.add(path)
+            if not shown:
+                Gtk.main_quit()
 
         def on_timer():
             sync()
