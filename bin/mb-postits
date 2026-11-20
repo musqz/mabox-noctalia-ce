@@ -253,7 +253,7 @@ class Postit(Gtk.Window):
         font = saved.get("font", FONT_DEFAULT)
         self.font = min(FONT_MAX, max(FONT_MIN, int(font))) if isinstance(font, (int, float)) else FONT_DEFAULT
         self.font_css = Gtk.CssProvider()
-        frame.get_style_context().add_provider(self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        content.get_child().get_style_context().add_provider(self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         self.apply_font()
         self.title_label = Gtk.Label(label=title, xalign=0)
         head = Gtk.EventBox()
@@ -310,7 +310,7 @@ class Postit(Gtk.Window):
         self.save_pos()
 
     def apply_font(self):
-        self.font_css.load_from_data(f".postit textview {{ font-size: {self.font}pt; }}".encode())
+        self.font_css.load_from_data(f"textview, textview text {{ font-size: {self.font}pt; }}".encode())
 
     def set_font(self, pt):
         self.font = min(FONT_MAX, max(FONT_MIN, pt))
