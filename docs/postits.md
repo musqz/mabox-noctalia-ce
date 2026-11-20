@@ -2,6 +2,8 @@
 
 Small windows on the desktop that show a note, a todo list or the agenda. Click in a note to type.
 
+<p align="center"><a href="img/postits.png"><img src="img/thumb/postits.png" alt="Post-its on the desktop: notes, a todo filter and the agenda, with the Todo panel and the Notes panel open"></a></p>
+
 | Key | Tool |
 |---|---|
 | `W-A-y` | show the post-its above windows; press again to close them |
