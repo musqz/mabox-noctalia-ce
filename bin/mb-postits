@@ -367,6 +367,24 @@ class ListBody:
         return row
 
 
+FILTERS = {"all": "", "overdue": "Overdue", "today": "Today", "tomorrow": "Tomorrow", "week": "Next 7 days", "later": "Later than 7 days", "nodate": "No date"}
+
+
+def task_matches(t, flt):
+    """The same due filters as the sort buttons in the Todo panel."""
+    if flt == "all":
+        return True
+    today = datetime.date.today()
+    due, kind = t["due"], due_kind(t["due"])
+    if flt == "nodate":
+        return not due
+    if flt == "later":
+        return bool(due) and due > (today + datetime.timedelta(days=7)).isoformat()
+    if flt == "week":
+        return bool(due) and today.isoformat() <= due <= (today + datetime.timedelta(days=7)).isoformat()
+    return kind == flt
+
+
 def open_todo():
     try:
         subprocess.Popen(["noctalia", "msg", "panel-open", "mabox/todo:main"])
@@ -378,9 +396,9 @@ def open_todo():
 class Tasks(ListBody):
     """Open tasks of one todo.txt list; ticking one writes the done line back."""
 
-    def __init__(self, name):
+    def __init__(self, name, flt="all"):
         super().__init__()
-        self.name = name
+        self.name, self.flt = name, flt
         self.path = os.path.join(TODO_DIR, name + ".txt")
         self.refresh()
         self.monitor = Gio.File.new_for_path(TODO_DIR).monitor_directory(Gio.FileMonitorFlags.NONE, None)
@@ -397,7 +415,7 @@ class Tasks(ListBody):
     def refresh(self):
         if self.box.get_parent() is None:  # its window is gone: stop the minute timer
             return False
-        everything = list(map(parse_task, self.read()))
+        everything = [t for t in map(parse_task, self.read()) if task_matches(t, self.flt)]
         tasks = [t for t in everything if not t["done"]]
         tasks.sort(key=lambda t: (t["due"] is None, t["due"] or "", t["pri"] or "Z"))
         for child in self.box.get_children():
@@ -405,7 +423,10 @@ class Tasks(ListBody):
         for t in tasks + [t for t in everything if t["done"]]:  # done ones stay below, struck through
             self.box.pack_start(self.row(t), False, False, 0)
         if self.on_color:
-            self.on_color(DUE_HEX[due_kind(tasks[0]["due"])] if tasks else DUE_HEX["nodate"])
+            if self.flt != "all":
+                self.on_color(DUE_HEX[self.flt])
+            else:
+                self.on_color(DUE_HEX[due_kind(tasks[0]["due"])] if tasks else DUE_HEX["nodate"])
         self.box.show_all()
         return True
 
@@ -614,9 +635,10 @@ def conf_keys():
     try:
         with open(CONF, encoding="utf-8") as f:
             for line in f.read().split("\n"):
-                kind, _, name = line.strip().partition(" ")
+                kind, _, rest = line.strip().partition(" ")
+                name, _, flt = rest.strip().partition(" ")
                 if kind == "tasks" and name and "/" not in name:
-                    keys.add("tasks:" + name)
+                    keys.add(f"tasks:{name}:{flt.strip() if flt.strip() in FILTERS else 'all'}")
                 elif kind == "agenda":
                     keys.add("agenda")
     except (OSError, UnicodeDecodeError):
@@ -625,13 +647,14 @@ def conf_keys():
 
 
 def conf_set(key, on):
-    line = "agenda" if key == "agenda" else "tasks " + key.split(":", 1)[1]
+    line = "agenda" if key == "agenda" else "tasks " + " ".join(key.split(":")[1:])
     try:
         with open(CONF, encoding="utf-8") as f:
             lines = [l for l in f.read().split("\n") if l.strip()]
     except (OSError, UnicodeDecodeError):
         lines = []
-    lines = [l for l in lines if l != line] + ([line] if on else [])
+    plain = line[:-4] if line.endswith(" all") else None  # an older line without a filter means "all"
+    lines = [l for l in lines if l != line and l != plain] + ([line] if on else [])
     os.makedirs(os.path.dirname(CONF), exist_ok=True)
     tmp = CONF + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -839,7 +862,7 @@ def main():
         layout = load_layout()
 
         args = sys.argv[1:]
-        cli = {"tasks:" + args[i + 1] for i, a in enumerate(args) if a in ("--tasks", "--task") and i + 1 < len(args) and "/" not in args[i + 1]}
+        cli = {"tasks:" + args[i + 1] + ":all" for i, a in enumerate(args) if a in ("--tasks", "--task") and i + 1 < len(args) and "/" not in args[i + 1]}
         if "--agenda" in args:
             cli.add("agenda")
 
@@ -853,8 +876,12 @@ def main():
             if key == "agenda":
                 body, title = Agenda(), "Agenda"
             else:
-                body = Tasks(key.split(":", 1)[1])
-                title = "Tasks · " + body.name
+                _, name, flt = key.split(":")
+                body = Tasks(name, flt)
+                title = "Tasks · " + body.name + (" · " + FILTERS[flt] if flt != "all" else "")
+            old = key[:-4]  # position saved before lists had filters
+            if key.endswith(":all") and key not in layout and old in layout:
+                layout[key] = layout[old]
             win = Postit(key, title, body.widget, PAPER, layout, layer, opened[0])
             opened[0] += 1
             body.on_color = win.set_head_color
@@ -898,7 +925,7 @@ def main():
             for key in sorted(extra):
                 if key in shown or key in hidden:
                     continue
-                if key.startswith("tasks:") and not os.path.exists(os.path.join(TODO_DIR, key[6:] + ".txt")):
+                if key.startswith("tasks:") and not os.path.exists(os.path.join(TODO_DIR, key.split(":")[1] + ".txt")):
                     continue  # list deleted or renamed outside the panel
                 open_extra(key)
             return False
