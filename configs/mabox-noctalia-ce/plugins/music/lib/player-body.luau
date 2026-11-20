@@ -1166,20 +1166,28 @@ end
 -- Source of the transport buttons, like the player list in the Noctalia Media panel.
 local function sourceSelect()
   loadPin()
-  local options, index = { activeName ~= "" and activeName or "No player" }, 0
-  for i, name in ipairs(players) do
-    table.insert(options, name)
-    if name == pinned then
-      index = i
+  -- The current source is on top; picking another one moves it there. A pinned source gets "Active player" at the end to follow Noctalia again.
+  local top = pinned ~= "" and pinned or (activeName ~= "" and activeName or "No player")
+  local entries, options = { { value = pinned } }, { top }
+  for _, name in ipairs(players) do
+    if name ~= top then
+      table.insert(entries, { value = name })
+      table.insert(options, name)
     end
+  end
+  if pinned ~= "" then
+    table.insert(entries, { value = "" })
+    table.insert(options, "Active player")
   end
   return ui.column({ gap = 0 }, {
     ui.label({ text = pinned == "" and "Active player" or "Pinned player", fontSize = 10, color = "on_surface_variant" }),
-    ui.select({ key = "source" .. table.concat(options, "|") .. index, width = 150, options = options, selectedIndex = index, onChange = function(idx)
-      local i = tonumber(idx)
-      pinned = i == 0 and "" or options[i + 1]
-      savePin()
-      render()
+    ui.select({ key = "source" .. table.concat(options, "|"), width = 150, options = options, selectedIndex = 0, onChange = function(idx)
+      local e = entries[tonumber(idx) + 1]
+      if e and e.value ~= pinned then
+        pinned = e.value
+        savePin()
+        render()
+      end
     end }),
   })
 end
