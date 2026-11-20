@@ -148,7 +148,7 @@ class Note:
         self.dirty = True
         if self.timer:
             GLib.source_remove(self.timer)
-        self.timer = GLib.timeout_add(SAVE_MS, self.save)
+        self.timer = GLib.timeout_add(SAVE_MS, lambda: self.save(from_timer=True))
 
     def on_disk(self, *_):
         try:
@@ -163,8 +163,8 @@ class Note:
             if self.on_reload:
                 self.on_reload()
 
-    def save(self, force=False):
-        if self.timer:
+    def save(self, force=False, from_timer=False):
+        if self.timer and not from_timer:
             GLib.source_remove(self.timer)
         self.timer = 0
         if not self.dirty:
@@ -173,7 +173,9 @@ class Note:
             if force:
                 # Closing: keep the typed body under whatever header the file has now.
                 with open(self.path, encoding="utf-8") as f:
-                    self.header = split_note(f.read())[0]
+                    header = split_note(f.read())[0]
+                if header:  # an empty read is a half-written file: keep the old header
+                    self.header = header
             elif os.stat(self.path).st_mtime_ns != self.mtime:
                 self.load()  # another writer (Notes panel) won: keep its version
                 subprocess.run(["notify-send", "mb-postits", f"{os.path.basename(self.path)} changed elsewhere; your last edit was dropped"])
