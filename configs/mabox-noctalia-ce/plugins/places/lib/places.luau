@@ -43,6 +43,12 @@ local DRIVE_MODES = {
 }
 local autoOpened = {}
 local hitCount = 0
+local indexReady = false
+local indexGen = 0
+local HIT_ROWS = 60
+local hitMore = 0 -- matches beyond the listed ones
+local treeNonce = 0
+local hitList = {} -- every folder the tree search found, shallow ones first
 local searchNonce = 0
 local render
 local listDir
@@ -400,6 +406,9 @@ local function loadDrives()
 end
 
 local function reload()
+  indexReady = false
+  indexGen += 1
+  indexing = false
   loadPlaces()
   for path in pairs(expanded) do
     listDir(path)
@@ -905,8 +914,10 @@ while i < len(queue) and n < 60000 and time.monotonic() - t0 < 8:
             for e in it:
                 if e.name.startswith(".") or "\n" in e.name:
                     continue
-                if e.is_dir(follow_symlinks=False):
-                    queue.append((path + "/" + e.name, d + 1))
+                c = path + "/" + e.name
+                if c not in seen and e.is_dir(follow_symlinks=False):
+                    seen.add(c)
+                    queue.append((c, d + 1))
     except OSError:
         pass
 out.close()]]
@@ -928,7 +939,6 @@ out.sort()
 for _, p in out[:300]:
     print(p)]]
 
-local indexReady = false
 local indexing = false
 local jump
 local queryGen = 0
@@ -937,7 +947,6 @@ local function indexPath()
   return noctalia.pluginDataDir() .. "/dirindex"
 end
 
-local indexGen = 0
 local function loadIndex()
   indexGen += 1
   local gen = indexGen
@@ -988,6 +997,7 @@ end
 -- Finds the matches for the typed text, opens the folders above the chosen one and marks its row.
 jump = function()
   hitKey, hitCount = nil, 0
+  hitList = {}
   forceOpen = {}
   for path in pairs(autoOpened) do
     expanded[path] = nil
@@ -1016,7 +1026,12 @@ jump = function()
         table.insert(hits, l)
       end
     end
+    hitMore = math.max(0, #hits - HIT_ROWS)
+    for i = #hits, HIT_ROWS + 1, -1 do
+      hits[i] = nil
+    end
     hitCount = #hits
+    hitList = hits
     hitPath = nil
     if hitCount > 0 then
       local path = hits[((treeIdx - 1) % hitCount) + 1]
@@ -1044,7 +1059,7 @@ end
 local function treeSearchRow()
   return ui.row({ gap = 6, align = "center" }, {
     ui.input({
-      key = "treeq",
+      key = "treeq" .. treeNonce,
       value = treeQuery,
       placeholder = "Jump to a folder in the tree",
       controlSize = "sm",
@@ -1059,6 +1074,12 @@ local function treeSearchRow()
         jump()
       end,
     }),
+    ui.button({ key = "tclear", glyph = "backspace", variant = "ghost", controlSize = "sm", enabled = treeQuery ~= "", onClick = function()
+      treeQuery = ""
+      treeIdx = 1
+      treeNonce += 1
+      jump()
+    end }),
     ui.button({ key = "tdrv", glyph = DRIVE_MODES[driveMode + 1].glyph, text = pinned and DRIVE_MODES[driveMode + 1].text or nil, variant = driveMode == 0 and "ghost" or "primary", controlSize = "sm", tooltip = DRIVE_MODES[driveMode + 1].tooltip, onClick = function()
       driveMode = (driveMode + 1) % 3
       indexReady = false
@@ -1070,22 +1091,44 @@ local function treeSearchRow()
   })
 end
 
--- Where the marked folder lives, under the tree search.
+-- Every folder the tree search found, under the search field: click one to jump to it in the tree, star it, copy its path.
 local function pathLine()
-  if not hitPath then
+  if #hitList == 0 then
     return nil
   end
   local home = noctalia.getenv("HOME")
-  local shown = hitPath
-  if home and string.sub(shown, 1, #home + 1) == home .. "/" then
-    shown = "~" .. string.sub(shown, #home + 1)
+  local rows = {}
+  for i, path in ipairs(hitList) do
+    local shown = path
+    if home and string.sub(shown, 1, #home + 1) == home .. "/" then
+      shown = "~" .. string.sub(shown, #home + 1)
+    end
+    table.insert(rows, ui.row({ key = "hit" .. path, gap = 2, align = "center" }, {
+      ui.button({
+        key = "hitgo" .. path,
+        selected = path == hitPath,
+        glyph = "folder",
+        text = shown,
+        variant = "ghost",
+        controlSize = "sm",
+        contentAlign = "start",
+        flexGrow = 1,
+        onClick = function()
+          treeIdx = i
+          jump()
+        end,
+        onRightClick = function() openFolder({ open = path }) end,
+      }),
+      starButton("d", path, "h"),
+      ui.button({ key = "hitcopy" .. path, glyph = "copy", variant = "ghost", controlSize = "sm", onClick = function() copyPath({ path = path }) end }),
+    }))
   end
-  return ui.row({ key = "hitpath", gap = 6, align = "center" }, {
-    ui.glyph({ name = "folder", size = 14, color = "hover" }),
-    ui.label({ text = shown, tooltip = hitPath, fontSize = 11, color = "hover", maxLines = 1, flexGrow = 1 }),
-    ui.button({ key = "hitcopy", glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy the path", onClick = function()
-      copyPath({ path = hitPath })
-    end }),
+  if hitMore > 0 then
+    table.insert(rows, ui.label({ text = "and " .. hitMore .. " more: type a bit more", fontSize = 11, color = "on_surface_variant" }))
+  end
+  -- A fixed box around the scroll: the list is long, and the box keeps it from pushing the cards out of the window.
+  return ui.column({ key = "hitbox", height = math.min(#rows, 7) * 34 + 4 }, {
+    ui.scroll({ key = "hitlist", gap = 2, flexGrow = 1 }, rows),
   })
 end
 
@@ -1198,6 +1241,7 @@ local function open()
   newIn = nil
   editing = false
   treeQuery, treeIdx, hitKey, hitPath, indexReady, forceOpen, autoOpened = "", 1, nil, nil, false, {}, {}
+  hitList, hitCount, hitMore = {}, 0, 0
   expanded = {}
   listing = {}
   loadLayout()
