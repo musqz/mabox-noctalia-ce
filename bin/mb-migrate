@@ -292,7 +292,7 @@ migrate_28() {
 migrate_29() {
     local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
     [[ -f $f ]] && grep -q "</keyboard>" "$f" || return 0
-    grep -q 'key="W-A-y"' "$f" || sed -i 's#</keyboard>#    <keybind key="W-A-y"><action name="Execute" command="mb-postits"/></keybind>\n  </keyboard>#' "$f"
+    grep -q 'key="W-A-y"' "$f" || sed -i 's#</keyboard>#    <keybind key="W-A-y"><action name="Execute" command="mb-postits --front"/></keybind>\n  </keyboard>#' "$f"
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 

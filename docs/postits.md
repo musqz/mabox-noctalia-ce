@@ -4,7 +4,7 @@ Small windows on the desktop that show a note, a todo list or the agenda. Click 
 
 | Key | Tool |
 |---|---|
-| `W-A-y` | show the post-its; press again to close them |
+| `W-A-y` | show the post-its above windows; press again to close them |
 
 `mb-postits` has no autostart. Start it from a terminal with options:
 
@@ -14,7 +14,7 @@ mb-postits --front --tasks First_list --agenda
 
 | Option | Effect |
 |---|---|
-| `--front` | show the post-its above windows (default: on the desktop, under windows) |
+| `--front` | show the post-its above windows (without it: on the desktop, under windows; `W-A-y` uses it) |
 | `--tasks LIST` | add a post-it with the open tasks of `~/.todo/LIST.txt` |
 | `--agenda` | add a post-it with the next events from `~/caldir` |
 
