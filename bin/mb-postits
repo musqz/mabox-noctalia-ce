@@ -605,6 +605,40 @@ class Agenda(ListBody):
         return True
 
 
+CONF = os.path.expanduser("~/.config/mabox-noctalia-ce/postits.conf")  # the Todo plugin writes the same path
+
+
+def conf_keys():
+    """Window keys switched on in postits.conf: lines 'tasks LIST' and 'agenda'."""
+    keys = set()
+    try:
+        with open(CONF, encoding="utf-8") as f:
+            for line in f.read().split("\n"):
+                kind, _, name = line.strip().partition(" ")
+                if kind == "tasks" and name and "/" not in name:
+                    keys.add("tasks:" + name)
+                elif kind == "agenda":
+                    keys.add("agenda")
+    except (OSError, UnicodeDecodeError):
+        pass
+    return keys
+
+
+def conf_set(key, on):
+    line = "agenda" if key == "agenda" else "tasks " + key.split(":", 1)[1]
+    try:
+        with open(CONF, encoding="utf-8") as f:
+            lines = [l for l in f.read().split("\n") if l.strip()]
+    except (OSError, UnicodeDecodeError):
+        lines = []
+    lines = [l for l in lines if l != line] + ([line] if on else [])
+    os.makedirs(os.path.dirname(CONF), exist_ok=True)
+    tmp = CONF + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write("".join(l + "\n" for l in lines))
+    os.replace(tmp, CONF)
+
+
 class Postit(Gtk.Window):
     def __init__(self, key, title, content, hex_color, layout, layer, slot=0):
         super().__init__()
@@ -804,17 +838,49 @@ def main():
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         layout = load_layout()
 
+        args = sys.argv[1:]
+        cli = {"tasks:" + args[i + 1] for i, a in enumerate(args) if a in ("--tasks", "--task") and i + 1 < len(args) and "/" not in args[i + 1]}
+        if "--agenda" in args:
+            cli.add("agenda")
+
+        def close(key):
+            body, win = shown.pop(key)
+            body.save(force=True)
+            body.monitor.cancel()
+            win.destroy()
+
+        def open_extra(key):
+            if key == "agenda":
+                body, title = Agenda(), "Agenda"
+            else:
+                body = Tasks(key.split(":", 1)[1])
+                title = "Tasks · " + body.name
+            win = Postit(key, title, body.widget, PAPER, layout, layer, opened[0])
+            opened[0] += 1
+            body.on_color = win.set_head_color
+            body.refresh()
+            win.on_close = lambda k=key: hide(k)
+            win.on_remove = lambda k=key: remove_extra(k)
+            win.on_close_all = quit_all
+            shown[key] = (body, win)
+
+        def remove_extra(key):
+            if key in conf_keys():
+                try:
+                    conf_set(key, False)
+                except OSError as e:
+                    print(f"mb-postits: {CONF}: {e}", file=sys.stderr)
+            hide(key)  # also when it came from a command line option
+
         def sync():
-            """Open a post-it for every note switched on, close the ones switched off."""
+            """Open a post-it for every note, list or agenda switched on, close the ones switched off."""
             pending[0] = 0
             on = screen_notes()
-            hidden.intersection_update(on)  # switched off elsewhere: it may come back
+            extra = cli | conf_keys()
+            hidden.intersection_update(set(on) | extra)  # switched off elsewhere: it may come back
             want = [p for p in on if p not in hidden]
-            for path in [p for p in shown if p not in want and not p.startswith("tasks:") and p != "agenda"]:
-                note, win = shown.pop(path)
-                note.save(force=True)
-                note.monitor.cancel()
-                win.destroy()
+            for path in [p for p in shown if p not in want and p not in extra]:
+                close(path)
             for path in want:
                 if path in shown:
                     continue
@@ -829,44 +895,26 @@ def main():
                 win.on_remove = note.switch_off
                 note.on_reload = lambda n=note, w=win: w.title_label.set_text(n.title())
                 shown[path] = (note, win)
+            for key in sorted(extra):
+                if key in shown or key in hidden:
+                    continue
+                if key.startswith("tasks:") and not os.path.exists(os.path.join(TODO_DIR, key[6:] + ".txt")):
+                    continue  # list deleted or renamed outside the panel
+                open_extra(key)
             return False
-
-        sync()
-        args = sys.argv[1:]
-        for i, arg in enumerate(args):
-            if arg in ("--tasks", "--task") and i + 1 < len(args) and "/" not in args[i + 1]:
-                key = "tasks:" + args[i + 1]
-                tasks = Tasks(args[i + 1])
-                win = Postit(key, "Tasks · " + tasks.name, tasks.widget, PAPER, layout, layer, opened[0])
-                opened[0] += 1
-                tasks.on_color = win.set_head_color
-                tasks.refresh()
-                win.on_close = win.on_remove = lambda k=key: hide(k)
-                win.on_close_all = quit_all
-                shown[key] = (tasks, win)
-        if "--agenda" in args:
-            agenda = Agenda()
-            win = Postit("agenda", "Agenda", agenda.widget, PAPER, layout, layer, opened[0])
-            opened[0] += 1
-            agenda.on_color = win.set_head_color
-            agenda.refresh()
-            win.on_close = win.on_remove = lambda: hide("agenda")
-            win.on_close_all = quit_all
-            shown["agenda"] = (agenda, win)
-        if not shown:
-            subprocess.run(["notify-send", "mb-postits", "No note has a 'screen: true' header line"])
-            return 1
 
         def hide(path):
             if path not in shown:
                 return
-            note, win = shown.pop(path)
-            note.save(force=True)
-            note.monitor.cancel()
-            win.destroy()
+            close(path)
             hidden.add(path)
             if not shown:
                 Gtk.main_quit()
+
+        sync()
+        if not shown:
+            subprocess.run(["notify-send", "mb-postits", "Nothing to show: switch on a note, a todo list or the agenda"])
+            return 1
 
         def on_timer():
             sync()
@@ -880,8 +928,15 @@ def main():
             if not pending[0]:
                 pending[0] = GLib.timeout_add(200, on_timer)
 
+        def on_conf(_mon, f, _other, _event):
+            if f.get_basename() == "postits.conf":
+                on_dir(_mon, f, _other, _event)
+
         watch = Gio.File.new_for_path(notes_dir()).monitor_directory(Gio.FileMonitorFlags.NONE, None)
         watch.connect("changed", on_dir)
+        os.makedirs(os.path.dirname(CONF), exist_ok=True)
+        conf_watch = Gio.File.new_for_path(os.path.dirname(CONF)).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+        conf_watch.connect("changed", on_conf)
         Gtk.main()
     finally:
         try:

@@ -457,6 +457,33 @@ local function clearDone()
   reload()
 end
 
+-- Lists shown by mb-postits: one "tasks NAME" line each in postits.conf (the agenda line is not ours).
+local POSTITS_DIR = (noctalia.getenv("HOME") or "") .. "/.config/mabox-noctalia-ce"
+local POSTITS = POSTITS_DIR .. "/postits.conf"
+
+local function onScreen(name)
+  for l in string.gmatch(noctalia.readFile(POSTITS) or "", "[^\n]+") do
+    if l == "tasks " .. name then
+      return true
+    end
+  end
+  return false
+end
+
+local function setOnScreen(name, on)
+  local out = {}
+  for l in string.gmatch(noctalia.readFile(POSTITS) or "", "[^\n]+") do
+    if l ~= "tasks " .. name and string.match(l, "%S") then
+      table.insert(out, l)
+    end
+  end
+  if on then
+    table.insert(out, "tasks " .. name)
+  end
+  noctalia.mkdirAll(POSTITS_DIR)
+  noctalia.writeFile(POSTITS, table.concat(out, "\n") .. (#out > 0 and "\n" or ""))
+end
+
 local function newList(name)
   name = string.gsub(noctalia.string.trim(name), "[^%w_%-%.]", "_")
   if name == "" or name == "done" or name == "report" or string.match(name, "^done_") or string.match(name, "^report_") then
@@ -480,12 +507,17 @@ local function renameList(name)
     writeLines(donePath(name), readLines(donePath(list)))
     noctalia.removeFile(donePath(list))
   end
+  if onScreen(list) then
+    setOnScreen(list, false)
+    setOnScreen(name, true)
+  end
   list = name
   saveState()
   return true
 end
 
 local function removeList()
+  setOnScreen(list, false)
   noctalia.removeFile(listPath(list))
   noctalia.removeFile(donePath(list))
   list = "todo"
@@ -1160,6 +1192,15 @@ local function listPanel()
       nonce = nonce + 1
       render()
     end }))
+  end
+  if not naming and not renaming then
+    table.insert(items, ui.row({ gap = 6, align = "center" }, {
+      ui.toggle({ key = "scr" .. list .. (onScreen(list) and "1" or "0"), checked = onScreen(list), tooltip = "Show this list as a post-it on the desktop (mb-postits)", onChange = function(v)
+        setOnScreen(list, v == true or v == "true")
+        render()
+      end }),
+      ui.label({ text = "On screen", color = "on_surface_variant" }),
+    }))
   end
   if #lists > 1 and not naming and not renaming then
     local sure = confirming == "list"
