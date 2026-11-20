@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -366,6 +367,14 @@ class ListBody:
         return row
 
 
+def open_todo():
+    try:
+        subprocess.Popen(["noctalia", "msg", "panel-open", "mabox/todo:main"])
+    except OSError as e:
+        print(f"mb-postits: {e}", file=sys.stderr)
+    return False
+
+
 class Tasks(ListBody):
     """Open tasks of one todo.txt list; ticking one writes the done line back."""
 
@@ -414,7 +423,7 @@ class Tasks(ListBody):
         label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
         open_panel = Gtk.EventBox()
         open_panel.add(label)
-        open_panel.connect("button-press-event", lambda *_: subprocess.Popen(["noctalia", "msg", "panel-open", "mabox/todo:main"]) and False)
+        open_panel.connect("button-press-event", lambda *_: open_todo())
         row.pack_start(open_panel, True, True, 0)
         if t["due"] and not t["done"]:
             try:
@@ -427,17 +436,21 @@ class Tasks(ListBody):
         return row
 
     def toggle(self, raw):
-        lines = self.read()
-        if raw in lines:
-            # Same as the panel: done lines get "x <date> " in front, reopening strips it.
-            lines[lines.index(raw)] = re.sub(r"^x (\d{4}-\d\d-\d\d )?", "", raw, count=1) if raw.startswith("x ") else complete_line(raw)
-            tmp = self.path + ".tmp"
-            try:
+        # Re-read the file as it is now and change only this line; blank lines and the rest stay.
+        path = os.path.realpath(self.path)
+        try:
+            with open(path, encoding="utf-8") as f:
+                lines = f.read().split("\n")
+            if raw in lines:
+                # Same as the panel: done lines get "x <date> " in front, reopening strips it.
+                lines[lines.index(raw)] = re.sub(r"^x (\d{4}-\d\d-\d\d )?", "", raw, count=1) if raw.startswith("x ") else complete_line(raw)
+                tmp = path + ".tmp"
                 with open(tmp, "w", encoding="utf-8") as f:
-                    f.write("\n".join(lines) + "\n")
-                os.replace(tmp, self.path)
-            except OSError as e:
-                print(f"mb-postits: {self.path}: {e}", file=sys.stderr)
+                    f.write("\n".join(lines))
+                shutil.copymode(path, tmp)
+                os.replace(tmp, path)
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"mb-postits: {self.path}: {e}", file=sys.stderr)
         self.refresh()
 
 
