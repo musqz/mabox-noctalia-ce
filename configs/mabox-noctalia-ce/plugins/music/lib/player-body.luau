@@ -1143,6 +1143,24 @@ end
 -- Source of the transport buttons, like the player list in the Noctalia Media panel.
 local function sourceSelect()
   loadPin()
+  if stay then -- a select does not open in a persistent panel: use buttons
+    local chips = { ui.button({ key = "src-auto", text = "Auto", variant = pinned == "" and "primary" or "outline", controlSize = "sm", tooltip = activeName ~= "" and ("Follow the active player (" .. activeName .. ")") or "Follow the active player", onClick = function()
+      pinned = ""
+      savePin()
+      render()
+    end }) }
+    for _, name in ipairs(players) do
+      table.insert(chips, ui.button({ key = "src-" .. name, text = name, variant = pinned == name and "primary" or "outline", controlSize = "sm", tooltip = "Send the player buttons to " .. name, onClick = function()
+        pinned = name
+        savePin()
+        render()
+      end }))
+    end
+    return ui.column({ gap = 0 }, {
+      ui.label({ text = pinned == "" and "Active player" or "Pinned player", fontSize = 10, color = "on_surface_variant" }),
+      ui.row({ gap = 4, align = "center" }, chips),
+    })
+  end
   -- The current source is on top; picking another one moves it there. A pinned source gets "Active player" at the end to follow Noctalia again.
   local top = pinned ~= "" and pinned or (activeName ~= "" and activeName or "No player")
   local entries, options = { { value = pinned } }, { top }
