@@ -124,6 +124,7 @@ end
 
 -- Noctalia has no query for its active player: a playing one stands in, else the first paused one.
 local activeName = ""
+local missed = 0 -- polls in a row that did not list the pinned player
 
 local function refreshPlayers()
   loadPin()
@@ -144,10 +145,15 @@ local function refreshPlayers()
     table.sort(names)
     local active = playing ~= "" and playing or paused
     local gone = false
-    if pinned ~= "" and (r.exitCode == 0 or r.exitCode == 1) and not seen[pinned] then -- the pinned player quit: back to the active one
-      pinned = ""
-      savePin()
-      gone = true
+    if pinned ~= "" and (r.exitCode == 0 or r.exitCode == 1) and not seen[pinned] then
+      missed += 1
+      if missed >= 2 then -- the pinned player quit (two polls, so a restart between tracks keeps it): back to the active one
+        pinned = ""
+        savePin()
+        gone = true
+      end
+    else
+      missed = 0
     end
     if gone or active ~= activeName or table.concat(names, "\n") ~= table.concat(players, "\n") then
       players, activeName = names, active
@@ -518,7 +524,7 @@ local function transport(action)
   else
     noctalia.runAsync({ "noctalia", "msg", "media", action })
   end
-  if action == "stop" and (pinned == "" or pinned == "mpv") then -- the list plays through mpv: another player's stop leaves it alone
+  if action == "stop" and (pinned == "mpv" or (pinned == "" and (activeName == "" or activeName == "mpv"))) then -- the list plays through mpv: another player's stop leaves it alone
     playSeq += 1
     playingUrl = ""
     nowPlaying = ""
