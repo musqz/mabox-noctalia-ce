@@ -1140,29 +1140,6 @@ local function sidebar()
   return ui.column({ width = 250, height = 446, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = revealSide }, { ui.column({ gap = 6 }, items) }) })
 end
 
--- "Add to playlist" chooser above the cards; the + on a row adds to the choice.
-local function takeFocus()
-  local f = plFocus
-  plFocus = false
-  return f
-end
-
-local function addRow()
-  local names = playlistOptions()
-  return ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = "Add to playlist", fontSize = 12, color = "on_surface_variant" }),
-    ui.select({ key = "plsel", width = 300, options = names, selectedIndex = tIdx - 1, onChange = function(idx)
-      tIdx = tonumber(idx) + 1
-      tName = tIdx < #names and names[tIdx] or ""
-      plFocus = tIdx == #names
-      render()
-    end }),
-    tIdx == #names and ui.input({ key = "plnew", value = newName, placeholder = "new playlist name, Enter creates it", controlSize = "sm", flexGrow = 1, focus = takeFocus(), submitOnEnter = true,
-      onChange = function(t) newName = t render() end, onSubmit = function(t) newName = t createList() end }) or ui.spacer({ flexGrow = 1 }),
-    tIdx == #names and ui.button({ glyph = "check", variant = "outline", controlSize = "sm", enabled = noctalia.string.trim(newName) ~= "", tooltip = "Create the playlist", onClick = createList }) or ui.spacer({ width = 0 }),
-  })
-end
-
 -- Source of the transport buttons, like the player list in the Noctalia Media panel.
 local function sourceSelect()
   loadPin()
@@ -1192,6 +1169,30 @@ local function sourceSelect()
   })
 end
 
+-- "Add to playlist" chooser above the cards; the + on a row adds to the choice.
+local function takeFocus()
+  local f = plFocus
+  plFocus = false
+  return f
+end
+
+local function addRow()
+  local names = playlistOptions()
+  return ui.row({ gap = 6, align = "center" }, {
+    ui.label({ text = "Add to playlist", fontSize = 12, color = "on_surface_variant" }),
+    ui.select({ key = "plsel", width = 300, options = names, selectedIndex = tIdx - 1, onChange = function(idx)
+      tIdx = tonumber(idx) + 1
+      tName = tIdx < #names and names[tIdx] or ""
+      plFocus = tIdx == #names
+      render()
+    end }),
+    tIdx == #names and ui.input({ key = "plnew", value = newName, placeholder = "new playlist name, Enter creates it", controlSize = "sm", flexGrow = 1, focus = takeFocus(), submitOnEnter = true,
+      onChange = function(t) newName = t render() end, onSubmit = function(t) newName = t createList() end }) or ui.spacer({ flexGrow = 1 }),
+    tIdx == #names and ui.button({ glyph = "check", variant = "outline", controlSize = "sm", enabled = noctalia.string.trim(newName) ~= "", tooltip = "Create the playlist", onClick = createList }) or ui.spacer({ width = 0 }),
+    sourceSelect(),
+  })
+end
+
 render = function()
   local content = body()
   panel.render(ui.column({ gap = 8, padding = 12, height = 592 }, {
@@ -1200,11 +1201,12 @@ render = function()
       ui.label({ text = "Music" }),
       ui.label({ text = hotkey("mabox/music:player"), color = "outline_variant" }),
       ui.spacer({ flexGrow = 1 }),
-      ui.button({ glyph = "player-skip-back", variant = "ghost", tooltip = "Previous", onClick = function() transport("previous") end }),
-      ui.button({ glyph = "player-play", variant = "ghost", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
-      ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = "Next", onClick = function() transport("next") end }),
-      ui.button({ glyph = "player-stop", variant = "ghost", tooltip = "Stop", onClick = function() transport("stop") end }),
-      sourceSelect(),
+      ui.row({ gap = 2, padding = 4, radius = 20, fill = "surface_container", align = "center" }, {
+        ui.button({ glyph = "player-skip-back", variant = "ghost", tooltip = "Previous", onClick = function() transport("previous") end }),
+        ui.button({ glyph = "player-play", variant = "ghost", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
+        ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = "Next", onClick = function() transport("next") end }),
+        ui.button({ glyph = "player-stop", variant = "ghost", tooltip = "Stop", onClick = function() transport("stop") end }),
+      }),
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh: show what plays now and add it to Recent", onClick = function() syncNow() end }),
       ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
