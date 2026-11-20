@@ -128,7 +128,7 @@ local function visible(n)
   return matches(noteHay(n), query)
 end
 
--- Header lines "title:", "tags:", "color:" and "order:" (a legacy "favorite:" line is skipped) end at the first other line; a blank line there is the separator.
+-- Header lines "title:", "tags:", "color:", "screen:" and "order:" (a legacy "favorite:" line is skipped) end at the first other line; a blank line there is the separator.
 local function parseNote(raw)
   raw = string.gsub(raw, "\r\n", "\n")
   local note = { tags = "" }
@@ -147,6 +147,8 @@ local function parseNote(raw)
       -- legacy line, dropped on the next save
     elseif key == "color" then
       note.color = COLOR_HEX[value] and value or nil
+    elseif key == "screen" then
+      note.screen = value == "true"
     else
       if line == "" and nl then
         pos = nl + 1
@@ -186,6 +188,9 @@ local function saveNote(n)
   head = head .. "tags: " .. string.gsub(n.tags, "[\r\n]", " ") .. "\n"
   if n.color then
     head = head .. "color: " .. n.color .. "\n"
+  end
+  if n.screen then
+    head = head .. "screen: true\n"
   end
   if n.order then
     head = head .. string.format("order: %.6f\n", n.order)
@@ -602,6 +607,14 @@ local function editor()
       ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 3, onClick = deleteNote }),
     }),
     ui.row({ gap = 6, align = "center" }, editorDots(n)),
+    ui.row({ gap = 6, align = "center" }, {
+      ui.toggle({ key = "scr" .. n.id, checked = n.screen == true, tooltip = "Show this note as a post-it on the desktop (mb-postits)", onChange = function(v)
+        n.screen = v or nil
+        saveNote(n)
+        render()
+      end }),
+      ui.label({ text = "On screen", color = "on_surface_variant" }),
+    }),
   }
   if titleShown(n) then
     table.insert(items, ui.row({ gap = 6, align = "center" }, {
