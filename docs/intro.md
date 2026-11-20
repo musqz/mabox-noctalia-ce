@@ -4,7 +4,7 @@ Mabox Noctalia CE is a labwc session for Mabox Linux with the Noctalia shell: a 
 
 ![The desktop with the Music panel, the desktop widgets and Cava](desktop.png)
 
-- [Guide](guide.md): system info, bar, theme, root menu, screenshots, wallpaper and power.
+- [Guide](guide.md): system info, bar, theme, root menu, screenshots, wallpaper, power and import from Mabox Openbox.
 - [Keys](keys.md): the hotkeys and how to change them.
 - [Install apps](install.md): the app installer panel.
 - [Music](music.md): the music panel and playlists.
