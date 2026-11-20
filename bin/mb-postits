@@ -29,6 +29,7 @@ COLORS = {  # same names and values as plugins/notes/lib/notes.luau
     "cyan": "#39b5c7", "blue": "#539bf5", "purple": "#986ee2", "pink": "#e275ad",
 }
 SAVE_MS = 600
+FONT_MIN, FONT_MAX, FONT_DEFAULT = 8, 28, 11
 SIZES = [("Small", 200, 150), ("Medium", 300, 240), ("Large", 460, 360)]
 CSS = b"""
 .postit { background: #d4a72c; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.35); color: #222; }
@@ -249,6 +250,11 @@ class Postit(Gtk.Window):
         tint = Gtk.CssProvider()
         tint.load_from_data(f".postit {{ background: {hex_color}; }}".encode())
         frame.get_style_context().add_provider(tint, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        font = saved.get("font", FONT_DEFAULT)
+        self.font = min(FONT_MAX, max(FONT_MIN, int(font))) if isinstance(font, (int, float)) else FONT_DEFAULT
+        self.font_css = Gtk.CssProvider()
+        frame.get_style_context().add_provider(self.font_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        self.apply_font()
         self.title_label = Gtk.Label(label=title, xalign=0)
         head = Gtk.EventBox()
         head.add(self.title_label)
@@ -284,6 +290,11 @@ class Postit(Gtk.Window):
                 item = Gtk.MenuItem(label=f"{name}  {w}x{h}")
                 item.connect("activate", lambda _i, w=w, h=h: self.set_size(w, h))
                 menu.append(item)
+            menu.append(Gtk.SeparatorMenuItem())
+            for label, step in (("Text bigger", 1), ("Text smaller", -1)):
+                item = Gtk.MenuItem(label=f"{label}  ({self.font} pt)")
+                item.connect("activate", lambda _i, step=step: self.set_font(self.font + step))
+                menu.append(item)
             menu.show_all()
             menu.popup_at_pointer(ev)
         elif ev.button == 1:
@@ -298,8 +309,16 @@ class Postit(Gtk.Window):
         self.resize(w, h)
         self.save_pos()
 
+    def apply_font(self):
+        self.font_css.load_from_data(f".postit textview {{ font-size: {self.font}pt; }}".encode())
+
+    def set_font(self, pt):
+        self.font = min(FONT_MAX, max(FONT_MIN, pt))
+        self.apply_font()
+        self.save_pos()
+
     def save_pos(self):
-        self.layout[self.key] = {"x": int(self.x), "y": int(self.y), "w": int(self.w), "h": int(self.h), "output": self.output}
+        self.layout[self.key] = {"x": int(self.x), "y": int(self.y), "w": int(self.w), "h": int(self.h), "output": self.output, "font": self.font}
         save_layout(self.layout)
 
     def drag_move(self, widget, ev):
