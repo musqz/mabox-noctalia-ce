@@ -97,6 +97,51 @@ local function toggleCava()
   refreshCava(1)
 end
 
+-- The player the transport buttons talk to: "" follows Noctalia's active player, a name pins one (playerctl base name, e.g. mpv).
+local players, pinned = {}, ""
+
+local function pinPath()
+  local dir = noctalia.pluginDataDir()
+  return dir and (dir .. "/player")
+end
+
+local pinLoaded = false
+
+local function loadPin()
+  local path = pinPath()
+  if pinLoaded or not path then
+    return
+  end
+  pinLoaded = true
+  pinned = noctalia.string.trim(noctalia.readFile(path) or "")
+end
+
+local function savePin()
+  local path = pinPath()
+  if path then
+    noctalia.writeFile(path, pinned .. "\n")
+  end
+end
+
+local function refreshPlayers()
+  loadPin()
+  noctalia.runAsync({ "sh", "-c", "playerctl -l 2>/dev/null" }, function(r)
+    local names, seen = {}, {}
+    for line in string.gmatch(r.stdout or "", "[^\n]+") do
+      local base = string.match(line, "^(.-)%.instance") or line
+      if not seen[base] then
+        seen[base] = true
+        table.insert(names, base)
+      end
+    end
+    table.sort(names)
+    if table.concat(names, "\n") ~= table.concat(players, "\n") then
+      players = names
+      render()
+    end
+  end)
+end
+
 local function refreshSleep()
   sleepLeft, _, sleepOff = mine.sleepLeft()
   render()
@@ -355,6 +400,7 @@ local function pollTitle(gen, delay)
       render()
     end
     refreshEq()
+    refreshPlayers()
     if alive then
       mergeRecent()
     end
@@ -425,6 +471,7 @@ end
 -- Refresh: show what plays now and remember it when it is a known track.
 local function syncNow()
   refreshEq()
+  refreshPlayers()
   player.verify(0, function(alive, title, path, playing, rawTitle, artist)
     if alive and path ~= "" then
       playingUrl = path
@@ -444,14 +491,25 @@ local function syncNow()
   end)
 end
 
+local PLAYERCTL = { toggle = "play-pause", play = "play", pause = "pause", stop = "stop", next = "next", previous = "previous" }
+
 local function transport(action)
-  noctalia.runAsync({ "noctalia", "msg", "media", action })
-  if action == "stop" then
+  loadPin()
+  if pinned ~= "" and PLAYERCTL[action] then
+    noctalia.runAsync({ "playerctl", "-p", pinned, PLAYERCTL[action] }, function(r)
+      if r.exitCode ~= 0 then -- the pinned player is gone: follow the active one
+        noctalia.runAsync({ "noctalia", "msg", "media", action })
+      end
+    end)
+  else
+    noctalia.runAsync({ "noctalia", "msg", "media", action })
+  end
+  if action == "stop" and (pinned == "" or pinned == "mpv") then -- the list plays through mpv: another player's stop leaves it alone
     playSeq += 1
     playingUrl = ""
     nowPlaying = ""
     render()
-  else
+  elseif action ~= "stop" then
     refreshTitle(1)
   end
 end
@@ -1090,6 +1148,28 @@ local function addRow()
   })
 end
 
+-- Source of the transport buttons, like the player list in the Noctalia Media panel.
+local function sourceSelect()
+  loadPin()
+  local options, index = { "Active player" }, 0
+  for i, name in ipairs(players) do
+    table.insert(options, name)
+    if name == pinned then
+      index = i
+    end
+  end
+  if pinned ~= "" and index == 0 then
+    table.insert(options, pinned .. " (not running)")
+    index = #options - 1
+  end
+  return ui.select({ key = "source" .. table.concat(options, "|") .. index, width = 150, options = options, selectedIndex = index, onChange = function(idx)
+    local i = tonumber(idx)
+    pinned = i == 0 and "" or string.gsub(options[i + 1], " %(not running%)$", "")
+    savePin()
+    render()
+  end })
+end
+
 render = function()
   local content = body()
   panel.render(ui.column({ gap = 8, padding = 12, height = 592 }, {
@@ -1103,6 +1183,7 @@ render = function()
       ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
       ui.button({ glyph = "player-skip-forward", variant = "ghost", controlSize = "sm", tooltip = "Next", onClick = function() transport("next") end }),
       ui.button({ glyph = "player-stop", variant = "ghost", controlSize = "sm", tooltip = "Stop", onClick = function() transport("stop") end }),
+      sourceSelect(),
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
       ui.button({ glyph = "volume", variant = "ghost", controlSize = "sm", tooltip = "Volume control", onClick = function() sh("pavucontrol") panel.close() end }),
