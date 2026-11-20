@@ -296,6 +296,14 @@ migrate_29() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# renCal opens calendar files and the Noctalia calendar panel; a choice the user made stays.
+migrate_30() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mimeapps.list
+    grep -qs '^text/calendar=' "$f" && return 0
+    [[ -f /usr/share/applications/renCal.desktop || -f ${XDG_DATA_HOME:-$HOME/.local/share}/applications/renCal.desktop ]] || return 0
+    xdg-mime default renCal.desktop text/calendar || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

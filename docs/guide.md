@@ -56,6 +56,8 @@ The bar is noctalia's. Extra buttons:
 
 A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed). While a recording runs, a stop button appears.
 
+A double click on a date in the Noctalia calendar panel opens the default calendar app. The update sets renCal as default when you have no choice yet. For Thunderbird: `xdg-mime default org.mozilla.Thunderbird.desktop text/calendar`.
+
 Click the updates button again to close the panel. Flatpak, Snap, npm and pipx entries show only when they have updates.
 
 The RAM button is a noctalia `sysmon` widget: it shows memory use and has no click action.
