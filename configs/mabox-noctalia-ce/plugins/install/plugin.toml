@@ -17,14 +17,3 @@ max_height = 900
 placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
-
-[[panel]]
-id = "main-keep"
-entry = "panel-keep.luau"
-width = 760
-height = 900
-placement = "floating"
-position = "top_center"
-keyboard_focus = "on_demand"
-persistent = true
-dismiss_on_outside_click = false

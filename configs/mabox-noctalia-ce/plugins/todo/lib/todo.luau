@@ -1,8 +1,7 @@
 --!nonstrict
 -- Todo: todo.txt lists in ~/.todo; done tasks stay struck through in the list until moved to done_<list>.txt.
 
-return function(stay)
-local KEEP = require("./keep.luau")
+return function()
 local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 local DIR = noctalia.getenv("HOME") .. "/.todo"
@@ -1516,7 +1515,6 @@ render = function()
       logo(),
       ui.label({ text = "Todo" }),
       ui.label({ text = hotkey("mabox/todo:main"), color = "outline_variant", flexGrow = 1 }),
-      KEEP("todo", "main", "main-keep", stay),
     }),
     ui.row({ gap = 12, align = "stretch", height = 770 }, {
       ui.column({ width = 240, height = 770 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
