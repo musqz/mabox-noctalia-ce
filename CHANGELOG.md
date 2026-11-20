@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
 
 ## 0.7.0
 - Add `mb-postits`: notes as small windows on the desktop (`W-A-y` shows or hides them). Type in a note directly; position, size and text size are saved.
