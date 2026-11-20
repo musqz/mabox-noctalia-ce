@@ -6,17 +6,15 @@ Small windows on the desktop that show a note, a todo list or the agenda. Click 
 |---|---|
 | `W-A-y` | show the post-its above windows; press again to close them |
 
-`mb-postits` has no autostart. Start it from a terminal with options:
-
-```sh
-mb-postits --front --tasks First_list --agenda
-```
+`mb-postits` has no autostart. Options, for a terminal:
 
 | Option | Effect |
 |---|---|
 | `--front` | show the post-its above windows (without it: on the desktop, under windows; `W-A-y` uses it) |
 | `--tasks LIST` | add a post-it with the open tasks of `~/.todo/LIST.txt` |
 | `--agenda` | add a post-it with the next events from `~/caldir` |
+
+Lists and the agenda switched on in `~/.config/mabox-noctalia-ce/postits.conf` open with `W-A-y` too. One line each: `tasks LIST` or `agenda`. Changes show within a second while the post-its run.
 
 ## Notes
 
@@ -26,6 +24,9 @@ mb-postits --front --tasks First_list --agenda
 The post-it opens within a second. Turn the switch off to remove it. The body is saved after a short pause and when you click away.
 
 ## Tasks
+
+1. Open the Todo panel and pick a list.
+2. Turn on **On screen** in the *Lists* column.
 
 - Tick the box to mark a task done. It stays in the list, struck through; untick to reopen it.
 - Click the task text to open the Todo panel.
