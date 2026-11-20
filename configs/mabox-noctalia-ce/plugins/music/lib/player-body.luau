@@ -135,7 +135,13 @@ local function refreshPlayers()
       end
     end
     table.sort(names)
-    if table.concat(names, "\n") ~= table.concat(players, "\n") then
+    local gone = false
+    if pinned ~= "" and (r.exitCode == 0 or r.exitCode == 1) and not seen[pinned] then -- the pinned player quit: back to the active one
+      pinned = ""
+      savePin()
+      gone = true
+    end
+    if gone or table.concat(names, "\n") ~= table.concat(players, "\n") then
       players = names
       render()
     end
@@ -1158,13 +1164,9 @@ local function sourceSelect()
       index = i
     end
   end
-  if pinned ~= "" and index == 0 then
-    table.insert(options, pinned .. " (not running)")
-    index = #options - 1
-  end
   return ui.select({ key = "source" .. table.concat(options, "|") .. index, width = 150, options = options, selectedIndex = index, onChange = function(idx)
     local i = tonumber(idx)
-    pinned = i == 0 and "" or string.gsub(options[i + 1], " %(not running%)$", "")
+    pinned = i == 0 and "" or options[i + 1]
     savePin()
     render()
   end })
