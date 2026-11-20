@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Start new Todo tasks as Medium, due today; the panel fills the window and the list scrolls.
 - List every folder the Places tree search finds under the field, with star, copy and a clear button.
 - Add an empty button to the Trash row in Places, with the item count and a confirmation.
 - Show the active project and its list when the Quick card in Places is folded.
