@@ -775,7 +775,7 @@ class Postit(Gtk.Window):
         self.save_pos()
 
     def set_head_color(self, hex_color):
-        self.head_css.load_from_data(f".postit-title {{ background: {hex_color}; }}".encode())
+        self.head_css.load_from_data(f".postit-title {{ background: {hex_color or 'rgba(0,0,0,0.10)'}; }}".encode())
 
     def apply_font(self):
         self.font_css.load_from_data(f"textview, textview text {{ font-size: {self.font}pt; }}".encode())
@@ -915,12 +915,13 @@ def main():
                     note = Note(path)
                 except (OSError, UnicodeDecodeError):
                     continue
-                win = Postit(os.path.basename(path), note.title(), note.widget, COLORS.get(note.fields.get("color"), COLORS["yellow"]), layout, layer, opened[0])
+                win = Postit(os.path.basename(path), note.title(), note.widget, COLORS["yellow"], layout, layer, opened[0])
+                win.set_head_color(COLORS.get(note.fields.get("color")))
                 opened[0] += 1
                 win.on_close = lambda p=path: hide(p)
                 win.on_close_all = quit_all
                 win.on_remove = note.switch_off
-                note.on_reload = lambda n=note, w=win: w.title_label.set_text(n.title())
+                note.on_reload = lambda n=note, w=win: (w.title_label.set_text(n.title()), w.set_head_color(COLORS.get(n.fields.get("color"))))
                 shown[path] = (note, win)
             for key in sorted(extra):
                 if key in shown or key in hidden:
