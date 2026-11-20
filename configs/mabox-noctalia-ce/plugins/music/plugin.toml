@@ -34,14 +34,3 @@ max_height = 620
 placement = "floating"
 position = "top_center"
 keyboard_focus = "on_demand"
-
-[[panel]]
-id = "player-keep"
-entry = "player-keep.luau"
-width = 1200
-height = 620
-placement = "floating"
-position = "top_center"
-keyboard_focus = "on_demand"
-persistent = true
-dismiss_on_outside_click = false
