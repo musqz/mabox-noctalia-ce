@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.7.0
 - Add `mb-postits`: notes as small windows on the desktop (`W-A-y` shows or hides them). Type in a note directly; position, size and text size are saved.
 - Add an On screen switch to the Notes editor; a note with it on gets a post-it.
 - Add post-its for a todo list (`--tasks LIST`: tick a task to strike it through, untick to reopen) and the agenda (`--agenda`: next events from `~/caldir`).
@@ -17,6 +19,7 @@
 - Draw a frame around every open folder in Places and alternate the row background.
 - Add a Balance slider to Recolor that favours darker or lighter palette colors.
 - Fix the Recolor Soft look saving JPEG files in gray.
+- Remove the F3 key that opened geany from the default keys.
 
 ## 0.6.2
 - Add a Resume switch to Recolor that skips images already in the output folder, to continue a stopped run on a large folder.
