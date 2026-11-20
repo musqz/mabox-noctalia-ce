@@ -456,13 +456,15 @@ local function noteItem(key, n, detail)
   for _, b in ipairs(buttons) do
     table.insert(head, b)
   end
-  table.insert(head, ui.row({ key = "pt" .. key, tooltip = n.screen and "Shown as a post-it on the desktop: click to remove it" or "Show this note as a post-it on the desktop", align = "center" }, {
-    ui.toggle({ key = "ps" .. key .. (n.screen and "1" or "0"), checked = n.screen == true, onChange = function(v)
-      n.screen = (v == true or v == "true") or nil
-      saveNote(n)
-      render()
-    end }),
-  }))
+  if not selecting then
+    table.insert(head, ui.row({ key = "pt" .. key, tooltip = n.screen and "Shown as a post-it on the desktop: click to remove it" or "Show this note as a post-it on the desktop", align = "center" }, {
+      ui.toggle({ key = "ps" .. key .. (n.screen and "1" or "0"), checked = n.screen == true, onChange = function(v)
+        n.screen = (v == true or v == "true") or nil
+        saveNote(n)
+        render()
+      end }),
+    }))
+  end
   if not selecting and not isFiltered() then
     table.insert(head, ui.button({ glyph = "arrow-up", variant = "ghost", controlSize = "sm", selected = cur == "up", tooltip = "Move up", onClick = function() moveNotes({ [n.id] = true }, "up") end }))
     table.insert(head, ui.button({ glyph = "arrow-down", variant = "ghost", controlSize = "sm", selected = cur == "down", tooltip = "Move down", onClick = function() moveNotes({ [n.id] = true }, "down") end }))
