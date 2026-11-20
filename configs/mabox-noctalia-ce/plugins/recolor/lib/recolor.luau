@@ -4,8 +4,7 @@ local logo = require("./celogo.luau")
 local hotkey = require("./hotkey.luau")
 local switch = require("./switch.luau")
 
-return function(keep)
-local KEEP = require("./keep.luau")
+return function()
 local function card(key)
   return { key = key, fill = "surface_variant", radius = 10, padding = 12, gap = 10, border = "primary", borderWidth = 1 }
 end
@@ -934,7 +933,6 @@ function render()
       ui.label({ text = "Recolor" }),
       ui.label({ text = hotkey("mabox/recolor:main"), color = "outline_variant", flexGrow = 1 }),
       switch("main"),
-      KEEP("recolor", "main", "main-keep", keep),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ key = "columns", gap = 10, align = "start" }, {

@@ -1,6 +1,5 @@
 --!nonstrict
-return function(stay)
-local KEEP = require("./keep.luau")
+return function()
 -- Music panel: PyRadio stations and the mb-music list in cards, search over both, transport through MPRIS.
 
 local csv = require("./csv.luau")
@@ -95,6 +94,72 @@ end
 local function toggleCava()
   sh("mb-cava toggle")
   refreshCava(1)
+end
+
+-- The player the transport buttons talk to: "" follows Noctalia's active player, a name pins one (playerctl base name, e.g. mpv).
+local players, pinned = {}, ""
+
+local function pinPath()
+  local dir = noctalia.pluginDataDir()
+  return dir and (dir .. "/player")
+end
+
+local pinLoaded = false
+
+local function loadPin()
+  local path = pinPath()
+  if pinLoaded or not path then
+    return
+  end
+  pinLoaded = true
+  pinned = noctalia.string.trim(noctalia.readFile(path) or "")
+end
+
+local function savePin()
+  local path = pinPath()
+  if path then
+    noctalia.writeFile(path, pinned .. "\n")
+  end
+end
+
+-- Noctalia has no query for its active player: a playing one stands in, else the first paused one.
+local activeName = ""
+local missed = 0 -- polls in a row that did not list the pinned player
+
+local function refreshPlayers()
+  loadPin()
+  noctalia.runAsync({ "sh", "-c", "playerctl -a metadata --format '{{playerName}}|{{status}}' 2>/dev/null" }, function(r)
+    local names, seen, playing, paused = {}, {}, "", ""
+    for line in string.gmatch(r.stdout or "", "[^\n]+") do
+      local name, status = string.match(line, "^([^|]+)|(%a+)")
+      if name and not seen[name] then
+        seen[name] = true
+        table.insert(names, name)
+      end
+      if name and status == "Playing" and playing == "" then
+        playing = name
+      elseif name and status == "Paused" and paused == "" then
+        paused = name
+      end
+    end
+    table.sort(names)
+    local active = playing ~= "" and playing or paused
+    local gone = false
+    if pinned ~= "" and (r.exitCode == 0 or r.exitCode == 1) and not seen[pinned] then
+      missed += 1
+      if missed >= 2 then -- the pinned player quit (two polls, so a restart between tracks keeps it): back to the active one
+        pinned = ""
+        savePin()
+        gone = true
+      end
+    else
+      missed = 0
+    end
+    if gone or active ~= activeName or table.concat(names, "\n") ~= table.concat(players, "\n") then
+      players, activeName = names, active
+      render()
+    end
+  end)
 end
 
 local function refreshSleep()
@@ -355,6 +420,7 @@ local function pollTitle(gen, delay)
       render()
     end
     refreshEq()
+    refreshPlayers()
     if alive then
       mergeRecent()
     end
@@ -425,6 +491,7 @@ end
 -- Refresh: show what plays now and remember it when it is a known track.
 local function syncNow()
   refreshEq()
+  refreshPlayers()
   player.verify(0, function(alive, title, path, playing, rawTitle, artist)
     if alive and path ~= "" then
       playingUrl = path
@@ -444,14 +511,25 @@ local function syncNow()
   end)
 end
 
+local PLAYERCTL = { toggle = "play-pause", play = "play", pause = "pause", stop = "stop", next = "next", previous = "previous" }
+
 local function transport(action)
-  noctalia.runAsync({ "noctalia", "msg", "media", action })
-  if action == "stop" then
+  loadPin()
+  if pinned ~= "" and PLAYERCTL[action] then
+    noctalia.runAsync({ "playerctl", "-p", pinned, PLAYERCTL[action] }, function(r)
+      if r.exitCode ~= 0 then -- the pinned player is gone: follow the active one
+        noctalia.runAsync({ "noctalia", "msg", "media", action })
+      end
+    end)
+  else
+    noctalia.runAsync({ "noctalia", "msg", "media", action })
+  end
+  if action == "stop" and (pinned == "mpv" or (pinned == "" and (activeName == "" or activeName == "mpv"))) then -- the list plays through mpv: another player's stop leaves it alone
     playSeq += 1
     playingUrl = ""
     nowPlaying = ""
     render()
-  else
+  elseif action ~= "stop" then
     refreshTitle(1)
   end
 end
@@ -1067,6 +1145,35 @@ local function sidebar()
   return ui.column({ width = 250, height = 446, gap = 2 }, { ui.scroll({ flexGrow = 1, key = "side", revealKey = revealSide }, { ui.column({ gap = 6 }, items) }) })
 end
 
+-- Source of the transport buttons, like the player list in the Noctalia Media panel.
+local function sourceSelect()
+  loadPin()
+  -- The current source is on top; picking another one moves it there. A pinned source gets "Active player" at the end to follow Noctalia again.
+  local top = pinned ~= "" and pinned or (activeName ~= "" and activeName or "No player")
+  local entries, options = { { value = pinned } }, { top }
+  for _, name in ipairs(players) do
+    if name ~= top then
+      table.insert(entries, { value = name })
+      table.insert(options, name)
+    end
+  end
+  if pinned ~= "" then
+    table.insert(entries, { value = "" })
+    table.insert(options, "Active player")
+  end
+  return ui.column({ gap = 0 }, {
+    ui.label({ text = pinned == "" and "Active player" or "Pinned player", fontSize = 10, color = "on_surface_variant" }),
+    ui.select({ key = "source" .. table.concat(options, "|"), width = 120, options = options, selectedIndex = 0, onChange = function(idx)
+      local e = entries[tonumber(idx) + 1]
+      if e and e.value ~= pinned then
+        pinned = e.value
+        savePin()
+        render()
+      end
+    end }),
+  })
+end
+
 -- "Add to playlist" chooser above the cards; the + on a row adds to the choice.
 local function takeFocus()
   local f = plFocus
@@ -1087,6 +1194,7 @@ local function addRow()
     tIdx == #names and ui.input({ key = "plnew", value = newName, placeholder = "new playlist name, Enter creates it", controlSize = "sm", flexGrow = 1, focus = takeFocus(), submitOnEnter = true,
       onChange = function(t) newName = t render() end, onSubmit = function(t) newName = t createList() end }) or ui.spacer({ flexGrow = 1 }),
     tIdx == #names and ui.button({ glyph = "check", variant = "outline", controlSize = "sm", enabled = noctalia.string.trim(newName) ~= "", tooltip = "Create the playlist", onClick = createList }) or ui.spacer({ width = 0 }),
+    sourceSelect(),
   })
 end
 
@@ -1098,12 +1206,14 @@ render = function()
       ui.label({ text = "Music" }),
       ui.label({ text = hotkey("mabox/music:player"), color = "outline_variant" }),
       ui.spacer({ flexGrow = 1 }),
-      ui.button({ text = "Refresh", glyph = "refresh", variant = "outline", tooltip = "Show what plays now and add it to Recent", onClick = function() syncNow() end }),
-      ui.button({ glyph = "player-skip-back", variant = "ghost", controlSize = "sm", tooltip = "Previous", onClick = function() transport("previous") end }),
-      ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
-      ui.button({ glyph = "player-skip-forward", variant = "ghost", controlSize = "sm", tooltip = "Next", onClick = function() transport("next") end }),
-      ui.button({ glyph = "player-stop", variant = "ghost", controlSize = "sm", tooltip = "Stop", onClick = function() transport("stop") end }),
+      ui.row({ gap = 2, padding = 4, radius = 20, fill = "surface_container", align = "center" }, {
+        ui.button({ glyph = "player-skip-back", variant = "ghost", tooltip = "Previous", onClick = function() transport("previous") end }),
+        ui.button({ glyph = "player-play", variant = "ghost", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
+        ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = "Next", onClick = function() transport("next") end }),
+        ui.button({ glyph = "player-stop", variant = "ghost", tooltip = "Stop", onClick = function() transport("stop") end }),
+      }),
       ui.spacer({ flexGrow = 1 }),
+      ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh: show what plays now and add it to Recent", onClick = function() syncNow() end }),
       ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
       ui.button({ glyph = "volume", variant = "ghost", controlSize = "sm", tooltip = "Volume control", onClick = function() sh("pavucontrol") panel.close() end }),
       ui.button({ glyph = "adjustments-horizontal", variant = eqOn and "primary" or "ghost", controlSize = "sm", tooltip = eqOn and "Equalizer (on)" or "Equalizer (off)", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/equalizer:main" }) panel.close() end }),
@@ -1131,7 +1241,6 @@ render = function()
         render()
       end }),
       ui.button({ text = "Shuffle music", glyph = "arrows-shuffle", variant = "ghost", controlSize = "sm", onClick = function() start(musicAll, true, "Shuffling music") end }),
-      KEEP("music", "player", "player-keep", stay),
       ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
     }),
     ui.row({ gap = 6, align = "center", fill = "surface_variant", radius = 8, padding = 6 }, {
