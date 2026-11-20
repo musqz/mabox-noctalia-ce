@@ -1195,8 +1195,8 @@ local function listPanel()
   end
   if not naming and not renaming then
     table.insert(items, ui.row({ gap = 6, align = "center" }, {
-      ui.toggle({ key = "scr" .. list, checked = onScreen(list), tooltip = "Show this list as a post-it on the desktop (mb-postits)", onChange = function(v)
-        setOnScreen(list, v)
+      ui.toggle({ key = "scr" .. list .. (onScreen(list) and "1" or "0"), checked = onScreen(list), tooltip = "Show this list as a post-it on the desktop (mb-postits)", onChange = function(v)
+        setOnScreen(list, v == true or v == "true")
         render()
       end }),
       ui.label({ text = "On screen", color = "on_surface_variant" }),
