@@ -188,7 +188,9 @@ The top panels have a **Keep open** switch in the header: Insert, System and Key
 
 ## Import from Mabox Openbox
 
-`mb-import-openbox` copies your Mabox todo setup into CE. Run it once, with `--dry-run` first to see what it would do:
+The Mabox todo lists and the CE Todo panel use the same files in `~/.todo`: a task added in one shows in the other. There is nothing to sync.
+
+`mb-import-openbox` copies the rest of the Mabox todo setup. Run it once, with `--dry-run` first to see what it would do:
 
 ```sh
 mb-import-openbox --dry-run
