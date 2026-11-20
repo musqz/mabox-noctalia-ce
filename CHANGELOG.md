@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
 
 ## 0.7.0
