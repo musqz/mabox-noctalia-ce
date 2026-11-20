@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Add a source dropdown to the Music panel on the Add to playlist row: the player buttons go to the player you pick, Active player follows Noctalia again.
+- Put the Music player buttons in a capsule and make Refresh an icon on the right.
+- Remove the Keep open switch from the Music and Recolor panels.
 - Add `mb-import-openbox`: make the Mabox todo list active in the Todo panel and turn Cherrytree todo notes into Notes (`--dry-run` shows what it would do).
 
 ## 0.7.1
