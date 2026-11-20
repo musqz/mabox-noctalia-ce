@@ -163,14 +163,18 @@ class Note:
             if self.on_reload:
                 self.on_reload()
 
-    def save(self):
+    def save(self, force=False):
         if self.timer:
             GLib.source_remove(self.timer)
         self.timer = 0
         if not self.dirty:
             return False
         try:
-            if os.stat(self.path).st_mtime_ns != self.mtime:
+            if force:
+                # Closing: keep the typed body under whatever header the file has now.
+                with open(self.path, encoding="utf-8") as f:
+                    self.header = split_note(f.read())[0]
+            elif os.stat(self.path).st_mtime_ns != self.mtime:
                 self.load()  # another writer (Notes panel) won: keep its version
                 subprocess.run(["notify-send", "mb-postits", f"{os.path.basename(self.path)} changed elsewhere; your last edit was dropped"])
                 return False
@@ -349,10 +353,12 @@ def main():
     layer = GtkLayerShell.Layer.TOP if "--front" in sys.argv else GtkLayerShell.Layer.BOTTOM
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
-    notes = []
+    shown = {}  # note path -> (Note, Postit)
+    pending = [0]
+    opened = [0]  # cascade slot for notes without a saved position
 
     def quit_all():
-        for n in notes:
+        for n, _ in shown.values():
             n.save()
         Gtk.main_quit()
 
@@ -362,17 +368,48 @@ def main():
         css.load_from_data(CSS)
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         layout = load_layout()
-        for i, path in enumerate(screen_notes()):
-            try:
-                note = Note(path)
-            except (OSError, UnicodeDecodeError):
-                continue
-            notes.append(note)
-            win = Postit(os.path.basename(path), note.title(), note.widget, COLORS.get(note.fields.get("color"), COLORS["yellow"]), layout, layer, i)
-            note.on_reload = lambda n=note, w=win: w.title_label.set_text(n.title())
-        if not notes:
+
+        def sync():
+            """Open a post-it for every note switched on, close the ones switched off."""
+            pending[0] = 0
+            want = screen_notes()
+            for path in [p for p in shown if p not in want]:
+                note, win = shown.pop(path)
+                note.save(force=True)
+                note.monitor.cancel()
+                win.destroy()
+            for path in want:
+                if path in shown:
+                    continue
+                try:
+                    note = Note(path)
+                except (OSError, UnicodeDecodeError):
+                    continue
+                win = Postit(os.path.basename(path), note.title(), note.widget, COLORS.get(note.fields.get("color"), COLORS["yellow"]), layout, layer, opened[0])
+                opened[0] += 1
+                note.on_reload = lambda n=note, w=win: w.title_label.set_text(n.title())
+                shown[path] = (note, win)
+            return False
+
+        sync()
+        if not shown:
             subprocess.run(["notify-send", "mb-postits", "No note has a 'screen: true' header line"])
             return 1
+
+        def on_timer():
+            sync()
+            if not shown:
+                Gtk.main_quit()
+            return False
+
+        def on_dir(_mon, f, _other, _event):
+            if f.get_basename().endswith(".tmp"):
+                return
+            if not pending[0]:
+                pending[0] = GLib.timeout_add(200, on_timer)
+
+        watch = Gio.File.new_for_path(notes_dir()).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+        watch.connect("changed", on_dir)
         Gtk.main()
     finally:
         try:
