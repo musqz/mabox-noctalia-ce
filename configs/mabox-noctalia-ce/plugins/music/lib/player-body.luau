@@ -123,26 +123,35 @@ local function savePin()
   end
 end
 
+-- Noctalia has no query for its active player: a playing one stands in, else the first paused one.
+local activeName = ""
+
 local function refreshPlayers()
   loadPin()
-  noctalia.runAsync({ "sh", "-c", "playerctl -l 2>/dev/null" }, function(r)
-    local names, seen = {}, {}
+  noctalia.runAsync({ "sh", "-c", "playerctl -a metadata --format '{{playerName}}|{{status}}' 2>/dev/null" }, function(r)
+    local names, seen, playing, paused = {}, {}, "", ""
     for line in string.gmatch(r.stdout or "", "[^\n]+") do
-      local base = string.match(line, "^(.-)%.instance") or line
-      if not seen[base] then
-        seen[base] = true
-        table.insert(names, base)
+      local name, status = string.match(line, "^([^|]+)|(%a+)")
+      if name and not seen[name] then
+        seen[name] = true
+        table.insert(names, name)
+      end
+      if name and status == "Playing" and playing == "" then
+        playing = name
+      elseif name and status == "Paused" and paused == "" then
+        paused = name
       end
     end
     table.sort(names)
+    local active = playing ~= "" and playing or paused
     local gone = false
     if pinned ~= "" and (r.exitCode == 0 or r.exitCode == 1) and not seen[pinned] then -- the pinned player quit: back to the active one
       pinned = ""
       savePin()
       gone = true
     end
-    if gone or table.concat(names, "\n") ~= table.concat(players, "\n") then
-      players = names
+    if gone or active ~= activeName or table.concat(names, "\n") ~= table.concat(players, "\n") then
+      players, activeName = names, active
       render()
     end
   end)
@@ -1157,19 +1166,22 @@ end
 -- Source of the transport buttons, like the player list in the Noctalia Media panel.
 local function sourceSelect()
   loadPin()
-  local options, index = { "Active player" }, 0
+  local options, index = { activeName ~= "" and activeName or "No player" }, 0
   for i, name in ipairs(players) do
     table.insert(options, name)
     if name == pinned then
       index = i
     end
   end
-  return ui.select({ key = "source" .. table.concat(options, "|") .. index, width = 150, options = options, selectedIndex = index, onChange = function(idx)
-    local i = tonumber(idx)
-    pinned = i == 0 and "" or options[i + 1]
-    savePin()
-    render()
-  end })
+  return ui.column({ gap = 0 }, {
+    ui.label({ text = pinned == "" and "Active player" or "Pinned player", fontSize = 10, color = "on_surface_variant" }),
+    ui.select({ key = "source" .. table.concat(options, "|") .. index, width = 150, options = options, selectedIndex = index, onChange = function(idx)
+      local i = tonumber(idx)
+      pinned = i == 0 and "" or options[i + 1]
+      savePin()
+      render()
+    end }),
+  })
 end
 
 render = function()
