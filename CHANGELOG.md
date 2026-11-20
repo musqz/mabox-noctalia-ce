@@ -8,6 +8,7 @@
 - Add an On screen switch to every row of the Notes list, also in the pinned window.
 - Put a Todo filter on the desktop with a second click on it in the Todo panel and take it off with a third; each filter is its own post-it.
 - Color the post-it title bar with the note's color.
+- Set renCal as the default calendar app when you have no choice yet; a double click on a date in the Noctalia calendar opens it.
 - Start new Todo tasks as Medium, due today; the panel fills the window and the list scrolls.
 - List every folder the Places tree search finds under the field, with star, copy and a clear button.
 - Add an empty button to the Trash row in Places, with the item count and a confirmation.
