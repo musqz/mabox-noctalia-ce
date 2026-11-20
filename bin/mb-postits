@@ -14,6 +14,12 @@ gi.require_version("Gdk", "3.0")
 gi.require_version("GtkLayerShell", "0.1")
 from gi.repository import Gdk, GLib, Gtk, GtkLayerShell
 
+try:
+    from gi.repository import GLibUnix
+    signal_add = GLibUnix.signal_add
+except ImportError:
+    signal_add = GLib.unix_signal_add
+
 STATE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "mb-postits")
 LAYOUT = os.path.join(STATE, "layout.json")
 MIN_W, MIN_H = 140, 100
@@ -178,7 +184,7 @@ def main():
     layer = GtkLayerShell.Layer.TOP if "--front" in sys.argv else GtkLayerShell.Layer.BOTTOM
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
-    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 15, Gtk.main_quit)
+    signal_add(GLib.PRIORITY_DEFAULT, 15, Gtk.main_quit)
     try:
         css = Gtk.CssProvider()
         css.load_from_data(CSS)
