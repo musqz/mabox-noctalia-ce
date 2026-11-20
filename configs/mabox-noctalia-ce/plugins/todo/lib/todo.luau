@@ -17,8 +17,9 @@ local archiveView = false
 local tasks = {}
 local doneTasks = {}
 local addText = ""
-local addPri = nil
+local addPri = "B" -- a new task starts as Medium, due today; both can be changed or cleared
 local addDue = nil
+local dueDefault = nil -- the date the form was last reset to; follows midnight while it is untouched
 local filterText = ""
 local filterTag = nil
 local naming = false
@@ -344,8 +345,8 @@ local function addTask(text, pri, due, note)
     return
   end
   local t = parse(text)
-  t.pri = pri or t.pri
-  t.due = normDate(due) or t.due
+  t.pri = t.pri or pri
+  t.due = t.due or normDate(due)
   note = noctalia.string.trim(note or "")
   t.note = note ~= "" and note or nil
   t.created = today()
@@ -650,7 +651,7 @@ local function calendarGrid(selected, onPick)
           variant = date == selected and "primary" or "ghost",
           controlSize = "sm",
           flexGrow = 1,
-          tooltip = date == day and "Today" or date,
+          tooltip = date == day and "Today" or fmtDate(date),
           onClick = function() onPick(date) end,
         }))
       end
@@ -1252,6 +1253,9 @@ local function addCard()
     })
   end
   local function submit()
+    if noctalia.string.trim(addText) == "" then
+      return
+    end
     local text, pri, due, note = addText, addPri, addDue, addNote
     if noctalia.string.trim(due or "") ~= "" and not normDate(due) then
       render()
@@ -1261,7 +1265,8 @@ local function addCard()
     if g ~= "" and not string.find(" " .. text .. " ", " +" .. g .. " ", 1, true) then
       text = text .. " +" .. g
     end
-    addText, addPri, addDue, addGroup, addNote = "", nil, nil, "", ""
+    addText, addPri, addDue, addGroup, addNote = "", "B", addDays(0), "", ""
+    dueDefault = addDue
     nonce = nonce + 1
     addTask(text, pri, due, note)
     reload()
@@ -1322,6 +1327,10 @@ local function addCard()
 end
 
 render = function()
+  if addDue == dueDefault and dueDefault ~= addDays(0) then
+    addDue = addDays(0)
+    dueDefault = addDue
+  end
   local body = groups()
   local done = doneSection(archiveView)
   if done then
@@ -1370,18 +1379,9 @@ render = function()
   if #doneItems > 0 then
     table.insert(side, card("donecard", doneItems))
   end
-  local visible = 0
-  if not archiveView then
-    for _, t in ipairs(tasks) do
-      visible = visible + (matches(t) and 1 or 0)
-    end
-  end
-  for _, t in ipairs((hideDone and not archiveView) and {} or doneTasks) do
-    visible = visible + (matches(t) and 1 or 0)
-  end
   table.insert(body, ui.spacer({ height = 16 }))
-  local content = (visible > (addOpen and 6 or 9) or editing) and ui.column({ height = addOpen and 380 or 620 }, { ui.scroll({ flexGrow = 1, key = "list" }, { ui.column({ gap = 8, padding = 4 }, body) }) }) or ui.column({ gap = 8 }, body)
-  local banner = ui.spacer({ height = 0 })
+  local content = ui.column({ flexGrow = 1 }, { ui.scroll({ flexGrow = 1, key = "list" }, { ui.column({ gap = 8, padding = 4 }, body) }) })
+  local banner = ui.spacer({ height = 0, flexGrow = 0 })
   if filterTag or noctalia.string.trim(filterText) ~= "" then
     local what = {}
     if filterTag then
@@ -1400,7 +1400,7 @@ render = function()
       end }),
     })
   end
-  local notesBar = ui.spacer({ height = 0 })
+  local notesBar = ui.spacer({ height = 0, flexGrow = 0 })
   local noteCount = 0
   for _, t in ipairs(tasks) do
     noteCount = noteCount + (t.note and 1 or 0)
@@ -1434,8 +1434,8 @@ render = function()
       ui.label({ text = hotkey("mabox/todo:main"), color = "outline_variant", flexGrow = 1 }),
       KEEP("todo", "main", "main-keep", stay),
     }),
-    ui.row({ gap = 12, align = "stretch" }, {
-      ui.column({ width = 240 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
+    ui.row({ gap = 12, align = "stretch", height = 770 }, {
+      ui.column({ width = 240, height = 770 }, { ui.scroll({ flexGrow = 1, key = "side" }, { ui.column({ gap = 8, padding = 4 }, side) }) }),
       ui.column({ gap = 8, flexGrow = 1 }, { addCard(), search, banner, notesBar, content }),
     }),
   }))
@@ -1459,7 +1459,8 @@ local function open()
   editing = nil
   calFor = nil
   archiveView = false
-  addText, addPri, addDue, addGroup, addNote, filterText, filterTag = "", nil, nil, "", "", "", nil
+  addText, addPri, addDue, addGroup, addNote, filterText, filterTag = "", "B", addDays(0), "", "", "", nil
+  dueDefault = addDue
   reload()
 end
 
