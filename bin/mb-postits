@@ -12,7 +12,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import Gdk, GLib, Gtk, GtkLayerShell
+from gi.repository import Gdk, Gio, GLib, Gtk, GtkLayerShell
 
 try:
     from gi.repository import GLibUnix
@@ -23,9 +23,17 @@ except ImportError:
 STATE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "mb-postits")
 LAYOUT = os.path.join(STATE, "layout.json")
 MIN_W, MIN_H = 140, 100
+DATA = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "noctalia/plugins/data/mabox/notes")
+COLORS = {  # same names and values as plugins/notes/lib/notes.luau
+    "red": "#e5534b", "orange": "#f0883e", "yellow": "#d4a72c", "green": "#57ab5a", "teal": "#2ea89a",
+    "cyan": "#39b5c7", "blue": "#539bf5", "purple": "#986ee2", "pink": "#e275ad",
+}
+SAVE_MS = 600
+SIZES = [("Small", 200, 150), ("Medium", 300, 240), ("Large", 460, 360)]
 CSS = b"""
-.postit { background: #f6e58d; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.35); color: #222; }
+.postit { background: #d4a72c; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.35); color: #222; }
 .postit-title { background: rgba(0,0,0,0.10); border-radius: 10px 10px 0 0; padding: 4px 8px; font-weight: bold; }
+.postit textview, .postit textview text { background: transparent; color: #222; }
 .postit-grip { color: rgba(0,0,0,0.45); padding: 0 4px; }
 """
 
@@ -74,18 +82,147 @@ def save_layout(layout):
     os.replace(tmp, LAYOUT)
 
 
+def notes_dir():
+    try:
+        with open(os.path.join(DATA, "path")) as f:
+            custom = f.read().strip()
+    except OSError:
+        custom = ""
+    return custom.rstrip("/") or os.path.join(DATA, "notes")
+
+
+def split_note(raw):
+    """(header, body, fields): the header keeps its raw lines so a save never rewrites them."""
+    raw = raw.replace("\r\n", "\n")
+    fields, pos = {}, 0
+    while pos < len(raw):
+        nl = raw.find("\n", pos)
+        line = raw[pos:] if nl < 0 else raw[pos:nl]
+        m = re.match(r"^([A-Za-z]+):\s*(.*)$", line)
+        if m and m.group(1) in ("title", "tags", "order", "favorite", "color", "screen"):
+            fields[m.group(1)] = m.group(2).strip()
+        else:
+            if line == "" and nl >= 0:
+                pos = nl + 1
+            break
+        pos = len(raw) if nl < 0 else nl + 1
+    return raw[:pos], raw[pos:], fields
+
+
+class Note:
+    """One note file shown in a text view; writes back the body only."""
+
+    def __init__(self, path):
+        self.path, self.timer, self.dirty, self.loading, self.on_reload = path, 0, False, False, None
+        self.view = Gtk.TextView(wrap_mode=Gtk.WrapMode.WORD_CHAR, left_margin=6, right_margin=6)
+        self.buf = self.view.get_buffer()
+        self.widget = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        self.widget.add(self.view)
+        self.load()
+        self.buf.connect("changed", self.on_changed)
+        self.view.connect("focus-out-event", lambda *_: self.save() or False)
+        self.monitor = Gio.File.new_for_path(path).monitor_file(Gio.FileMonitorFlags.NONE, None)
+        self.monitor.connect("changed", self.on_disk)
+
+    def load(self):
+        with open(self.path, encoding="utf-8") as f:
+            raw = f.read()
+        self.mtime = os.stat(self.path).st_mtime_ns
+        self.header, body, self.fields = split_note(raw)
+        self.loading = True
+        self.buf.set_text(body)
+        self.loading = False
+        self.dirty = False
+
+    def title(self):
+        if self.fields.get("title"):
+            return self.fields["title"]
+        for line in self.buf.get_text(self.buf.get_start_iter(), self.buf.get_end_iter(), False).splitlines():
+            if line.strip():
+                return line.lstrip("# \t").strip() or os.path.basename(self.path)
+        return os.path.basename(self.path)
+
+    def on_changed(self, _buf):
+        if self.loading:
+            return
+        self.dirty = True
+        if self.timer:
+            GLib.source_remove(self.timer)
+        self.timer = GLib.timeout_add(SAVE_MS, self.save)
+
+    def on_disk(self, *_):
+        try:
+            changed = os.stat(self.path).st_mtime_ns != self.mtime
+        except OSError:
+            return
+        if changed and not self.dirty:
+            try:
+                self.load()
+            except (OSError, UnicodeDecodeError):
+                return
+            if self.on_reload:
+                self.on_reload()
+
+    def save(self):
+        if self.timer:
+            GLib.source_remove(self.timer)
+        self.timer = 0
+        if not self.dirty:
+            return False
+        try:
+            if os.stat(self.path).st_mtime_ns != self.mtime:
+                self.load()  # another writer (Notes panel) won: keep its version
+                subprocess.run(["notify-send", "mb-postits", f"{os.path.basename(self.path)} changed elsewhere; your last edit was dropped"])
+                return False
+            body = self.buf.get_text(self.buf.get_start_iter(), self.buf.get_end_iter(), False)
+            if self.header and not self.header.endswith("\n"):
+                self.header += "\n"
+            tmp = self.path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(self.header + body)
+            os.replace(tmp, self.path)
+            self.mtime = os.stat(self.path).st_mtime_ns
+            self.dirty = False
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"mb-postits: {self.path}: {e}", file=sys.stderr)
+        return False
+
+
+def screen_notes():
+    """Paths of the notes that have a 'screen: true' header line."""
+    out = []
+    try:
+        names = sorted(os.listdir(notes_dir()))
+    except OSError:
+        return out
+    for name in names:
+        path = os.path.join(notes_dir(), name)
+        if not name.endswith(".md"):
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                fields = split_note(f.read())[2]
+        except (OSError, UnicodeDecodeError):
+            continue
+        if fields.get("screen", "").strip().lower() == "true":
+            out.append(path)
+    return out
+
+
 class Postit(Gtk.Window):
-    def __init__(self, key, title, layout, layer):
+    def __init__(self, key, title, content, hex_color, layout, layer, slot=0):
         super().__init__()
         self.key, self.layout = key, layout
         self.outs = monitors()
         saved = layout.get(key, {})
-        self.x, self.y = saved.get("x", 60), saved.get("y", 60)
+        self.x, self.y = saved.get("x", 60 + 30 * slot), saved.get("y", 60 + 30 * slot)
         self.w, self.h = saved.get("w", 260), saved.get("h", 200)
         # A saved output that is gone falls back to the first one.
         names = [n for n, _ in self.outs]
         self.output = saved.get("output") if saved.get("output") in names else names[0]
         mon = dict(self.outs)[self.output]
+        geom = mon.get_geometry()
+        self.w, self.h = min(self.w, geom.width), min(self.h, geom.height)
 
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, layer)
@@ -99,19 +236,23 @@ class Postit(Gtk.Window):
         if visual:
             self.set_visual(visual)
         self.set_app_paintable(True)
-        self.set_default_size(self.w, self.h)
+        self.set_size_request(int(self.w), int(self.h))
 
         frame = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin=8)
         frame.get_style_context().add_class("postit")
+        tint = Gtk.CssProvider()
+        tint.load_from_data(f".postit {{ background: {hex_color}; }}".encode())
+        frame.get_style_context().add_provider(tint, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        self.title_label = Gtk.Label(label=title, xalign=0)
         head = Gtk.EventBox()
-        head.add(Gtk.Label(label=title, xalign=0))
+        head.add(self.title_label)
         head.get_style_context().add_class("postit-title")
         head.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
-        head.connect("button-press-event", self.drag_start)
+        head.connect("button-press-event", self.head_press)
         head.connect("motion-notify-event", self.drag_move)
         head.connect("button-release-event", self.drag_end)
         frame.pack_start(head, False, False, 0)
-        frame.pack_start(Gtk.TextView(wrap_mode=Gtk.WrapMode.WORD_CHAR, left_margin=6, right_margin=6), True, True, 0)
+        frame.pack_start(content, True, True, 0)
 
         grip = Gtk.EventBox(halign=Gtk.Align.END)
         grip.add(Gtk.Label(label="◢"))
@@ -130,16 +271,37 @@ class Postit(Gtk.Window):
 
     # Pointer coordinates are surface-relative, so while the window follows the
     # pointer they stay at the press point: each event's offset is the new step.
-    def drag_start(self, widget, ev):
-        if ev.button == 1:
+    def head_press(self, widget, ev):
+        if ev.button == 3:
+            menu = Gtk.Menu()
+            for name, w, h in SIZES:
+                item = Gtk.MenuItem(label=f"{name}  {w}x{h}")
+                item.connect("activate", lambda _i, w=w, h=h: self.set_size(w, h))
+                menu.append(item)
+            menu.show_all()
+            menu.popup_at_pointer(ev)
+        elif ev.button == 1:
             self.p0 = (ev.x_root, ev.y_root)
             self.dragging = "move"
+            self.last = ev.time
         return True
 
+    def set_size(self, w, h):
+        self.w, self.h = w, h
+        self.set_size_request(w, h)
+        self.resize(w, h)
+        self.save_pos()
+
+    def save_pos(self):
+        self.layout[self.key] = {"x": int(self.x), "y": int(self.y), "w": int(self.w), "h": int(self.h), "output": self.output}
+        save_layout(self.layout)
+
     def drag_move(self, widget, ev):
-        if getattr(self, "dragging", None) == "move":
-            self.x += ev.x_root - self.p0[0]
-            self.y += ev.y_root - self.p0[1]
+        # Events that arrive before the compositor has moved the surface carry stale coordinates.
+        if getattr(self, "dragging", None) == "move" and ev.time - self.last >= 40:
+            self.last = ev.time
+            self.x = max(0, self.x + ev.x_root - self.p0[0])
+            self.y = max(0, self.y + ev.y_root - self.p0[1])
             self.moved = True
             self.apply_margins()
         return True
@@ -148,13 +310,17 @@ class Postit(Gtk.Window):
         if ev.button == 1:
             self.p0 = (ev.x_root, ev.y_root)
             self.dragging = "size"
+            self.size0 = (self.w, self.h)
         return True
 
     def grip_move(self, widget, ev):
         if getattr(self, "dragging", None) == "size":
-            self.w = max(MIN_W, self.w + ev.x_root - self.p0[0])
-            self.h = max(MIN_H, self.h + ev.y_root - self.p0[1])
+            # The top-left corner is fixed while resizing, so the offset from the press point is absolute.
+            mon = dict(self.outs)[self.output].get_geometry()
+            self.w = min(mon.width, max(MIN_W, self.size0[0] + ev.x_root - self.p0[0]))
+            self.h = min(mon.height, max(MIN_H, self.size0[1] + ev.y_root - self.p0[1]))
             self.moved = True
+            self.set_size_request(int(self.w), int(self.h))
             self.resize(int(self.w), int(self.h))
         return True
 
@@ -164,8 +330,7 @@ class Postit(Gtk.Window):
             if not getattr(self, "moved", False):
                 return True
             self.moved = False
-            self.layout[self.key] = {"x": int(self.x), "y": int(self.y), "w": int(self.w), "h": int(self.h), "output": self.output}
-            save_layout(self.layout)
+            self.save_pos()
         return True
 
 
@@ -184,13 +349,30 @@ def main():
     layer = GtkLayerShell.Layer.TOP if "--front" in sys.argv else GtkLayerShell.Layer.BOTTOM
     with open(pidfile, "w") as f:
         f.write(str(os.getpid()))
-    signal_add(GLib.PRIORITY_DEFAULT, 15, Gtk.main_quit)
+    notes = []
+
+    def quit_all():
+        for n in notes:
+            n.save()
+        Gtk.main_quit()
+
+    signal_add(GLib.PRIORITY_DEFAULT, 15, quit_all)
     try:
         css = Gtk.CssProvider()
         css.load_from_data(CSS)
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         layout = load_layout()
-        Postit("demo", "Post-it", layout, layer)
+        for i, path in enumerate(screen_notes()):
+            try:
+                note = Note(path)
+            except (OSError, UnicodeDecodeError):
+                continue
+            notes.append(note)
+            win = Postit(os.path.basename(path), note.title(), note.widget, COLORS.get(note.fields.get("color"), COLORS["yellow"]), layout, layer, i)
+            note.on_reload = lambda n=note, w=win: w.title_label.set_text(n.title())
+        if not notes:
+            subprocess.run(["notify-send", "mb-postits", "No note has a 'screen: true' header line"])
+            return 1
         Gtk.main()
     finally:
         try:
