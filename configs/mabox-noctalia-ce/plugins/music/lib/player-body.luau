@@ -1181,7 +1181,7 @@ local function sourceSelect()
   end
   return ui.column({ gap = 0 }, {
     ui.label({ text = pinned == "" and "Active player" or "Pinned player", fontSize = 10, color = "on_surface_variant" }),
-    ui.select({ key = "source" .. table.concat(options, "|"), width = 150, options = options, selectedIndex = 0, onChange = function(idx)
+    ui.select({ key = "source" .. table.concat(options, "|"), width = 120, options = options, selectedIndex = 0, onChange = function(idx)
       local e = entries[tonumber(idx) + 1]
       if e and e.value ~= pinned then
         pinned = e.value
@@ -1200,13 +1200,13 @@ render = function()
       ui.label({ text = "Music" }),
       ui.label({ text = hotkey("mabox/music:player"), color = "outline_variant" }),
       ui.spacer({ flexGrow = 1 }),
-      ui.button({ text = "Refresh", glyph = "refresh", variant = "outline", tooltip = "Show what plays now and add it to Recent", onClick = function() syncNow() end }),
-      ui.button({ glyph = "player-skip-back", variant = "ghost", controlSize = "sm", tooltip = "Previous", onClick = function() transport("previous") end }),
-      ui.button({ glyph = "player-play", variant = "ghost", controlSize = "sm", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
-      ui.button({ glyph = "player-skip-forward", variant = "ghost", controlSize = "sm", tooltip = "Next", onClick = function() transport("next") end }),
-      ui.button({ glyph = "player-stop", variant = "ghost", controlSize = "sm", tooltip = "Stop", onClick = function() transport("stop") end }),
+      ui.button({ glyph = "player-skip-back", variant = "ghost", tooltip = "Previous", onClick = function() transport("previous") end }),
+      ui.button({ glyph = "player-play", variant = "ghost", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
+      ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = "Next", onClick = function() transport("next") end }),
+      ui.button({ glyph = "player-stop", variant = "ghost", tooltip = "Stop", onClick = function() transport("stop") end }),
       sourceSelect(),
       ui.spacer({ flexGrow = 1 }),
+      ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh: show what plays now and add it to Recent", onClick = function() syncNow() end }),
       ui.button({ glyph = "radio", variant = "ghost", controlSize = "sm", tooltip = "PyRadio", onClick = function() sh("jumpapp -m -c pyradio kitty --class pyradio -e pyradio") panel.close() end }),
       ui.button({ glyph = "volume", variant = "ghost", controlSize = "sm", tooltip = "Volume control", onClick = function() sh("pavucontrol") panel.close() end }),
       ui.button({ glyph = "adjustments-horizontal", variant = eqOn and "primary" or "ghost", controlSize = "sm", tooltip = eqOn and "Equalizer (on)" or "Equalizer (off)", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-toggle", "mabox/equalizer:main" }) panel.close() end }),
