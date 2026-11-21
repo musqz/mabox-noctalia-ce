@@ -456,7 +456,7 @@ local function noteItem(key, n, detail)
   for _, b in ipairs(buttons) do
     table.insert(head, b)
   end
-  if not selecting then
+  if pinned and not selecting then
     table.insert(head, ui.row({ key = "pt" .. key, tooltip = n.screen and "Shown as a post-it on the desktop: click to remove it" or "Show this note as a post-it on the desktop", align = "center" }, {
       ui.toggle({ key = "ps" .. key .. (n.screen and "1" or "0"), checked = n.screen == true, onChange = function(v)
         n.screen = (v == true or v == "true") or nil
@@ -544,6 +544,31 @@ local function toggleColor(name)
   render()
 end
 
+-- Under a dot of the pinned panel: every note of that color on the desktop as a post-it; when they all are, a click takes them all off.
+local function colorAllOnScreen(name)
+  local count, shown = 0, 0
+  for _, n in ipairs(notes) do
+    if n.color == name then
+      count = count + 1
+      if n.screen then
+        shown = shown + 1
+      end
+    end
+  end
+  return count > 0 and shown == count
+end
+
+local function colorOnScreen(name)
+  local all = colorAllOnScreen(name)
+  for _, n in ipairs(notes) do
+    if n.color == name then
+      n.screen = (not all) or nil
+      saveNote(n)
+    end
+  end
+  render()
+end
+
 local function colorBar()
   local dots = dotColors()
   if #dots == 0 then
@@ -556,12 +581,24 @@ local function colorBar()
     local ring = zone == "dots" and i == dotCursor
     local size = ring and 24 or 18
     local dot = { key = "cf" .. c.name, width = size, height = size, radius = size // 2, fill = c.hex, border = "on_surface", borderWidth = ring and 3 or (on and 2 or 0), opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function() toggleColor(c.name) end }
+    local desk = colorAllOnScreen(c.name)
+    local under = pinned and ui.button({
+      key = "cd" .. c.name .. (desk and "1" or "0"),
+      glyph = desk and "minus" or "circle-filled",
+      glyphSize = 8,
+      width = 28,
+      height = 16,
+      variant = "ghost",
+      controlSize = "sm",
+      tooltip = desk and ("All " .. c.name .. " notes are on the desktop: click to remove them") or ("Show all " .. c.name .. " notes on the desktop as post-its"),
+      onClick = function() colorOnScreen(c.name) end,
+    }) or ui.box({ key = "cu" .. c.name, width = 14, height = 2, radius = 1, fill = "on_surface", opacity = on and 1 or 0 })
     table.insert(cells, ui.column({ gap = 3, align = "center" }, {
       ui.box(dot),
-      ui.box({ key = "cu" .. c.name, width = 14, height = 2, radius = 1, fill = "on_surface", opacity = on and 1 or 0 }),
+      under,
     }))
   end
-  return ui.row({ gap = 8, align = "center" }, cells)
+  return ui.row({ gap = pinned and 4 or 8, align = "center" }, cells)
 end
 
 local function searchBox()
@@ -616,14 +653,6 @@ local function editor()
       ui.button({ glyph = "trash", text = "Delete", variant = "ghost", controlSize = "sm", selected = editField == "head" and editHead == 3, onClick = deleteNote }),
     }),
     ui.row({ gap = 6, align = "center" }, editorDots(n)),
-    ui.row({ gap = 6, align = "center" }, {
-      ui.toggle({ key = "scr" .. n.id .. (n.screen and "1" or "0"), checked = n.screen == true, tooltip = "Show this note as a post-it on the desktop (mb-postits)", onChange = function(v)
-        n.screen = (v == true or v == "true") or nil
-        saveNote(n)
-        render()
-      end }),
-      ui.label({ text = "On screen", color = "on_surface_variant" }),
-    }),
   }
   if titleShown(n) then
     table.insert(items, ui.row({ gap = 6, align = "center" }, {
@@ -760,7 +789,14 @@ local function sameSnapshot(a, b)
 end
 
 local function toggleSelect()
-  selecting = not selecting
+  if current then
+    -- Select while a note is open: back to the list, in select mode.
+    finishEdit()
+    selecting = true
+    zone = "list"
+  else
+    selecting = not selecting
+  end
   selCursor = 1
   if not selecting and zone == "sel" then
     zone = "list"
