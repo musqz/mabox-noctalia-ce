@@ -456,7 +456,7 @@ local function noteItem(key, n, detail)
   for _, b in ipairs(buttons) do
     table.insert(head, b)
   end
-  if pinned and not selecting then
+  if pinned or selecting then
     table.insert(head, ui.row({ key = "pt" .. key, tooltip = n.screen and "Shown as a post-it on the desktop: click to remove it" or "Show this note as a post-it on the desktop", align = "center" }, {
       ui.toggle({ key = "ps" .. key .. (n.screen and "1" or "0"), checked = n.screen == true, onChange = function(v)
         n.screen = (v == true or v == "true") or nil
@@ -582,7 +582,7 @@ local function colorBar()
     local size = ring and 24 or 18
     local dot = { key = "cf" .. c.name, width = size, height = size, radius = size // 2, fill = c.hex, border = "on_surface", borderWidth = ring and 3 or (on and 2 or 0), opacity = (on or not any) and 1 or 0.4, tooltip = on and ("Untick " .. c.name) or ("Show only " .. c.name), onClick = function() toggleColor(c.name) end }
     local desk = colorAllOnScreen(c.name)
-    local under = pinned and ui.button({
+    local under = (pinned or selecting) and ui.button({
       key = "cd" .. c.name .. (desk and "1" or "0"),
       glyph = desk and "minus" or "circle-filled",
       glyphSize = 8,
@@ -598,7 +598,7 @@ local function colorBar()
       under,
     }))
   end
-  return ui.row({ gap = pinned and 4 or 8, align = "center" }, cells)
+  return ui.row({ gap = (pinned or selecting) and 4 or 8, align = "center" }, cells)
 end
 
 local function searchBox()
