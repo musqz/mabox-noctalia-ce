@@ -429,6 +429,11 @@ local function openFolder(p)
   done()
 end
 
+local function openFileDir(path)
+  local d = string.match(path, "^(.*)/[^/]*$")
+  openFolder({ open = (d == nil or d == "") and "/" or d })
+end
+
 local function openDrive(d)
   if d.mount ~= "" then
     openFolder({ open = d.mount })
@@ -640,9 +645,9 @@ local function childRows(path, depth, out, tag)
           variant = "ghost",
           contentAlign = "start",
           flexGrow = 1,
-          tooltip = full .. "\nClick: open, right click: copy the path",
+          tooltip = full .. "\nClick: open, right click: open the folder",
           onClick = function() openFile({ path = full }) end,
-          onRightClick = function() copyPath({ path = full }) end,
+          onRightClick = function() openFileDir(full) end,
         }),
         starButton("f", full, tag),
       }))
@@ -825,9 +830,9 @@ local function quickCard()
           variant = "ghost",
           contentAlign = "start",
           flexGrow = 1,
-          tooltip = q.path .. "\nClick: open, right click: copy the path",
+          tooltip = q.path .. "\nClick: open, right click: open the folder",
           onClick = function() openFile({ path = q.path }) end,
-          onRightClick = function() copyPath({ path = q.path }) end,
+          onRightClick = function() openFileDir(q.path) end,
         }),
         starButton("f", q.path, tag),
       }))
@@ -877,9 +882,9 @@ local function recentCard()
         variant = "ghost",
         contentAlign = "start",
         flexGrow = 1,
-        tooltip = f.dir .. "\nClick: open, right click: copy the path",
+        tooltip = f.dir .. "\nClick: open, right click: open the folder",
         onClick = function() openFile(f) end,
-        onRightClick = function() copyPath(f) end,
+        onRightClick = function() openFileDir(f.path or (f.dir .. "/" .. f.name)) end,
       }),
       starButton("f", f.path or (f.dir .. "/" .. f.name), "rc"),
     }))
