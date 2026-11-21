@@ -394,28 +394,40 @@ def open_todo():
 
 
 class Tasks(ListBody):
-    """Open tasks of one todo.txt list; ticking one writes the done line back."""
+    """Open tasks of one todo.txt list, or of every list for a filter (name "*"); ticking one writes the done line back."""
 
     def __init__(self, name, flt="all"):
         super().__init__()
         self.name, self.flt = name, flt
-        self.path = os.path.join(TODO_DIR, name + ".txt")
         self.refresh()
         self.monitor = Gio.File.new_for_path(TODO_DIR).monitor_directory(Gio.FileMonitorFlags.NONE, None)
-        self.monitor.connect("changed", lambda _m, f, *_: f.get_basename() == name + ".txt" and self.refresh())
+        self.monitor.connect("changed", lambda _m, f, *_: f.get_basename() in [os.path.basename(p) for p in self.paths()] and self.refresh())
         GLib.timeout_add_seconds(60, self.refresh)  # due colours follow midnight
 
-    def read(self):
+    def paths(self):
+        if self.name != "*":
+            return [os.path.join(TODO_DIR, self.name + ".txt")]
         try:
-            with open(self.path, encoding="utf-8") as f:
-                return [l for l in f.read().split("\n") if l.strip()]
-        except (OSError, UnicodeDecodeError):
+            names = sorted(n for n in os.listdir(TODO_DIR) if n.endswith(".txt") and not n.startswith(("done_", "report_")))
+        except OSError:
             return []
+        return [os.path.join(TODO_DIR, n) for n in names]
+
+    def read(self):
+        out = []
+        for path in self.paths():
+            try:
+                with open(path, encoding="utf-8") as f:
+                    out += [(l, path) for l in f.read().split("\n") if l.strip()]
+            except (OSError, UnicodeDecodeError):
+                pass
+        return out
 
     def refresh(self):
         if self.box.get_parent() is None:  # its window is gone: stop the minute timer
             return False
-        everything = [t for t in map(parse_task, self.read()) if task_matches(t, self.flt)]
+        parsed = [dict(parse_task(raw), path=path) for raw, path in self.read()]
+        everything = [t for t in parsed if task_matches(t, self.flt)]
         tasks = [t for t in everything if not t["done"]]
         tasks.sort(key=lambda t: (t["due"] is None, t["due"] or "", t["pri"] or "Z"))
         for child in self.box.get_children():
@@ -433,7 +445,7 @@ class Tasks(ListBody):
     def row(self, t):
         row = Gtk.Box(spacing=6)
         check = Gtk.CheckButton(active=t["done"], tooltip_text="Mark as open" if t["done"] else "Mark as done")
-        check.connect("toggled", lambda _c, raw=t["raw"]: GLib.idle_add(self.toggle, raw))
+        check.connect("toggled", lambda _c, raw=t["raw"], path=t["path"]: GLib.idle_add(self.toggle, raw, path))
         row.pack_start(check, False, False, 0)
         label = Gtk.Label(xalign=0, wrap=True)
         if t["done"]:
@@ -454,11 +466,19 @@ class Tasks(ListBody):
             dot = Gtk.Label(xalign=1)
             dot.set_markup(f'<span foreground="{DUE_HEX[due_kind(t["due"])]}">●</span> <small>{GLib.markup_escape_text(when)}</small>')
             row.pack_end(dot, False, False, 0)
+        # The groups (+word) and contexts (@word) of the task; a filter mixes the lists, so it also says which list the task is in.
+        info = list(t["tags"])
+        if self.name == "*":
+            info.append(os.path.basename(t["path"])[:-4])
+        if info:
+            where = Gtk.Label(xalign=1, opacity=0.55)
+            where.set_markup(f'<small>{GLib.markup_escape_text("  ".join(info))}</small>')
+            row.pack_end(where, False, False, 6)
         return row
 
-    def toggle(self, raw):
+    def toggle(self, raw, path):
         # Re-read the file as it is now and change only this line; blank lines and the rest stay.
-        path = os.path.realpath(self.path)
+        path = os.path.realpath(path)
         try:
             with open(path, encoding="utf-8") as f:
                 lines = f.read().split("\n")
@@ -471,7 +491,7 @@ class Tasks(ListBody):
                 shutil.copymode(path, tmp)
                 os.replace(tmp, path)
         except (OSError, UnicodeDecodeError) as e:
-            print(f"mb-postits: {self.path}: {e}", file=sys.stderr)
+            print(f"mb-postits: {path}: {e}", file=sys.stderr)
         self.refresh()
 
 
@@ -638,7 +658,8 @@ def conf_keys():
                 kind, _, rest = line.strip().partition(" ")
                 name, _, flt = rest.strip().partition(" ")
                 if kind == "tasks" and name and "/" not in name:
-                    keys.add(f"tasks:{name}:{flt.strip() if flt.strip() in FILTERS else 'all'}")
+                    flt = flt.strip() if flt.strip() in FILTERS else "all"
+                    keys.add(f"tasks:{name if flt == 'all' else '*'}:{flt}")  # a filter covers every list
                 elif kind == "agenda":
                     keys.add("agenda")
     except (OSError, UnicodeDecodeError):
@@ -654,7 +675,9 @@ def conf_set(key, on):
     except (OSError, UnicodeDecodeError):
         lines = []
     plain = line[:-4] if line.endswith(" all") else None  # an older line without a filter means "all"
-    lines = [l for l in lines if l != line and l != plain] + ([line] if on else [])
+    flt = key.split(":")[-1] if key.startswith("tasks:") and not key.endswith(":all") else None
+    # A filter is one post-it for every list: drop its lines whatever list name they carry.
+    lines = [l for l in lines if l != line and l != plain and not (flt and re.fullmatch(r"tasks \S+ " + re.escape(flt), l))] + ([line] if on else [])
     os.makedirs(os.path.dirname(CONF), exist_ok=True)
     tmp = CONF + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -878,7 +901,12 @@ def main():
             else:
                 _, name, flt = key.split(":")
                 body = Tasks(name, flt)
-                title = "Tasks · " + body.name + (" · " + FILTERS[flt] if flt != "all" else "")
+                title = "Tasks · " + (FILTERS[flt] if name == "*" else body.name + (" · " + FILTERS[flt] if flt != "all" else ""))
+            if key.startswith("tasks:") and key not in layout and key.split(":")[1] == "*":  # a filter keeps the place it had for a list
+                for k in layout:
+                    if k.startswith("tasks:") and k.endswith(":" + flt):
+                        layout[key] = layout[k]
+                        break
             old = key[:-4]  # position saved before lists had filters
             if key.endswith(":all") and key not in layout and old in layout:
                 layout[key] = layout[old]
@@ -926,7 +954,7 @@ def main():
             for key in sorted(extra):
                 if key in shown or key in hidden:
                     continue
-                if key.startswith("tasks:") and not os.path.exists(os.path.join(TODO_DIR, key.split(":")[1] + ".txt")):
+                if key.startswith("tasks:") and key.split(":")[1] != "*" and not os.path.exists(os.path.join(TODO_DIR, key.split(":")[1] + ".txt")):
                     continue  # list deleted or renamed outside the panel
                 open_extra(key)
             return False
