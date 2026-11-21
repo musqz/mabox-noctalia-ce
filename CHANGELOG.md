@@ -9,6 +9,7 @@
 - Add a pcmanfm action *Set as wallpaper* for a single image: sets it as the wallpaper and stops the slideshow (`mb-wallpaper-image`).
 - Add `mb-files`: opens pcmanfm-qt when installed, else pcmanfm through XWayland (GTK3 menus ran off the screen bottom). Places, `W-f`, the root menu, Status and Recolor use it.
 - Right click on a drive in the Places panel opens it in the file manager; `mb-files` brings the window to the front.
+- Right click on a file in the Places panel opens its folder in the file manager (it no longer copies the path).
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
