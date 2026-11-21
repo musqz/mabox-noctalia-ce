@@ -14,6 +14,7 @@
 - pcmanfm-qt opens folders as tabs in the running window (`mb-migrate` sets `SingleWindowMode`).
 - Todo panel: click the open list again to put it on the desktop as a post-it, click once more to remove it.
 - Post-its for a filter (Overdue, Today, Tomorrow, Next 7 days, Later, No date) show the tasks of all lists, with the list, group and context next to each task.
+- Todo panel: every group and context in the Groups card has a remove button; a group with tasks asks first and is removed from the tasks of the open list.
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
