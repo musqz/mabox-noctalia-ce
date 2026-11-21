@@ -13,6 +13,7 @@
 - Add `pcmanfm-qt` and `kimageformats` (AVIF thumbnails) to the install list and as optional dependencies.
 - pcmanfm-qt opens folders as tabs in the running window (`mb-migrate` sets `SingleWindowMode`).
 - Todo panel: click the open list again to put it on the desktop as a post-it, click once more to remove it.
+- Post-its for a filter (Overdue, Today, Tomorrow, Next 7 days, Later, No date) show the tasks of all lists, with the list, group and context next to each task.
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
