@@ -503,7 +503,7 @@ local function cleanRows(rows)
   local trash = size("~/.local/share/Trash")
   if not dyn or trash > 4096 then
     add("trash", "Trash", human(trash), "Empty the trash", {
-      { label = "Open the trash", open = { "pcmanfm", "trash://" } },
+      { label = "Open the trash", open = { "mb-files", "trash://" } },
       { label = "Empty the trash", bad = true, size = "du -sh ~/.local/share/Trash", run = "rm -rf ~/.local/share/Trash/files ~/.local/share/Trash/info ~/.local/share/Trash/expunged" },
     })
   end

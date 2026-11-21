@@ -1,5 +1,5 @@
 --!nonstrict
--- Places: standard folders, file manager bookmarks and recent files; folders expand in place, right click opens pcmanfm.
+-- Places: standard folders, file manager bookmarks and recent files; folders expand in place, right click opens the file manager.
 
 local pinSide = require("./side.luau")
 local logo = require("./celogo.luau")
@@ -425,7 +425,7 @@ local function done()
 end
 
 local function openFolder(p)
-  noctalia.runAsync({ "pcmanfm", p.open })
+  noctalia.runAsync({ "mb-files", p.open })
   done()
 end
 
@@ -437,7 +437,7 @@ local function openDrive(d)
   noctalia.runAsync({ "udisksctl", "mount", "-b", d.dev }, function(r)
     local mp = string.match(r.stdout or "", " at (/[^\n]-)%.?%s*$")
     if mp then
-      noctalia.runAsync({ "pcmanfm", mp })
+      noctalia.runAsync({ "mb-files", mp })
     else
       noctalia.runAsync({ "notify-send", "-a", "Places", "Mount failed", d.name .. ": " .. noctalia.string.trim(r.stderr or "") })
     end

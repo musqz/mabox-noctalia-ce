@@ -110,7 +110,7 @@
     <keybind key="W-y"><action name="Execute" command="noctalia msg panel-toggle mabox/todo:main"/></keybind>
     <keybind key="W-A-q"><action name="Execute" command="noctalia msg panel-toggle mabox/equalizer:main"/></keybind>
     <keybind key="W-e" name.action="Execute" command.action="geany"/>
-    <keybind key="W-f" name.action="Execute" command.action="pcmanfm"/>
+    <keybind key="W-f" name.action="Execute" command.action="mb-files"/>
     <keybind key="W-r" name.action="Execute" command.action="jumpapp -m -c pyradio kitty --class pyradio -e pyradio"/>
     <keybind key="W-w" name.action="Execute" command.action="firefox"/>
     <keybind key="W-v" name.action="Execute" command.action="pavucontrol"/>
