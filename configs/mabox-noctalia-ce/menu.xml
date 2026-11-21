@@ -45,7 +45,7 @@
     <action name="Execute" command="exo-open --launch WebBrowser" />
   </item>
   <item label="File Manager" icon="system-file-manager">
-    <action name="Execute" command="pcmanfm" />
+    <action name="Execute" command="mb-files" />
   </item>
   <separator />
   <item label="Launcher" icon="applications-all">

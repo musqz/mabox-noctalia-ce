@@ -59,6 +59,7 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mb-sysreport` | system info with user, host, addresses, ids and serials removed; `overview`, `hardware`, `logs`, `report [--save]` | System plugin |
 | `mpv-play-stream` | play a copied URL in mpv | `C-S-1` |
 | `mb-wallpaper-dir` | set the Noctalia wallpaper folder | file manager action "Set wallpaper dir" |
+| `mb-files` | open pcmanfm-qt, else pcmanfm through XWayland | Places, `W-f`, root menu, Recolor, Status |
 | `brightness-primary` | brightness up/down on the main monitor (`BRIGHTNESS_OUTPUT`) | brightness keys |
 | `q-term-toggle [right\|left]` | show/hide a quake terminal, right half or left half | keybinds `F12`, `C-grave` in `rc.xml` |
 | `screenrec-toggle` | start/stop recording with `wl-screenrec`; options `-o` output, `-f` fps, `-c` mp4/mkv, `-a` none/system/mic | bar button, root menu, `rc.xml` |

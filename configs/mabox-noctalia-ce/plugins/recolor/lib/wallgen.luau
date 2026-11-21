@@ -742,8 +742,8 @@ function render()
   local actionRow = ui.row({ gap = 8, align = "center" }, {
       ui.button({ key = "gen" .. (busy and "1" or "0"), glyph = busy and "player-stop" or "sparkles", text = busy and "Stop" or "Generate", variant = busy and "destructive" or "primary", onClick = function() if busy then stopJob() else generate(false) end end }),
       ui.button({ key = "genset", glyph = "photo", text = "Generate and set as wallpaper", variant = "outline", enabled = not busy, onClick = function() generate(true) end }),
-      ui.button({ key = "open", glyph = "folder-open", text = "Open folder", variant = "outline", tooltip = "Show the output folder in pcmanfm", onClick = function()
-        noctalia.runAsync({ "sh", "-c", 'mkdir -p "$1" && exec pcmanfm "$1"', "sh", destDir() })
+      ui.button({ key = "open", glyph = "folder-open", text = "Open folder", variant = "outline", tooltip = "Show the output folder in the file manager", onClick = function()
+        noctalia.runAsync({ "sh", "-c", 'mkdir -p "$1" && exec mb-files "$1"', "sh", destDir() })
         panel.close()
       end }),
       ui.button({ key = "use", glyph = "photo-up", text = "Use folder as wallpapers", variant = "outline", tooltip = "Add the output folder to the wallpaper folders and start it", onClick = function()
