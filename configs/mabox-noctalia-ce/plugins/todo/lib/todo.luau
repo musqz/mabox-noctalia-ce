@@ -480,10 +480,15 @@ local function filterKey(mode)
   return mode == "date" and "all" or mode
 end
 
+-- A filter post-it covers every list: its line is "tasks * FILTER", and a line with any list name counts as the same post-it.
 local function isPinned(name, mode)
   local f = filterKey(mode)
   for _, l in ipairs(postitLines()) do
-    if l == "tasks " .. name .. " " .. f or (f == "all" and l == "tasks " .. name) then
+    if f == "all" then
+      if l == "tasks " .. name .. " all" or l == "tasks " .. name then
+        return true
+      end
+    elseif string.match(l, "^tasks %S+ " .. f .. "$") then
       return true
     end
   end
@@ -494,12 +499,18 @@ local function setPinned(name, mode, on)
   local f = filterKey(mode)
   local out = {}
   for _, l in ipairs(postitLines()) do
-    if not (l == "tasks " .. name .. " " .. f or (f == "all" and l == "tasks " .. name)) then
+    local same
+    if f == "all" then
+      same = l == "tasks " .. name .. " all" or l == "tasks " .. name
+    else
+      same = string.match(l, "^tasks %S+ " .. f .. "$") ~= nil
+    end
+    if not same then
       table.insert(out, l)
     end
   end
   if on then
-    table.insert(out, "tasks " .. name .. " " .. f)
+    table.insert(out, "tasks " .. (f == "all" and name or "*") .. " " .. f)
   end
   savePostitLines(out)
 end
@@ -509,7 +520,7 @@ local function moveListPostits(name, to)
   local out = {}
   for _, l in ipairs(postitLines()) do
     local n, f = string.match(l, "^tasks (%S+) ?(%S*)$")
-    if n == name then
+    if n == name and (f == "" or f == "all") then
       if to then
         table.insert(out, "tasks " .. to .. " " .. (f ~= "" and f or "all"))
       end
