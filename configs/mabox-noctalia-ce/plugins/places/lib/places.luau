@@ -577,22 +577,6 @@ local function dirRow(path, name, glyph, depth, tag, fill)
     onClick = function() toggleDir(path) end,
     onRightClick = function() openFolder({ open = path }) end,
   })
-  if open and depth > 0 then
-    -- The name of an open subfolder takes the hover color; a button has no text color, so it is a row of glyph and label.
-    title = ui.row({
-      key = "to" .. tag .. path,
-      gap = 6,
-      align = "center",
-      padding = 6,
-      flexGrow = 1,
-      tooltip = path .. "\nClick: hide the content, right click: open in the file manager",
-      onClick = function() toggleDir(path) end,
-      onRightClick = function() openFolder({ open = path }) end,
-    }, {
-      ui.glyph({ name = "chevron-down", size = 14, color = "hover" }),
-      ui.label({ text = name, color = "hover", maxLines = 1, flexGrow = 1 }),
-    })
-  end
   table.insert(row, title)
   if open then
     table.insert(row, ui.button({ key = "tn" .. tag .. path, glyph = "folder-plus", variant = (newIn == path and newTag == tag) and "primary" or "ghost", controlSize = "sm", tooltip = "New folder", onClick = function()
