@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Action
+Name=Set as wallpaper
+Icon=preferences-desktop-wallpaper
+Profiles=profile-setwallpaperimage
+
+[X-Action-Profile profile-setwallpaperimage]
+MimeTypes=image/jpeg;image/png;image/webp;image/avif;
+Exec=mb-wallpaper-image %f
+Name=Set as wallpaper
