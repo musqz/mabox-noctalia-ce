@@ -6,5 +6,6 @@ Profiles=profile-setwallpaperdir
 
 [X-Action-Profile profile-setwallpaperdir]
 MimeTypes=inode/directory;
+SelectionCount==1
 Exec=mb-wallpaper-dir %f
 Name=Set wallpaper dir

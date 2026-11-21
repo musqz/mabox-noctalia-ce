@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Set one image as the noctalia wallpaper and stop the slideshow. Used by the pcmanfm action "Set as wallpaper".
+#   mb-wallpaper-image <file>
+set -euo pipefail
+
+f=${1:-}
+case ${f,,} in
+    *.jpg|*.jpeg|*.png|*.webp|*.avif) [[ -f $f ]] || f= ;;
+    *) f= ;;
+esac
+[[ -n $f ]] || { notify-send -u critical -i error "Wallpaper" "No image selected." || true; exit 1; }
+f=$(readlink -f "$f")
+
+if ! noctalia msg wallpaper-set "$f" >/dev/null; then
+    notify-send -u critical -i error "Wallpaper" "noctalia could not set the image." || true
+    exit 1
+fi
+noctalia msg config-set wallpaper.automation.enabled false >/dev/null || true
+notify-send -i preferences-desktop-wallpaper "Wallpaper" "Set to: $f" || true

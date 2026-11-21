@@ -141,6 +141,12 @@ Converter: pick a preset, then files; output lands next to the source and never 
 
 Right-click a folder in pcmanfm → *Set wallpaper dir*. Command line: `mb-wallpaper-dir <dir>`.
 
+Set one image: right-click it in pcmanfm → *Set as wallpaper*. The slideshow stops. Command line: `mb-wallpaper-image <file>`.
+
+Set one image from a folder:
+1. Right-click the folder → *Set wallpaper dir*. A running slideshow keeps running.
+2. Pick the image in the Noctalia wallpaper chooser.
+
 Saved folders: `W-A-w`, the bar photo button, the *Wallpaper folders* entry in the root menu Mabox Config or `/wp` in the launcher (`/wp list`, `/wp add`). *Add folder* opens a chooser; select a circle to switch. The current folder is listed automatically.
 
 <p align="center"><a href="img/wallpaper-folders.png"><img src="img/thumb/wallpaper-folders.png" alt="Wallpaper folders panel"></a></p>
