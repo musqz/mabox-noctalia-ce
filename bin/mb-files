@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 # File manager launcher: pcmanfm-qt when installed, else pcmanfm. GTK3 context menus run off the screen bottom on Wayland, so pcmanfm runs through XWayland.
+# The window is raised after the launch.
 #   mb-files [path...]
-if command -v pcmanfm-qt >/dev/null; then exec pcmanfm-qt "$@"; fi
-GDK_BACKEND=x11 exec pcmanfm "$@"
+if command -v pcmanfm-qt >/dev/null; then
+    pcmanfm-qt "$@" >/dev/null 2>&1 &
+    id=pcmanfm-qt
+else
+    GDK_BACKEND=x11 pcmanfm "$@" >/dev/null 2>&1 &
+    id=Pcmanfm
+fi
+sleep 0.5
+wlrctl window focus "app_id:$id" 2>/dev/null || true

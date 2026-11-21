@@ -752,14 +752,16 @@ local function driveCard()
     table.insert(rows, ui.row({ key = "d" .. i, gap = 4, align = "center" }, {
       mounted and ui.button({ key = "dx" .. i, glyph = expanded[d.mount] and "chevron-down" or "chevron-right", variant = "ghost", controlSize = "sm", tooltip = "Show or hide the folders of this drive", onClick = function() toggleDir(d.mount) end }) or ui.box({ key = "dx" .. i, width = 0, height = 0 }),
       ui.button({
+        key = "db" .. i,
         selected = hitKey == "d" .. i,
         glyph = d.hot and "device-floppy" or "database",
         text = d.name .. "  " .. d.size,
         variant = "ghost",
         contentAlign = "start",
         flexGrow = 1,
-        tooltip = mounted and (d.mount .. "\nClick: open") or (d.dev .. "\nClick: mount and open"),
+        tooltip = mounted and (d.mount .. "\nClick or right click: open") or (d.dev .. "\nClick or right click: mount and open"),
         onClick = function() openDrive(d) end,
+        onRightClick = function() openDrive(d) end,
       }),
       mounted and ui.button({ key = "ej" .. i, glyph = "player-eject", variant = "ghost", controlSize = "sm", tooltip = "Unmount", onClick = function() unmountDrive(d) end }) or ui.box({ key = "ej" .. i, height = 0 }),
     }))
