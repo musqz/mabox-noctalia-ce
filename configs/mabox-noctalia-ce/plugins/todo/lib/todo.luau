@@ -1276,6 +1276,33 @@ local function listPanel()
   return items
 end
 
+-- Strips a group or context from every line of the open list (done ones too); only that word is cut, the rest of the line stays as it is.
+local function removeTag(tag)
+  local lines = readLines(listPath(list))
+  for i, l in ipairs(lines) do
+    local kept, changed = {}, false
+    for word in string.gmatch(l, "%S+") do
+      if word == tag then
+        changed = true
+      else
+        table.insert(kept, word)
+      end
+    end
+    if changed then
+      lines[i] = table.concat(kept, " ")
+    end
+  end
+  writeLines(listPath(list), lines)
+  if string.sub(tag, 1, 1) == "+" then
+    removeSavedGroup(string.sub(tag, 2))
+  end
+  if filterTag == tag then
+    filterTag = nil
+  end
+  confirming = nil
+  reload()
+end
+
 local function tagPanel()
   local counts, names = {}, {}
   for _, t in ipairs(tasks) do
@@ -1326,8 +1353,20 @@ local function tagPanel()
         removeSavedGroup(string.sub(tag, 2))
         render()
       end) }))
+    elseif confirming == "g" .. tag then
+      table.insert(items, ui.label({ text = "Remove " .. tag .. " from " .. counts[tag] .. (counts[tag] == 1 and " task?" or " tasks?"), color = "error", fontSize = 11 }))
+      table.insert(items, ui.row({ gap = 4, align = "center" }, {
+        ui.button({ key = "gyes" .. tag, glyph = "trash", text = "Remove", variant = "destructive", controlSize = "sm", onClick = function() removeTag(tag) end }),
+        ui.button({ key = "gno" .. tag, text = "Cancel", variant = "outline", controlSize = "sm", onClick = function()
+          confirming = nil
+          render()
+        end }),
+      }))
     else
-      table.insert(items, btn)
+      table.insert(items, ui.row({ gap = 2, align = "center" }, { btn, iconButton("x", "Remove " .. tag .. " from all tasks of this list", function()
+        confirming = "g" .. tag
+        render()
+      end) }))
     end
   end
   return items
