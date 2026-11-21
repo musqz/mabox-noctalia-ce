@@ -6,6 +6,8 @@
 - Remove the Keep open switch from the Music, Recolor, Equalizer, Autostart, Agents, Install and Todo panels.
 - Add an icon to the autostart rows in the Configs panel that opens the Autostart panel.
 - Add `mb-import-openbox`: make the Mabox todo list active in the Todo panel and turn Cherrytree todo notes into Notes (`--dry-run` shows what it would do).
+- Add a pcmanfm action *Set as wallpaper* for a single image: sets it as the wallpaper and stops the slideshow (`mb-wallpaper-image`).
+- Add `mb-files`: opens pcmanfm-qt when installed, else pcmanfm through XWayland (GTK3 menus ran off the screen bottom). Places, `W-f`, the root menu, Status and Recolor use it.
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
