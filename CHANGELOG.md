@@ -11,6 +11,7 @@
 - Right click on a drive in the Places panel opens it in the file manager; `mb-files` brings the window to the front.
 - Right click on a file in the Places panel opens its folder in the file manager (it no longer copies the path).
 - Add `pcmanfm-qt` and `kimageformats` (AVIF thumbnails) to the install list and as optional dependencies.
+- pcmanfm-qt opens folders as tabs in the running window (`mb-migrate` sets `SingleWindowMode`).
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
