@@ -20,7 +20,9 @@ Lists and the agenda switched on in `~/.config/mabox-noctalia-ce/postits.conf` o
 
 ## Notes
 
-1. Open the pinned Notes panel (`C-W-n`).
+<p align="center"><a href="img/notes-editor.png"><img src="img/thumb/notes-editor.png" alt="Notes panel with a new note" style="margin: 8px"></a> <a href="img/notes-select.png"><img src="img/thumb/notes-select.png" alt="Notes panel in Select mode with the desktop switches" style="margin: 8px"></a></p>
+
+1. Open the pinned Notes panel (`C-W-n`), or click **Select** in the Notes panel (`W-n`).
 2. Turn on the switch of a note, or click the small dot under a colour to put all notes of that colour on the desktop. The dot becomes a bar; click it to take them off.
 
 The post-it opens within a second; its title bar has the colour of the note. Turn the switch off to remove it. The body is saved after a short pause and when you click away.
