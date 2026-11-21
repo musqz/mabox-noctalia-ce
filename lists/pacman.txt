@@ -29,3 +29,5 @@ fittsmon
 fittsmon-wl-gui
 skippy-wl
 tabdock
+pcmanfm-qt
+kimageformats
