@@ -12,6 +12,7 @@
 - Right click on a file in the Places panel opens its folder in the file manager (it no longer copies the path).
 - Add `pcmanfm-qt` and `kimageformats` (AVIF thumbnails) to the install list and as optional dependencies.
 - pcmanfm-qt opens folders as tabs in the running window (`mb-migrate` sets `SingleWindowMode`).
+- Todo panel: click the open list again to put it on the desktop as a post-it, click once more to remove it.
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
