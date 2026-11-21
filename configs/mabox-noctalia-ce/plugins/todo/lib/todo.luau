@@ -1165,15 +1165,20 @@ end
 local function listPanel()
   local items = { sideTitle("Lists") }
   for _, name in ipairs(lists) do
-    table.insert(items, ui.button({
-      key = "l" .. name,
+    local pinnedNow = isPinned(name, "date")
+    local btn = ui.button({
+      key = "l:" .. name .. ":" .. (pinnedNow and "1" or "0"),
       text = name,
       glyph = "list",
       variant = name == list and "primary" or "ghost",
       controlSize = "sm",
       contentAlign = "start",
-      tooltip = "Open list " .. name,
+      flexGrow = 1,
+      tooltip = "Click: open the list. Click again: put it on the post-it. Click again: remove from it",
       onClick = function()
+        if name == list then
+          setPinned(name, "date", not isPinned(name, "date"))
+        end
         confirming = nil
         editing = nil
         filterTag = nil
@@ -1181,7 +1186,18 @@ local function listPanel()
         saveState()
         reload()
       end,
-    }))
+    })
+    if pinnedNow then
+      table.insert(items, ui.row({ gap = 4, align = "center" }, {
+        btn,
+        ui.button({ key = "lp:" .. name, glyph = "note", variant = "ghost", controlSize = "sm", tooltip = "On the post-it: click to remove", onClick = function()
+          setPinned(name, "date", false)
+          render()
+        end }),
+      }))
+    else
+      table.insert(items, btn)
+    end
   end
   if naming then
     local function create()
