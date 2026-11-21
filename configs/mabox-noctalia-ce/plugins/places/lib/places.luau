@@ -1156,6 +1156,10 @@ render = function()
     editing = not editing
     render()
   end })
+  local usageButton = ui.button({ key = "usage", glyph = "chart-treemap", variant = "ghost", controlSize = "sm", tooltip = "Disk usage (QDirStat)", onClick = function()
+    noctalia.runAsync({ "qdirstat", HOME or "/" })
+    done()
+  end })
   local collapseButton = ui.button({ key = "collapse", glyph = "arrows-minimize", variant = "ghost", controlSize = "sm", enabled = next(expanded) ~= nil, tooltip = "Close all open folders", onClick = function()
     expanded = {}
     newIn = nil
@@ -1172,6 +1176,7 @@ render = function()
         ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
         editButton,
         collapseButton,
+        usageButton,
         ui.spacer({ flexGrow = 1 }),
         pinSide.dockButton("places", pinned, render),
         pinSide.panelButton("places", "main"),
@@ -1196,6 +1201,7 @@ render = function()
     table.insert(head, 2, ui.row({ gap = 6, align = "center" }, {
       editButton,
       collapseButton,
+      usageButton,
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Reload", onClick = reload }),
       ui.button({ glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = function()
