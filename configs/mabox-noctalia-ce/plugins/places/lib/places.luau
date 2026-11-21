@@ -1160,10 +1160,12 @@ render = function()
     noctalia.runAsync({ "qdirstat", HOME or "/" })
     done()
   end })
-  local collapseButton = ui.button({ key = "collapse", glyph = "arrows-minimize", variant = "ghost", controlSize = "sm", enabled = next(expanded) ~= nil, tooltip = "Close all open folders", onClick = function()
-    expanded = {}
-    newIn = nil
-    render()
+  local collapseButton = ui.button({ key = "collapse", glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Close all open folders", onClick = function()
+    if next(expanded) ~= nil then
+      expanded = {}
+      newIn = nil
+      render()
+    end
   end })
   if pinned then
     head = {
