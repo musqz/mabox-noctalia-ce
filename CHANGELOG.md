@@ -17,6 +17,7 @@
 - Todo panel: every group and context in the Groups card has a remove button; a group with tasks asks first and is removed from the tasks of the open list.
 - Notes: the On screen switch moves out of the editor and the list; it is in the pinned panel and in Select of the top panel. A small dot under each colour puts all notes of that colour on the desktop, a bar takes them off.
 - Notes: Select in an open note goes back to the list in select mode.
+- Places: right click on an open subfolder opens it in the file manager; its name no longer has the hover colour.
 
 ## 0.7.1
 - Add an Agenda switch to the Configs panel (Post-its card) that shows the next events as a post-it.
