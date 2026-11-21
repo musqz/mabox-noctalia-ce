@@ -304,6 +304,21 @@ migrate_30() {
     xdg-mime default renCal.desktop text/calendar || true
 }
 
+# pcmanfm-qt opens folders as tabs in the running window; run once, a later choice stays.
+migrate_31() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/pcmanfm-qt/default/settings.conf
+    if [[ ! -f $f ]]; then
+        mkdir -p "${f%/*}"
+        printf '[Behavior]\nSingleWindowMode=true\n' > "$f"
+    elif grep -q '^SingleWindowMode=' "$f"; then
+        sed -i 's/^SingleWindowMode=.*/SingleWindowMode=true/' "$f"
+    elif grep -q '^\[Behavior\]' "$f"; then
+        sed -i 's/^\[Behavior\][[:space:]]*$/[Behavior]\nSingleWindowMode=true/' "$f"
+    else
+        printf '\n[Behavior]\nSingleWindowMode=true\n' >> "$f"
+    fi
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
