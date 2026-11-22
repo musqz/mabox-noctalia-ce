@@ -1,6 +1,6 @@
 pkgbase = mabox-noctalia-ce
 	pkgdesc = Mabox labwc + Noctalia session and default configs (CE)
-	pkgver = 0.7.1
+	pkgver = 0.8.0
 	pkgrel = 1
 	url = https://github.com/musqz/mabox-noctalia-ce
 	install = mabox-noctalia-ce.install
@@ -45,6 +45,8 @@ pkgbase = mabox-noctalia-ce
 	optdepends = kitty: terminal keybind
 	optdepends = pavucontrol: volume control keybind
 	optdepends = viewnior: screenshot viewer keybind
+	optdepends = pcmanfm-qt: file manager used by mb-files (menus fit the screen, folders open as tabs)
+	optdepends = kimageformats: AVIF thumbnails in pcmanfm-qt
 	optdepends = fittsmon: provides fittsmon-wl (github.com/musqz/fittsmon)
 	optdepends = fittsmon-wl-gui: fittsmon-wl config GUI (github.com/musqz/fittsmon-wl-gui)
 	optdepends = skippy-wl: window switcher keybinds (github.com/musqz/skippy-wl)
@@ -61,7 +63,7 @@ pkgbase = mabox-noctalia-ce
 	optdepends = tabdock: Firefox tab panel autostart (github.com/musqz/tabdock)
 	optdepends = pyradio: PyRadio theme template
 	optdepends = python-pywalfox: Firefox theme template
-	source = mabox-noctalia-ce-0.7.1.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.7.1.tar.gz
-	sha256sums = 8cc09a4ac5d58ae84ea9e69c3a98dfeb7fc52e166e56a4eb5e57c370115cddfc
+	source = mabox-noctalia-ce-0.8.0.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.8.0.tar.gz
+	sha256sums = SKIP
 
 pkgname = mabox-noctalia-ce

@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.8.0
 - Add a source dropdown to the Music panel on the Add to playlist row: the player buttons go to the player you pick, Active player follows Noctalia again.
 - Put the Music player buttons in a capsule and make Refresh an icon on the right.
 - Remove the Keep open switch from the Music, Recolor, Equalizer, Autostart, Agents, Install and Todo panels.
