@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Records a video tour of the Mabox CE plugins and widgets on the Philips screen.
+#   mb-tour [--list | --dry-run | --only <scene>]
+# Output: ~/Videos/mabox-ce-tour-<date>.mp4. Personal data is swapped for lib/demo/fixtures while it runs.
+# The sysinfo widget shows user@host: change it before recording.
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+fix=$here/fixtures
+repo=$(cd "$here/../.." && pwd)
+data=${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox
+bak=${XDG_RUNTIME_DIR:-/tmp}/mb-tour-backup
+out=$HOME/Videos/mabox-ce-tour-$(date +%F).mp4
+output=${MB_TOUR_OUTPUT:-HDMI-A-2}
+wp=${MB_TOUR_WALLPAPERS:-/mnt/data_work/Wallpaper_Coloring}
+wp2=${MB_TOUR_WALLPAPERS2:-/mnt/data_work/Wallpapers}
+
+# seconds held after the action | scene | caption | key or command shown | action
+timeline() {
+    cat <<TABLE
+10|intro|Mabox CE|Noctalia on labwc|mb-wallpaper-dir $wp/titans_solarized; mb-widget on info; mb-widget on sysinfo; mb-widget on polaroids; mb-widget on today; noctalia msg desktop-widgets-show
+8|intro|Hotkeys|W-k|panel_open mabox/keys:keys
+13|wallpaper|Wallpaper folders|W-A-w|panel_open mabox/wallpaper-dirs:dirs
+28|widgets|Desktop widgets: toggle on/off|Mabox menu|panel_open mabox/tools:widgets
+10|notes|Notes|W-n, C-W-n|panel_open mabox/notes:main
+10|notes|Todo|W-y|panel_open mabox/todo:main
+10|notes|Places, pinned left|C-W-p|panel_close; mb-pinned places
+10|notes|Status|W-A-s|panel_open mabox/status:main
+13|configs|Configs: Power, Lockscreen, Logo|C-W-c|panel_open mabox/configs:main
+10|configs|Colors|W-c|panel_open mabox/colors:picker
+10|system|System|W-A-i|system_tab overview; panel_open mabox/system:system
+10|system|System: Fixes|W-A-i|system_tab fixes; panel_open mabox/system:system
+10|wallpaper2|Wallpaper folders|W-A-w|panel_open mabox/wallpaper-dirs:dirs; mb-wallpaper-dir $wp/cyberpunk_polar_night
+10|capture|Capture|W-A-r|panel_open mabox/capture:main
+10|capture|Snapshot|Mabox menu|panel_open mabox/snapshot:main
+10|capture|Recolor|Mabox menu|panel_open mabox/recolor:main
+10|capture|Crypto|Mabox menu|panel_open mabox/crypto:main
+10|audio|Cava|W-A-v|panel_open mabox/cava:main
+10|audio|Equalizer|W-A-q|panel_open mabox/equalizer:main
+10|audio|Music|C-S-2|panel_open mabox/music:add
+8|windows|Quake terminal, right|F12|panel_close; q-term-toggle right
+8|windows|Quake terminal, left|C-grave|q-term-toggle left
+8|windows|Window snap|W-KP_1..9|wtype -M logo -k KP_1 -m logo
+10|outro|Wallpaper folders|W-A-w|panel_open mabox/wallpaper-dirs:dirs; mb-wallpaper-dir $wp2/Cyberpunk
+8|outro|Mabox CE|github.com/musqz/mabox-noctalia-ce|panel_close
+TABLE
+}
+
+system_tab() { ((swap)) && printf '%s\n' "$1" > "$data/system/tab"; return 0; }
+
+panel_open() { panel_close; noctalia msg panel-open "$@" >/dev/null || true; }
+panel_close() { noctalia msg panel-close >/dev/null 2>&1 || true; }
+cget() { local v; v=$(noctalia msg config-get "$1" 2>/dev/null) || return 1; v=${v#\'}; echo "${v%\'}"; }
+
+mode=run only=
+case ${1:-} in
+    "") ;;
+    --list)
+        timeline | awk -F'|' '{ t += $1; printf "%3d  %4d  %-10s %s\n", $1, t, $2, $3 }'
+        exit 0 ;;
+    --dry-run) mode=dry ;;
+    --only) only=${2:?scene name}; mode=only ;;
+    *) sed -n '2,5p' "$0" | sed 's/^# \?//'; exit 2 ;;
+esac
+
+if [[ -e $bak ]]; then
+    echo "mb-tour: $bak exists, a previous run did not restore. Restore from it by hand, then remove it." >&2
+    exit 1
+fi
+command -v wl-screenrec >/dev/null || { echo "mb-tour: wl-screenrec missing" >&2; exit 1; }
+pgrep -x wl-screenrec >/dev/null && { echo "mb-tour: a recording is already running" >&2; exit 1; }
+
+speed=1
+swap=1 rec=1
+[[ $mode == dry ]] && speed=0.1 swap=0 rec=0
+rec_pid=
+orig_dir=$(cget wallpaper.directory) || orig_dir=
+orig_dark=$(cget wallpaper.directory_dark) || orig_dark=$orig_dir
+orig_light=$(cget wallpaper.directory_light) || orig_light=$orig_dir
+orig_slide=$(cget wallpaper.automation.enabled) || orig_slide=
+declare -A widget_was=()
+while read -r name state; do widget_was[$name]=$state; done < <(mb-widget list | sed 's/ (\(on\|off\))$/ \1/')
+
+restore() {
+    trap - EXIT INT TERM
+    if [[ -n $rec_pid ]]; then pgrep -x wl-screenrec >/dev/null && screenrec-toggle >/dev/null 2>&1; wait "$rec_pid" 2>/dev/null || true; fi
+    panel_close
+    for p in colors notes status configs capture places crypto; do noctalia msg plugin "mabox/$p:pin" all hide >/dev/null 2>&1 || true; done
+    for w in "${!widget_was[@]}"; do mb-widget "${widget_was[$w]}" "$w" >/dev/null 2>&1 || true; done
+    for q in left right; do wlrctl toplevel minimize title:"q-term-$q" 2>/dev/null || true; done
+    if [[ -n $orig_dir ]]; then
+        noctalia msg config-set wallpaper.directory "\"$orig_dir\"" >/dev/null || true
+        noctalia msg config-set wallpaper.directory_dark "\"$orig_dark\"" >/dev/null || true
+        noctalia msg config-set wallpaper.directory_light "\"$orig_light\"" >/dev/null || true
+    fi
+    [[ -n $orig_slide ]] && noctalia msg config-set wallpaper.automation.enabled "$orig_slide" >/dev/null || true
+    if [[ -d $bak && $swap == 1 ]]; then
+        rm -rf "$HOME/.todo"
+        if [[ -d $bak/todo ]]; then cp -a "$bak/todo" "$HOME/.todo"; fi
+        if [[ -f $bak/todo-state ]]; then cp -a "$bak/todo-state" "$data/todo/state"; else rm -f "$data/todo/state"; fi
+        if [[ -f $bak/notes-path ]]; then cp -a "$bak/notes-path" "$data/notes/path"; else rm -f "$data/notes/path"; fi
+        if [[ -f $bak/system-tab ]]; then cp -a "$bak/system-tab" "$data/system/tab"; else rm -f "$data/system/tab"; fi
+        if [[ -f $bak/expanded ]]; then cp -a "$bak/expanded" "$data/configs/expanded"; else rm -f "$data/configs/expanded"; fi
+        if [[ -f $bak/xbel ]]; then cp -a "$bak/xbel" "$HOME/.local/share/recently-used.xbel"; else rm -f "$HOME/.local/share/recently-used.xbel"; fi
+        noctalia msg plugins disable mabox/notes >/dev/null 2>&1 && noctalia msg plugins enable mabox/notes >/dev/null 2>&1 || true
+        rm -rf "$bak"
+    fi
+}
+trap restore EXIT
+trap 'restore; exit 130' INT TERM
+
+if ((swap)); then
+    mkdir -p "$bak" "$data/todo" "$data/notes" "$data/configs" "$data/system"
+    [[ -d $HOME/.todo ]] && cp -a "$HOME/.todo" "$bak/todo"
+    cp -a "$data/todo/state" "$bak/todo-state" 2>/dev/null || true
+    [[ -f $data/notes/path ]] && cp -a "$data/notes/path" "$bak/notes-path"
+    [[ -f $data/configs/expanded ]] && cp -a "$data/configs/expanded" "$bak/expanded"
+    [[ -f $data/system/tab ]] && cp -a "$data/system/tab" "$bak/system-tab"
+    [[ -f $HOME/.local/share/recently-used.xbel ]] && cp -a "$HOME/.local/share/recently-used.xbel" "$bak/xbel"
+
+    rm -rf "$HOME/.todo"; mkdir -p "$HOME/.todo"
+    awk -v d0="$(date +%F)" '{
+        while (match($0, /\{\+[0-9]+\}/)) {
+            n = substr($0, RSTART + 2, RLENGTH - 3)
+            cmd = "date -d \"" d0 " + " n " days\" +%F"; cmd | getline day; close(cmd)
+            $0 = substr($0, 1, RSTART - 1) day substr($0, RSTART + RLENGTH)
+        }
+        print }' "$fix/todo/First_list.txt" > "$HOME/.todo/First_list.txt"
+    printf 'list=First_list\nhide_done=1\nsort=date\ngroups=\ndesc=0\nadd_open=1\n' > "$data/todo/state"
+    printf '%s\n' "$fix/notes" > "$data/notes/path"
+    printf 'Power\nLockscreen\nLogo\n' > "$data/configs/expanded"
+    sed "s#@REPO@#$repo#g" "$fix/recently-used.xbel" > "$HOME/.local/share/recently-used.xbel"
+    noctalia msg plugins disable mabox/notes >/dev/null 2>&1 && noctalia msg plugins enable mabox/notes >/dev/null 2>&1 || true
+fi
+
+if ((rec)); then
+    for i in 5 4 3 2 1; do notify-send -t 900 -a Tour "Recording starts in $i" "Move the mouse off the screen"; sleep 1; done
+    marker=$bak.start; touch "$marker"
+    screenrec-toggle -o "$output" -f 30 -c mp4 >/dev/null 2>&1 &
+    rec_pid=$!
+    sleep 2
+fi
+
+while IFS='|' read -r secs scene title hint action; do
+    [[ -z $only || $scene == "$only" ]] || continue
+    notify-send -t 4000 -a Tour "$title" "$hint"
+    eval "$action" >/dev/null 2>&1 || echo "mb-tour: failed: $action" >&2
+    sleep "$(awk -v s="$secs" -v k="$speed" 'BEGIN { print s * k }')"
+done < <(timeline)
+
+if ((rec)); then
+    screenrec-toggle >/dev/null 2>&1 || true
+    wait "$rec_pid" 2>/dev/null || true
+    rec_pid=
+    last=$(find "$HOME/Videos/Recordings" -name "*.mp4" -newer "$marker" | head -n1)
+    rm -f "$marker"
+    [[ -n $last ]] || { echo "mb-tour: no recording found in ~/Videos/Recordings" >&2; exit 1; }
+    mv "$last" "$out"
+    echo "mb-tour: $out"
+fi

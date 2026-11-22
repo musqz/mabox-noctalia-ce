@@ -4,7 +4,7 @@
 local scale, checked = 1.0, 0
 
 local function uiScale()
-  if os.time() - checked < 5 then
+  if os.time() - checked < 1 then
     return scale
   end
   checked = os.time()
