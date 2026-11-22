@@ -60,22 +60,51 @@ def card(output, zone, cmds, monitor):
         win.set_visual(visual)
     win.set_app_paintable(True)
     win.connect("draw", draw_bg)
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=14)
-    box.set_size_request(320, -1)
-    head = Gtk.Label()
-    head.set_markup(f"<big><b>{label}</b></big>  {GLib.markup_escape_text(output)}")
-    head.set_halign(Gtk.Align.START)
-    box.pack_start(head, False, False, 0)
-    for key, name in EVENTS:
-        if cmds.get(key, "").strip():
+    # One line per command; wrap past a third of the monitor width and drop the font a step
+    # when three stacked cards would not fit the monitor height.
+    geom = monitor.get_geometry()
+    max_px = max(360, (geom.width - 80) // 3 - 40)
+    max_h = (geom.height - 80) // 3
+    probe = Gtk.Label()
+    shown = [(name, cmds[key]) for key, name in EVENTS if cmds.get(key, "").strip()]
+    for size, head_size in (("large", "x-large"), ("medium", "large"), ("small", "medium")):
+        def text_width(cmd):
+            layout = probe.create_pango_layout("")
+            layout.set_markup(f"<span size='{size}'>{GLib.markup_escape_text(cmd)}</span>")
+            return layout.get_pixel_size()[0]
+        text_px = min(max_px, max(320, max(text_width(c) for _, c in shown) + 16))
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, margin=20)
+        head = Gtk.Label()
+        head.set_markup(f"<span size='{head_size}'><b>{label}</b></span>  "
+                        f"<span size='{size}'>{GLib.markup_escape_text(output)}</span>")
+        head.set_halign(Gtk.Align.START)
+        head.set_size_request(text_px, -1)
+        head.set_line_wrap(True)
+        box.pack_start(head, False, False, 0)
+        rows = []
+        for name, cmd in shown:
             row = Gtk.Label()
-            row.set_markup(f"<b>{GLib.markup_escape_text(name)}</b>\n{GLib.markup_escape_text(cmds[key])}")
+            row.set_markup(f"<span size='{size}'><b>{GLib.markup_escape_text(name)}</b>\n"
+                           f"{GLib.markup_escape_text(cmd)}</span>")
             row.set_halign(Gtk.Align.START)
             row.set_xalign(0)
             row.set_line_wrap(True)
-            row.set_line_wrap_mode(Pango.WrapMode.CHAR)
-            row.set_max_width_chars(38)
+            row.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            row.set_size_request(text_px, -1)
             box.pack_start(row, False, False, 0)
+            rows.append(row)
+        box.show_all()
+        if box.get_preferred_height_for_width(text_px + 40)[1] <= max_h:
+            break
+    else:
+        # Still too tall at the smallest font: cut each row to 4 lines, then 3 (the name takes one).
+        for lines in (4, 3):
+            for row in rows:
+                row.set_ellipsize(Pango.EllipsizeMode.END)
+                row.set_lines(lines)
+            if box.get_preferred_height_for_width(text_px + 40)[1] <= max_h:
+                break
+    win.set_default_size(text_px + 40, -1)
     win.add(box)
     win.show_all()
     win.input_shape_combine_region(cairo.Region())
