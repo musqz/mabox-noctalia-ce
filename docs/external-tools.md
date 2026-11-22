@@ -31,6 +31,8 @@ Change the commands in `~/.config/labwc/rc.xml`, then run `labwc --reconfigure`.
 
 Overview of all windows, like Alt-Tab with pictures. Started by the autostart line (systemd user service `skippy-wl.service`).
 
+<p align="center"><a href="img/skippy-wl.png"><img src="img/thumb/skippy-wl.png" alt="The skippy-wl overview with the filter field and five windows"></a></p>
+
 | Key | Action |
 |---|---|
 | `W-Tab` | open and step to the next window; release `W` to pick |
