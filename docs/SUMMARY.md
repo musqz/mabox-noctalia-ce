@@ -11,6 +11,7 @@
 - [Post-its](postits.md)
 - [Tools](tools.md)
 - [Custom plugins](custom-plugins.md)
+- [External tools](external-tools.md)
 
 # Reference
 

@@ -10,6 +10,7 @@ Mabox Noctalia CE is a labwc session for Mabox Linux with the Noctalia shell: a 
 - [Music](music.md): the music panel and playlists.
 - [Tools](tools.md): panels, desktop widgets and scripts.
 - [Custom plugins](custom-plugins.md): plugins from users, starting with Ripper.
+- [External tools](external-tools.md): jumpapp-ng, skippy-wl, fittsmon-wl and tabdock.
 - [Overview](overview.md): files, paths, plugins and services.
 - [Snapshot ISO](snapshot.md): build an ISO of your system, then USB or VM.
 
