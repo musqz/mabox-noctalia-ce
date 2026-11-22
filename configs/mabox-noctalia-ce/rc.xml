@@ -34,6 +34,22 @@
     <region name="t" x="0%" y="0%" width="100%" height="50%"/>
     <region name="b" x="0%" y="50%" width="100%" height="50%"/>
     <region name="c" x="0%" y="0%" width="100%" height="100%"/>
+    <region name="tl3" x="0%" y="0%" width="33.333%" height="50%"/>
+    <region name="tl23" x="0%" y="0%" width="66.667%" height="50%"/>
+    <region name="tr3" x="66.667%" y="0%" width="33.333%" height="50%"/>
+    <region name="tr23" x="33.333%" y="0%" width="66.667%" height="50%"/>
+    <region name="bl3" x="0%" y="50%" width="33.333%" height="50%"/>
+    <region name="bl23" x="0%" y="50%" width="66.667%" height="50%"/>
+    <region name="br3" x="66.667%" y="50%" width="33.333%" height="50%"/>
+    <region name="br23" x="33.333%" y="50%" width="66.667%" height="50%"/>
+    <region name="t3" x="33.333%" y="0%" width="33.333%" height="50%"/>
+    <region name="b3" x="33.333%" y="50%" width="33.333%" height="50%"/>
+    <region name="r3" x="66.667%" y="0%" width="33.333%" height="100%"/>
+    <region name="r23" x="33.333%" y="0%" width="66.667%" height="100%"/>
+    <region name="l3" x="0%" y="0%" width="33.333%" height="100%"/>
+    <region name="l23" x="0%" y="0%" width="66.667%" height="100%"/>
+    <region name="c3" x="33.333%" y="0%" width="33.333%" height="100%"/>
+    <region name="c8" x="10%" y="10%" width="80%" height="80%"/>
   </regions>
 
   <keyboard>
@@ -227,15 +243,15 @@
     <keybind key="W-A-7"><action name="Maximize"/></keybind>
     <keybind key="W-A-8"><action name="MoveToOutput" direction="right" wrap="yes"/></keybind>
 
-    <keybind key="W-KP_7"><action name="ToggleSnapToRegion" region="tl"/></keybind>
-    <keybind key="W-KP_8"><action name="ToggleSnapToRegion" region="t"/></keybind>
-    <keybind key="W-KP_9"><action name="ToggleSnapToRegion" region="tr"/></keybind>
-    <keybind key="W-KP_4"><action name="ToggleSnapToRegion" region="l"/></keybind>
-    <keybind key="W-KP_5"><action name="ToggleSnapToRegion" region="c"/></keybind>
-    <keybind key="W-KP_6"><action name="ToggleSnapToRegion" region="r"/></keybind>
-    <keybind key="W-KP_1"><action name="ToggleSnapToRegion" region="bl"/></keybind>
-    <keybind key="W-KP_2"><action name="ToggleSnapToRegion" region="b"/></keybind>
-    <keybind key="W-KP_3"><action name="ToggleSnapToRegion" region="br"/></keybind>
+    <keybind key="W-KP_7"><action name="If"><query tiled_region="tl"/><then><action name="SnapToRegion" region="tl3"/></then><else><action name="If"><query tiled_region="tl3"/><then><action name="SnapToRegion" region="tl23"/></then><else><action name="If"><query tiled_region="tl23"/><then><action name="SnapToRegion" region="tl"/></then><else><action name="SnapToRegion" region="tl"/></else></action></else></action></else></action></keybind>
+    <keybind key="W-KP_8"><action name="If"><query tiled_region="t"/><then><action name="SnapToRegion" region="t3"/></then><else><action name="If"><query tiled_region="t3"/><then><action name="SnapToRegion" region="t"/></then><else><action name="SnapToRegion" region="t"/></else></action></else></action></keybind>
+    <keybind key="W-KP_9"><action name="If"><query tiled_region="tr"/><then><action name="SnapToRegion" region="tr3"/></then><else><action name="If"><query tiled_region="tr3"/><then><action name="SnapToRegion" region="tr23"/></then><else><action name="If"><query tiled_region="tr23"/><then><action name="SnapToRegion" region="tr"/></then><else><action name="SnapToRegion" region="tr"/></else></action></else></action></else></action></keybind>
+    <keybind key="W-KP_4"><action name="If"><query tiled_region="l"/><then><action name="SnapToRegion" region="l3"/></then><else><action name="If"><query tiled_region="l3"/><then><action name="SnapToRegion" region="l23"/></then><else><action name="If"><query tiled_region="l23"/><then><action name="SnapToRegion" region="l"/></then><else><action name="SnapToRegion" region="l"/></else></action></else></action></else></action></keybind>
+    <keybind key="W-KP_5"><action name="If"><query tiled_region="c"/><then><action name="SnapToRegion" region="c3"/></then><else><action name="If"><query tiled_region="c3"/><then><action name="SnapToRegion" region="c8"/></then><else><action name="If"><query tiled_region="c8"/><then><action name="SnapToRegion" region="c"/></then><else><action name="SnapToRegion" region="c"/></else></action></else></action></else></action></keybind>
+    <keybind key="W-KP_6"><action name="If"><query tiled_region="r"/><then><action name="SnapToRegion" region="r3"/></then><else><action name="If"><query tiled_region="r3"/><then><action name="SnapToRegion" region="r23"/></then><else><action name="If"><query tiled_region="r23"/><then><action name="SnapToRegion" region="r"/></then><else><action name="SnapToRegion" region="r"/></else></action></else></action></else></action></keybind>
+    <keybind key="W-KP_1"><action name="If"><query tiled_region="bl"/><then><action name="SnapToRegion" region="bl3"/></then><else><action name="If"><query tiled_region="bl3"/><then><action name="SnapToRegion" region="bl23"/></then><else><action name="If"><query tiled_region="bl23"/><then><action name="SnapToRegion" region="bl"/></then><else><action name="SnapToRegion" region="bl"/></else></action></else></action></else></action></keybind>
+    <keybind key="W-KP_2"><action name="If"><query tiled_region="b"/><then><action name="SnapToRegion" region="b3"/></then><else><action name="If"><query tiled_region="b3"/><then><action name="SnapToRegion" region="b"/></then><else><action name="SnapToRegion" region="b"/></else></action></else></action></keybind>
+    <keybind key="W-KP_3"><action name="If"><query tiled_region="br"/><then><action name="SnapToRegion" region="br3"/></then><else><action name="If"><query tiled_region="br3"/><then><action name="SnapToRegion" region="br23"/></then><else><action name="If"><query tiled_region="br23"/><then><action name="SnapToRegion" region="br"/></then><else><action name="SnapToRegion" region="br"/></else></action></else></action></else></action></keybind>
 
     <keybind key="W-S-1"><action name="SendToDesktop" to="left" follow="yes" wrap="yes"/></keybind>
     <keybind key="W-S-2"><action name="SendToDesktop" to="right" follow="yes" wrap="yes"/></keybind>
