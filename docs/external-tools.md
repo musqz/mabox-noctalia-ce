@@ -64,11 +64,15 @@ Turn the screen edges and corners into buttons: a click, scroll or pointer enter
 
 Edit the zones with the GUI: run `fittsmon-wl-gui`, pick a monitor and a zone, set a command per event. The file is `~/.config/fittsmon-wl/fittsmon-wlrc` (one section per zone, `[Output-Zone]` overrides per monitor).
 
+<p align="center"><a href="img/fittsmon-gui.png"><img src="img/thumb/fittsmon-gui.png" alt="fittsmon-wl-gui with the TopC zone and the WheelUp event"></a></p>
+
 `W-A-k` shows what every zone does, as a card on each monitor. Press again or wait 20 s to close it.
 
 ## tabdock
 
 A side panel that lists the tabs and containers of Firefox-based browsers. It hides to a thin strip; move the pointer to the strip to open it. Needs the signed extension in each browser.
+
+<p align="center"><a href="img/tabdock.png"><img src="img/thumb/tabdock.png" alt="The tabdock panel with the find window"></a></p>
 
 1. Install the extension: `/usr/share/tabdock/tabdock.xpi`, then in the browser `about:addons` → gear → *Install Add-on From File…*.
 2. Start the panel: add `(sleep 5 && tabdock) &` to `~/.config/mabox-noctalia-ce/autostart.local`.
