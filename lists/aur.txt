@@ -1,3 +1,2 @@
-jumpapp-ng
 wl-screenrec
 labwc-menu-generator-git
