@@ -123,7 +123,7 @@ Pinned windows are the layers `pinned-left` and `pinned-right`, shown and hidden
 | List | Contents |
 |---|---|
 | `lists/pacman.txt` | repo packages (`labwc`, `noctalia`, `kanshi`, …) |
-| `lists/aur.txt` | AUR packages (`jumpapp-ng`, `wl-screenrec`, `labwc-menu-generator-git`) |
+| `lists/aur.txt` | AUR packages (`wl-screenrec`, `labwc-menu-generator-git`) |
 | `lists/github.txt` | built from source with `makepkg`; all entries disabled |
 | `packaging/PKGBUILD` | `depends` and `optdepends` of `mabox-noctalia-ce` itself |
 

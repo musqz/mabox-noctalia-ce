@@ -1,10 +1,10 @@
 # External tools
 
-Five small programs by the same author run next to the CE panels. Most are available in the Mabox repo; jumpapp-ng is in the AUR. More information is in each git.
+Five small programs by the same author run next to the CE panels. All five are available in the Mabox repo. More information is in each git.
 
 | Tool | What it does | Key | Package | Git |
 |---|---|---|---|---|
-| jumpapp-ng | run or raise an application | `F1`, `F2`, `C-KP_1` … `C-KP_6`, `W-r` | AUR | <https://github.com/musqz/jumpapp> |
+| jumpapp-ng | run or raise an application | `F1`, `F2`, `C-KP_1` … `C-KP_6`, `W-r` | Mabox repo | <https://github.com/musqz/jumpapp> |
 | skippy-wl | window overview and switcher | `W-Tab`, `W-S-Tab` | Mabox repo | <https://github.com/musqz/skippy-wl> |
 | fittsmon-wl | commands on screen edges and corners | `W-A-k` shows them | Mabox repo | <https://github.com/musqz/fittsmon> |
 | fittsmon-wl-gui | editor for the fittsmon-wl zones | | Mabox repo | <https://github.com/musqz/fittsmon-wl-gui> |
