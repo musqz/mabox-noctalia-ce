@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
 
 ## 0.8.0
 - Add a source dropdown to the Music panel on the Add to playlist row: the player buttons go to the player you pick, Active player follows Noctalia again.
