@@ -62,6 +62,7 @@ Windows:
 | `W-A-1` … `W-A-6` | snap to an edge or corner |
 | `W-A-7` | maximize |
 | `W-KP_1` … `W-KP_9` | snap to a 3x3 area (keypad layout); press again to step through the sizes |
+| drag to an edge | release at a screen edge: half of the screen, the top edge maximizes; at a corner: a quarter |
 | `W-drag` | move a window; keep W held on release to snap to the quarter under the pointer |
 | `W-1`, `W-2` | previous, next workspace |
 | `W-S-1`, `W-S-2` | send window to previous, next workspace |
@@ -70,7 +71,7 @@ Windows:
 
 <p align="center"><img src="img/snap-keys.png" alt="The nine W-KP snap keys and their sizes" width="420"></p>
 
-<p align="center"><img src="img/snap-drag.png" alt="W + drag snaps a window to the quarter under the pointer" width="420"></p>
+<p align="center"><img src="img/snap-drag.png" alt="Drag to a screen edge or corner, or hold W and drop on a quarter" width="420"></p>
 
 Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; not in the pinned windows). Click the panel once first.
 
