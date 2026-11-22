@@ -70,6 +70,8 @@ Windows:
 
 <p align="center"><img src="img/snap-keys.png" alt="The nine W-KP snap keys and their sizes" width="420"></p>
 
+<p align="center"><img src="img/snap-drag.png" alt="W + drag snaps a window to the quarter under the pointer" width="420"></p>
+
 Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; not in the pinned windows). Click the panel once first.
 
 | Key | Action |
