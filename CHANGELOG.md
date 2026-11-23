@@ -6,6 +6,7 @@
 - Start pcmanfm through XWayland on `C-KP_3`, so its context menus stay on screen. Existing installs keep the old key until you copy the bind from the default `rc.xml`.
 - Add folder, drive and hidden toggles to the Places search, so dot-folders such as `~/.icons` can be found.
 - Give each open folder level in Places its own theme colour and a dark head row.
+- Reorder the Places Quick list with arrows (sort button on the Quick card).
 
 ## 0.8.0
 - Add a source dropdown to the Music panel on the Add to playlist row: the player buttons go to the player you pick, Active player follows Noctalia again.
