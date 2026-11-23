@@ -220,7 +220,7 @@
     <!-- jumpapp -->
     <keybind key="C-KP_1"><action name="Execute" command="jumpapp -m /usr/bin/waterfox" /></keybind>
     <keybind key="C-KP_2"><action name="Execute" command="jumpapp -m /usr/bin/geany" /></keybind>
-    <keybind key="C-KP_3"><action name="Execute" command="jumpapp -m /usr/bin/pcmanfm" /></keybind>
+    <keybind key="C-KP_3"><action name="Execute" command="jumpapp -m -c Pcmanfm -i pcmanfm env GDK_BACKEND=x11 pcmanfm" /></keybind>
     <keybind key="C-KP_4"><action name="Execute" command="jumpapp -m /usr/bin/terminator" /></keybind>
     <keybind key="C-KP_5"><action name="Execute" command="jumpapp -m /usr/bin/flatpak run com.stremio.Stremio" /></keybind>
     <keybind key="C-KP_6"><action name="Execute" command="jumpapp -m /usr/bin/firefox" /></keybind>

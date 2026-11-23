@@ -18,7 +18,7 @@ Examples from `rc.xml`:
 
 ```xml
 <keybind key="F1"><action name="Execute" command="jumpapp -m firefox"/></keybind>
-<keybind key="C-KP_3"><action name="Execute" command="jumpapp -m /usr/bin/pcmanfm"/></keybind>
+<keybind key="C-KP_6"><action name="Execute" command="jumpapp -m /usr/bin/firefox"/></keybind>
 ```
 
 - `-m` minimizes the window when it is the only one and already in focus.
