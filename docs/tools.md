@@ -40,10 +40,6 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 <td><a href="img/places.png"><img src="img/thumb/places.png" alt="Places panel"></a><br>Places</td>
 <td><a href="img/colors-pinned.png"><img src="img/thumb/colors-pinned.png" alt="Colors panel as a pinned window"></a><br>Colors, pinned</td>
 </tr>
-<tr>
-<td><a href="img/wallpaper-folders-favorites.png"><img src="img/thumb/wallpaper-folders-favorites.png" alt="Wallpaper folders panel, favorites"></a><br>Wallpaper folders, favorites</td>
-<td><a href="img/wallpaper-folders-slideshow.png"><img src="img/thumb/wallpaper-folders-slideshow.png" alt="Wallpaper folders panel, transition and slideshow"></a><br>Wallpaper folders, slideshow</td>
-</tr>
 </table>
 
 ## Desktop widgets
