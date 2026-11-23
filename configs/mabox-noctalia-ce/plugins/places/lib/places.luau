@@ -54,6 +54,7 @@ local order = { table.unpack(ORDER) }
 local hidden = {}
 local folded = {}
 local editing = false
+local qSort = false -- Quick list: arrows to reorder
 
 local function unescape(s)
   s = string.gsub(s, "%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
@@ -565,7 +566,7 @@ local function tint(depth)
   return TINTS[depth % #TINTS + 1]
 end
 
-local function dirRow(path, name, glyph, depth, tag, fill)
+local function dirRow(path, name, glyph, depth, tag, fill, extra)
   local open = expanded[path]
   local row = {}
   if depth > 0 then
@@ -592,6 +593,9 @@ local function dirRow(path, name, glyph, depth, tag, fill)
       render()
     end }))
     table.insert(row, ui.button({ key = "tt" .. tag .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
+  end
+  if extra then
+    table.insert(row, extra)
   end
   table.insert(row, starButton("d", path, tag))
   -- An open folder's own row is dark, so it reads as the head of its frame.
@@ -769,6 +773,32 @@ local function driveCard()
   return card("drives", rows)
 end
 
+-- Only while the sort button is on: two small arrows move an entry one place in the list (stored order of the list file).
+local function moveQuick(path, d)
+  reloadQuick()
+  for i, q in ipairs(quick) do
+    if q.path == path then
+      local j = i + d
+      if quick[j] then
+        quick[i], quick[j] = quick[j], quick[i]
+        saveQuick()
+      end
+      break
+    end
+  end
+  render()
+end
+
+local function quickArrows(i, path)
+  if not qSort then
+    return nil
+  end
+  return ui.row({ key = "qmv" .. path, gap = 0, align = "center" }, {
+    ui.button({ key = "qup" .. path, glyph = "arrow-up", variant = "ghost", controlSize = "sm", enabled = i > 1, onClick = function() moveQuick(path, -1) end }),
+    ui.button({ key = "qdn" .. path, glyph = "arrow-down", variant = "ghost", controlSize = "sm", enabled = i < #quick, onClick = function() moveQuick(path, 1) end }),
+  })
+end
+
 local function quickCard()
   loadQProfiles()
   local rows = {}
@@ -803,7 +833,7 @@ local function quickCard()
     local name = string.match(q.path, "([^/]+)/*$") or q.path
     local tag = "q"
     if q.kind == "d" then
-      local head = dirRow(q.path, name, "folder", 0, tag)
+      local head = dirRow(q.path, name, "folder", 0, tag, nil, quickArrows(i, q.path))
       if expanded[q.path] then
         local group = { head }
         if newIn == q.path and newTag == tag then
@@ -815,19 +845,22 @@ local function quickCard()
         table.insert(items, head)
       end
     else
-      table.insert(items, ui.row({ key = "f" .. tag .. q.path, gap = 2, align = "center" }, {
-        ui.button({
-          glyph = "file",
-          text = name,
-          variant = "ghost",
-          contentAlign = "start",
-          flexGrow = 1,
-          tooltip = q.path .. "\nClick: open, right click: open the folder",
-          onClick = function() openFile({ path = q.path }) end,
-          onRightClick = function() openFileDir(q.path) end,
-        }),
-        starButton("f", q.path, tag),
-      }))
+      local frow = { ui.button({
+        glyph = "file",
+        text = name,
+        variant = "ghost",
+        contentAlign = "start",
+        flexGrow = 1,
+        tooltip = q.path .. "\nClick: open, right click: open the folder",
+        onClick = function() openFile({ path = q.path }) end,
+        onRightClick = function() openFileDir(q.path) end,
+      }) }
+      local arrows = quickArrows(i, q.path)
+      if arrows then
+        table.insert(frow, arrows)
+      end
+      table.insert(frow, starButton("f", q.path, tag))
+      table.insert(items, ui.row({ key = "f" .. tag .. q.path, gap = 2, align = "center" }, frow))
     end
   end
   if #quick == 0 and qActive then
@@ -840,6 +873,7 @@ local function quickCard()
     ui.input({ key = "qn" .. qNonce, value = qName, placeholder = "new project name", controlSize = "sm", frameVisible = true, flexGrow = 1,
       onChange = function(t) qName = t end, onSubmit = saveQProfile }),
     ui.button({ key = "qsave", glyph = "device-floppy", text = "New", variant = "outline", controlSize = "sm", onClick = saveQProfile }),
+    ui.button({ key = "qsort", glyph = "arrows-sort", variant = qSort and "primary" or "ghost", controlSize = "sm", enabled = #quick > 1 or qSort, tooltip = "Reorder the list", onClick = function() qSort = not qSort; render() end }),
     ui.button({ key = "qclear", glyph = "x", variant = "ghost", controlSize = "sm", enabled = #quick > 0, onClick = function() reloadQuick(); quick = {}; saveQuick(); render() end }),
   }))
   -- Folded, only the active project stays in view: its button and its list.
@@ -1288,6 +1322,7 @@ end
 local function open()
   newIn = nil
   editing = false
+  qSort = false
   treeQuery, treeIdx, hitKey, hitPath, indexReady, forceOpen, autoOpened = "", 1, nil, nil, false, {}, {}
   hitList, hitCount, hitMore = {}, 0, 0
   expanded = {}
