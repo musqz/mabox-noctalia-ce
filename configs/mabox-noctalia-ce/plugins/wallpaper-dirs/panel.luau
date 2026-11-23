@@ -402,7 +402,7 @@ function render()
         showPreview(p)
       end
     end }, {
-      ui.label({ text = label, flexGrow = 1, maxLines = 1, color = p == current and "primary" or "on_surface" }),
+      ui.button({ key = "pn" .. i .. (p == current and "c" or ""), text = label, variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = function() pick(p) end }),
       ui.button({ key = "p" .. i .. (p == current and "c" or ""), glyph = p == current and "circle-check" or "circle", variant = p == current and "primary" or "ghost", controlSize = "sm", selected = kbd.sel("p" .. i), tooltip = "Select as wallpaper folder", onClick = function() pick(p) end }),
       ui.button({ key = "d" .. i, glyph = "trash", selected = kbd.sel("d" .. i), text = armed == i and "Click again" or nil, variant = armed == i and "destructive" or "ghost", controlSize = "sm", tooltip = "Remove from list", onClick = function() remove(i) end }),
     }))
