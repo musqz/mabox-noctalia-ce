@@ -34,13 +34,8 @@ local treeIdx = 1
 local hitKey = nil
 local hitPath = nil
 local forceOpen = {}
-local driveMode = 0
--- Search scope, index 1-3: folders only, folders and drives, drives only.
-local DRIVE_MODES = {
-  { glyph = "folder", text = "Folders", tooltip = "Searching your folders only (click: add the mounted drives)" },
-  { glyph = "database", text = "Folders + drives", tooltip = "Searching your folders and the mounted drives (click: drives only)" },
-  { glyph = "server", text = "Drives", tooltip = "Searching the mounted drives only (click: folders only)" },
-}
+-- Search scope toggles: places and bookmarks, mounted drives (one of the two stays on), hidden folders.
+local sFolders, sDrives, sHidden = true, false, false
 local autoOpened = {}
 local hitCount = 0
 local indexReady = false
@@ -485,11 +480,12 @@ end
 
 -- Folder contents come from python: a script callback only gets 25 ms of CPU.
 local LIST = [[import os, sys
+hid = sys.argv[2] == "1"
 out = []
 try:
     with os.scandir(sys.argv[1]) as it:
         for e in it:
-            if not e.name.startswith(".") and "\n" not in e.name:
+            if (hid or not e.name.startswith(".")) and "\n" not in e.name:
                 out.append((0 if e.is_dir() else 1, e.name.lower(), e.name))
 except OSError:
     pass
@@ -497,7 +493,11 @@ for kind, _, name in sorted(out)[:300]:
     print("df"[kind] + name)]]
 
 listDir = function(path)
-  noctalia.runAsync({ "python3", "-I", "-c", LIST, path }, function(r)
+  local hid = sHidden
+  noctalia.runAsync({ "python3", "-I", "-c", LIST, path, hid and "1" or "0" }, function(r)
+    if hid ~= sHidden then
+      return
+    end
     local items = {}
     for l in string.gmatch(r.stdout or "", "[^\n]+") do
       table.insert(items, { dir = string.sub(l, 1, 1) == "d", name = string.sub(l, 2) })
@@ -559,6 +559,12 @@ local function newFolderRow(path, depth, tag)
   })
 end
 
+-- Each open folder level gets its own palette role, so nested frames stay apart and still follow the theme.
+local TINTS = { "primary", "secondary", "tertiary" }
+local function tint(depth)
+  return TINTS[depth % #TINTS + 1]
+end
+
 local function dirRow(path, name, glyph, depth, tag, fill)
   local open = expanded[path]
   local row = {}
@@ -588,6 +594,8 @@ local function dirRow(path, name, glyph, depth, tag, fill)
     table.insert(row, ui.button({ key = "tt" .. tag .. path, glyph = "terminal-2", variant = "ghost", controlSize = "sm", tooltip = "Open in terminal", onClick = function() openTerminal(path) end }))
   end
   table.insert(row, starButton("d", path, tag))
+  -- An open folder's own row is dark, so it reads as the head of its frame.
+  fill = open and "surface" or fill
   return ui.row({ key = "r" .. tag .. path, gap = 2, align = "center", fill = fill, radius = fill and 6 or nil }, row)
 end
 
@@ -603,7 +611,7 @@ local function childRows(path, depth, out, tag)
   -- Every second row of a folder's content gets a slightly darker background. Both fills are explicit: a retained widget
   -- would keep an old one when the rows move after a fold.
   local function stripe(i)
-    return i % 2 == 1 and "surface" or "surface_variant"
+    return tint(depth - 1) .. (i % 2 == 1 and "/0.06" or "/0.16")
   end
   for i, it in ipairs(items) do
     local full = (path == "/" and "" or path) .. "/" .. it.name
@@ -615,7 +623,7 @@ local function childRows(path, depth, out, tag)
           table.insert(group, newFolderRow(full, depth + 1, tag))
         end
         childRows(full, depth + 1, group, tag)
-        table.insert(out, ui.column({ key = "frame" .. tag .. full, gap = 2, padding = 4, radius = 8, border = "outline_variant", borderWidth = 1 }, group))
+        table.insert(out, ui.column({ key = "frame" .. tag .. full, gap = 2, padding = 4, radius = 8, fill = tint(depth) .. "/0.10", border = tint(depth) .. "/0.7", borderWidth = 1 }, group))
       else
         table.insert(out, dirRow(full, it.name, "folder", depth, tag, stripe(i)))
       end
@@ -655,7 +663,7 @@ local function card(key, children, extra, whenClosed)
   if extra and not closed then
     table.insert(top, extra)
   end
-  local rows = { ui.row({ gap = 4, align = "center" }, top) }
+  local rows = { ui.row({ gap = 4, align = "center", fill = closed and "surface_variant" or "surface", radius = 8 }, top) }
   if not closed then
     for _, c in ipairs(children) do
       table.insert(rows, c)
@@ -682,7 +690,7 @@ local function placeRows()
           table.insert(group, newFolderRow(p.path, 1, tag))
         end
         childRows(p.path, 1, group, tag)
-        table.insert(list, ui.column({ key = "frame" .. tag .. p.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
+        table.insert(list, ui.column({ key = "frame" .. tag .. p.path, gap = 2, padding = 4, radius = 8, fill = tint(0) .. "/0.10", border = tint(0) .. "/0.7", borderWidth = 1 }, group))
       else
         table.insert(list, head)
       end
@@ -802,7 +810,7 @@ local function quickCard()
           table.insert(group, newFolderRow(q.path, 1, tag))
         end
         childRows(q.path, 1, group, tag)
-        table.insert(items, ui.column({ key = "frame" .. tag .. q.path, gap = 2, padding = 4, radius = 8, border = "primary", borderWidth = 1 }, group))
+        table.insert(items, ui.column({ key = "frame" .. tag .. q.path, gap = 2, padding = 4, radius = 8, fill = tint(0) .. "/0.10", border = tint(0) .. "/0.7", borderWidth = 1 }, group))
       else
         table.insert(items, head)
       end
@@ -879,14 +887,16 @@ local function recentCard()
   return card("recent", rows, ui.row({ gap = 4, align = "center" }, sizes))
 end
 
--- Tree search: every folder below the places is indexed once (python, breadth first, hidden folders left out);
--- a match opens the folders above it and scrolls to its row.
+-- Tree search: every folder below the places is indexed once (python, breadth first; hidden folders only when asked,
+-- minus the cache-like ones); a match opens the folders above it and scrolls to its row.
 local INDEX = [[import os, sys, time
 out = open(sys.argv[1], "w")
+hid = sys.argv[2] == "1"
+skip = {".cache", ".git", ".npm", ".cargo", ".rustup"}
 t0 = time.monotonic()
 seen = set()
 queue = []
-for r in sys.argv[2:]:
+for r in sys.argv[3:]:
     r = os.path.abspath(r)
     if r not in seen:
         seen.add(r)
@@ -903,10 +913,10 @@ while i < len(queue) and n < 60000 and time.monotonic() - t0 < 8:
     try:
         with os.scandir(path) as it:
             for e in it:
-                if e.name.startswith(".") or "\n" in e.name:
+                if (e.name.startswith(".") and not hid) or "\n" in e.name:
                     continue
                 c = path + "/" + e.name
-                if c not in seen and e.is_dir(follow_symlinks=False):
+                if c not in seen and e.name not in skip and e.is_dir(follow_symlinks=False):
                     seen.add(c)
                     queue.append((c, d + 1))
     except OSError:
@@ -943,13 +953,13 @@ local function loadIndex()
   local gen = indexGen
   indexing = true
   noctalia.mkdirAll(noctalia.pluginDataDir())
-  local args = { "python3", "-I", "-c", INDEX, indexPath() }
+  local args = { "python3", "-I", "-c", INDEX, indexPath(), sHidden and "1" or "0" }
   for _, p in ipairs(places) do
-    if p.path and p.ok and driveMode ~= 2 then
+    if sFolders and p.path and p.ok then
       table.insert(args, p.path)
     end
   end
-  if driveMode > 0 then
+  if sDrives then
     for _, d in ipairs(drives) do
       if d.mount ~= "" then
         table.insert(args, d.mount)
@@ -969,13 +979,13 @@ end
 -- First place row, in screen order, whose folder is the match or lies above it.
 local function rowFor(path)
   for _, id in ipairs(order) do
-    if id == "drives" and driveMode > 0 and not hidden[id] then
+    if id == "drives" and sDrives and not hidden[id] then
       for i, d in ipairs(drives) do
         if d.mount ~= "" and (path == d.mount or string.sub(path, 1, #d.mount + 1) == d.mount .. "/") then
           return { path = d.mount, key = "d" .. i }, "d", id
         end
       end
-    elseif (id == "places" or id == "bookmarks") and driveMode ~= 2 and not hidden[id] then
+    elseif (id == "places" or id == "bookmarks") and sFolders and not hidden[id] then
       for _, p in ipairs(places) do
         if (id == "places") == (p.std == true) and p.path and p.ok and (path == p.path or string.sub(path, 1, #p.path + 1) == p.path .. "/") then
           return p, p.std and "s" or "b", id
@@ -1047,8 +1057,50 @@ jump = function()
   end)
 end
 
+-- Toggle for one search scope; the callback flips it and answers false when it must stay on. A change re-reads the index.
+local function scopeButton(key, glyph, label, on, what, flip)
+  return ui.button({
+    key = key,
+    glyph = glyph,
+    text = pinned and label or nil,
+    variant = on and "primary" or "ghost",
+    controlSize = "sm",
+    tooltip = what .. (on and ": searched (click: leave out)" or ": left out (click: search them)"),
+    onClick = function()
+      if flip() then
+        indexReady = false
+        treeIdx = 1
+        jump()
+      end
+    end,
+  })
+end
+
 local function treeSearchRow()
-  return ui.row({ gap = 6, align = "center" }, {
+  local scope = ui.row({ gap = 2, align = "center" }, {
+    scopeButton("sfold", "folder", "Folders", sFolders, "Your places and bookmarks", function()
+      if sFolders and not sDrives then
+        return false
+      end
+      sFolders = not sFolders
+      return true
+    end),
+    scopeButton("sdrv", "server", "Drives", sDrives, "The mounted drives", function()
+      if sDrives and not sFolders then
+        return false
+      end
+      sDrives = not sDrives
+      return true
+    end),
+    scopeButton("shid", "eye", "Hidden", sHidden, "Hidden folders", function()
+      sHidden = not sHidden
+      for path in pairs(expanded) do
+        listDir(path)
+      end
+      return true
+    end),
+  })
+  local field = ui.row({ gap = 6, align = "center" }, {
     ui.input({
       key = "treeq" .. treeNonce,
       value = treeQuery,
@@ -1071,15 +1123,11 @@ local function treeSearchRow()
       treeNonce += 1
       jump()
     end }),
-    ui.button({ key = "tdrv", glyph = DRIVE_MODES[driveMode + 1].glyph, text = pinned and DRIVE_MODES[driveMode + 1].text or nil, variant = driveMode == 0 and "ghost" or "primary", controlSize = "sm", tooltip = DRIVE_MODES[driveMode + 1].tooltip, onClick = function()
-      driveMode = (driveMode + 1) % 3
-      indexReady = false
-      jump()
-    end }),
-    ui.row({ key = "tcount", tooltip = (treeQuery ~= "" and hitCount > 0) and ("Folder " .. (((treeIdx - 1) % hitCount) + 1) .. " of " .. hitCount .. " found. Enter: next one.") or (indexing and "Reading the folders..." or "Number of folders found. Enter: next one."), align = "center" }, {
+    ui.row({ key = "tcount", tooltip = (treeQuery ~= "" and hitCount > 0) and ("Folder " .. (((treeIdx - 1) % hitCount) + 1) .. " of " .. hitCount .. ". Enter: next one.") or (indexing and "Reading the folders..." or "Number of folders found. Enter: next one."), align = "center" }, {
       ui.label({ text = (treeQuery ~= "" and indexing) and "..." or (treeQuery ~= "" and hitCount > 0) and (((treeIdx - 1) % hitCount) + 1 .. (pinned and " of " or "/") .. hitCount) or (treeQuery ~= "" and "0" or ""), fontSize = 11, color = "on_surface_variant" }),
     }),
   })
+  return ui.column({ gap = 4 }, { scope, field })
 end
 
 -- Every folder the tree search found, under the search field: click one to jump to it in the tree, star it, copy its path.
@@ -1104,6 +1152,7 @@ local function pathLine()
         controlSize = "sm",
         contentAlign = "start",
         flexGrow = 1,
+        tooltip = path,
         onClick = function()
           treeIdx = i
           jump()
