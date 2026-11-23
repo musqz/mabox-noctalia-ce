@@ -7,6 +7,8 @@
 - Add folder, drive and hidden toggles to the Places search, so dot-folders such as `~/.icons` can be found.
 - Give each open folder level in Places its own theme colour and a dark head row.
 - Reorder the Places Quick list with arrows (sort button on the Quick card).
+- Add a Favorites card to the Wallpaper folders panel (same list as the stars in the Noctalia wallpaper panel) and let every card fold.
+- Highlight a Wallpaper folders row on hover.
 
 ## 0.8.0
 - Add a source dropdown to the Music panel on the Add to playlist row: the player buttons go to the player you pick, Active player follows Noctalia again.
