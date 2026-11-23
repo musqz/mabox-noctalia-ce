@@ -55,7 +55,9 @@ function M.currentSync()
   local inside = false
   for line in string.gmatch(noctalia.readFile(base .. "/noctalia/settings.toml") or "", "[^\n]+") do
     local h = string.match(line, "^%s*%[([^%]]+)%]%s*$")
-    if h then
+    if string.match(line, "^%s*%[%[") then
+      inside = false
+    elseif h then
       inside = h == "wallpaper"
     elseif inside then
       local v = string.match(line, '^directory%s*=%s*"(.-)"') or string.match(line, "^directory%s*=%s*'(.-)'")
@@ -72,6 +74,29 @@ function M.current(cb)
   noctalia.runAsync({ "noctalia", "msg", "config-get", "wallpaper.directory" }, function(r)
     cb(r.exitCode == 0 and string.match(r.stdout or "", "^%s*'(/.-)'%s*$") or "")
   end)
+end
+
+-- Interval in minutes read from the state file: like currentSync it cannot fail when many config-get calls run at once.
+function M.intervalSync()
+  local base = noctalia.getenv("XDG_STATE_HOME")
+  if not base or base == "" then
+    base = noctalia.getenv("HOME") .. "/.local/state"
+  end
+  local inside = false
+  for line in string.gmatch(noctalia.readFile(base .. "/noctalia/settings.toml") or "", "[^\n]+") do
+    local h = string.match(line, "^%s*%[([^%]]+)%]%s*$")
+    if string.match(line, "^%s*%[%[") then
+      inside = false
+    elseif h then
+      inside = h == "wallpaper.automation"
+    elseif inside then
+      local v = tonumber(string.match(line, "^%s*interval_seconds%s*=%s*(%d+)"))
+      if v then
+        return math.max(1, math.floor(v / 60 + 0.5))
+      end
+    end
+  end
+  return nil
 end
 
 -- Slideshow interval in minutes; the config stores seconds.
