@@ -149,7 +149,14 @@ Set one image from a folder:
 
 Saved folders: `W-A-w`, the bar photo button, the *Wallpaper folders* entry in the root menu Mabox Config or `/wp` in the launcher (`/wp list`, `/wp add`). *Add folder* opens a chooser; select a circle to switch. The current folder is listed automatically.
 
-<p align="center"><a href="img/wallpaper-folders.png"><img src="img/thumb/wallpaper-folders.png" alt="Wallpaper folders panel"></a></p>
+Favorites: *Add current* saves the wallpaper on screen with its theme, a click applies one, the trash button removes it. They are the same favorites as the stars in the Noctalia wallpaper panel. Each card folds with its header.
+
+<table align="center">
+<tr>
+<td><a href="img/wallpaper-folders-favorites.png"><img src="img/thumb/wallpaper-folders-favorites.png" alt="Wallpaper folders panel, favorites"></a></td>
+<td><a href="img/wallpaper-folders-slideshow.png"><img src="img/thumb/wallpaper-folders-slideshow.png" alt="Wallpaper folders panel, transition and slideshow"></a></td>
+</tr>
+</table>
 
 ## Power
 
