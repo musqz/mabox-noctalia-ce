@@ -10,7 +10,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | System panel:<br>_overview, hardware, logs, a report built from parts, public or private view, service status and safe restarts, quick fixes_ | `W-A-i` | [guide.md](guide.md#system-info) |
 | Keys panel:<br>_hotkey list with search, Basics and All; opens on All binds, with hotkey lists for installed applications; `/keys` in the launcher runs a bind_ | `W-k` | [keys.md](keys.md) |
 | Insert:<br>_`/hist` types a shell history line, `/es` an Espanso snippet into the previous window; panel to add and edit snippets_ | `W-A-h`, `W-A-e` | [keys.md](keys.md) |
-| Wallpaper folders:<br>_saved list, click to switch the wallpaper directory; `/wp` in the launcher, root menu_ | `W-A-w` | [guide.md](guide.md#wallpaper-directory) |
+| Wallpaper folders:<br>_saved list, click to switch the wallpaper directory; favorites: add the wallpaper on screen, click one to apply it; fold each card; `/wp` in the launcher, root menu_ | `W-A-w` | [guide.md](guide.md#wallpaper-directory) |
 | Notes panel:<br>_notes with colors_ | `W-n`, pinned window `C-W-n` | `~/.local/state/noctalia/plugins/data/mabox/notes/path`: one line, folder to sync (optional) |
 | Post-its:<br>_notes, a todo list and the agenda as small windows on the desktop_ | `W-A-y` | [postits.md](postits.md) |
 | Places panel:<br>_folders, bookmarks, drives, recent files, FSearch; show, hide and reorder the cards with the edit button; the second field finds a folder by name anywhere below your places, opens the folders above it and jumps to it (Enter: next match); the drive button next to the field adds the mounted drives to the search, and a mounted drive in the Drives card opens its folders with the arrow_ | `W-p`, pinned window `C-W-p` | bookmarks from `~/.config/gtk-3.0/bookmarks` |
@@ -39,6 +39,10 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 <tr>
 <td><a href="img/places.png"><img src="img/thumb/places.png" alt="Places panel"></a><br>Places</td>
 <td><a href="img/colors-pinned.png"><img src="img/thumb/colors-pinned.png" alt="Colors panel as a pinned window"></a><br>Colors, pinned</td>
+</tr>
+<tr>
+<td><a href="img/wallpaper-folders-favorites.png"><img src="img/thumb/wallpaper-folders-favorites.png" alt="Wallpaper folders panel, favorites"></a><br>Wallpaper folders, favorites</td>
+<td><a href="img/wallpaper-folders-slideshow.png"><img src="img/thumb/wallpaper-folders-slideshow.png" alt="Wallpaper folders panel, transition and slideshow"></a><br>Wallpaper folders, slideshow</td>
 </tr>
 </table>
 
