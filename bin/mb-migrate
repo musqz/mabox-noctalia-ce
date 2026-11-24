@@ -319,6 +319,19 @@ migrate_31() {
     fi
 }
 
+# Luciole follows the Noctalia colors through the template its package ships; add the block once, when Luciole is installed.
+migrate_32() {
+    local f=${files[0]}
+    [[ -f $f && -f /usr/share/luciole/templates/colors.toml ]] || return 0
+    grep -q '^\[theme\.templates\.user\.luciole\]' "$f" && return 0
+    cat >> "$f" <<'TOML'
+
+[theme.templates.user.luciole]
+input_path = "/usr/share/luciole/templates/colors.toml"
+output_path = "~/.config/luciole/colors.toml"
+TOML
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
