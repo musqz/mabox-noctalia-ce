@@ -9,7 +9,12 @@ sp=
 mkdir -p "$tmp/bin" "$tmp/.local/share/applications" "$tmp/run"
 cat > "$tmp/bin/wlrctl" <<'STUB'
 #!/usr/bin/env bash
-cat "$MB_WINDOWS"
+if [[ ${2:-} == close ]]; then
+    grep -v "^${3#app_id:}:" "$MB_WINDOWS" > "$MB_WINDOWS.new" || true
+    mv "$MB_WINDOWS.new" "$MB_WINDOWS"
+else
+    cat "$MB_WINDOWS"
+fi
 STUB
 cat > "$tmp/bin/wtype" <<'STUB'
 #!/usr/bin/env bash
@@ -82,6 +87,31 @@ printf 'Toucher: b\n' > "$MB_WINDOWS"; rm -f "$tmp/started" "$tmp/started2"
 
 # the root menu is valid XML and lists the sessions
 "$ms" menu | python3 -c "import sys, xml.dom.minidom as m; d = m.parseString(sys.stdin.read()); assert 'multi' in d.toxml()" || fail "menu"
+
+# a session can own a range of workspaces; ranges may not overlap
+for n in multi two t work; do "$ms" delete "$n" 2>/dev/null || true; done
+printf 'firefox: a\n' > "$MB_WINDOWS"
+"$ms" save wide --workspace 1-2 2>/dev/null || fail "range save"
+"$ms" list | grep -qx $'wide\t1-2\t1' || fail "range list: $("$ms" list)"
+"$ms" save other --workspace 2 2>/dev/null && fail "overlap accepted"
+"$ms" save other 2>/dev/null; "$ms" list | grep -qx $'other\t3\t1' || fail "next free after a range"
+
+# replace: the session you are in is saved, every window is closed, the target starts
+printf 'firefox: a\nToucher: b\n' > "$MB_WINDOWS"; rm -f "$tmp/started"
+printf '# workspace 3\nToucher\ttouch %s/started\n' "$tmp" > "$tmp/.config/mabox-noctalia-ce/sessions/other.session"
+MB_SESSION_WORKSPACE=1 "$ms" start other --replace; sleep 0.3
+[[ $("$ms" show wide | grep -c '^firefox') == 1 && $("$ms" show wide | grep -c '^Toucher') == 0 ]] || fail "replace did not save the old session: $("$ms" show wide)"
+[[ -f $tmp/started ]] || fail "replace did not start the target"
+[[ ! -s $MB_WINDOWS ]] || fail "replace left windows open"
+
+# replace keeps the other sessions' apps out of the saved one
+printf '# workspace 2\nfirefox\ttrue\n' > "$tmp/.config/mabox-noctalia-ce/sessions/other.session"
+printf '# workspace 1-2\nToucher\ttouch x\n' > "$tmp/.config/mabox-noctalia-ce/sessions/wide.session"
+"$ms" delete other
+printf '# workspace 3\nfirefox\ttrue\n' > "$tmp/.config/mabox-noctalia-ce/sessions/other.session"
+printf 'firefox: a\nToucher: b\n' > "$MB_WINDOWS"
+MB_SESSION_WORKSPACE=1 "$ms" start other --replace; sleep 0.3
+[[ $("$ms" show wide | grep -c '^firefox') == 0 ]] || fail "replace saved another session's app: $("$ms" show wide)"
 
 # login switch
 export XDG_STATE_HOME=$tmp/state
