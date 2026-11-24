@@ -19,6 +19,8 @@
 - Add sessions: `mb-session` saves the running windows as a named set of apps on its own workspace and starts or switches it again; `mb-migrate` adds the workspace binds (`W-A-C-F1..6`).
 - Add a Sessions card to Places and a Sessions panel (`A-F1`) with start, save, stop, rename and delete; the root menu lists the sessions.
 - Add an *Open at login* switch to the Sessions panel; `mb-migrate` adds the autostart line (off by default).
+- Show the session of the active workspace in the Sessions panel and the root menu (needs `python-pywayland`).
+- Give a session a range of workspaces (`3-4`) and add *Replace*: it saves the session you are in, closes every window and starts the chosen one.
 
 ## 0.9.0
 - Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
