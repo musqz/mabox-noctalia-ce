@@ -1,0 +1,38 @@
+# section,keys,description  (defaults, from the swayimg man page)
+Viewer,Esc,Exit
+Viewer,Enter,Gallery mode
+Viewer,S,Slideshow on or off
+Viewer,PgDn,Next image
+Viewer,PgUp,Previous image
+Viewer,Shift+PgDn,Next frame
+Viewer,Shift+PgUp,Previous frame
+Viewer,F,Fullscreen on or off
+Viewer,T,Text info on or off
+Viewer,A,Anti-aliasing on or off
+Viewer,+,Zoom in
+Viewer,-,Zoom out
+Viewer,Left Right Up Down,Move around the image
+Viewer,Backspace,Reset scale and position
+Viewer,],Rotate 90 degrees clockwise
+Viewer,[,Rotate 90 degrees counterclockwise
+Viewer,M,Flip vertically
+Viewer,Shift+M,Flip horizontally
+Viewer,Insert,Mark or unmark the image
+Viewer,Delete,Skip the image (remove from the list)
+Mouse,Ctrl+Scroll,Zoom
+Mouse,Drag,Move the image
+Gallery,Esc,Exit
+Gallery,Enter,Viewer mode
+Gallery,S,Slideshow mode
+Gallery,Left Right Up Down,Select a thumbnail
+Gallery,Home,First thumbnail
+Gallery,End,Last thumbnail
+Gallery,PgUp,Previous page
+Gallery,PgDn,Next page
+Gallery,+,Bigger thumbnails
+Gallery,-,Smaller thumbnails
+Gallery,F,Fullscreen on or off
+Gallery,T,Text info on or off
+Gallery,A,Anti-aliasing on or off
+Gallery,Insert,Mark or unmark the image
+Gallery,Delete,Skip the image (remove from the list)
