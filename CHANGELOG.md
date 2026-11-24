@@ -10,6 +10,8 @@
 - Open the folder buttons of the Configs panel through `mb-files`, so Luciole opens first.
 - Click the comment of a Custom entry in the Configs panel to change it.
 - Move bar buttons with arrows from the Bar buttons card in the Configs panel (sort button); the card lists the buttons in bar order.
+- Add a *Direct* switch to the System report parts: off, the report is only built with *Build report*, and nothing runs when the panel opens.
+- Show the exit code and run time when a System report run fails.
 
 ## 0.9.0
 - Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
