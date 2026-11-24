@@ -4,6 +4,10 @@
 - Make Luciole follow the Noctalia colours: `mb-migrate` adds its colour template when Luciole is installed.
 - Add Luciole actions *set-as-wallpaper* and *set-wallpaper-dir*: `mb-migrate` links them into the Luciole scripts folder when Luciole is installed.
 - Open Luciole from `mb-files` when it is installed (Places, `W-f`, root menu, Status, Recolor).
+- List the same folders in the Places Folders card as the Luciole sidebar (Desktop, Public and Templates added, missing folders left out) and add a Network row when Luciole has *Show Network* on.
+- Make the Places chevron button close open folders first, then fold all cards, then unfold them.
+- Add an optional comment to Custom entries in the Configs panel; it replaces the file name in the row.
+- Open the folder buttons of the Configs panel through `mb-files`, so Luciole opens first.
 
 ## 0.9.0
 - Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
