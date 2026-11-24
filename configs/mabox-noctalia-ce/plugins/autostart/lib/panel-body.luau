@@ -151,14 +151,14 @@ local function saveRow(e)
 end
 
 local function toggleDefault(name)
-  skipped[name] = not skipped[name] or nil
-  if store.saveSkipped(skipped) then
+  if store.setSkipped(name, not store.skipped()[name]) then
     err = nil
     note = "Saved. Applies at next login"
   else
     err = "Could not write autostart.skip"
     note = nil
   end
+  skipped = store.skipped()
   render()
 end
 
@@ -234,7 +234,7 @@ function render()
       ui.button({ key = "refresh", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Read the file again", onClick = refresh }),
       ui.button({ key = "geany", glyph = "file-text", text = "Open autostart.local", variant = "ghost", controlSize = "sm", onClick = openFile }),
     }),
-    err and ui.label({ text = err, color = "error" }) or ui.label({ text = note or "Changes apply at next login", color = note and "primary" or "on_surface_variant", fontSize = 12 }),
+    err and ui.label({ text = err, color = "error" }) or ui.label({ text = note or "Changes apply at next login. Edited a file by hand? Press refresh", color = note and "primary" or "on_surface_variant", fontSize = 12 }),
     ui.scroll({ key = "body", gap = 10, flexGrow = 1 }, {
     ui.column(card("mine"), {
       ui.label({ text = "Your startup programs", color = "on_surface_variant", fontSize = 12 }),

@@ -103,12 +103,17 @@ function M.skipped()
   return set
 end
 
-function M.saveSkipped(set)
+-- Read the file again before changing it: other names (written by hand or by mb-session) stay.
+function M.setSkipped(name, skip)
   local names = {}
-  for _, d in ipairs(M.DEFAULTS) do
-    if set[d.name] then
-      table.insert(names, d.name)
+  for line in string.gmatch(noctalia.readFile(skipFile()) or "", "[^\n]+") do
+    line = noctalia.string.trim(line)
+    if line ~= "" and line ~= name then
+      table.insert(names, line)
     end
+  end
+  if skip then
+    table.insert(names, name)
   end
   noctalia.mkdirAll(dir())
   return noctalia.writeFile(skipFile(), #names > 0 and table.concat(names, "\n") .. "\n" or "")
