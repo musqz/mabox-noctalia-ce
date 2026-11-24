@@ -7,7 +7,7 @@ arch=('any')
 url='https://github.com/musqz/mabox-noctalia-ce'
 license=('GPL')
 depends=('python' 'python-gobject' 'python-cairo' 'gtk3' 'gtk-layer-shell' 'imagemagick' 'labwc' 'noctalia' 'kanshi' 'wlr-randr' 'wlopm' 'wtype' 'swayidle' 'wlrctl' 'grim' 'slurp' 'yad'
-         'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'gmrun' 'qt6ct' 'nwg-look' 'jq')
+         'geany' 'libnotify' 'ddcutil' 'terminator' 'foot' 'pacman-contrib' 'gmrun' 'qt6ct' 'nwg-look' 'jq' 'python-pywayland')
 optdepends=('pastel: wallpaper colors for the Cava panel (mb-cava-theme)'
             'mabox-colorizer: cavactl for the Cava panel'
             'cava: audio visualizer (mb-cava); the C-A-v key also needs jumpapp-ng'

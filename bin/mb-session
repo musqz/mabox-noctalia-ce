@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""mb-session - desktop sessions: a named set of applications on one labwc workspace.
+"""mb-session - desktop sessions: a named set of applications on one or more labwc workspaces.
 
   mb-session list                       name, workspace, app count (TSV)
   mb-session show NAME
   mb-session capture                    app_id, command (TSV) of the open windows
   mb-session baseline                   remember the open windows for save --new-only
-  mb-session save NAME [--new-only] [--workspace N]
+  mb-session save NAME [--new-only] [--workspace N|N-M]
   mb-session remove NAME APP_ID         drop an app (all its windows) from a session
   mb-session rename OLD NEW
   mb-session delete NAME
-  mb-session start NAME                 go to the workspace, start the missing apps
+  mb-session start NAME [--replace]     go to the workspace, start the missing apps;
+                                        --replace saves the session you are in, closes every window first
   mb-session switch NAME                go to the workspace only
+  mb-session current                    number of the active workspace
   mb-session stop NAME                  close the windows of the session apps
   mb-session menu                       labwc pipe menu
   mb-session login [on|off]             show or set: open the Sessions panel at login
@@ -158,6 +160,23 @@ def path(name):
     return os.path.join(DIR, name + ".session")
 
 
+def parse_ws(text):
+    """"3" or "3-4" as (first, last)."""
+    m = re.fullmatch(r"(\d+)(?:-(\d+))?", text)
+    if not m or int(m.group(2) or m.group(1)) < int(m.group(1)):
+        die("workspace: N or N-M")
+    return int(m.group(1)), int(m.group(2) or m.group(1))
+
+
+def fmt_ws(ws):
+    return str(ws[0]) if ws[0] == ws[1] else f"{ws[0]}-{ws[1]}"
+
+
+def session_at(ws):
+    """Name of the session that owns workspace number ws."""
+    return next((n for n in names() if ws and read(n)[0][0] <= ws <= read(n)[0][1]), None)
+
+
 def read(name):
     p = path(name)
     if not os.path.isfile(p):
@@ -166,9 +185,9 @@ def read(name):
     with open(p) as f:
         for line in f:
             line = line.rstrip("\n")
-            m = re.match(r"# workspace (\d+)$", line)
+            m = re.match(r"# workspace (\d+(?:-\d+)?)$", line)
             if m:
-                ws = int(m.group(1))
+                ws = parse_ws(m.group(1))
             elif line and not line.startswith("#"):
                 app_id, _, cmd = line.partition("\t")
                 apps.append((app_id, cmd))
@@ -178,7 +197,7 @@ def read(name):
 def write(name, ws, apps):
     os.makedirs(DIR, exist_ok=True)
     with open(path(name), "w") as f:
-        f.write(f"# workspace {ws}\n")
+        f.write(f"# workspace {fmt_ws(ws)}\n")
         for app_id, cmd in apps:
             f.write(f"{app_id}\t{cmd}\n")
 
@@ -191,14 +210,14 @@ def names():
 
 
 def used_workspaces(skip=None):
-    return {read(n)[0] for n in names() if n != skip}
+    return {w for n in names() if n != skip for w in range(read(n)[0][0], read(n)[0][1] + 1)}
 
 
 def switch(ws):
     if not ws:
         return
     try:
-        subprocess.run(["wtype", "-M", "logo", "-M", "alt", "-M", "ctrl", "-k", f"F{ws}",
+        subprocess.run(["wtype", "-M", "logo", "-M", "alt", "-M", "ctrl", "-k", f"F{ws[0]}",
                         "-m", "ctrl", "-m", "alt", "-m", "logo"], check=False)
     except OSError:
         die("wtype is not installed")
@@ -206,12 +225,12 @@ def switch(ws):
 
 def cmd_save(argv):
     if not argv:
-        die("save NAME [--new-only] [--workspace N]")
+        die("save NAME [--new-only] [--workspace N|N-M]")
     name, new_only, ws = argv[0], "--new-only" in argv, None
     if "--workspace" in argv:
         try:
-            ws = int(argv[argv.index("--workspace") + 1])
-        except (IndexError, ValueError):
+            ws = parse_ws(argv[argv.index("--workspace") + 1])
+        except IndexError:
             die("--workspace needs a number")
     only = None
     if new_only:
@@ -225,21 +244,38 @@ def cmd_save(argv):
     taken = used_workspaces(skip=name)
     top = workspace_count()
     if ws is None:
-        ws = next((n for n in range(1, top + 1) if n not in taken), None)
-        if ws is None:
+        free = next((n for n in range(1, top + 1) if n not in taken), None)
+        if free is None:
             die("every workspace has a session")
-    if not 1 <= ws <= top:
+        ws = (free, free)
+    if ws[0] < 1 or ws[1] > top:
         die(f"workspace 1-{top}")
-    if ws in taken:
-        die(f"workspace {ws} belongs to another session")
+    if taken & set(range(ws[0], ws[1] + 1)):
+        die(f"workspace {fmt_ws(ws)} overlaps another session")
     apps = capture(only)
     if not apps:
         die("no applications to save")
     write(name, ws, apps)
 
 
-def cmd_start(name):
+def close_all():
+    for app_id in windows():
+        subprocess.run(["wlrctl", "toplevel", "close", "app_id:" + app_id], check=False)
+    for _ in range(20):  # windows that ask to save stay open
+        if not windows():
+            return
+        time.sleep(0.5)
+
+
+def cmd_start(name, replace=False):
     ws, apps = read(name)
+    if replace:
+        old = session_at(current_workspace())
+        if old:
+            rows = capture()
+            if rows:
+                write(old, read(old)[0], rows)
+        close_all()
     switch(ws)
     time.sleep(0.5)
     open_now = [w.lower() for w in windows(True)]
@@ -259,6 +295,37 @@ def cmd_start(name):
         time.sleep(wait)
 
 
+def current_workspace():
+    """Active workspace number from the ext-workspace protocol (labwc); None when it cannot be read."""
+    if os.environ.get("MB_SESSION_WORKSPACE"):  # tests
+        return int(os.environ["MB_SESSION_WORKSPACE"])
+    try:
+        from pywayland.client import Display
+        from pywayland.protocol.ext_workspace_v1 import ExtWorkspaceManagerV1
+        display = Display()
+        display.connect()
+    except Exception:
+        return None
+    spaces = []
+
+    def on_workspace(_mgr, ws):
+        ws.info = {"state": 0}
+        ws.dispatcher["state"] = lambda o, st: o.info.__setitem__("state", st)
+        spaces.append(ws)
+
+    def on_global(reg, name, iface, ver):
+        if iface == "ext_workspace_manager_v1":
+            mgr = reg.bind(name, ExtWorkspaceManagerV1, 1)
+            mgr.dispatcher["workspace"] = on_workspace
+
+    display.get_registry().dispatcher["global"] = on_global
+    for _ in range(3):
+        display.roundtrip()
+    active = next((i for i, ws in enumerate(spaces, 1) if ws.info["state"] & 1), None)
+    sys.stdout.flush()
+    return active
+
+
 def cmd_stop(name):
     for app_id, _ in read(name)[1]:
         subprocess.run(["wlrctl", "toplevel", "close", "app_id:" + app_id], check=False)
@@ -269,8 +336,10 @@ def menu():
         return f"<item label={quoteattr(label)}><action name=\"Execute\" command={quoteattr(command)}/></item>"
     out = ["<openbox_pipe_menu>",
            item("Sessions panel", "noctalia msg panel-toggle mabox/places:sessions")]
+    here = current_workspace()
     for n in names():
-        out.append(item(n, f"setsid -f mb-session start {shlex.quote(n)}"))
+        mark = "● " if here and session_at(here) == n else ""
+        out.append(item(mark + n, f"setsid -f mb-session start {shlex.quote(n)}"))
     out.append("</openbox_pipe_menu>")
     print("\n".join(out))
 
@@ -297,10 +366,10 @@ def main(argv):
     if c == "list":
         for n in names():
             ws, apps = read(n)
-            print(f"{n}\t{ws}\t{len(apps)}")
+            print(f"{n}\t{fmt_ws(ws)}\t{len(apps)}")
     elif c == "show" and a:
         ws, apps = read(a[0])
-        print(f"workspace\t{ws}")
+        print(f"workspace\t{fmt_ws(ws)}")
         for app_id, cmd in apps:
             print(f"{app_id}\t{cmd}")
     elif c == "capture":
@@ -327,7 +396,11 @@ def main(argv):
             die(f"no session {a[0]}")
         os.remove(p)
     elif c == "start" and a:
-        cmd_start(a[0])
+        cmd_start(a[0], "--replace" in a[1:])
+    elif c == "current":
+        ws = current_workspace()
+        if ws:
+            print(ws)
     elif c == "stop" and a:
         cmd_stop(a[0])
     elif c == "menu":
@@ -346,4 +419,10 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        code = main(sys.argv[1:])
+    except SystemExit as e:
+        code = e.code if isinstance(e.code, int) else 1
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)  # pywayland crashes in interpreter teardown

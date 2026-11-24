@@ -901,7 +901,7 @@ local function quickCard()
 end
 
 -- Sessions: named sets of apps on their own workspace, kept by mb-session. The state lives in one table (Luau local limit).
-local S = { login = false, list = {}, apps = {}, shown = {}, ask = {}, name = "", nonce = 0, renaming = nil, renameText = "", base = false }
+local S = { ws = "", cur = nil, login = false, list = {}, apps = {}, shown = {}, ask = {}, name = "", nonce = 0, renaming = nil, renameText = "", base = false }
 
 function S.run(args, after)
   noctalia.runAsync(args, function(r)
@@ -929,6 +929,10 @@ end
 
 function S.load()
   S.login = noctalia.fileExists(S.loginFile())
+  noctalia.runAsync({ "mb-session", "current" }, function(r)
+    S.cur = tonumber(string.match(r.stdout or "", "%d+"))
+    render()
+  end)
   noctalia.runAsync({ "mb-session", "list" }, function(r)
     S.list = {}
     for n, ws, c in string.gmatch(r.stdout or "", "([^\t\n]+)\t(%d+)\t(%d+)") do
@@ -958,10 +962,24 @@ function S.save(newOnly)
   if newOnly then
     table.insert(args, "--new-only")
   end
+  local ws = string.match(S.ws, "^%s*(%d+-?%d*)%s*$")
+  if ws then
+    table.insert(args, "--workspace")
+    table.insert(args, ws)
+  end
+  S.ws = ""
   S.name = ""
   S.nonce += 1
   S.base = false
   S.run(args)
+end
+
+-- Workspace "3" or "3-4": does the active workspace fall inside it.
+function S.has(ws, cur)
+  local a, b = string.match(ws, "^(%d+)-?(%d*)$")
+  a = tonumber(a)
+  b = tonumber(b) or a
+  return a ~= nil and cur ~= nil and cur >= a and cur <= b
 end
 
 function S.button(key, glyph, tip, fn)
@@ -1002,12 +1020,13 @@ function S.row(it)
     })
   end
   local open = S.shown[name]
+  local here = S.has(it.ws, S.cur)
   local row = ui.row({ key = "sr" .. name, gap = 2, align = "center" }, {
     S.button("sf" .. name, open and "chevron-down" or "chevron-right", "Show the apps", function()
       S.shown[name] = (not open) or nil
       S.load()
     end),
-    ui.button({ key = "ss" .. name, glyph = "player-play", text = name, variant = "ghost", contentAlign = "start", flexGrow = 1,
+    ui.button({ key = "ss" .. name .. (here and "-on" or ""), glyph = here and "point-filled" or "player-play", text = name, variant = here and "primary" or "ghost", contentAlign = "start", flexGrow = 1,
       tooltip = "Workspace " .. it.ws .. ": go there and start the apps that are not open", onClick = function()
         S.run({ "setsid", "-f", "mb-session", "start", name })
         done()
@@ -1015,6 +1034,10 @@ function S.row(it)
     ui.label({ text = it.count .. " · " .. it.ws, tooltip = it.count .. " windows, workspace " .. it.ws, color = "outline_variant", fontSize = 11 }),
     S.confirm("sv" .. name, "device-floppy", "Save?", "Save all open windows into this session (click twice)", function()
       S.run({ "mb-session", "save", name })
+    end),
+    S.confirm("sp" .. name, "replace", "Replace?", "Save the session you are in, close every window, then start this one (click twice)", function()
+      S.run({ "setsid", "-f", "mb-session", "start", name, "--replace" })
+      done()
     end),
     S.confirm("sk" .. name, "player-stop", "Stop?", "Close the windows of this session's apps (click twice)", function()
       S.run({ "mb-session", "stop", name })
@@ -1042,6 +1065,16 @@ end
 
 function S.card()
   local rows = {}
+  if S.cur then
+    local at = nil
+    for _, it in ipairs(S.list) do
+      if S.has(it.ws, S.cur) then
+        at = it.name
+      end
+    end
+    table.insert(rows, ui.label({ text = at and ("Now: " .. at .. " (workspace " .. S.cur .. ")") or ("Workspace " .. S.cur .. ", no session"),
+      color = at and "primary" or "outline_variant", fontSize = 12 }))
+  end
   for _, it in ipairs(S.list) do
     table.insert(rows, S.row(it))
   end
@@ -1051,6 +1084,8 @@ function S.card()
   table.insert(rows, ui.row({ gap = 4, align = "center" }, {
     ui.input({ key = "sn" .. S.nonce, value = S.name, placeholder = "session name", controlSize = "sm", frameVisible = true, flexGrow = 1,
       onChange = function(t) S.name = t end, onSubmit = function() S.save(S.base) end }),
+    ui.input({ key = "sw" .. S.nonce, value = S.ws, placeholder = "ws 3-4", controlSize = "sm", frameVisible = true, width = 80,
+      onChange = function(t) S.ws = t end, onSubmit = function() S.save(S.base) end }),
     ui.button({ key = "snew", glyph = "player-record", variant = S.base and "primary" or "outline", controlSize = "sm",
       tooltip = "New: remember the open windows, then Save keeps only the apps you open after", onClick = function()
         S.base = not S.base
