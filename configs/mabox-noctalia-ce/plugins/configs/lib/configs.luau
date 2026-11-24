@@ -192,6 +192,7 @@ local expanded = {}
 local newName = ""
 local newNote = ""
 local noteNonce = 0
+local editUid, editText = nil, ""
 local newPath = ""
 local render
 -- The pinned window and the dropdown render separately: hovering the card renders it again from the state file.
@@ -514,6 +515,26 @@ local function pastePath(thenAdd)
   end)
 end
 
+local function renameNote(name, path, note)
+  local home = noctalia.getenv("HOME")
+  local prefix = "Custom|" .. name .. "|"
+  local out = {}
+  local done = false
+  note = string.sub(noctalia.string.trim((string.gsub(note, "[|\n]", " "))), 1, 60)
+  for l in string.gmatch(noctalia.readFile(localFile()) or "", "[^\n]+") do
+    local cmd, raw = string.match(l, "^[^|]*|[^|]*|([^|]*)|([^|]*)")
+    raw = raw or ""
+    if not done and string.sub(l, 1, #prefix) == prefix and string.gsub(raw, "^~", home) == path then
+      done = true
+      l = prefix .. cmd .. "|" .. raw .. (note ~= "" and "|" .. note or "")
+    end
+    table.insert(out, l)
+  end
+  noctalia.writeFile(localFile(), table.concat(out, "\n") .. "\n")
+  editUid = nil
+  refresh()
+end
+
 local function removeCustom(name, path)
   local home = noctalia.getenv("HOME")
   local prefix = "Custom|" .. name .. "|"
@@ -771,8 +792,29 @@ local function entryRow(e)
   local function removeIt() removeCustom(e.name, e.path) end
   stop("f" .. uid, 1, showIt)
   stop("o" .. uid, 2, openIt)
+  local labelColor = e.state == "ok" and "on_surface" or "on_surface_variant"
+  local shown = e.note ~= "" and e.note or e.name
+  local head
+  if e.group ~= "Custom" then
+    head = ui.label({ text = shown, color = labelColor, maxLines = 1, flexGrow = 1, tooltip = e.path })
+  elseif editUid == uid then
+    local function save() renameNote(e.name, e.path, editText) end
+    head = ui.row({ gap = 4, align = "center", flexGrow = 1 }, {
+      ui.input({ key = "edit" .. uid, focus = true, value = editText, placeholder = "comment", controlSize = "sm", frameVisible = true, flexGrow = 1, onChange = function(t) editText = t end, onSubmit = save }),
+      ui.button({ key = "editok" .. uid, glyph = "check", variant = "primary", controlSize = "sm", tooltip = "Save the comment", onClick = save }),
+      ui.button({ key = "editno" .. uid, glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Cancel", onClick = function()
+        editUid = nil
+        render()
+      end }),
+    })
+  else
+    head = ui.button({ key = "ed" .. uid, text = shown, variant = "ghost", controlSize = "sm", contentAlign = "start", maxLines = 1, flexGrow = 1, tooltip = e.path .. "\nClick: change the comment", onClick = function()
+      editUid, editText = uid, e.note
+      render()
+    end })
+  end
   local items = {
-    ui.label({ text = e.note ~= "" and e.note or e.name, color = e.state == "ok" and "on_surface" or "on_surface_variant", maxLines = 1, flexGrow = 1, tooltip = e.path }),
+    head,
     ui.button({ key = "f" .. uid, glyph = "folder", selected = kbd.sel("f" .. uid), variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = showIt }),
     ui.button({
       key = "o" .. uid,
@@ -1483,6 +1525,7 @@ local function handleKey(chord)
 end
 
 local function start()
+  editUid = nil
   loadExpanded()
   logoArmed = false
   render()
