@@ -11,18 +11,16 @@ Folders, drives, bookmarks and recent files in one narrow panel. Pinned at the s
 
 ## Header
 
-<p align="center"><a href="img/places-buttons.png"><img src="img/places-buttons.png" alt="The header buttons of Places with their meaning"></a></p>
-
 | Icon | Does |
 |---|---|
-| refresh | reload the lists |
-| adjustments | edit mode: show, hide and move the cards; lists the buttons |
-| chevrons up | close open folders; click again to fold all cards; again to unfold them |
-| treemap | disk usage in QDirStat |
-| sidebar | dock: windows keep clear of the panel |
-| navbar | open as the top panel and close the window |
-| arrows | move the pinned window to the other side |
-| x | close |
+| <img src="img/places-icon-refresh.png" width="22" alt=""> | Reload the lists |
+| <img src="img/places-icon-edit.png" width="22" alt=""> | Show, hide and move the cards; the edit screen lists the buttons |
+| <img src="img/places-icon-chevrons.png" width="22" alt=""> | Close open folders; click again to fold all cards; again to unfold them |
+| <img src="img/places-icon-usage.png" width="22" alt=""> | Disk usage (QDirStat) |
+| <img src="img/places-icon-dock.png" width="22" alt=""> | Dock: keep windows clear of the panel |
+| <img src="img/places-icon-navbar.png" width="22" alt=""> | Open as the top panel and close this window |
+| <img src="img/places-icon-side.png" width="22" alt=""> | Move to the other side |
+| <img src="img/places-icon-close.png" width="22" alt=""> | Close |
 
 ## Search
 
