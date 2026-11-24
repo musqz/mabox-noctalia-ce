@@ -1,0 +1,44 @@
+# section,keys,description  (defaults, Linux, from Google's Chrome shortcut page)
+Tabs and windows,Ctrl+N,New window
+Tabs and windows,Ctrl+Shift+N,New incognito window
+Tabs and windows,Ctrl+T,New tab
+Tabs and windows,Ctrl+Shift+T,Reopen closed tab
+Tabs and windows,Ctrl+Tab or Ctrl+PgDn,Next tab
+Tabs and windows,Ctrl+Shift+Tab or Ctrl+PgUp,Previous tab
+Tabs and windows,Ctrl+1..8,Go to tab 1-8
+Tabs and windows,Ctrl+W or Ctrl+F4,Close tab
+Tabs and windows,Ctrl+Shift+W or Alt+F4,Close window
+Tabs and windows,Ctrl+Shift+PgUp or Ctrl+Shift+PgDn,Move the tab left or right
+Tabs and windows,F11,Full screen
+Navigate,Alt+Home,Home page
+Navigate,Alt+Left,Back
+Navigate,Alt+Right,Forward
+Navigate,Alt+F or Alt+E,Open the menu
+Navigate,F6,Focus the toolbars
+Navigate,Shift+Esc,Task manager
+Navigate,Ctrl+H,History
+Navigate,Ctrl+J,Downloads
+Navigate,F1,Help
+Address bar,Ctrl+L or Alt+D or F6,Jump to the address bar
+Address bar,Ctrl+K or Ctrl+E,Search from anywhere
+Address bar,Alt+Enter,Open the typed search in a new tab
+Address bar,Ctrl+Enter,Add www. and .com to the typed name
+Address bar,Shift+Delete,Remove the selected prediction
+Page,Ctrl+P,Print
+Page,Ctrl+S,Save the page
+Page,F5 or Ctrl+R,Reload
+Page,Ctrl+Shift+R or Shift+F5,"Reload, ignore the cache"
+Page,Esc,Stop loading
+Page,Ctrl+F or F3,Find
+Page,Ctrl+G,Next match
+Page,Ctrl+Shift+G,Previous match
+Page,Space or PgDn,Scroll down one screen
+Page,Shift+Space or PgUp,Scroll up one screen
+Page,Home,Top of the page
+Page,End,Bottom of the page
+Page,Ctrl++,Zoom in
+Page,Ctrl+-,Zoom out
+Page,Ctrl+0,Reset zoom
+Page,Ctrl+U,View the page source
+Developer,Ctrl+Shift+J or F12,Developer tools
+Browser,Ctrl+Shift+Delete,Clear browsing data

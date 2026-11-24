@@ -1,0 +1,31 @@
+# section,keys,description  (defaults, from the Okular handbook (docs.kde.org))
+File,Ctrl+O,Open a file
+File,Ctrl+S,Save
+File,Ctrl+Shift+S,Save as
+File,F5,Reload the file
+File,Ctrl+P,Print
+File,Alt+Enter,Document properties
+File,Ctrl+Shift+T,Reopen the last closed tab
+File,Ctrl+Q,Quit
+Edit,Ctrl+Z,Undo annotation edit
+Edit,Ctrl+Shift+Z,Redo annotation edit
+Edit,Ctrl+C,Copy selected text
+Edit,Ctrl+A,Select all text
+Edit,Ctrl+F,Find
+Edit,F3,Find next
+Edit,Shift+F3,Find previous
+View,Ctrl+Shift+P,Presentation mode
+View,Ctrl+Shift+F,Full screen
+View,Ctrl++,Zoom in
+View,Ctrl+-,Zoom out
+Go,Ctrl+Home,Start of the document
+Go,Ctrl+End,End of the document
+Go,Alt+Shift+Left,Back to the previous view
+Go,Alt+Shift+Right,Forward to the next view
+Go,Ctrl+G,Go to page
+Navigate,Space or PgDn,Forward
+Navigate,Backspace or PgUp,Back
+Navigate,Up or Down,Scroll
+Navigate,Shift+Down or Shift+Up,Start automatic scrolling
+Navigate,H or L,Top of the previous or next page
+Navigate,J or K,One line down or up

@@ -1,0 +1,51 @@
+# section,keys,description  (defaults, from the Audacity manual (manual.audacityteam.org))
+File,Ctrl+N,New project window
+File,Ctrl+O,Open audio or project
+File,Ctrl+W,Close the project window
+File,Ctrl+S,Save the project
+File,Ctrl+Shift+E,Export audio
+File,Ctrl+Shift+I,Import audio as a new track
+File,Ctrl+Q,Quit
+Edit,Ctrl+Z,Undo
+Edit,Ctrl+Y,Redo
+Edit,Ctrl+X,Cut
+Edit,Ctrl+K,Delete the selection
+Edit,Ctrl+C,Copy
+Edit,Ctrl+V,Paste
+Edit,Ctrl+D,Duplicate into a new track
+Edit,Ctrl+Alt+X,Cut and leave a gap
+Edit,Ctrl+Alt+K,Delete and leave a gap
+Edit,Ctrl+L,Silence the selection
+Edit,Ctrl+T,Trim to the selection
+Edit,Ctrl+I,Split the clip
+Edit,Ctrl+B,Add a label at the selection
+Edit,Ctrl+M,Add a label at the playback position
+Edit,Ctrl+P,Preferences
+Selection,Ctrl+A,Select all
+Selection,Shift+J,Select from the track start to the cursor
+Selection,Shift+K,Select from the cursor to the track end
+Selection,Z,Snap the selection to zero crossings
+Selection,Ctrl+Shift+K,Extend the selection into all tracks
+Zoom,Ctrl+1,Zoom in
+Zoom,Ctrl+2,Default zoom
+Zoom,Ctrl+3,Zoom out
+Zoom,Ctrl+E,Zoom to the selection
+Zoom,Shift+Z,Toggle between two zoom levels
+View,Ctrl+F,Fit the project to the width
+View,Ctrl+Shift+F,Fit track heights to the window
+View,Ctrl+Shift+C,Collapse all tracks
+View,Ctrl+Shift+X,Expand collapsed tracks
+View,PgUp,Scroll right
+View,PgDn,Scroll left
+Playback,Space,Play or stop
+Playback,X,Play or stop and set the cursor to the stop point
+Playback,Shift+Space,Play the looped region once
+Playback,P,Pause
+Playback,R,Record at the end of the selected track
+Playback,Shift+R,Record on a new track
+Playback,Shift+D,Punch and roll record
+Playback,Shift+T,Timer record
+Playback,Left,Cursor to the left edge of the selection
+Playback,Right,Cursor to the right edge of the selection
+Playback,J,Cursor to the start of the selected track
+Playback,K,Cursor to the end of the selected track

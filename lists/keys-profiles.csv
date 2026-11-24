@@ -32,3 +32,10 @@ Forum Scout,app,forum-scout,forum-scout+org.musqz.forum-scout
 Clementine,app,clementine,clementine+org.clementine_player.Clementine
 Luciole,app,luciole,dev.noctalia.luciole
 Swayimg,app,swayimg,swayimg
+Okular,app,okular,okular+org.kde.okular
+Evince,app,evince,evince+org.gnome.Evince
+Chromium,app,chromium,chromium
+VS Code,app,code,code+code-oss
+Kdenlive,app,kdenlive,kdenlive+org.kde.kdenlive
+Audacity,app,audacity,audacity
+Signal,app,signal-desktop,signal-desktop+signal

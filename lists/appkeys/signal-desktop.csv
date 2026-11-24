@@ -1,0 +1,53 @@
+# section,keys,description  (defaults, from the shortcut guide inside Signal Desktop (Linux))
+Navigate,Ctrl+T or Ctrl+F6,Move between the main sections
+Navigate,Alt+Up or Ctrl+Shift+Tab,Previous conversation
+Navigate,Alt+Down or Ctrl+Tab,Next conversation
+Navigate,Alt+Shift+Up,Previous unread conversation
+Navigate,Alt+Shift+Down,Next unread conversation
+Navigate,Ctrl+1..9,Go to conversation 1-9
+Navigate,Ctrl+J,Most recent message
+Navigate,Ctrl+F,Search
+Navigate,Ctrl+Shift+F,Search in the conversation
+Navigate,Ctrl+N,New conversation
+Navigate,"Ctrl+,",Preferences
+Conversation,Ctrl+Shift+L,Conversation menu
+Conversation,Ctrl+Shift+T,Focus the message box
+Conversation,Ctrl+Shift+M,All media
+Conversation,Ctrl+Shift+A,Archive the conversation
+Conversation,Ctrl+Shift+U,Unarchive the conversation
+Conversation,Ctrl+Up,Scroll to the top
+Conversation,Ctrl+Down,Scroll to the bottom
+Conversation,Ctrl+Shift+C,Close the conversation
+Messages,Enter,Default action on the selected message
+Messages,Ctrl+D,Message details
+Messages,Ctrl+Shift+R,Reply
+Messages,Ctrl+Shift+E,Reaction picker
+Messages,Ctrl+S,Save the attachment
+Messages,Ctrl+Shift+D,Delete messages
+Messages,Ctrl+Shift+S,Forward messages
+Messages,Shift+Enter,Context menu
+Composer,Ctrl+Shift+J,Emoji picker
+Composer,Ctrl+Shift+O,Sticker picker
+Composer,Ctrl+Shift+G,GIF picker
+Composer,Ctrl+Shift+Y,Record a voice note
+Composer,Ctrl+Shift+K,Expand the message box
+Composer,Ctrl+Enter,Send from the expanded message box
+Composer,Ctrl+U,Attach a file
+Composer,Ctrl+P,Remove the link preview
+Composer,Ctrl+Shift+P,Remove attachments
+Composer,Up,Edit the last message
+Composer,Ctrl+B,Bold
+Composer,Ctrl+I,Italic
+Composer,Ctrl+Shift+X,Strikethrough
+Composer,Ctrl+E,Monospace
+Composer,Ctrl+Shift+B,Spoiler
+Calls,Shift+M,Microphone on or off
+Calls,Shift+V,Camera on or off
+Calls,Shift+P,Preview on or off
+Calls,Shift+H,Raise or lower your hand
+Calls,Alt+Shift+V,Accept with video
+Calls,Alt+Shift+A,Accept without video
+Calls,Alt+Shift+D,Decline
+Calls,Alt+Shift+C,Start an audio call
+Calls,Alt+Shift+Y,Start a video call
+Calls,Alt+Shift+E,Hang up

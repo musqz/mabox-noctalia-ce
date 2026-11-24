@@ -1,0 +1,59 @@
+# section,keys,description  (defaults, from the Kdenlive manual (docs.kdenlive.org))
+File,Ctrl+N,New project
+File,Ctrl+O,Open
+File,Ctrl+S,Save
+File,Ctrl+Shift+S,Save as
+File,Ctrl+Q,Quit
+General,Ctrl+Z,Undo
+General,Ctrl+Shift+Z,Redo
+General,Ctrl+X,Cut
+General,Ctrl+C or Ctrl+Ins,Copy
+General,Ctrl+V or Shift+Ins,Paste
+General,Ctrl+A,Select all
+General,Delete,Delete the selection
+General,F2,Rename
+General,Ctrl+Alt+I,Find action
+General,Ctrl+Shift+F,Full screen
+General,"Ctrl+Alt+,",Configure shortcuts
+Playback,Space,Play or stop
+Playback,K,Pause
+Playback,J,Rewind (again for more speed)
+Playback,L,Forward (again for more speed)
+Playback,Left,Back one frame
+Playback,Right,Forward one frame
+Playback,Shift+Left,Back one second
+Playback,Shift+Right,Forward one second
+Playback,Ctrl+Space,Play the zone
+Playback,Home,Clip start
+Playback,End,Clip end
+Playback,P,Playhead to the mouse position
+Editing,I,Zone in
+Editing,O,Zone out
+Editing,T,Switch monitor
+Editing,V,Insert the clip zone in the timeline
+Editing,B,Overwrite with the clip zone
+Timeline,Shift+R,Cut clip
+Timeline,Ctrl+Shift+R,Cut all clips
+Timeline,Ctrl+D,Duplicate clip
+Timeline,Ctrl+G,Group clips
+Timeline,Ctrl+Shift+G,Ungroup clips
+Timeline,Shift+Delete,Extract clip
+Timeline,Shift+X,Extract the timeline zone
+Timeline,Z,Lift the timeline zone
+Timeline,G,Add or remove a guide
+Timeline,Shift+S,Add subtitle
+Timeline,U,Mix clips
+Timeline,X,Razor tool
+Timeline,S,Selection tool
+Timeline,M,Spacer tool
+Timeline,Esc,Back to the selection tool
+Timeline,Ctrl+Tab,Next sequence
+Timeline,Ctrl+Shift+Tab,Previous sequence
+Timeline,Ctrl++,Zoom in
+Timeline,Ctrl+-,Zoom out
+Titler,Alt+T,Add text
+Titler,Alt+R,Add rectangle
+Titler,Alt+E,Add ellipse
+Titler,Alt+I,Insert an image
+Titler,Alt+S,Selection tool
+Render,Ctrl+Enter,Render
