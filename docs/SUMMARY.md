@@ -8,6 +8,7 @@
 - [Keys](keys.md)
 - [Install apps](install.md)
 - [Music](music.md)
+- [Places](places.md)
 - [Post-its](postits.md)
 - [Tools](tools.md)
 - [Custom plugins](custom-plugins.md)
