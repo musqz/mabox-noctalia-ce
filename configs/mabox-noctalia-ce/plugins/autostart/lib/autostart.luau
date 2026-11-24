@@ -103,20 +103,24 @@ function M.skipped()
   return set
 end
 
--- Read the file again before changing it: other names (written by hand or by mb-session) stay.
+-- Re-reads the file and changes only the lines equal to `name` (the shell's grep -qx match); every other line stays as it is.
 function M.setSkipped(name, skip)
-  local names = {}
-  for line in string.gmatch(noctalia.readFile(skipFile()) or "", "[^\n]+") do
-    line = noctalia.string.trim(line)
-    if line ~= "" and line ~= name then
-      table.insert(names, line)
+  local text = noctalia.readFile(skipFile()) or ""
+  local out = {}
+  for line in string.gmatch(text, "([^\n]*)\n") do
+    if line ~= name then
+      table.insert(out, line)
     end
   end
+  local last = string.match(text, "([^\n]+)$")
+  if last and last ~= name then
+    table.insert(out, last)
+  end
   if skip then
-    table.insert(names, name)
+    table.insert(out, name)
   end
   noctalia.mkdirAll(dir())
-  return noctalia.writeFile(skipFile(), #names > 0 and table.concat(names, "\n") .. "\n" or "")
+  return noctalia.writeFile(skipFile(), #out > 0 and table.concat(out, "\n") .. "\n" or "")
 end
 
 return M
