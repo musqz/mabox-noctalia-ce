@@ -891,6 +891,12 @@ render = function()
     end
     table.insert(groups[e.group], e)
   end
+  -- Terminals and Tools are picked by name; the labwc, Noctalia and Custom lists keep their own order.
+  for _, g in ipairs({ "Terminals", "Tools" }) do
+    if groups[g] then
+      table.sort(groups[g], function(x, y) return string.lower(x.name) < string.lower(y.name) end)
+    end
+  end
   for i, g in ipairs(order) do
     if g == "Custom" then
       table.remove(order, i)
