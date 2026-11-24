@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # File manager launcher: Luciole when installed (one path), else pcmanfm-qt, else pcmanfm. GTK3 context menus run off the screen bottom on Wayland, so pcmanfm runs through XWayland.
 # The window is raised after the launch.
-#   mb-files [path...]
+#   mb-files [path]   (Luciole takes one path; the others take several)
 if command -v luciole >/dev/null; then
     luciole ${1:+"$1"} >/dev/null 2>&1 &
     id=dev.noctalia.luciole
