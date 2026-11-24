@@ -1,2 +1,0 @@
-wl-screenrec
-labwc-menu-generator-git
