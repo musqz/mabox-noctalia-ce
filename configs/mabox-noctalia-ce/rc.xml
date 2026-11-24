@@ -18,7 +18,7 @@
     <core>
     <gap>10</gap>
   </core>
-  <desktops number="2" />
+  <desktops number="4" />
   <!-- Thumbnail-based window switcher -->
   <windowSwitcher preview="no" outlines="yes">
     <osd style="thumbnail"/>
@@ -93,6 +93,14 @@
     <keybind key="W-A-w"><action name="Execute" command="noctalia msg panel-toggle mabox/wallpaper-dirs:dirs"/></keybind>
     <keybind key="W-A-r"><action name="Execute" command="noctalia msg panel-toggle mabox/capture:main"/></keybind>
     <keybind key="C-W-s"><action name="Execute" command="mb-pinned status"/></keybind>
+
+    <!-- Sessions: mb-session presses these to reach a session workspace -->
+    <keybind key="W-A-C-F1"><action name="GoToDesktop" to="1"/></keybind>
+    <keybind key="W-A-C-F2"><action name="GoToDesktop" to="2"/></keybind>
+    <keybind key="W-A-C-F3"><action name="GoToDesktop" to="3"/></keybind>
+    <keybind key="W-A-C-F4"><action name="GoToDesktop" to="4"/></keybind>
+    <keybind key="W-A-C-F5"><action name="GoToDesktop" to="5"/></keybind>
+    <keybind key="W-A-C-F6"><action name="GoToDesktop" to="6"/></keybind>
 
     <!-- Wallpaper -->
     <keybind key="W-2"><action name="Execute" command="noctalia msg workspace-switch next"/></keybind>
