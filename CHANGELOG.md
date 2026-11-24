@@ -16,6 +16,7 @@
 - Add Audacity, Chromium, Evince, Kdenlive, Okular, Signal and VS Code to the application lists of the Keys panel.
 - Add a button to the Notes panel and the pinned Notes window that shows or hides the post-its (`mb-postits --front`, `W-A-y`).
 - Install `labwc-menu-generator-git` and `luciole-git` from the Mabox repo, and list `luciole-git` as an optional dependency (file manager of `mb-files`).
+- Install `wl-screenrec` from the Mabox repo; the AUR list and the AUR step of `install.sh` are gone.
 - Add sessions: `mb-session` saves the running windows as a named set of apps on its own workspace and starts or switches it again; `mb-migrate` adds the workspace binds (`W-A-C-F1..6`).
 - Add a Sessions panel (`A-F1`) with start, save, stop, rename and delete; the root menu lists the sessions.
 - Add the Autostart entry *session* (also a button in the Sessions panel) that opens the Sessions panel at login; off by default, `mb-migrate` adds the line.

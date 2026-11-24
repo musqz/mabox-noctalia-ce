@@ -96,7 +96,6 @@ if [[ -z $ver ]] || (( $(vercmp "$ver" 5.4) < 0 )); then
 fi
 
 mapfile -t repo < <(read_list "$dir/lists/pacman.txt")
-mapfile -t aur < <(read_list "$dir/lists/aur.txt")
 
 missing() {
     local p
@@ -104,20 +103,11 @@ missing() {
 }
 
 mapfile -t need_repo < <(missing "${repo[@]}")
-mapfile -t need_aur < <(missing "${aur[@]}")
 
 if (( ${#need_repo[@]} )); then
     echo "Installing: ${need_repo[*]}"
     sudo pacman -S --needed "${need_repo[@]}"
     record "${need_repo[@]}"
-fi
-
-if (( ${#need_aur[@]} )); then
-    helper=$(command -v paru || command -v yay || true)
-    [[ -n $helper ]] || { echo "No AUR helper (paru/yay). Install by hand: ${need_aur[*]}" >&2; exit 1; }
-    echo "Installing from AUR: ${need_aur[*]}"
-    "$helper" -S --needed "${need_aur[@]}"
-    record "${need_aur[@]}"
 fi
 
 tmp=
@@ -173,7 +163,6 @@ report() {
     local opt=() p
     echo; echo "Install summary"
     echo "[done] repo packages: ${#need_repo[@]} installed, $(( ${#repo[@]} - ${#need_repo[@]} )) already present"
-    echo "[done] AUR packages: ${#need_aur[@]} installed, $(( ${#aur[@]} - ${#need_aur[@]} )) already present"
     echo "[done] GitHub builds: ${built[*]:-none, all present}"
     echo "[done] mabox-noctalia-ce package built and installed"
     [[ -z ${al_new:-} ]] || echo "[done] created $al from the template"
