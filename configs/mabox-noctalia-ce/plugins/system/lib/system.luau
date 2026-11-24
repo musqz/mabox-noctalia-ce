@@ -61,6 +61,7 @@ return function(stay)
   local session = 0
   local picked = {}
   local choosing = false
+  local liveParts, partsPending = true, false
   local runs = {}
   local hideWords = ""
   local saveDir = ""
@@ -135,6 +136,7 @@ return function(stay)
     end
     hideWords = noctalia.string.trim(key("hide") or "")
     saveDir = noctalia.string.trim(key("save_dir") or "")
+    liveParts = key("live") ~= "0"
     local saved = key("parts")
     if saved then
       picked = {}
@@ -150,7 +152,7 @@ return function(stay)
     local path = settingsPath()
     if path then
       noctalia.mkdirAll(noctalia.pluginDataDir())
-      noctalia.writeFile(path, "hide=" .. hideWords .. "\nsave_dir=" .. saveDir .. "\nparts=" .. table.concat(partsList(), ",") .. "\n")
+      noctalia.writeFile(path, "hide=" .. hideWords .. "\nsave_dir=" .. saveDir .. "\nparts=" .. table.concat(partsList(), ",") .. "\nlive=" .. (liveParts and "1" or "0") .. "\n")
     end
   end
 
@@ -191,8 +193,14 @@ return function(stay)
     if id == "settings" or id == "fixes" or (cache[id] and not force) then
       return
     end
+    -- Direct off: the report is only collected when Build report (or refresh) asks for it.
+    if id == "report" and not liveParts and not force then
+      cache.report = { idle = true, text = "Direct is off. Choose the parts, then press Build report." }
+      return
+    end
     cache[id] = { loading = true, text = cache[id] and cache[id].text }
     local mine = session
+    local started = os.time()
     runs[id] = (runs[id] or 0) + 1
     local run = runs[id]
     local argv = { "mb-sysreport", id }
@@ -217,7 +225,7 @@ return function(stay)
       if result.stdoutTruncated then
         text = text .. "\n(output truncated)"
       end
-      cache[id] = { text = result.exitCode == 0 and text or "mb-sysreport failed: " .. (result.stderr or "") }
+      cache[id] = { text = result.exitCode == 0 and text or "mb-sysreport failed (exit " .. tostring(result.exitCode) .. " after " .. (os.time() - started) .. " s). Press the refresh icon at the top to try again." .. (result.stderr and result.stderr ~= "" and "\n" .. result.stderr or "") }
       render()
     end)
     render()
@@ -291,7 +299,7 @@ read -r _
 
   local function reportText()
     local entry = cache.report
-    return entry and not entry.loading and entry.text or nil
+    return entry and not entry.loading and not entry.idle and not partsPending and entry.text or nil
   end
 
   -- Same default as mb-sysreport: Documents, or the home folder when that is missing.
@@ -621,12 +629,21 @@ exec xdg-open "$d"]]
       }))
     end
     if tab == "report" and choosing then
+      local function build()
+        partsPending = false
+        cache.report = nil
+        load("report", true)
+        render()
+      end
       local function pick(set)
         picked = set
         saveSettings()
-        cache.report = nil
-        load("report")
-        render()
+        if liveParts then
+          build()
+        else
+          partsPending = true
+          render()
+        end
       end
       local box = {}
       for _, g in ipairs(GROUPS) do
@@ -643,13 +660,28 @@ exec xdg-open "$d"]]
           table.insert(box, ui.row({ gap = 4 }, { table.unpack(chips, n, math.min(n + 5, #chips)) }))
         end
       end
+      local top = {
+        ui.label({ text = "Include in the report", fontSize = 12, fontWeight = "bold", flexGrow = 1 }),
+        ui.toggle({ key = "live" .. (liveParts and "1" or "0"), checked = liveParts, onChange = function()
+          liveParts = not liveParts
+          saveSettings()
+          local cur = cache.report
+          if liveParts and (partsPending or not cur or cur.idle) then
+            build()
+          else
+            render()
+          end
+        end }),
+        ui.label({ text = "Direct", color = "on_surface_variant", fontSize = 11, tooltip = "On: the report is built after every change. Off: press Build report (for slow machines)" }),
+      }
+      if not liveParts then
+        table.insert(top, ui.button({ text = "Build report", glyph = "refresh", variant = partsPending and "primary" or "outline", controlSize = "sm", onClick = build }))
+      end
+      table.insert(top, ui.button({ text = "Standard", variant = "outline", controlSize = "sm", onClick = function() pick(standardParts()) end }))
+      table.insert(top, ui.button({ text = "None", variant = "outline", controlSize = "sm", onClick = function() pick({}) end }))
       -- Fixed height: the rows of chips are not measured reliably, so the box scrolls instead of overlapping.
-      table.insert(right, ui.column({ gap = 6, height = 270, fill = "surface_variant", radius = 10, padding = 10, border = "primary", borderWidth = 1 }, {
-        ui.row({ gap = 6, align = "center" }, {
-          ui.label({ text = "Include in the report", fontSize = 12, fontWeight = "bold", flexGrow = 1 }),
-          ui.button({ text = "Standard", variant = "outline", controlSize = "sm", onClick = function() pick(standardParts()) end }),
-          ui.button({ text = "None", variant = "outline", controlSize = "sm", onClick = function() pick({}) end }),
-        }),
+      table.insert(right, ui.column({ gap = 6, height = 225, fill = "surface_variant", radius = 10, padding = 10, border = "primary", borderWidth = 1 }, {
+        ui.row({ gap = 6, align = "center", padding = 6, radius = 8, border = "outline_variant", borderWidth = 1 }, top),
         ui.scroll({ flexGrow = 1, key = "parts" }, {
           ui.column({ gap = 6 }, box),
         }),
@@ -698,6 +730,7 @@ exec xdg-open "$d"]]
     checks = {}
     private = false
     choosing = false
+    partsPending = false
     openFix = nil
     fixQuery, fixTopic = "", ""
     services.reset()
