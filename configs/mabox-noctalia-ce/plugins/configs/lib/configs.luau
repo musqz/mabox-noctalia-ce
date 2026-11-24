@@ -15,26 +15,26 @@ local toml = require("./tomlsection.luau")
 return function(pinned)
 -- Prints group|name|path|state for every entry whose command (or path) exists.
 local PROBE = [[
-printf '%s\n' "$1" | while IFS='|' read -r g n c p; do
+printf '%s\n' "$1" | while IFS='|' read -r g n c p x; do
   [ -n "$p" ] || continue
   case $p in "~"*) p=$HOME${p#"~"} ;; esac
   if [ "$c" = "-" ]; then [ -e "$p" ] || continue
   else command -v "$c" >/dev/null || continue; fi
   if [ -e "$p" ]; then s=ok; else s=missing; fi
-  printf '%s|%s|%s|%s\n' "$g" "$n" "$p" "$s"
+  printf '%s|%s|%s|%s|%s\n' "$g" "$n" "$p" "$s" "$x"
 done
 ]]
 
 local OPEN = [[
-if [ -d "$1" ]; then exec xdg-open "$1"; fi
+if [ -d "$1" ]; then exec mb-files "$1"; fi
 if command -v geany >/dev/null; then exec geany "$1"; fi
 exec xdg-open "$1"
 ]]
 
 -- A directory opens itself, a file opens its folder.
 local SHOW = [[
-if [ -d "$1" ]; then exec xdg-open "$1"; fi
-exec xdg-open "$(dirname "$1")"
+if [ -d "$1" ]; then exec mb-files "$1"; fi
+exec mb-files "$(dirname "$1")"
 ]]
 
 -- Path of the file copied in the file manager (Ctrl+C or Copy Path): file:// uri or plain text.
@@ -190,6 +190,8 @@ local PINNABLE = { colors = true, notes = true, status = true, configs = true, c
 local stopped = {}
 local expanded = {}
 local newName = ""
+local newNote = ""
+local noteNonce = 0
 local newPath = ""
 local render
 -- The pinned window and the dropdown render separately: hovering the card renders it again from the state file.
@@ -373,9 +375,9 @@ refresh = function()
   noctalia.runAsync({ "sh", "-c", PROBE, "sh", table.concat(all, "\n") }, function(result)
     entries = {}
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
-      local g, n, p, s = string.match(l, "^([^|]*)|([^|]*)|([^|]*)|(%a+)$")
+      local g, n, p, s, x = string.match(l, "^([^|]*)|([^|]*)|([^|]*)|(%a+)|(.*)$")
       if g then
-        table.insert(entries, { group = g, name = n, path = p, state = s })
+        table.insert(entries, { group = g, name = n, path = p, state = s, note = x })
       end
     end
     render()
@@ -489,8 +491,10 @@ local function addCustom()
   if raw ~= "" and string.sub(raw, -1) ~= "\n" then
     raw = raw .. "\n"
   end
-  noctalia.writeFile(localFile(), raw .. "Custom|" .. name .. "|-|" .. path .. "\n")
-  newName, newPath = "", ""
+  local note = string.sub(noctalia.string.trim((string.gsub(newNote, "[|\n]", " "))), 1, 60)
+  noctalia.writeFile(localFile(), raw .. "Custom|" .. name .. "|-|" .. path .. (note ~= "" and "|" .. note or "") .. "\n")
+  newName, newPath, newNote = "", "", ""
+  noteNonce += 1
   refresh()
 end
 
@@ -516,7 +520,7 @@ local function removeCustom(name, path)
   local out = {}
   local done = false
   for l in string.gmatch(noctalia.readFile(localFile()) or "", "[^\n]+") do
-    local raw = string.match(l, "^[^|]*|[^|]*|[^|]*|(.*)$") or ""
+    local raw = string.match(l, "^[^|]*|[^|]*|[^|]*|([^|]*)") or ""
     raw = string.gsub(raw, "^~", home)
     if not done and string.sub(l, 1, #prefix) == prefix and raw == path then
       done = true
@@ -768,8 +772,7 @@ local function entryRow(e)
   stop("f" .. uid, 1, showIt)
   stop("o" .. uid, 2, openIt)
   local items = {
-    ui.label({ text = e.name, color = e.state == "ok" and "on_surface" or "on_surface_variant" }),
-    ui.spacer({ flexGrow = 1 }),
+    ui.label({ text = e.note ~= "" and e.note or e.name, color = e.state == "ok" and "on_surface" or "on_surface_variant", maxLines = 1, flexGrow = 1, tooltip = e.path }),
     ui.button({ key = "f" .. uid, glyph = "folder", selected = kbd.sel("f" .. uid), variant = "ghost", controlSize = "sm", tooltip = "Show in file manager", onClick = showIt }),
     ui.button({
       key = "o" .. uid,
@@ -782,7 +785,7 @@ local function entryRow(e)
     }),
   }
   if e.name == "autostart" or e.name == "autostart.local" then
-    table.insert(items, 3, ui.button({ key = "as" .. uid, glyph = "rocket", variant = "ghost", controlSize = "sm", tooltip = "Open the Autostart panel", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/autostart:main" }) end }))
+    table.insert(items, 2, ui.button({ key = "as" .. uid, glyph = "rocket", variant = "ghost", controlSize = "sm", tooltip = "Open the Autostart panel", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/autostart:main" }) end }))
   end
   if e.group == "Custom" then
     stop("x" .. uid, 3, removeIt)
@@ -1432,6 +1435,8 @@ render = function()
         ui.input({ key = "newName", value = newName, onChange = function(t) newName = t end }),
         ui.label({ text = "Path (~ allowed)", fontSize = 11, color = "on_surface_variant" }),
         ui.input({ key = "newPath", value = newPath, onChange = function(t) newPath = t end }),
+        ui.label({ text = "Comment (optional, shown instead of the file name)", fontSize = 11, color = "on_surface_variant" }),
+        ui.input({ key = "newNote" .. noteNonce, value = newNote, onChange = function(t) newNote = t end }),
         ui.row({ gap = 4 }, {
           ui.button({ key = "c-files", selected = kbd.sel("c-files"), text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = files }),
           ui.button({ key = "c-paste", selected = kbd.sel("c-paste"), text = "Paste", glyph = "clipboard", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Use the copied file", onClick = paste }),
@@ -1439,7 +1444,7 @@ render = function()
         }),
       }))
     end
-    -- The pinned window has no fields: the copied file is added at once.
+    -- The pinned window adds the copied file at once; the comment field is optional.
     if g == "Custom" and not closed and pinned then
       row += 1
       local function files()
@@ -1450,6 +1455,7 @@ render = function()
       end
       stop("c-files", 1, files)
       stop("c-copied", 2, addCopied)
+      table.insert(rows, ui.input({ key = "newNote" .. noteNonce, value = newNote, placeholder = "comment (optional)", controlSize = "sm", frameVisible = true, onChange = function(t) newNote = t end }))
       table.insert(rows, ui.row({ gap = 4 }, {
         ui.button({ key = "c-files", selected = kbd.sel("c-files"), text = "Files", glyph = "folder-open", variant = "ghost", controlSize = "sm", flexGrow = 1, tooltip = "Open the file manager, select a file, press Ctrl+C", onClick = files }),
         ui.button({ key = "c-copied", selected = kbd.sel("c-copied"), text = "Add copied", glyph = "plus", variant = "primary", controlSize = "sm", flexGrow = 1, tooltip = "Add the file you copied in the file manager", onClick = addCopied }),
