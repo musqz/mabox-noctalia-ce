@@ -52,8 +52,8 @@ local searchNonce = 0
 local render
 local listDir
 
-local ORDER = { "quick", "sessions", "places", "bookmarks", "drives", "recent" }
-local TITLES = { quick = "Quick", sessions = "Sessions", places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
+local ORDER = { "quick", "places", "bookmarks", "drives", "recent" }
+local TITLES = { quick = "Quick", places = "Folders", bookmarks = "Bookmarks", drives = "Drives", recent = "Recent" }
 local order = { table.unpack(ORDER) }
 local hidden = {}
 local folded = {}
@@ -924,11 +924,11 @@ function S.run(args, after)
 end
 
 function S.loginFile()
-  return (noctalia.getenv("XDG_STATE_HOME") or (HOME .. "/.local/state")) .. "/mabox-noctalia-ce/session-login"
+  return (noctalia.getenv("XDG_CONFIG_HOME") or (HOME .. "/.config")) .. "/mabox-noctalia-ce/autostart.skip"
 end
 
 function S.load()
-  S.login = noctalia.fileExists(S.loginFile())
+  S.login = not string.find("\n" .. (noctalia.readFile(S.loginFile()) or "") .. "\n", "\nsession\n", 1, true)
   noctalia.runAsync({ "mb-session", "current" }, function(r)
     S.cur = tonumber(string.match(r.stdout or "", "%d+"))
     render()
@@ -1097,7 +1097,7 @@ function S.card()
     ui.button({ key = "ssave", glyph = "device-floppy", text = S.base and "Save new" or "Save", variant = "outline", controlSize = "sm",
       tooltip = S.base and "Save the apps opened since New" or "Save every open window", onClick = function() S.save(S.base) end }),
   }))
-  return card("sessions", rows)
+  return ui.column({ key = "sessions", fill = "surface_variant", radius = 10, padding = 10, gap = 2, border = "primary", borderWidth = 1 }, rows)
 end
 
 local function recentCard()
@@ -1566,7 +1566,6 @@ render = function()
   byId.drives = driveCard()
   byId.recent = recentCard()
   byId.quick = quickCard()
-  byId.sessions = S.card()
   local cards = {}
   for i, id in ipairs(order) do
     if editing and byId[id] then
@@ -1598,8 +1597,9 @@ local function open()
   loadLayout()
   loadSize()
   qDel = nil
-  S.load()
-  if only ~= "sessions" then
+  if only == "sessions" then
+    S.load()
+  else
     reload()
   end
 end

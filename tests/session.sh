@@ -114,9 +114,9 @@ MB_SESSION_WORKSPACE=1 "$ms" start other --replace; sleep 0.3
 [[ $("$ms" show wide | grep -c '^firefox') == 0 ]] || fail "replace saved another session's app: $("$ms" show wide)"
 
 # login switch
-export XDG_STATE_HOME=$tmp/state
-[[ $("$ms" login) == off ]] || fail "login default"
-"$ms" login on; [[ $("$ms" login) == on ]] || fail "login on"
+[[ $("$ms" login) == on ]] || fail "login default"
 "$ms" login off; [[ $("$ms" login) == off ]] || fail "login off"
+grep -qx session "$tmp/.config/mabox-noctalia-ce/autostart.skip" || fail "login off: skip file"
+"$ms" login on; [[ $("$ms" login) == on ]] || fail "login on"
 
 echo ok

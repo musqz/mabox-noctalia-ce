@@ -148,4 +148,14 @@ migrate; migrate
 [[ $(count 'key="A-F1"') == 1 ]] || { echo "FAIL migrate_35: expected one A-F1 bind"; exit 1; }
 valid || { echo "FAIL migrate_35: rc.xml is no longer valid"; exit 1; }
 
+# migrate_36: the Sessions panel entry is off by default; a login switched on before stays on, once.
+sk=$conf/mabox-noctalia-ce/autostart.skip
+rm -f "$sk"; echo 35 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(grep -cx session "$sk") == 1 ]] || { echo "FAIL migrate_36: session not off by default"; exit 1; }
+printf 'kanshi\nsession\n' > "$sk"; mkdir -p "$tmp/state/mabox-noctalia-ce"; : > "$tmp/state/mabox-noctalia-ce/session-login"
+echo 35 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate
+[[ $(<"$sk") == kanshi && ! -e "$tmp/state/mabox-noctalia-ce/session-login" ]] || { echo "FAIL migrate_36: login kept on"; exit 1; }
+
 echo ok
