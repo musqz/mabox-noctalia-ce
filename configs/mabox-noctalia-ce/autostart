@@ -1,10 +1,5 @@
-# Example autostart file
-
-# When running under systemd, uncomment the systemctl line below to pull in
-# graphical-session.target via labwc-session.target. This lets systemd user
-# services declaring WantedBy=graphical-session.target (panels, portals,
-# notification daemons, etc.) start in sync with the labwc session. Enable
-# individual services with: systemctl --user enable <unit>
+# Mabox defaults. Switch them off in the Autostart panel (autostart.skip).
+# Your own programs go in autostart.local (Autostart panel, Open autostart.local), not in this file.
 #
 # Entries listed in autostart.skip (one name per line, set in the Autostart panel) do not start.
 on() { ! grep -qx "$1" ~/.config/mabox-noctalia-ce/autostart.skip 2>/dev/null; }
