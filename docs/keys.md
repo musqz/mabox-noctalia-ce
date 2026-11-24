@@ -47,6 +47,7 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 | `W-i` | install apps |
 | `W-p` | places |
 | `C-W-p` | pinned places window |
+| `A-F1` | sessions panel |
 | `W-A-s` | status |
 | `C-W-s` | pinned status window |
 | `A-Space` | root menu |
