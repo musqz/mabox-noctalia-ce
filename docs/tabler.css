@@ -1,0 +1,12 @@
+@font-face {
+  font-family: "tabler-places";
+  src: url("fonts/tabler-places.ttf") format("truetype");
+}
+.ti {
+  font-family: "tabler-places";
+  font-style: normal;
+  font-size: 1.6em;
+  line-height: 1;
+  vertical-align: middle;
+  color: #e4a667;
+}

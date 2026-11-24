@@ -13,14 +13,14 @@ Folders, drives, bookmarks and recent files in one narrow panel. Pinned at the s
 
 | Icon | Does |
 |---|---|
-| <img src="img/places-icon-refresh.png" width="34" alt=""> | Reload the lists |
-| <img src="img/places-icon-edit.png" width="34" alt=""> | Show, hide and move the cards; the edit screen lists the buttons |
-| <img src="img/places-icon-chevrons.png" width="34" alt=""> | Close open folders; click again to fold all cards; again to unfold them |
-| <img src="img/places-icon-usage.png" width="34" alt=""> | Disk usage (QDirStat) |
-| <img src="img/places-icon-dock.png" width="34" alt=""> | Dock: keep windows clear of the panel |
-| <img src="img/places-icon-navbar.png" width="34" alt=""> | Open as the top panel and close this window |
-| <img src="img/places-icon-side.png" width="34" alt=""> | Move to the other side |
-| <img src="img/places-icon-close.png" width="34" alt=""> | Close |
+| <i class="ti">&#xEB13;</i> | Reload the lists |
+| <i class="ti">&#xEA03;</i> | Show, hide and move the cards; the edit screen lists the buttons |
+| <i class="ti">&#xEA66;</i> | Close open folders; click again to fold all cards; again to unfold them |
+| <i class="ti">&#xF381;</i> | Disk usage (QDirStat) |
+| <i class="ti">&#xEADA;</i> | Dock: keep windows clear of the panel |
+| <i class="ti">&#xEAD7;</i> | Open as the top panel and close this window |
+| <i class="ti">&#xEDB0;</i> | Move to the other side |
+| <i class="ti">&#xEB55;</i> | Close |
 
 ## Search
 
