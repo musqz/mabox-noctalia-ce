@@ -1,0 +1,13 @@
+# section,keys,description  (defaults, from the Evince help (help.gnome.org))
+Navigate,Up or Down,Scroll
+Navigate,Ctrl+PgUp or Ctrl+PgDn,Previous or next page
+Navigate,Ctrl+Home,Start of the document
+Navigate,Ctrl+End,End of the document
+Navigate,Shift+PgUp or Shift+PgDn,Ten pages at a time
+Navigate,F9,Show or hide the side pane
+View,Ctrl++,Zoom in
+View,Ctrl+-,Zoom out
+View,F11,Full screen
+View,F11 or Esc,Leave full screen
+Search,Ctrl+F or /,Show the search box
+Search,Esc,Hide the search bar

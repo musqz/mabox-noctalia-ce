@@ -1,0 +1,50 @@
+# section,keys,description  (defaults, Linux, from the VS Code default keybindings (code.visualstudio.com))
+General,Ctrl+Shift+P or F1,Command palette
+General,Ctrl+P,Quick open a file
+General,"Ctrl+,",Settings
+General,Ctrl+N,New file
+General,Ctrl+S,Save
+General,Ctrl+W,Close editor
+General,Ctrl+K Ctrl+W,Close all editors
+General,Ctrl+Shift+T,Reopen closed editor
+Display,Ctrl+B,Show or hide the side bar
+Display,F11,Full screen
+Display,Ctrl+K Z,Zen mode
+Display,Esc Esc,Leave Zen mode
+Display,Ctrl+=,Zoom in
+Display,Ctrl+Num0,Reset zoom
+Display,Ctrl+Shift+E,Explorer
+Editing,Ctrl+Shift+K,Delete line
+Editing,Alt+Up,Move line up
+Editing,Alt+Down,Move line down
+Editing,Ctrl+/,Toggle line comment
+Editing,Ctrl+Shift+I,Format document
+Editing,Ctrl+K Ctrl+F,Format selection
+Editing,Ctrl+Space,Suggestions
+Editing,Ctrl+.,Quick fix
+Navigation,Ctrl+G,Go to line
+Navigation,Ctrl+Shift+O,Go to symbol
+Navigation,F12,Go to definition
+Navigation,Ctrl+Shift+F10,Peek definition
+Navigation,Shift+F12,Go to references
+Navigation,Ctrl+Alt+-,Go back
+Navigation,F8,Next error or warning
+Navigation,Ctrl+\,Split editor
+Multi-cursor,Ctrl+D,Add the next match to the selection
+Multi-cursor,Ctrl+K Ctrl+D,Move the last selection to the next match
+Multi-cursor,Ctrl+Shift+L,Select all matches
+Multi-cursor,Shift+Alt+Up,Cursor above
+Multi-cursor,Shift+Alt+Down,Cursor below
+Search,Ctrl+F,Find
+Search,Ctrl+H,Replace
+Search,Ctrl+Shift+H,Replace in files
+Search,Alt+C,Match case
+Search,Alt+R,Regular expression
+Search,Alt+W,Whole word
+Search,Alt+Enter,Select all find matches
+Debug,F9,Toggle breakpoint
+Debug,F5,Start or continue debugging
+Debug,Ctrl+F5,Start without debugging
+Debug,F6,Pause
+Debug,F11,Step into
+Terminal,Ctrl+`,Show or hide the terminal
