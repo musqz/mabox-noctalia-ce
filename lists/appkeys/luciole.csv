@@ -1,0 +1,43 @@
+# section,keys,description  (defaults, from the Luciole binary; change them under [keybinds] in ~/.config/luciole/settings.toml)
+Navigate,Alt+Left,Back
+Navigate,Alt+Right,Forward
+Navigate,Alt+Up,Parent folder
+Navigate,Alt+Home,Home folder
+Navigate,Ctrl+L,Edit location
+Navigate,Ctrl+F or Ctrl+K,Search
+View,Ctrl+1,Grid view
+View,Ctrl+2,List view
+View,Ctrl+3,Miller columns
+View,Ctrl+H,Show hidden files
+View,Ctrl++ or Ctrl+=,Zoom in
+View,Ctrl+-,Zoom out
+View,Ctrl+0,Reset zoom
+View,F11,Fullscreen
+Files,Ctrl+X,Cut
+Files,Ctrl+C,Copy
+Files,Ctrl+V,Paste
+Files,Ctrl+Z,Undo
+Files,Ctrl+Shift+Z,Redo
+Files,Shift+Delete,Delete permanently
+Files,Alt+Enter,Properties
+Files,Shift+F10,Context menu
+Files,Ctrl+Shift+N,New folder
+Files,Ctrl+Alt+N,New file
+Select,Ctrl+A,Select all
+Select,Ctrl+Shift+I,Invert selection
+Select,Ctrl+S,Select by pattern
+Select,Ctrl+Space,Toggle selection
+Tabs,Ctrl+T,New tab
+Tabs,Ctrl+W,Close tab
+Tabs,Ctrl+Shift+T,Reopen closed tab
+Tabs,Ctrl+Shift+D,Duplicate tab
+Tabs,Ctrl+Tab or Ctrl+PgDn,Next tab
+Tabs,Ctrl+Shift+Tab or Ctrl+PgUp,Previous tab
+Tabs,Alt+1..8,Go to tab 1-8
+Tabs,Alt+9,Last tab
+Tabs,Ctrl+Enter,Open in new tab
+Tabs,Ctrl+Shift+Enter,Open in new tab in the background
+Windows,Ctrl+N,New window
+Windows,Ctrl+Shift+W,Close window
+Windows,Ctrl+Alt+W,Close split pane
+Windows,Ctrl+Q,Quit
