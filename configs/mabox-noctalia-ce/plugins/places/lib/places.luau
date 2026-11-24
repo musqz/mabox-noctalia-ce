@@ -11,11 +11,14 @@ local SIZES = { 5, 10, 20, 50 }
 local HOME = noctalia.getenv("HOME")
 local FOLDERS = {
   { name = "Home", glyph = "home", path = HOME },
-  { name = "Downloads", glyph = "download", path = HOME .. "/Downloads" },
+  { name = "Desktop", glyph = "device-desktop", path = HOME .. "/Desktop" },
   { name = "Documents", glyph = "files", path = HOME .. "/Documents" },
+  { name = "Downloads", glyph = "download", path = HOME .. "/Downloads" },
   { name = "Music", glyph = "music", path = HOME .. "/Music" },
   { name = "Pictures", glyph = "photo", path = HOME .. "/Pictures" },
   { name = "Videos", glyph = "video", path = HOME .. "/Videos" },
+  { name = "Public", glyph = "users", path = HOME .. "/Public" },
+  { name = "Templates", glyph = "file-plus", path = HOME .. "/Templates" },
   { name = "Trash", glyph = "trash", open = "trash:///" },
 }
 
@@ -325,7 +328,13 @@ local function loadPlaces()
   places = {}
   for _, f in ipairs(FOLDERS) do
     local target = f.open or f.path
-    table.insert(places, { name = f.name, glyph = f.glyph, path = f.path, open = target, ok = f.open ~= nil or noctalia.fileExists(target), std = true })
+    if f.open or noctalia.fileExists(target) then
+      table.insert(places, { name = f.name, glyph = f.glyph, path = f.path, open = target, ok = true, std = true })
+    end
+  end
+  -- Follows Luciole's "Show Network" switch.
+  if string.find("\n" .. (noctalia.readFile(HOME .. "/.config/luciole/settings.toml") or ""), "\nshow_network%s*=%s*true") then
+    table.insert(places, { name = "Network", glyph = "network", open = "network:///", ok = true, std = true })
   end
   local raw = noctalia.readFile(HOME .. "/.config/gtk-3.0/bookmarks") or ""
   if raw == "" then
@@ -1238,7 +1247,7 @@ local function legend()
   local items = {
     { "refresh", "Reload the lists" },
     { "adjustments", "Show, hide and move the cards (this screen)" },
-    { "chevrons-up", "Close all open folders" },
+    { "chevrons-up", "Close open folders; again folds all cards; again unfolds them" },
     { "chart-treemap", "Disk usage (QDirStat)" },
   }
   table.insert(items, { "layout-sidebar", "Dock: keep windows clear of the panel" })
@@ -1265,12 +1274,26 @@ render = function()
     noctalia.runAsync({ "qdirstat", HOME or "/" })
     done()
   end })
-  local collapseButton = ui.button({ key = "collapse", glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Close all open folders", onClick = function()
+  local collapseButton = ui.button({ key = "collapse", glyph = "chevrons-up", variant = "ghost", controlSize = "sm", tooltip = "Close open folders, then fold all cards, then unfold them", onClick = function()
     if next(expanded) ~= nil then
       expanded = {}
       newIn = nil
       render()
+      return
     end
+    local anyOpen = false
+    for _, id in ipairs(order) do
+      if not hidden[id] and not folded[id] then
+        anyOpen = true
+      end
+    end
+    forceOpen = {}
+    for _, id in ipairs(order) do
+      if not hidden[id] then
+        folded[id] = anyOpen or nil
+      end
+    end
+    saveLayout()
   end })
   if pinned then
     head = {
