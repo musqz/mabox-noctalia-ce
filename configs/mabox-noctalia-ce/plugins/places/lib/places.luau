@@ -1233,6 +1233,28 @@ local function searchRow()
   })
 end
 
+-- The pinned window has no tooltips: edit mode lists what the header and search icons do.
+local function legend()
+  local items = {
+    { "refresh", "Reload the lists" },
+    { "adjustments", "Show, hide and move the cards (this screen)" },
+    { "chevrons-up", "Close all open folders" },
+    { "chart-treemap", "Disk usage (QDirStat)" },
+  }
+  table.insert(items, { "layout-sidebar", "Dock: keep windows clear of the panel" })
+  table.insert(items, { "layout-navbar", "Open as the top panel, close this window" })
+  table.insert(items, { "arrows-left-right", "Move to the other side" })
+  table.insert(items, { "x", "Close" })
+  local rows = { ui.label({ text = "Buttons", fontSize = 11, color = "outline_variant" }) }
+  for _, it in ipairs(items) do
+    table.insert(rows, ui.row({ key = "lg-" .. it[1], gap = 8, align = "center" }, {
+      ui.glyph({ name = it[1], size = 14, color = "outline_variant" }),
+      ui.label({ text = it[2], fontSize = 11, color = "on_surface_variant", flexGrow = 1, maxLines = 2 }),
+    }))
+  end
+  return ui.column({ key = "legend", gap = 6, padding = 6 }, rows)
+end
+
 render = function()
   local head
   local editButton = ui.button({ key = "edit", glyph = "adjustments", variant = editing and "primary" or "ghost", controlSize = "sm", tooltip = "Show, hide and move the cards", onClick = function()
@@ -1314,6 +1336,9 @@ render = function()
     elseif byId[id] and not hidden[id] then
       table.insert(cards, byId[id])
     end
+  end
+  if editing and pinned then
+    table.insert(cards, legend())
   end
   table.insert(head, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = hitKey }, cards))
   pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1, height = (not pinned) and 712 or nil }, head))
