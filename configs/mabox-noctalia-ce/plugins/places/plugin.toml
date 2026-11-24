@@ -18,6 +18,16 @@ placement = "attached"
 open_near_click = true
 capture_keys = ["escape"]
 
+[[panel]]
+id = "sessions"
+entry = "sessions.luau"
+width = 800
+height = "content"
+max_height = 560
+placement = "attached"
+open_near_click = true
+capture_keys = ["escape"]
+
 [[service]]
 id = "pin"
 entry = "pin.luau"

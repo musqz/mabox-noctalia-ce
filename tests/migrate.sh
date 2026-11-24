@@ -141,4 +141,11 @@ migrate; migrate
 [[ $(count '<desktops number="4" />') == 1 ]] || { echo "FAIL migrate_34: desktops"; exit 1; }
 valid || { echo "FAIL migrate_34: rc.xml is no longer valid"; exit 1; }
 
+# migrate_35: the Sessions panel key is added once, and an existing binding of the key is left alone.
+grep -v 'key="A-F1"' "$root/configs/mabox-noctalia-ce/rc.xml" > "$conf/mabox-noctalia-ce/rc.xml"
+echo 34 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(count 'key="A-F1"') == 1 ]] || { echo "FAIL migrate_35: expected one A-F1 bind"; exit 1; }
+valid || { echo "FAIL migrate_35: rc.xml is no longer valid"; exit 1; }
+
 echo ok
