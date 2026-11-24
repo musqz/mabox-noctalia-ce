@@ -50,8 +50,8 @@ def die(msg):
     sys.exit(1)
 
 
-def windows():
-    """Unique app ids of the open windows, in list order."""
+def windows(all_windows=False):
+    """App ids of the open windows in list order, each once unless all_windows."""
     try:
         out = subprocess.run(["wlrctl", "toplevel", "list"], capture_output=True, text=True).stdout
     except OSError:
@@ -59,7 +59,7 @@ def windows():
     ids = []
     for line in out.splitlines():
         app_id = line.partition(": ")[0].strip()
-        if app_id and app_id not in ids and not app_id.lower().startswith(SKIP):
+        if app_id and (all_windows or app_id not in ids) and not app_id.lower().startswith(SKIP):
             ids.append(app_id)
     return ids
 
@@ -132,10 +132,11 @@ def command_for(app_id, notes):
     return running_cmdline(exe) or base
 
 
-def capture(only=None):
+def capture(before=None):
+    """before: app ids of the baseline windows; an app counts as new when it has more windows now."""
     notes, rows = [], []
     for app_id in windows():
-        if only is not None and app_id in only:
+        if before is not None and windows(True).count(app_id) <= before.count(app_id):
             continue
         cmd = command_for(app_id, notes)
         if cmd:
@@ -210,7 +211,7 @@ def cmd_save(argv):
     if new_only:
         try:
             with open(BASELINE) as f:
-                only = set(f.read().split("\n")) - {""}
+                only = f.read().split()
         except OSError:
             die("no baseline, run baseline first")
     old = read(name)[0] if os.path.isfile(path(name)) else None
@@ -268,7 +269,7 @@ def main(argv):
             print(f"{app_id}\t{cmd}")
     elif c == "baseline":
         with open(BASELINE, "w") as f:
-            f.write("\n".join(windows()) + "\n")
+            f.write("\n".join(windows(True)) + "\n")
     elif c == "save":
         cmd_save(a)
     elif c == "remove" and len(a) == 2:
