@@ -60,7 +60,17 @@ The list is the file `~/.config/mabox-noctalia-ce/config-paths.local`, one entry
 
 `W-A-i` opens the System panel: *Overview*, *Hardware*, *Logs* (this and the previous boot, kernel, failed services, crashes), *Report*, *Services* and *Fixes*.
 
-*Report* builds one text from the parts you choose. *Choose parts* ticks what goes in: Overview, Hardware, each log, and topics such as audio, graphics, network, Bluetooth, disks, boot, packages, power or desktop. The choice is remembered. The text has no user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names. Read it, then *Copy* or *Save* (to `~/Documents`, or the folder set in *Settings*).
+*Report* builds one text from the parts you choose.
+
+<p align="center"><a href="img/system-report.png"><img src="img/thumb/system-report.png" alt="System panel, Report tab with the parts box open and Direct switched off"></a></p>
+
+1. Press *Choose parts* and tick what goes in: *Basics* (Overview, Hardware), *Logs* (system warnings, user warnings, previous boot, kernel, failed services, crashes, Noctalia, pacman) and *Topics* (full system, hardware only, audio, graphics, network, Bluetooth, disks, boot and kernel, packages, power, desktop and Noctalia). *Standard* and *None* set or clear all parts. The choice is remembered.
+2. Read the text. It has no user name, host name, IP and MAC addresses, ids, serials and Wi-Fi names.
+3. Press *Copy*, or *Save* (to `~/Documents`, or the folder set in *Settings*).
+
+*Direct* (switch in the parts box): on, the report is built again after every change. Off, nothing is collected until you press *Build report*; use this on a slow machine. *Copy* and *Save* come back after *Build report*.
+
+A failed run shows `mb-sysreport failed (exit N)`. Press the refresh icon at the top to run it again.
 
 *Services* lists the system and user services (Failed, Running, All) with a name filter. Open one for its file path, status (scrubbed), *Open folder* and *Edit* (your own file in an editor, otherwise a drop-in, pre-filled with a commented template: remove the `#` of a line to use it, then restart the unit). *Restart*, *Stop*, *Start* and *Reset failed* open a terminal that shows the command and asks y/N first; system units use `sudo` and ask for the unit name instead of y. The *Timers* chip lists your user timers: *Run now* (starts the service), *Start*, *Stop*, *Enable* and *Disable* (both with `--now`) and *Edit*; system timers are not listed. Session-critical units (dbus, systemd-*, login and display managers, polkit, NetworkManager) show status and the folder only; no Edit, Stop or Restart.
 
