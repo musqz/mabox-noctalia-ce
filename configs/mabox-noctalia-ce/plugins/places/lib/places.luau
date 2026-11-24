@@ -935,7 +935,7 @@ function S.load()
   end)
   noctalia.runAsync({ "mb-session", "list" }, function(r)
     S.list = {}
-    for n, ws, c in string.gmatch(r.stdout or "", "([^\t\n]+)\t(%d+)\t(%d+)") do
+    for n, ws, c in string.gmatch(r.stdout or "", "([^\t\n]+)\t(%d+-?%d*)\t(%d+)") do
       table.insert(S.list, { name = n, ws = ws, count = c })
     end
     for name in pairs(S.shown) do

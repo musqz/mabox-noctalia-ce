@@ -9,7 +9,7 @@
   mb-session remove NAME APP_ID         drop an app (all its windows) from a session
   mb-session rename OLD NEW
   mb-session delete NAME
-  mb-session start NAME [--replace]     go to the workspace, start the missing apps;
+  mb-session start NAME [--replace]     go to the (first) workspace, start the missing apps;
                                         --replace saves the session you are in, closes every window first
   mb-session switch NAME                go to the workspace only
   mb-session current                    number of the active workspace
@@ -181,7 +181,7 @@ def read(name):
     p = path(name)
     if not os.path.isfile(p):
         die(f"no session {name}")
-    ws, apps = None, []
+    ws, apps = (0, 0), []
     with open(p) as f:
         for line in f:
             line = line.rstrip("\n")
@@ -272,7 +272,9 @@ def cmd_start(name, replace=False):
     if replace:
         old = session_at(current_workspace())
         if old:
-            rows = capture()
+            # apps of the other sessions stay out of the saved one
+            others = {r[0] for n in names() if n != old for r in read(n)[1]} - {r[0] for r in read(old)[1]}
+            rows = [r for r in capture() if r[0] not in others]
             if rows:
                 write(old, read(old)[0], rows)
         close_all()
@@ -309,8 +311,9 @@ def current_workspace():
     spaces = []
 
     def on_workspace(_mgr, ws):
-        ws.info = {"state": 0}
+        ws.info = {"state": 0, "name": ""}
         ws.dispatcher["state"] = lambda o, st: o.info.__setitem__("state", st)
+        ws.dispatcher["name"] = lambda o, n: o.info.__setitem__("name", n)
         spaces.append(ws)
 
     def on_global(reg, name, iface, ver):
@@ -321,9 +324,11 @@ def current_workspace():
     display.get_registry().dispatcher["global"] = on_global
     for _ in range(3):
         display.roundtrip()
-    active = next((i for i, ws in enumerate(spaces, 1) if ws.info["state"] & 1), None)
-    sys.stdout.flush()
-    return active
+    for i, ws in enumerate(spaces, 1):
+        if ws.info["state"] & 1:
+            m = re.search(r"(\d+)$", ws.info["name"])  # "Workspace 2"
+            return int(m.group(1)) if m else i
+    return None
 
 
 def cmd_stop(name):
