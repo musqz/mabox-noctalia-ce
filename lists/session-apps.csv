@@ -1,0 +1,5 @@
+# app_id,command,note  (command used when the app has no arguments to keep; ids that differ from the executable)
+firefox,firefox --new-window,
+geany,geany -i,
+dev.noctalia.luciole,mb-files,
+cava-transparent,mb-cava,

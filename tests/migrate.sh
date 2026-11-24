@@ -133,4 +133,12 @@ migrate; migrate
 printf 'Exec=mine\n' > "$desk"; echo 27 > "$tmp/state/mabox-noctalia-ce/config-version"; migrate
 [[ $(<"$desk") == Exec=mine ]] || { echo "FAIL migrate_28: overwrote the user's launcher"; exit 1; }
 
+# migrate_34: the session workspace binds are added once, four workspaces at least, a user-bound key stays.
+grep -v 'key="W-A-C-F' "$root/configs/mabox-noctalia-ce/rc.xml" | sed 's#<desktops number="4" />#<desktops number="2" />#; s#</keyboard>#    <keybind key="W-A-C-F2"><action name="Execute" command="mine"/></keybind>\n  </keyboard>#' > "$conf/mabox-noctalia-ce/rc.xml"
+echo 33 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(count 'GoToDesktop') == 5 && $(count 'key="W-A-C-F2"') == 1 && $(count 'command="mine"') == 1 ]] || { echo "FAIL migrate_34: binds"; exit 1; }
+[[ $(count '<desktops number="4" />') == 1 ]] || { echo "FAIL migrate_34: desktops"; exit 1; }
+valid || { echo "FAIL migrate_34: rc.xml is no longer valid"; exit 1; }
+
 echo ok
