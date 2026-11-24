@@ -16,6 +16,9 @@
 - Add Audacity, Chromium, Evince, Kdenlive, Okular, Signal and VS Code to the application lists of the Keys panel.
 - Add a button to the Notes panel and the pinned Notes window that shows or hides the post-its (`mb-postits --front`, `W-A-y`).
 - Install `labwc-menu-generator-git` and `luciole-git` from the Mabox repo, and list `luciole-git` as an optional dependency (file manager of `mb-files`).
+- Add sessions: `mb-session` saves the running windows as a named set of apps on its own workspace and starts or switches it again; `mb-migrate` adds the workspace binds (`W-A-C-F1..6`).
+- Add a Sessions card to Places and a Sessions panel (`A-F1`) with start, save, stop, rename and delete; the root menu lists the sessions.
+- Add an *Open at login* switch to the Sessions panel; `mb-migrate` adds the autostart line (off by default).
 
 ## 0.9.0
 - Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
