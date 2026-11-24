@@ -1473,7 +1473,7 @@ render = function()
         logo(),
         ui.label({ text = "Sessions" }),
         ui.label({ text = hotkey("mabox/places:sessions"), color = "outline_variant", flexGrow = 1 }),
-        ui.button({ key = "slogin", glyph = "power", variant = S.login and "primary" or "ghost", controlSize = "sm",
+        ui.button({ key = "slogin", glyph = "login", variant = S.login and "primary" or "ghost", controlSize = "sm",
           tooltip = S.login and "Opens at login (click to turn off)" or "Open this panel at login", onClick = function()
             S.login = not S.login
             noctalia.runAsync({ "mb-session", "login", S.login and "on" or "off" })
