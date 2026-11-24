@@ -107,7 +107,8 @@ end
 function M.setSkipped(name, skip)
   local names = {}
   for line in string.gmatch(noctalia.readFile(skipFile()) or "", "[^\n]+") do
-    if line ~= name then
+    line = noctalia.string.trim(line)
+    if line ~= "" and line ~= name then
       table.insert(names, line)
     end
   end
