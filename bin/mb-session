@@ -126,7 +126,7 @@ def running_cmdlines(exe):
     return [c for _, c in sorted(found)]
 
 
-def commands_for(app_id, count, notes):
+def commands_for(app_id, count, notes, skip=0):
     """One command per window: the running command lines first, else the base command."""
     base = overrides().get(app_id.lower()) or desktop_exec(app_id)
     if not base:
@@ -137,7 +137,7 @@ def commands_for(app_id, count, notes):
         running = running_cmdlines(os.path.basename(argv[0]))
     except (ValueError, IndexError):
         running = []
-    return [(running[i] if i < len(running) else base) for i in range(count)]
+    return [(running[i] if i < len(running) else base) for i in range(skip, skip + count)]
 
 
 def capture(before=None):
@@ -145,8 +145,8 @@ def capture(before=None):
     notes, rows = [], []
     now = windows(True)
     for app_id in windows():
-        count = now.count(app_id) - (before.count(app_id) if before is not None else 0)
-        rows += [(app_id, c) for c in commands_for(app_id, count, notes)]
+        skip = before.count(app_id) if before is not None else 0
+        rows += [(app_id, c) for c in commands_for(app_id, now.count(app_id) - skip, notes, skip)]
     for n in notes:
         print(n, file=sys.stderr)
     return rows
@@ -270,12 +270,7 @@ def menu():
     out = ["<openbox_pipe_menu>",
            item("Sessions panel", "noctalia msg panel-toggle mabox/places:sessions")]
     for n in names():
-        q = shlex.quote(n)
-        out += [f"<menu id={quoteattr('session-' + n)} label={quoteattr(n)}>",
-                item("Start", f"setsid -f mb-session start {q}"),
-                item("Stop", f"mb-session stop {q}"),
-                item("Save current windows", f"mb-session save {q}"),
-                "</menu>"]
+        out.append(item(n, f"setsid -f mb-session start {shlex.quote(n)}"))
     out.append("</openbox_pipe_menu>")
     print("\n".join(out))
 

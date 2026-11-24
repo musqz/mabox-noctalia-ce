@@ -1564,7 +1564,9 @@ local function open()
   loadSize()
   qDel = nil
   S.load()
-  reload()
+  if only ~= "sessions" then
+    reload()
+  end
 end
 
 local function tick()

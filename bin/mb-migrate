@@ -358,7 +358,7 @@ migrate_34() {
 migrate_35() {
     local a=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/autostart
     if [[ -f $a ]] && grep -q '^on() {' "$a" && ! grep -q 'mb-session login-run' "$a"; then
-        sed -i '/mb-plugins-enable/a on session \&\& command -v mb-session >/dev/null \&\& (sleep 8 \&\& mb-session login-run) >/dev/null 2>\&1 \&' "$a"
+        sed -i '/^command -v mb-plugins-enable/a on session \&\& command -v mb-session >/dev/null \&\& (sleep 8 \&\& mb-session login-run) >/dev/null 2>\&1 \&' "$a"
     fi
     local m=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/menu.xml
     if [[ -f $m ]] && ! grep -q 'mb-session menu' "$m" && grep -q 'id="apps-menu"' "$m"; then
