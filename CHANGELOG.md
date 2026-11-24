@@ -8,6 +8,7 @@
 - Make the Places chevron button close open folders first, then fold all cards, then unfold them.
 - Add an optional comment to Custom entries in the Configs panel; it replaces the file name in the row.
 - Open the folder buttons of the Configs panel through `mb-files`, so Luciole opens first.
+- Click the comment of a Custom entry in the Configs panel to change it.
 
 ## 0.9.0
 - Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
