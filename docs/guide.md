@@ -35,19 +35,22 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 Add a file you edit often, such as a config of another program.
 
 1. Press **Files**. The file manager opens in `~/.config`.
-2. Select the file and copy it (Ctrl+C).
-3. Type a comment (optional), for example `stremio`.
-4. Press **Add copied**.
+2. Select the file and copy it (Ctrl+C). The path of the file is now in the clipboard.
+3. Type a comment in the field, for example `stremio` (optional).
+4. Press **Add copied**. The row is added and the field is empty again.
+
+**Add copied** takes the path from the clipboard. Copy another file first for the next entry.
 
 The row shows the comment, or the file name when there is no comment. Hover the row for the full path.
+
+- Click the comment to change it: type, then press Enter or the check. The x cancels. An empty comment shows the file name again.
+- Buttons on the right:
 
 | Button | Does |
 |---|---|
 | folder | show the file in the file manager (Luciole) |
 | pencil | open the file in your editor |
 | trash | remove the row; the file stays |
-
-A row in grey text points to a file that no longer exists.
 
 In the dropdown (`W-c`) the card has fields instead: *Name* (optional, default: the file name), *Path* (`~` allowed), *Comment*. **Paste** fills the path with the file you copied; **Add** saves.
 
