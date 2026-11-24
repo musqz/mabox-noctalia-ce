@@ -25,7 +25,7 @@ A session is a saved set of applications with the workspace they live on. Start 
 | Icon | Does |
 |---|---|
 | <i class="ti">&#xEA61;</i> | Show the apps of the session. The x removes an app |
-| <i class="ti">&#xED46;</i> **name** | Go to the workspace and start the apps that are not open |
+| <i class="ti">&#xED46;</i> | Go to the workspace and start the apps that are not open |
 | <i class="ti">&#xEB62;</i> | Save all open windows into the session. Press twice |
 | <i class="ti">&#xEBC7;</i> | Replace: save the session you are in, close every window, start this one. Press twice |
 | <i class="ti">&#xED4A;</i> | Close the windows of the session's apps. Press twice |
