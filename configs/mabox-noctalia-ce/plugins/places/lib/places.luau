@@ -924,7 +924,7 @@ function S.run(args, after)
 end
 
 function S.loginFile()
-  return HOME .. "/.config/mabox-noctalia-ce/autostart.skip"
+  return (noctalia.getenv("XDG_CONFIG_HOME") or (HOME .. "/.config")) .. "/mabox-noctalia-ce/autostart.skip"
 end
 
 function S.load()

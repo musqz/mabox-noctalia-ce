@@ -376,9 +376,10 @@ migrate_36() {
     local st=${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/session-login
     if [[ -f $st ]]; then
         rm -f "$st"
-        [[ -f $d/autostart.skip ]] && sed -i '/^session$/d' "$d/autostart.skip"
+        [[ -f $d/autostart.skip ]] && sed -i '/^session[[:space:]]*$/d' "$d/autostart.skip"
     elif ! grep -qx session "$d/autostart.skip" 2>/dev/null; then
         mkdir -p "$d"
+        [[ -s $d/autostart.skip && -n $(tail -c1 "$d/autostart.skip") ]] && echo >> "$d/autostart.skip"
         echo session >> "$d/autostart.skip"
     fi
     return 0
