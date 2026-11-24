@@ -26,7 +26,32 @@ The repo copy under `configs/` is only the default. Edit the live files under `~
 - *Power*, *Lockscreen*, *Text size*: screen off and lock times, lock screen look, size of text and widgets (see below).
 - *Bar buttons*: edit the buttons in the bar (see [Change a bar button](#change-a-bar-button)).
 - *labwc*, *Noctalia*, *Terminals*, *Tools*: the config files; the folder icon opens the folder, the pencil opens the file in your editor.
-- *Custom*: add your own files to the list.
+- *Custom*: add your own files to the list (see below).
+
+### Custom files
+
+<p align="center"><a href="img/configs-custom.png"><img src="img/configs-custom.png" alt="Custom card in the pinned Configs window with two entries, a comment field and the Files and Add copied buttons"></a></p>
+
+Add a file you edit often, such as a config of another program.
+
+1. Press **Files**. The file manager opens in `~/.config`.
+2. Select the file and copy it (Ctrl+C).
+3. Type a comment (optional), for example `stremio`.
+4. Press **Add copied**.
+
+The row shows the comment, or the file name when there is no comment. Hover the row for the full path.
+
+| Button | Does |
+|---|---|
+| folder | show the file in the file manager (Luciole) |
+| pencil | open the file in your editor |
+| trash | remove the row; the file stays |
+
+A row in grey text points to a file that no longer exists.
+
+In the dropdown (`W-c`) the card has fields instead: *Name* (optional, default: the file name), *Path* (`~` allowed), *Comment*. **Paste** fills the path with the file you copied; **Add** saves.
+
+The list is the file `~/.config/mabox-noctalia-ce/config-paths.local`, one entry per line: `Custom|name|-|path|comment`. The comment is optional.
 
 ## System info
 
