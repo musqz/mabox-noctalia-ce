@@ -227,6 +227,11 @@ local function loadNotes()
   end)
 end
 
+-- mb-postits is a toggle: a second start ends the running one. Detached, or runAsync ends it after about 30 s.
+local function togglePostits()
+  noctalia.runAsync({ "setsid", "-f", "mb-postits", "--front" })
+end
+
 local function reload()
   loadNotes()
   render()
@@ -824,12 +829,13 @@ render = function()
       ui.row({ gap = 6, align = "center" }, {
         ui.button({ glyph = "plus", text = "New", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 1, tooltip = "New note in the notes window", onClick = function() openMain("new") end }),
         ui.button({ glyph = "notes", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 2, tooltip = "Open the notes window", onClick = function() openMain() end }),
-        ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "Reload", onClick = reload }),
+        ui.button({ glyph = "sticker", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 3, tooltip = "show/hide postits " .. hotkey("mb-postits --front"), onClick = togglePostits }),
+        ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Reload", onClick = reload }),
         ui.spacer({ flexGrow = 1 }),
         pinSide.dockButton("notes", pinned, render),
         pinSide.panelButton("notes", "main"),
-        ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 4, tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
-        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 5, tooltip = "Close", onClick = function() pinSide.close("notes", pinned) end }),
+        ui.button({ glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 5, tooltip = "Move to the other side", onClick = function() pinSide.swap("notes", pinned) end }),
+        ui.button({ glyph = "x", variant = "ghost", controlSize = "sm", selected = zone == "top" and topCursor == 6, tooltip = "Close", onClick = function() pinSide.close("notes", pinned) end }),
       }),
     }
     local bar = colorBar()
@@ -867,6 +873,7 @@ render = function()
       logo(),
       ui.label({ text = "Notes" }),
       ui.label({ text = hotkey("mabox/notes:main"), color = "outline_variant", flexGrow = 1 }),
+      ui.button({ key = "postits", glyph = "sticker", variant = "ghost", controlSize = "sm", tooltip = "show/hide postits " .. hotkey("mb-postits --front"), onClick = togglePostits }),
       ui.button({ key = "reload", glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Re-read notes from disk", onClick = reload }),
       ui.button({ key = "pin", glyph = "pin", variant = "ghost", controlSize = "sm", tooltip = "Pin window", onClick = pinWindow }),
       ui.button({ key = "close", glyph = "x", variant = "ghost", controlSize = "sm", tooltip = "Close", onClick = function() panel.close() end }),
@@ -1068,7 +1075,7 @@ local function onKey(chord)
     if zone == "sel" then
       selCursor = math.max(1, math.min(7, selCursor + step))
     elseif zone == "top" then
-      topCursor = (topCursor - 1 + step) % 5 + 1
+      topCursor = (topCursor - 1 + step) % 6 + 1
     elseif zone == "side" then
       if step == -1 then
         return
@@ -1109,7 +1116,7 @@ local function onKey(chord)
     focusSearch = true
   elseif chord == "alt+enter" then
     if zone == "top" then
-      local actions = { function() openMain("new") end, function() openMain() end, reload, function() pinSide.swap("notes", pinned) end, function() panel.close() end }
+      local actions = { function() openMain("new") end, function() openMain() end, togglePostits, reload, function() pinSide.swap("notes", pinned) end, function() panel.close() end }
       actions[topCursor]()
       return
     elseif zone == "side" then
