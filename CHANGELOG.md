@@ -14,6 +14,7 @@
 - Show the exit code and run time when a System report run fails.
 - Add Luciole and swayimg to the application lists of the Keys panel.
 - Add Audacity, Chromium, Evince, Kdenlive, Okular, Signal and VS Code to the application lists of the Keys panel.
+- Add a button to the Notes panel and the pinned Notes window that shows or hides the post-its (`mb-postits --front`, `W-A-y`).
 - Install `labwc-menu-generator-git` and `luciole-git` from the Mabox repo, and list `luciole-git` as an optional dependency (file manager of `mb-files`).
 
 ## 0.9.0
