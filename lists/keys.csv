@@ -105,7 +105,7 @@ W-S-x,Capture,0,Stop recording and interval screenshots
 C-Insert,Capture,0,Show the last screenshot
 C-KP_1,Jump,0,Waterfox: focus or start
 C-KP_2,Jump,0,Geany: focus or start
-C-KP_3,Jump,0,PCManFM: focus or start
+C-KP_3,Jump,0,Luciole: focus or start
 C-KP_4,Jump,0,Terminator: focus or start
 C-KP_5,Jump,0,Stremio: focus or start
 C-KP_6,Jump,0,Firefox: focus or start
