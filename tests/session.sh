@@ -70,4 +70,23 @@ printf 'Toucher: b\n' > "$MB_WINDOWS"; "$ms" baseline
 printf 'Toucher: b\nToucher: b2\n' > "$MB_WINDOWS"
 "$ms" save more --new-only 2>/dev/null || fail "new-only: extra window of a known app"
 
+# every window is saved: two windows of one app give two lines; a quake terminal window is left out
+printf 'firefox: a\nfirefox: b\nfirefox: q-term-left\n' > "$MB_WINDOWS"
+"$ms" delete fresh; "$ms" delete more; "$ms" save multi 2>/dev/null || fail "save multi"
+[[ $("$ms" show multi | grep -c '^firefox') == 2 ]] || fail "one line per window: $("$ms" show multi)"
+# start launches only the missing window
+printf '# workspace 1\nToucher\ttouch %s/started\nToucher\ttouch %s/started2\n' "$tmp" "$tmp" > "$tmp/.config/mabox-noctalia-ce/sessions/two.session"
+printf 'Toucher: b\n' > "$MB_WINDOWS"; rm -f "$tmp/started" "$tmp/started2"
+"$ms" start two; sleep 0.3
+[[ ! -f $tmp/started && -f $tmp/started2 ]] || fail "start: count-aware"
+
+# the root menu is valid XML and lists the sessions
+"$ms" menu | python3 -c "import sys, xml.dom.minidom as m; d = m.parseString(sys.stdin.read()); assert 'multi' in d.toxml()" || fail "menu"
+
+# login switch
+export XDG_STATE_HOME=$tmp/state
+[[ $("$ms" login) == off ]] || fail "login default"
+"$ms" login on; [[ $("$ms" login) == on ]] || fail "login on"
+"$ms" login off; [[ $("$ms" login) == off ]] || fail "login off"
+
 echo ok

@@ -6,11 +6,15 @@
   mb-session capture                    app_id, command (TSV) of the open windows
   mb-session baseline                   remember the open windows for save --new-only
   mb-session save NAME [--new-only] [--workspace N]
-  mb-session remove NAME APP_ID         drop one app from a session
+  mb-session remove NAME APP_ID         drop an app (all its windows) from a session
   mb-session rename OLD NEW
   mb-session delete NAME
   mb-session start NAME                 go to the workspace, start the missing apps
   mb-session switch NAME                go to the workspace only
+  mb-session stop NAME                  close the windows of the session apps
+  mb-session menu                       labwc pipe menu
+  mb-session login [on|off]             show or set: open the Sessions panel at login
+  mb-session login-run                  autostart: open the panel when login is on
 
 Sessions: ~/.config/mabox-noctalia-ce/sessions/NAME.session, first line
 "# workspace N", then "app_id<TAB>command". start skips an app whose window is
@@ -24,6 +28,7 @@ import shlex
 import subprocess
 import sys
 import time
+from xml.sax.saxutils import quoteattr
 
 HOME = os.environ["HOME"]
 DIR = os.path.join(os.environ.get("XDG_CONFIG_HOME", HOME + "/.config"), "mabox-noctalia-ce", "sessions")
@@ -58,7 +63,10 @@ def windows(all_windows=False):
         die("wlrctl is not installed")
     ids = []
     for line in out.splitlines():
-        app_id = line.partition(": ")[0].strip()
+        app_id, _, title = line.partition(": ")
+        app_id = app_id.strip()
+        if title.startswith("q-term-"):  # the quake terminals have the terminal's app id
+            continue
         if app_id and (all_windows or app_id not in ids) and not app_id.lower().startswith(SKIP):
             ids.append(app_id)
     return ids
@@ -99,9 +107,9 @@ def desktop_exec(app_id):
     return None
 
 
-def running_cmdline(exe):
-    """Command line of the oldest process of this executable, when it carries arguments."""
-    best = None
+def running_cmdlines(exe):
+    """Command lines (with arguments) of the processes of this executable, oldest first."""
+    found = []
     for pid in filter(str.isdigit, os.listdir("/proc")):
         try:
             with open(f"/proc/{pid}/cmdline", "rb") as f:
@@ -114,33 +122,31 @@ def running_cmdline(exe):
             continue
         if any(a.startswith("--type=") or a == "-contentproc" for a in argv):
             continue
-        if best is None or start < best[0]:
-            best = (start, argv)
-    return shlex.join([exe] + best[1][1:]) if best else None
+        found.append((start, shlex.join([exe] + argv[1:])))
+    return [c for _, c in sorted(found)]
 
 
-def command_for(app_id, notes):
+def commands_for(app_id, count, notes, skip=0):
+    """One command per window: the running command lines first, else the base command."""
     base = overrides().get(app_id.lower()) or desktop_exec(app_id)
     if not base:
         notes.append(f"no command known for {app_id}, skipped")
-        return None
+        return []
     try:
         argv = [a for a in shlex.split(base) if a != "env" and "=" not in a.split("/")[0]]
-        exe = os.path.basename(argv[0])
+        running = running_cmdlines(os.path.basename(argv[0]))
     except (ValueError, IndexError):
-        return base
-    return running_cmdline(exe) or base
+        running = []
+    return [(running[i] if i < len(running) else base) for i in range(skip, skip + count)]
 
 
 def capture(before=None):
-    """before: app ids of the baseline windows; an app counts as new when it has more windows now."""
+    """One row per window; with before (the baseline ids) only the windows beyond those."""
     notes, rows = [], []
+    now = windows(True)
     for app_id in windows():
-        if before is not None and windows(True).count(app_id) <= before.count(app_id):
-            continue
-        cmd = command_for(app_id, notes)
-        if cmd:
-            rows.append((app_id, cmd))
+        skip = before.count(app_id) if before is not None else 0
+        rows += [(app_id, c) for c in commands_for(app_id, now.count(app_id) - skip, notes, skip)]
     for n in notes:
         print(n, file=sys.stderr)
     return rows
@@ -236,10 +242,13 @@ def cmd_start(name):
     ws, apps = read(name)
     switch(ws)
     time.sleep(0.5)
-    open_ids = {w.lower() for w in windows()}
+    open_now = [w.lower() for w in windows(True)]
     wait = float(os.environ.get("MB_SESSION_WAIT", "1"))
+    seen = {}
     for app_id, cmd in apps:
-        if app_id.lower() in open_ids:
+        # one line per window: start only the windows that are missing
+        seen[app_id.lower()] = seen.get(app_id.lower(), 0) + 1
+        if seen[app_id.lower()] <= open_now.count(app_id.lower()):
             continue
         try:
             subprocess.Popen(shlex.split(cmd), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
@@ -248,6 +257,36 @@ def cmd_start(name):
             print(f"mb-session: {app_id}: {e}", file=sys.stderr)
             continue
         time.sleep(wait)
+
+
+def cmd_stop(name):
+    for app_id, _ in read(name)[1]:
+        subprocess.run(["wlrctl", "toplevel", "close", "app_id:" + app_id], check=False)
+
+
+def menu():
+    def item(label, command):
+        return f"<item label={quoteattr(label)}><action name=\"Execute\" command={quoteattr(command)}/></item>"
+    out = ["<openbox_pipe_menu>",
+           item("Sessions panel", "noctalia msg panel-toggle mabox/places:sessions")]
+    for n in names():
+        out.append(item(n, f"setsid -f mb-session start {shlex.quote(n)}"))
+    out.append("</openbox_pipe_menu>")
+    print("\n".join(out))
+
+
+LOGIN = os.path.join(os.environ.get("XDG_STATE_HOME", HOME + "/.local/state"), "mabox-noctalia-ce", "session-login")
+
+
+def login(a):
+    if a and a[0] in ("on", "off"):
+        os.makedirs(os.path.dirname(LOGIN), exist_ok=True)
+        if a[0] == "on":
+            open(LOGIN, "w").close()
+        elif os.path.exists(LOGIN):
+            os.remove(LOGIN)
+    else:
+        print("on" if os.path.exists(LOGIN) else "off")
 
 
 def main(argv):
@@ -289,6 +328,15 @@ def main(argv):
         os.remove(p)
     elif c == "start" and a:
         cmd_start(a[0])
+    elif c == "stop" and a:
+        cmd_stop(a[0])
+    elif c == "menu":
+        menu()
+    elif c == "login":
+        login(a)
+    elif c == "login-run":
+        if os.path.exists(LOGIN):
+            subprocess.run(["noctalia", "msg", "panel-open", "mabox/places:sessions"])
     elif c == "switch" and a:
         switch(read(a[0])[0])
     else:

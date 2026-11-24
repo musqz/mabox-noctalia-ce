@@ -25,6 +25,7 @@ on numlock && (sleep 3 && [ "$(cat /sys/class/leds/*numlock/brightness 2>/dev/nu
 noctalia &
 (sleep 3 && noctalia msg plugins source add mabox path /usr/share/mabox-noctalia-ce/plugins) >/dev/null 2>&1 &
 command -v mb-plugins-enable >/dev/null && (sleep 6 && mb-plugins-enable) >/dev/null 2>&1 &
+on session && command -v mb-session >/dev/null && (sleep 8 && mb-session login-run) >/dev/null 2>&1 &
 
 # First login only: stock wallpaper. The marker is written first so a failed call never overrides a later choice.
 wp=/usr/share/backgrounds/noctalia-wallpaper.jpg

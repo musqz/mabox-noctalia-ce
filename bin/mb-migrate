@@ -354,6 +354,22 @@ migrate_34() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# A-F1 opens the Sessions panel and autostart can open it at login (off until switched on); a key the user already bound stays.
+migrate_35() {
+    local a=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/autostart
+    if [[ -f $a ]] && grep -q '^on() {' "$a" && ! grep -q 'mb-session login-run' "$a"; then
+        sed -i '/^command -v mb-plugins-enable/a on session \&\& command -v mb-session >/dev/null \&\& (sleep 8 \&\& mb-session login-run) >/dev/null 2>\&1 \&' "$a"
+    fi
+    local m=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/menu.xml
+    if [[ -f $m ]] && ! grep -q 'mb-session menu' "$m" && grep -q 'id="apps-menu"' "$m"; then
+        sed -i 's#^\( *\)<menu id="apps-menu"#\1<menu id="sessions-menu" label="Sessions" icon="preferences-system-windows" execute="mb-session menu" />\n&#' "$m"
+    fi
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && ! grep -q 'key="A-F1"' "$f" && grep -q "</keyboard>" "$f" || return 0
+    sed -i 's#</keyboard>#    <keybind key="A-F1"><action name="Execute" command="noctalia msg panel-toggle mabox/places:sessions"/></keybind>\n  </keyboard>#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
