@@ -107,7 +107,8 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 Pinned window: press `alt+s` first, then click a field.
 
 - *Reset* fills the fields from `config.toml`, *Undo* switches back. Nothing changes until *Save*.
-- *+ Add button*: fill name, icon and click commands, press *Add to the bar*. The button lands at the end of the bar; reorder it in the Noctalia settings.
+- *+ Add button*: fill name, icon and click commands, press *Add to the bar*. The button lands at the end of the bar; move it with the sort button.
+- Sort button (next to *+ Add button*): shows an up and a down arrow on each button. An arrow moves the button one place in the bar, past any widget, also into the next bar section. Press the sort button again to hide the arrows.
 - *Remove*: takes the button out of the bar. Its settings stay; *+ Add button* with the same name brings it back.
 
 ## Theme
