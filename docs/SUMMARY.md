@@ -10,6 +10,7 @@
 - [Music](music.md)
 - [Places](places.md)
 - [Post-its](postits.md)
+- [Sessions](sessions.md)
 - [Tools](tools.md)
 - [Custom plugins](custom-plugins.md)
 - [External tools](external-tools.md)

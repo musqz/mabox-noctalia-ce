@@ -9,6 +9,7 @@ Mabox Noctalia CE is a labwc session for Mabox Linux with the Noctalia shell: a 
 - [Install apps](install.md): the app installer panel.
 - [Music](music.md): the music panel and playlists.
 - [Places](places.md): the Places panel, and how it works with Luciole.
+- [Sessions](sessions.md): save the open applications and switch between sessions.
 - [Tools](tools.md): panels, desktop widgets and scripts.
 - [Custom plugins](custom-plugins.md): plugins from users, starting with Ripper.
 - [External tools](external-tools.md): jumpapp-ng, skippy-wl, fittsmon-wl and tabdock.
