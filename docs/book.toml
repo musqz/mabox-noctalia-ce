@@ -10,5 +10,6 @@ build-dir = "../_site"
 [output.html]
 default-theme = "navy"
 preferred-dark-theme = "navy"
+additional-css = ["tabler.css"]
 git-repository-url = "https://github.com/musqz/mabox-noctalia-ce"
 edit-url-template = "https://github.com/musqz/mabox-noctalia-ce/edit/main/docs/{path}"
