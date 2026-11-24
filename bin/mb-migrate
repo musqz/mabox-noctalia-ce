@@ -332,6 +332,17 @@ output_path = "~/.config/luciole/colors.toml"
 TOML
 }
 
+# Luciole custom actions: the shipped scripts are linked into its scripts folder (root-owned targets are accepted); a script of the same name stays.
+migrate_33() {
+    local src=/usr/share/mabox-noctalia-ce/luciole-scripts
+    local dst=${XDG_DATA_HOME:-$HOME/.local/share}/luciole/scripts s
+    [[ -d $src ]] && command -v luciole >/dev/null || return 0
+    mkdir -p "$dst"
+    for s in "$src"/*; do
+        [[ -e $dst/${s##*/} || -L $dst/${s##*/} ]] || ln -s "$s" "$dst/${s##*/}"
+    done
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
