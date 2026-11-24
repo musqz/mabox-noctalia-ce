@@ -10,6 +10,7 @@ M.DEFAULTS = {
   { name = "mb-status-warn", desc = "Status warnings" },
   { name = "mb-hide-cursor", desc = "Hide the pointer (F20)" },
   { name = "numlock", desc = "Switch NumLock on at login" },
+  { name = "session", desc = "Open the Sessions panel (A-F1)" },
 }
 
 -- Started by the session, not switchable here. polkit is a Noctalia setting (shell.polkit_agent).

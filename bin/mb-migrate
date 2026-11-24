@@ -370,6 +370,20 @@ migrate_35() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# The Sessions panel at login is the Autostart entry "session", off by default (autostart.skip); a login switched on before stays on.
+migrate_36() {
+    local d=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce
+    local st=${XDG_STATE_HOME:-$HOME/.local/state}/mabox-noctalia-ce/session-login
+    if [[ -f $st ]]; then
+        rm -f "$st"
+        [[ -f $d/autostart.skip ]] && sed -i '/^session$/d' "$d/autostart.skip"
+    elif ! grep -qx session "$d/autostart.skip" 2>/dev/null; then
+        mkdir -p "$d"
+        echo session >> "$d/autostart.skip"
+    fi
+    return 0
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

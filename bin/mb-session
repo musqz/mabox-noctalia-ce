@@ -15,8 +15,8 @@
   mb-session current                    number of the active workspace
   mb-session stop NAME                  close the windows of the session apps
   mb-session menu                       labwc pipe menu
-  mb-session login [on|off]             show or set: open the Sessions panel at login
-  mb-session login-run                  autostart: open the panel when login is on
+  mb-session login [on|off]             show or set: open the Sessions panel at login (autostart.skip)
+  mb-session login-run                  autostart: open the Sessions panel
 
 Sessions: ~/.config/mabox-noctalia-ce/sessions/NAME.session, first line
 "# workspace N", then "app_id<TAB>command". start skips an app whose window is
@@ -349,18 +349,23 @@ def menu():
     print("\n".join(out))
 
 
-LOGIN = os.path.join(os.environ.get("XDG_STATE_HOME", HOME + "/.local/state"), "mabox-noctalia-ce", "session-login")
+SKIP_FILE = os.path.join(os.path.dirname(DIR), "autostart.skip")
 
 
 def login(a):
+    """The autostart entry "session" is on unless autostart.skip lists it (the Autostart panel edits the same file)."""
+    try:
+        with open(SKIP_FILE) as f:
+            skipped = f.read().split()
+    except OSError:
+        skipped = []
     if a and a[0] in ("on", "off"):
-        os.makedirs(os.path.dirname(LOGIN), exist_ok=True)
-        if a[0] == "on":
-            open(LOGIN, "w").close()
-        elif os.path.exists(LOGIN):
-            os.remove(LOGIN)
+        skipped = [n for n in skipped if n != "session"] + (["session"] if a[0] == "off" else [])
+        os.makedirs(os.path.dirname(SKIP_FILE), exist_ok=True)
+        with open(SKIP_FILE, "w") as f:
+            f.write("".join(n + "\n" for n in skipped))
     else:
-        print("on" if os.path.exists(LOGIN) else "off")
+        print("off" if "session" in skipped else "on")
 
 
 def main(argv):
@@ -413,8 +418,7 @@ def main(argv):
     elif c == "login":
         login(a)
     elif c == "login-run":
-        if os.path.exists(LOGIN):
-            subprocess.run(["noctalia", "msg", "panel-open", "mabox/places:sessions"])
+        subprocess.run(["noctalia", "msg", "panel-open", "mabox/places:sessions"])
     elif c == "switch" and a:
         switch(read(a[0])[0])
     else:
