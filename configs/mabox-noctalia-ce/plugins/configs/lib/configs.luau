@@ -56,7 +56,7 @@ for d in $(noctalia msg plugins source list | awk '$2=="path"{print $3}'); do
 done | xargs -r sed -s -n '1s/^id = "\(.*\)"/\1/p'
 ]]
 
--- Prints name<TAB>tooltip<TAB>left<TAB>middle<TAB>right<TAB>glyph for every custom_button widget that is in the bar.
+-- Prints name<TAB>tooltip<TAB>left<TAB>middle<TAB>right<TAB>glyph for every custom_button widget that is in the bar, in bar order.
 local BUTTONS = [[
 used=$(for k in start center end; do noctalia msg config-get "bar.default.$k"; done | grep -o "'[^']*'" | tr -d "'" | tr '\n' '|')
 noctalia msg config-get widget | awk -v used="|$used" '
@@ -71,7 +71,7 @@ function unq(v,   q) { q = substr(v, 1, 1); v = substr(v, 2, length(v) - 2); if 
   if (sec == "top") { if (k == "type" && v == "custom_button") btn[cur] = 1; if (k == "tooltip") tip[cur] = v; if (k == "glyph") gly[cur] = v }
   else if (sec == "act") act[cur, k] = v
 }
-END { for (j = 1; j <= n; j++) { c = names[j]; if (btn[c] && index(used, "|" c "|")) printf "%s\t%s\t%s\t%s\t%s\t%s\n", c, tip[c], act[c, "left"], act[c, "middle"], act[c, "right"], gly[c] } }
+END { m = split(used, ord, "|"); for (j = 1; j <= m; j++) { c = ord[j]; if (c != "" && btn[c] && !seen[c]++) printf "%s\t%s\t%s\t%s\t%s\t%s\n", c, tip[c], act[c, "left"], act[c, "middle"], act[c, "right"], gly[c] } }
 '
 ]]
 
@@ -142,6 +142,32 @@ done
 noctalia msg config-reload >/dev/null
 ]=]
 
+-- $1 = widget, $2 = up|down: moves the widget one place in the bar, past any widget (across bar sections too) and reloads.
+local MOVE = [=[
+n="$1"; dir="$2"
+ls=$(noctalia msg config-get bar.default.start 2>/dev/null) && lc=$(noctalia msg config-get bar.default.center 2>/dev/null) && le=$(noctalia msg config-get bar.default.end 2>/dev/null) || exit 6
+names() { printf '%s' "$2" | tr -d '\n' | grep -o "'[^']*'" | tr -d "'" | sed "s/^/$1 /"; }
+out=$({ names start "$ls"; names center "$lc"; names end "$le"; } | awk -v n="$n" -v dir="$dir" -v q="'" '
+{ sec[NR] = $1; nm[NR] = $2; if ($2 == n) me = NR }
+END {
+  if (!me) exit 4
+  j = me + (dir == "up" ? -1 : 1)
+  if (j < 1 || j > NR) exit 5
+  t = nm[me]; nm[me] = nm[j]; nm[j] = t
+  for (i = 1; i <= NR; i++) lst[sec[i]] = lst[sec[i]] (lst[sec[i]] == "" ? "" : ", ") q nm[i] q
+  print sec[me], "[" lst[sec[me]] "]"
+  if (sec[j] != sec[me]) print sec[j], "[" lst[sec[j]] "]"
+}')
+rc=$?
+[ "$rc" = 0 ] || exit "$rc"
+while read -r k v; do
+  noctalia msg config-set "bar.default.$k" "$v" >/dev/null || exit 1
+done <<EOF
+$out
+EOF
+noctalia msg config-reload >/dev/null
+]=]
+
 local FIELDS = {
   { "glyph", "Icon (Tabler name, e.g. camera)", "glyph" },
   { "tooltip", "Tooltip", "tooltip" },
@@ -182,6 +208,8 @@ local panels = {}
 local staticLoaded = false
 local drafts = {}
 local confirmRemove = {}
+local barSort = false
+local moving = false
 local armCount = 0
 local plugins = {}
 local failed = {}
@@ -682,6 +710,20 @@ local function removeButton(b)
       noctalia.notify("Configs", b.name .. " is not in the bar")
     else
       noctalia.notify("Configs", "Removing " .. b.name .. " failed")
+    end
+    refresh()
+  end)
+end
+
+local function moveButton(b, dir)
+  if moving then
+    return
+  end
+  moving = true
+  noctalia.runAsync({ "sh", "-c", MOVE, "sh", b.name, dir }, function(result)
+    moving = false
+    if result.exitCode ~= 0 and result.exitCode ~= 5 then
+      noctalia.notify("Configs", "Moving " .. b.name .. " failed")
     end
     refresh()
   end)
@@ -1334,7 +1376,16 @@ render = function()
         toggle(id)
       end
       stop(id, 1, toggleOne)
-      table.insert(btnRows, ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "point-filled" or "point", variant = "ghost", controlSize = "sm", contentAlign = "start", onClick = toggleOne }))
+      local nameButton = ui.button({ key = id, selected = kbd.sel(id), text = b.name, glyph = isOpen and "point-filled" or "point", variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, onClick = toggleOne })
+      if barSort then
+        table.insert(btnRows, ui.row({ gap = 2, align = "center" }, {
+          nameButton,
+          ui.button({ key = "bu-" .. b.name, glyph = "arrow-up", variant = "ghost", controlSize = "sm", tooltip = "Move one place left in the bar", onClick = function() moveButton(b, "up") end }),
+          ui.button({ key = "bd-" .. b.name, glyph = "arrow-down", variant = "ghost", controlSize = "sm", tooltip = "Move one place right in the bar", onClick = function() moveButton(b, "down") end }),
+        }))
+      else
+        table.insert(btnRows, nameButton)
+      end
       if isOpen then
         local d = draftOf(b.name)
         local lines = {}
@@ -1402,7 +1453,10 @@ render = function()
       toggle("bb-add")
     end
     stop("bb-add", 1, toggleAdd)
-    table.insert(btnRows, ui.button({ key = "bb-add", selected = kbd.sel("bb-add"), text = "+ Add button", glyph = addOpen and "point-filled" or "point", variant = "ghost", controlSize = "sm", contentAlign = "start", tooltip = "Put a new button in the bar", onClick = toggleAdd }))
+    table.insert(btnRows, ui.row({ gap = 2, align = "center" }, {
+      ui.button({ key = "bb-add", selected = kbd.sel("bb-add"), text = "+ Add button", glyph = addOpen and "point-filled" or "point", variant = "ghost", controlSize = "sm", contentAlign = "start", flexGrow = 1, tooltip = "Put a new button in the bar", onClick = toggleAdd }),
+      ui.button({ key = "bb-sort", glyph = "arrows-sort", variant = barSort and "primary" or "ghost", controlSize = "sm", enabled = #buttons > 1 or barSort, tooltip = "Move the buttons in the bar", onClick = function() barSort = not barSort; render() end }),
+    }))
     if addOpen then
       local function addIt()
         addButton()
@@ -1425,7 +1479,7 @@ render = function()
       field("Right click", "right")
       row += 1
       stop("ba-add", 1, addIt)
-      table.insert(lines, ui.button({ key = "ba-add", selected = kbd.sel("ba-add"), text = "Add to the bar", glyph = "plus", variant = "primary", controlSize = "sm", tooltip = "Create the button and put it at the end of the bar; reorder it in the Noctalia settings", onClick = addIt }))
+      table.insert(lines, ui.button({ key = "ba-add", selected = kbd.sel("ba-add"), text = "Add to the bar", glyph = "plus", variant = "primary", controlSize = "sm", tooltip = "Create the button and put it at the end of the bar; move it with the sort button", onClick = addIt }))
       table.insert(btnRows, ui.column({ fill = "surface", radius = 6, padding = 8, gap = 4 }, lines))
     end
   end
