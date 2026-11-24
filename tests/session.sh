@@ -65,4 +65,9 @@ printf 'firefox: c\nToucher: b\n' > "$MB_WINDOWS"
 "$ms" save fresh --new-only 2>/dev/null
 [[ $("$ms" show fresh | tail -n +2 | wc -l) == 1 ]] || fail "new-only: $("$ms" show fresh)"
 
+# a second window of an app that was already open counts as new
+printf 'Toucher: b\n' > "$MB_WINDOWS"; "$ms" baseline
+printf 'Toucher: b\nToucher: b2\n' > "$MB_WINDOWS"
+"$ms" save more --new-only 2>/dev/null || fail "new-only: extra window of a known app"
+
 echo ok
