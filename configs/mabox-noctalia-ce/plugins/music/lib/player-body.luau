@@ -524,6 +524,9 @@ local function transport(action)
   else
     noctalia.runAsync({ "noctalia", "msg", "media", action })
   end
+  if action == "stop" then
+    player.resetRepeat()
+  end
   if action == "stop" and (pinned == "mpv" or (pinned == "" and (activeName == "" or activeName == "mpv"))) then -- the list plays through mpv: another player's stop leaves it alone
     playSeq += 1
     playingUrl = ""
@@ -1211,6 +1214,10 @@ render = function()
         ui.button({ glyph = "player-play", variant = "ghost", tooltip = "Pause / play", onClick = function() transport("toggle") end }),
         ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = "Next", onClick = function() transport("next") end }),
         ui.button({ glyph = "player-stop", variant = "ghost", tooltip = "Stop", onClick = function() transport("stop") end }),
+        (pinned == "" or pinned == "mpv") and ui.button({ glyph = "repeat-once", variant = player.isRepeating() and "primary" or "ghost", tooltip = player.isRepeating() and "Repeat this song (on)" or "Repeat this song (off)", onClick = function()
+          player.setRepeat(not player.isRepeating())
+          render()
+        end }) or ui.spacer({ width = 0 }),
       }),
       ui.spacer({ flexGrow = 1 }),
       ui.button({ glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "Refresh: show what plays now and add it to Recent", onClick = function() syncNow() end }),
