@@ -16,6 +16,8 @@ The first `/es` row, *Manage snippets*, opens a panel to add, edit and delete sn
 
 <p align="center"><a href="img/espanso.png"><img src="img/thumb/espanso.png" alt="The /es launcher with the snippets list"></a></p>
 
+<div class="keys">
+
 | Key | Action |
 |---|---|
 | `W-k` | hotkey list |
@@ -83,3 +85,5 @@ Panel keys (Keys, Snippets, Configs, Colors, Status, Capture, Reset, Notes; not 
 | `A-Enter` | activate |
 | `A-s` | clear the cursor, back to the search field |
 | `A-q` | close the panel |
+
+</div>
