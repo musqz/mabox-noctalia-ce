@@ -219,6 +219,19 @@ In *Configs* → *Widgets*, *Edit layout* opens the desktop widget editor. *Corn
 - Screenshots of a whole screen use the focused monitor. Set `SCREENSHOT_OUTPUT` (for example `HDMI-A-1`) in `~/.config/mabox-noctalia-ce/environment` to always take the same one; re-login to apply.
 - Brightness keys control one output; set `BRIGHTNESS_OUTPUT` (default `HDMI-A-1`).
 
+### Work on one monitor
+
+1. Find the monitor name: `wlr-randr`.
+2. Add this as the first rule inside `<windowRules>` in `~/.config/mabox-noctalia-ce/rc.xml`, with your name:
+   ```
+   <windowRule identifier="*"><action name="MoveToOutput" output="HDMI-A-2"/></windowRule>
+   ```
+3. Reload labwc: `C-S-r`.
+
+- Every new window opens on that monitor. `W-A-8` sends the focused window to the other one.
+- Panels open on the monitor where the pointer is.
+- A monitor in standby stays an active output. Do not switch it off with `wlr-randr --off`; the layout breaks and kanshi has to restore it.
+
 ## Music
 
 See [music.md](music.md).
