@@ -2,7 +2,7 @@
 # Values that contain /home/ or ~/.local/bin are always skipped.
 widget.syshelper
 widget.notify-test
-widget.recstop
+widget.screenrec.actions
 bar.default.monitor
 font_family
 font_scale

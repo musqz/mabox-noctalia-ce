@@ -92,7 +92,7 @@ The bar is noctalia's. Extra buttons:
 | <span class="nw"><img src="img/icon-screenrec.png" width="34" alt=""> Screenshot/rec</span> | area screenshot | Capture panel |
 | <span class="nw"><img src="img/icon-calendar.png" width="34" alt=""> Calendar</span> | opens rencal | |
 
-A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed). While a recording runs, a stop button appears.
+A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed). While a recording runs, the camera button turns into a red dot; click it to stop.
 
 A double click on a date in the Noctalia calendar panel opens the default calendar app. The update sets renCal as default when you have no choice yet. For Thunderbird: `xdg-mime default org.mozilla.Thunderbird.desktop text/calendar`.
 
@@ -164,15 +164,15 @@ Converter: pick a preset, then files; output lands next to the source and never 
 
 <p align="center"><a href="img/capture.png"><img src="img/thumb/capture.png" alt="Capture panel"></a></p>
 
-- `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT` or the first), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.
+- `mb-shots-interval [-o OUTPUT|auto | -a] [seconds]` starts: `-o` one monitor (`auto` = `SCREENSHOT_OUTPUT`, the only monitor, or a click on one of several), `-a` select an area once. Run it again to stop. Files go to `~/Pictures/shot_interval`.
 - `mb-shots-interval -b` moves the images to `backup/DATE`; `-x` deletes them; `-n` counts them.
 - `mb-gifmaker [-s PIXELS]` turns the images into a GIF in `~/Pictures/Mabox-Animations`. Settings: `~/.config/mabox/mb-gifmaker.conf`.
 - Interval settings: `~/.config/mabox/mb-interval-shots.conf` (`interval=`, `screenshot_dir=`).
 - `W-S-x` stops a running recording and interval screenshots.
 - `mb-screenshot --delay N <screenshot-* args>` waits N seconds first; `--format png|jpg|webp|avif` sets the file type.
 - `mb-screenshot screenshot-window` shows the skippy-wl picker: click or `Space` toggles windows, `Enter` confirms. Each picked window is saved as its own file, even when hidden or on another monitor. Without skippy-wl it takes the focused window.
-- `screenrec-toggle -o auto` records a whole monitor instead of an area.
-- While recording, a red stop button appears next to the `screenrec` bar button; click it to stop.
+- `screenrec-toggle -o auto` records a whole monitor instead of an area; with several monitors you click the one to record.
+- While recording, the camera button of the bar is a red dot; click it to stop.
 - Capture pinned window: `mb-pinned capture`; the side is set like for the other plugins.
 - Pinned windows: the layout-sidebar button docks one (other windows make room); press it again to float. Saved per plugin in `~/.config/mabox-noctalia-ce/pinned-dock`.
 
