@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.10.0
 - Make Luciole follow the Noctalia colours: `mb-migrate` adds its colour template when Luciole is installed.
 - Add Luciole actions *set-as-wallpaper* and *set-wallpaper-dir*: `mb-migrate` links them into the Luciole scripts folder when Luciole is installed.
 - Open Luciole from `mb-files` when it is installed (Places, `W-f`, root menu, Status, Recolor).
@@ -22,6 +24,8 @@
 - Add the Autostart entry *session* (also a button in the Sessions panel) that opens the Sessions panel at login; off by default, `mb-migrate` adds the line.
 - Show the session of the active workspace in the Sessions panel and the root menu (needs `python-pywayland`).
 - Give a session a range of workspaces (`3-4`) and add *Replace*: it saves the session you are in, closes every window and starts the chosen one.
+- List the pyradio config in the Configs panel.
+- Make `C-KP_3` jump to Luciole, matched by its app id.
 - Add a *Picture folder* setting to the Polaroids widget: random pictures from that folder.
 - Add a *Refresh every (minutes)* setting to the Polaroids widget: new pictures and positions on a timer.
 - Turn the camera button into a red dot while recording; a click on it stops the recording.
