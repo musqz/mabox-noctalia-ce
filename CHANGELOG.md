@@ -22,6 +22,8 @@
 - Add the Autostart entry *session* (also a button in the Sessions panel) that opens the Sessions panel at login; off by default, `mb-migrate` adds the line.
 - Show the session of the active workspace in the Sessions panel and the root menu (needs `python-pywayland`).
 - Give a session a range of workspaces (`3-4`) and add *Replace*: it saves the session you are in, closes every window and starts the chosen one.
+- Add a *Picture folder* setting to the Polaroids widget: random pictures from that folder.
+- Add a *Refresh every (minutes)* setting to the Polaroids widget: new pictures and positions on a timer.
 
 ## 0.9.0
 - Make the `W-KP_1..9` snap keys cycle on repeat: corners and sides go half, 1/3, 2/3 of the width; top and bottom go full width, 1/3 centred; the centre goes full, 1/3, 80%. Existing installs keep the old keys until you copy the binds from the default `rc.xml`.
