@@ -27,3 +27,19 @@ entry = "widget.luau"
   label_key = "settings.random.label"
   description_key = "settings.random.description"
   default = false
+
+  [[desktop_widget.setting]]
+  key = "folder"
+  type = "folder"
+  label_key = "settings.folder.label"
+  description_key = "settings.folder.description"
+  default = ""
+
+  [[desktop_widget.setting]]
+  key = "interval"
+  type = "int"
+  label_key = "settings.interval.label"
+  description_key = "settings.interval.description"
+  default = 0
+  min = 0
+  max = 1440
