@@ -2,14 +2,22 @@
 
 `W-A-r` opens the Capture panel: screenshots, recording, interval shots and the recent files.
 
-<p align="center"><a href="img/capture.png"><img src="img/thumb/capture.png" alt="Capture panel"></a></p>
+<p align="center"><a href="img/capture.png"><img src="img/capture.png" width="280" alt="Capture panel with the screenshot, record and interval cards and the recent files"></a></p>
 
-| Key | Does |
+| Key | Tool |
 |---|---|
+| `W-A-r` | Capture panel |
 | `C-S-a` | screenshot of an area |
 | `C-Insert` | open the last screenshot |
 | `W-S-r` | record an area; press again to stop |
 | `W-S-x` | stop a recording and interval shots |
+
+The camera <i class="ti">&#xEA54;</i> in the bar:
+
+| Click | Does |
+|---|---|
+| left | screenshot of an area |
+| right | open the Capture panel |
 
 ## Screenshot
 
@@ -21,7 +29,7 @@
 
 - *Screen* records a monitor, *Area* records the part you select. With several monitors, *Screen* asks you to click one.
 - Choose mp4 or mkv, 15, 30 or 60 fps, and the sound: none, system or microphone.
-- While you record, the camera in the bar is a red dot:
+- While you record, the camera <i class="ti">&#xEA54;</i> in the bar is a red dot <i class="ti ti-rec">&#xF671;</i>:
 
 | Click | Does |
 |---|---|
