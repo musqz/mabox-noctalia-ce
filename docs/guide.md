@@ -88,9 +88,9 @@ The bar is noctalia's. Extra buttons:
 
 | Button | Left click | Right click |
 |---|---|---|
-| <img src="img/icon-updates.png" width="34" alt=""> Updates | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), mirrors (pacman-mirrors fasttrack, continent, choose; reflector on plain Arch), check now; `?` button explains the checker, `i` button opens the System panel | check now |
-| <img src="img/icon-screenrec.png" width="34" alt=""> Screenshot/rec | area screenshot | Capture panel |
-| <img src="img/icon-calendar.png" width="34" alt=""> Calendar | opens rencal | |
+| <span class="nw"><img src="img/icon-updates.png" width="34" alt=""> Updates</span> | panel: update all, repo + AUR, repo only, flatpak, snap, npm, pipx, remove orphans (when any), mirrors (pacman-mirrors fasttrack, continent, choose; reflector on plain Arch), check now; `?` button explains the checker, `i` button opens the System panel | check now |
+| <span class="nw"><img src="img/icon-screenrec.png" width="34" alt=""> Screenshot/rec</span> | area screenshot | Capture panel |
+| <span class="nw"><img src="img/icon-calendar.png" width="34" alt=""> Calendar</span> | opens rencal | |
 
 A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed). While a recording runs, a stop button appears.
 
