@@ -50,6 +50,8 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 
 ## Tools in `bin/`
 
+<div class="keys">
+
 | Tool | Does | Called by |
 |---|---|---|
 | `mb-updates-ce` | counts pacman, AUR, flatpak, snap, npm, pipx updates for the bar button | autostart, systemd units, `config.toml` |
@@ -68,6 +70,8 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 | `mb-screenshot-menu` | root-menu list of screenshot delays (3, 5, 10, 30 s) | root menu, Screenshot |
 | `capture-stop` | stop a running recording and interval screenshots | `W-S-x`, stop button in the bar while recording |
 | `mb-gifmaker` | make a GIF from the interval screenshots (`gifski`) | run by hand |
+
+</div>
 
 ## Plugins
 
