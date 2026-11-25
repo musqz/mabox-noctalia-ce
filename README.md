@@ -73,12 +73,12 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 ## Docs
 
-- [docs/guide.md](docs/guide.md): bar, theme, menu, monitors, tips.
+- [docs/guide.md](docs/guide.md): configs, system info, bar, menu, capture, wallpaper, power.
 - [docs/keys.md](docs/keys.md): hotkeys and the Keys panel.
 - [docs/tools.md](docs/tools.md): panels, desktop widgets, music and scripts.
 - [docs/snapshot.md](docs/snapshot.md): build an ISO, then USB or VM.
 - [docs/music.md](docs/music.md): music panel, playlists and media keys.
-- [docs/overview.md](docs/overview.md): files, paths and tools.
+- [docs/technical/](docs/technical/): files, paths, commands and config files.
 
 ## Screenshots
 

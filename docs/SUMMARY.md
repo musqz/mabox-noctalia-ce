@@ -17,5 +17,4 @@
 
 # Reference
 
-- [Overview](overview.md)
 - [Snapshot ISO](snapshot.md)
