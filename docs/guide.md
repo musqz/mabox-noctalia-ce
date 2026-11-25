@@ -89,6 +89,8 @@ While a recording runs, the camera <i class="ti">&#xEA54;</i> is a red dot <i cl
 | left | <i class="ti">&#xED4A;</i> stop |
 | right | <i class="ti">&#xED45;</i> pause; click again to resume |
 
+The same dot shows while interval screenshots run; a left click stops them.
+
 A double click on a date in the Noctalia calendar panel opens the default calendar app. The update sets renCal as default when you have no choice yet.
 
 Click the updates button again to close the panel. Flatpak, Snap, npm and pipx entries show only when they have updates.

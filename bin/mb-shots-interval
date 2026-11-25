@@ -82,7 +82,40 @@ load_conf
 
 mkdir -p "$dir"
 echo $$ > "$pidfile"
-trap 'rm -f "$pidfile"; kill $(jobs -p) 2>/dev/null || true' EXIT
+
+# The camera button of the bar is a red dot while this runs; a left click stops it.
+getcfg() {
+    local v
+    v=$(noctalia msg config-get "widget.screenrec.$1" 2>/dev/null) || v=
+    v=${v#\'}; v=${v%\'}
+    printf '%s' "$v"
+}
+setcfg() { noctalia msg config-set "widget.screenrec.$1" "\"$2\"" >/dev/null || true; }
+stop_cmd='exec mb-shots-interval'
+tip= gly= act_l=
+restore() {
+    rm -f "$pidfile"
+    kill $(jobs -p) 2>/dev/null || true
+    # only undo what this script set; a recording may own the button now
+    if [[ $(getcfg tooltip) == "interval:"* ]]; then
+        setcfg glyph "${gly:-camera}"
+        setcfg color on_surface
+        setcfg tooltip "${tip:-L:Area shot R:Panel}"
+    fi
+    [[ $(getcfg actions.left) == "$stop_cmd" ]] && setcfg actions.left "${act_l:-exec mb-screenshot screenshot-region}"
+    return 0
+}
+trap restore EXIT
+tip=$(getcfg tooltip)
+[[ $tip == "interval:"* || $tip == "recording:"* || $tip == "paused:"* ]] && tip=
+gly=$(getcfg glyph)
+[[ $gly == circle-filled || $gly == player-pause ]] && gly=
+act_l=$(getcfg actions.left)
+[[ $act_l == "$stop_cmd" || $act_l == 'exec screenrec-toggle --stop' ]] && act_l=
+setcfg glyph circle-filled
+setcfg color error
+setcfg tooltip "interval: left click stops"
+setcfg actions.left "$stop_cmd"
 while true; do
     grim "${args[@]}" "$dir/Shot-$(date +%Y%m%d-%H%M%S).png" || true
     sleep "$interval" & wait $!
