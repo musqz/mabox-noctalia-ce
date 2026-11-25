@@ -29,7 +29,8 @@ end
 
 local PROBE = [[
 p=${XDG_RUNTIME_DIR:-/tmp}/mb-shots-interval.pid
-pgrep -x wl-screenrec >/dev/null && echo rec=1 || echo rec=0
+r=${XDG_RUNTIME_DIR:-/tmp}/mb-screenrec/pid
+{ pgrep -x wl-screenrec >/dev/null || { [ -f "$r" ] && kill -0 "$(cat "$r")" 2>/dev/null; }; } && echo rec=1 || echo rec=0
 { [ -f "$p" ] && kill -0 "$(cat "$p")" 2>/dev/null; } && echo iv=1 || echo iv=0
 wlr-randr 2>/dev/null | sed -n 's/^\([^ ][^ ]*\) .*/out=\1/p'
 echo n=$(mb-shots-interval -n 2>/dev/null || echo 0)

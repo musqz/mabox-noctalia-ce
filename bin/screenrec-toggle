@@ -2,12 +2,24 @@
 # Toggle a recording with wl-screenrec; file is named by date and time.
 # Run again to stop; bound to the screenrec button in the noctalia bar.
 #   screenrec-toggle [-o OUTPUT] [-f FPS] [-c mp4|mkv] [-a none|system|mic]
+#   screenrec-toggle --pause | --stop      while recording: pause or resume (segments are joined at the stop), stop
 # Without -o you select a region; -o auto uses SCREENSHOT_OUTPUT, the only monitor, or a click on one of several. -a records the default sink or microphone.
 set -euo pipefail
 
+ctl=${XDG_RUNTIME_DIR:-/tmp}/mb-screenrec
+if [[ -d $ctl ]] && kill -0 "$(<"$ctl/pid")" 2>/dev/null; then
+    if [[ ${1-} == --pause ]]; then
+        if [[ -e $ctl/pause ]]; then rm -f "$ctl/pause"; else touch "$ctl/pause"; fi
+    else
+        touch "$ctl/stop"
+    fi
+    exit 0
+fi
+rm -rf "$ctl"
 if pkill -INT -x wl-screenrec; then
     exit 0
 fi
+[[ ${1-} == --pause || ${1-} == --stop ]] && exit 0
 
 output= fps= container=mp4 audio=none
 # Defaults from the Capture panel, so the bar button records with the same choices.
@@ -60,38 +72,88 @@ case $audio in
 esac
 out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).$container"
 
-# Put the tooltip back as it was, it may be a custom one.
-tip=$(noctalia msg config-get widget.screenrec.tooltip 2>/dev/null) || tip=
-tip=${tip#\'}; tip=${tip%\'}
-[[ $tip == "stop recording" ]] && tip=
-gly=$(noctalia msg config-get widget.screenrec.glyph 2>/dev/null) || gly=
-gly=${gly#\'}; gly=${gly%\'}
-[[ $gly == circle-filled ]] && gly=
-# A click on the button stops the recording; the original click action comes back afterwards.
-stop_cmd='exec pkill -INT -x wl-screenrec'
-act=$(noctalia msg config-get widget.screenrec.actions.left 2>/dev/null) || act=
-act=${act#\'}; act=${act%\'}
-[[ -z $act || $act == "$stop_cmd" ]] && act='exec mb-screenshot screenshot-region'
-bar_state circle-filled error "stop recording"
-noctalia msg config-set widget.screenrec.actions.left "\"$stop_cmd\"" >/dev/null || true
+# Put the bar button back as it was; glyph, tooltip and click actions may be custom.
+getcfg() {
+    local v
+    v=$(noctalia msg config-get "widget.screenrec.$1" 2>/dev/null) || v=
+    v=${v#\'}; v=${v%\'}
+    printf '%s' "$v"
+}
+tip=$(getcfg tooltip)
+[[ $tip == "recording:"* || $tip == "paused:"* || $tip == "stop recording" ]] && tip=
+gly=$(getcfg glyph)
+[[ $gly == circle-filled || $gly == player-pause ]] && gly=
+stop_cmd='exec screenrec-toggle --stop'
+pause_cmd='exec screenrec-toggle --pause'
+act_l=$(getcfg actions.left)
+[[ -z $act_l || $act_l == "$stop_cmd" || $act_l == 'exec pkill -INT -x wl-screenrec' ]] && act_l='exec mb-screenshot screenshot-region'
+act_r=$(getcfg actions.right)
+[[ -z $act_r || $act_r == "$pause_cmd" ]] && act_r='exec noctalia msg panel-toggle mabox/capture:main'
+setcfg() { noctalia msg config-set "widget.screenrec.$1" "\"$2\"" >/dev/null || true; }
+bar_state circle-filled error "recording: left stop, right pause"
+setcfg actions.left "$stop_cmd"
+setcfg actions.right "$pause_cmd"
+
+mkdir -p "$(dirname "$out")"
+mkdir "$ctl"
+echo $$ > "$ctl/pid"
+parts=$(mktemp -d "$(dirname "$out")/.parts.XXXXXX")
+# the parts stay unless the recording was joined, so a killed script loses nothing
+keep=1
 # the bar button is the camera of configs/noctalia/config.toml: left screenshot, right Capture panel
 restore() {
-    local cur
     bar_state "${gly:-camera}" on_surface "${tip:-L:Area shot R:Panel}"
-    cur=$(noctalia msg config-get widget.screenrec.actions.left 2>/dev/null) || cur=
-    cur=${cur#\'}; cur=${cur%\'}
-    [[ $cur == "$stop_cmd" ]] && { noctalia msg config-set widget.screenrec.actions.left "\"$act\"" >/dev/null || true; }
+    # only undo what this script set; the user may have changed the action meanwhile
+    [[ $(getcfg actions.left) == "$stop_cmd" ]] && setcfg actions.left "$act_l"
+    [[ $(getcfg actions.right) == "$pause_cmd" ]] && setcfg actions.right "$act_r"
+    rm -rf "$ctl"
+    [[ -n $keep ]] || rm -rf "$parts"
     return 0
 }
 trap restore EXIT
 
-mkdir -p "$(dirname "$out")"
-if wl-screenrec "${args[@]}" -f "$out"; then
+# The loop watches the stop and pause flags. Pause ends the segment and waits; resume starts the next one with
+# the same arguments.
+list=$parts/list
+n=0 ok=1
+while :; do
+    n=$((n + 1))
+    seg=$parts/$(printf %03d "$n").$container
+    wl-screenrec "${args[@]}" -f "$seg" &
+    pid=$!
+    while kill -0 "$pid" 2>/dev/null; do
+        if [[ -e $ctl/stop || -e $ctl/pause ]]; then
+            kill -INT "$pid" 2>/dev/null || true
+            break
+        fi
+        sleep 0.2
+    done
+    wait "$pid" || ok=0
+    [[ -s $seg ]] && echo "file '$seg'" >> "$list"
+    (( ok )) || break
+    [[ -e $ctl/pause && ! -e $ctl/stop ]] || break
+    bar_state player-pause error "paused: left stop, right resume"
+    while [[ -e $ctl/pause && ! -e $ctl/stop ]]; do sleep 0.3; done
+    [[ -e $ctl/stop ]] && break
+    bar_state circle-filled error "recording: left stop, right pause"
+done
+
+# join what was recorded, also after an error in a later part
+saved=
+if [[ -s $list ]]; then
+    if [[ $(grep -c . "$list") -eq 1 ]]; then
+        mv "$(sed -n "s/^file '\(.*\)'\$/\1/p" "$list")" "$out" && saved=1
+    elif ffmpeg -loglevel error -f concat -safe 0 -i "$list" -c copy "$out"; then
+        saved=1
+    fi
+fi
+[[ -n $saved ]] && keep=
+if [[ -n $saved ]]; then
     ( choice=$(notify-send -a "Screen recording" -A folder="Open folder" -A play="Play" "Screen recording" "Saved $(basename "$out")") || exit 0
       case $choice in
           folder) xdg-open "$(dirname "$out")" ;;
           play) xdg-open "$out" ;;
       esac ) >/dev/null 2>&1 &
 else
-    notify-send -a "Screen recording" -u critical "Screen recording" "Failed"
+    notify-send -a "Screen recording" -u critical "Screen recording" "Failed, parts kept in $parts"
 fi
