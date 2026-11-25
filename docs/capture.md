@@ -2,7 +2,7 @@
 
 `W-A-r` opens the Capture panel: screenshots, recording, interval shots and the recent files.
 
-<p align="center"><a href="img/capture.png"><img src="img/thumb/capture.png" alt="Capture panel"></a></p>
+<p align="center"><a href="img/capture.png"><img style="vertical-align:top" src="img/thumb/capture.png" alt="Capture panel"></a> <a href="img/capture-settings.png"><img style="vertical-align:top" src="img/thumb/capture-settings.png" alt="Capture settings"></a></p>
 
 | Key | Does |
 |---|---|
