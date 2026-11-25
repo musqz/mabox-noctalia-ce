@@ -30,7 +30,7 @@
 
 ## Interval
 
-- *Start* takes a screenshot every few seconds, of an area or a monitor; *Stop* ends it.
+- *Start* takes a screenshot every few seconds, of an area or a monitor; *Stop* ends it. While it runs, the camera <i class="ti">&#xEA54;</i> in the bar is a red dot <i class="ti ti-rec">&#xF671;</i>: a left click stops it.
 - *GIF* turns the images into an animation. *Backup* moves them to a dated folder; *Delete all* removes them (click twice).
 
 The folder icons next to the headings open the folders with your files.

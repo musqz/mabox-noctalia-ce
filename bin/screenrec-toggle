@@ -80,13 +80,13 @@ getcfg() {
     printf '%s' "$v"
 }
 tip=$(getcfg tooltip)
-[[ $tip == "recording:"* || $tip == "paused:"* || $tip == "stop recording" ]] && tip=
+[[ $tip == "recording:"* || $tip == "paused:"* || $tip == "interval:"* || $tip == "stop recording" ]] && tip=
 gly=$(getcfg glyph)
 [[ $gly == circle-filled || $gly == player-pause ]] && gly=
 stop_cmd='exec screenrec-toggle --stop'
 pause_cmd='exec screenrec-toggle --pause'
 act_l=$(getcfg actions.left)
-[[ -z $act_l || $act_l == "$stop_cmd" || $act_l == 'exec pkill -INT -x wl-screenrec' ]] && act_l='exec mb-screenshot screenshot-region'
+[[ -z $act_l || $act_l == "$stop_cmd" || $act_l == 'exec mb-shots-interval' || $act_l == 'exec pkill -INT -x wl-screenrec' ]] && act_l='exec mb-screenshot screenshot-region'
 act_r=$(getcfg actions.right)
 [[ -z $act_r || $act_r == "$pause_cmd" ]] && act_r='exec noctalia msg panel-toggle mabox/capture:main'
 setcfg() { noctalia msg config-set "widget.screenrec.$1" "\"$2\"" >/dev/null || true; }
