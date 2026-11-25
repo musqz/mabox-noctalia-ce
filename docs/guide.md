@@ -92,7 +92,14 @@ The bar is noctalia's. Extra buttons:
 | <span class="nw"><img src="img/icon-screenrec.png" width="34" alt=""> Screenshot/rec</span> | area screenshot | Capture panel |
 | <span class="nw"><img src="img/icon-calendar.png" width="34" alt=""> Calendar</span> | opens rencal | |
 
-A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed). While a recording runs, the camera button turns into a red dot: left click stops, right click pauses and resumes.
+A right-click on the clock opens rencal too (`rencal` and `jumpapp` installed).
+
+While a recording runs, the camera <i class="ti">&#xEA54;</i> is a red dot <i class="ti ti-rec">&#xF671;</i>:
+
+| Click | Does |
+|---|---|
+| left | <i class="ti">&#xED4A;</i> stop |
+| right | <i class="ti">&#xED45;</i> pause; click again to resume |
 
 A double click on a date in the Noctalia calendar panel opens the default calendar app. The update sets renCal as default when you have no choice yet. For Thunderbird: `xdg-mime default org.mozilla.Thunderbird.desktop text/calendar`.
 
@@ -172,7 +179,7 @@ Converter: pick a preset, then files; output lands next to the source and never 
 - `mb-screenshot --delay N <screenshot-* args>` waits N seconds first; `--format png|jpg|webp|avif` sets the file type.
 - `mb-screenshot screenshot-window` shows the skippy-wl picker: click or `Space` toggles windows, `Enter` confirms. Each picked window is saved as its own file, even when hidden or on another monitor. Without skippy-wl it takes the focused window.
 - `screenrec-toggle -o auto` records a whole monitor instead of an area; with several monitors you click the one to record.
-- While recording, the camera button of the bar is a red dot: left click stops, right click pauses and resumes. From a key: `screenrec-toggle --pause` and `screenrec-toggle --stop`.
+- Pause and stop from a key: `screenrec-toggle --pause` and `screenrec-toggle --stop`.
 - Capture pinned window: `mb-pinned capture`; the side is set like for the other plugins.
 - Pinned windows: the layout-sidebar button docks one (other windows make room); press it again to float. Saved per plugin in `~/.config/mabox-noctalia-ce/pinned-dock`.
 
