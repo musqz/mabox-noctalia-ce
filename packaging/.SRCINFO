@@ -66,6 +66,6 @@ pkgbase = mabox-noctalia-ce
 	optdepends = pyradio: PyRadio theme template
 	optdepends = python-pywalfox: Firefox theme template
 	source = mabox-noctalia-ce-0.10.0.tar.gz::https://github.com/musqz/mabox-noctalia-ce/archive/refs/tags/v0.10.0.tar.gz
-	sha256sums = SKIP
+	sha256sums = ff9444ade0ba6ee9804ed4c267df621f7fd293221cc0097a67fc504a12a6e428
 
 pkgname = mabox-noctalia-ce
