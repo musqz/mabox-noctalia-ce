@@ -23,5 +23,6 @@ return {
   "Tools|skippy-wl|skippy-wl|~/.config/skippy-wl/skippy-wl.rc",
   "Tools|tabdock|tabdock|~/.config/tabdock/config.toml",
   "Tools|radicale|radicale|~/.config/radicale/config",
+  "Tools|pyradio|pyradio|~/.config/pyradio/config",
   "Tools|music list|mpv|~/.config/mabox/mb-music/yt_music_list.csv",
 }
