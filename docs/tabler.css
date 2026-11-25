@@ -19,3 +19,6 @@
 
 /* all tables: text starts at the top of the row */
 td { vertical-align: top; }
+
+/* wider page so the tables have room */
+:root { --content-max-width: 1000px; }
