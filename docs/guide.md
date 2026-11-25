@@ -143,13 +143,7 @@ Converter: pick a preset, then files; output lands next to the source and never 
 
 ## Screenshots and recording
 
-`W-A-r` opens the Capture panel: screenshot, interval and record cards, and the recent files.
-
-<p align="center"><a href="img/capture.png"><img src="img/thumb/capture.png" alt="Capture panel"></a></p>
-
-- Screenshot: area, screen, all screens, or a window (click the windows you want in the picker, press Enter).
-- Record: pick area or screen. While recording, the camera in the bar is a red dot: left click stops, right click pauses.
-- Interval: a screenshot every few seconds; *GIF* turns them into an animation.
+See [capture.md](capture.md).
 
 ## Wallpaper directory
 
