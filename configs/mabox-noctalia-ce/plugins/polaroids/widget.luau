@@ -38,27 +38,42 @@ local randoms = {}
 local randomMode = false
 local shuffleGen = 0
 local shuffledCount = 0
+local pileSeed = 0
+local lastShuffle = os.time()
+local lastFolder = ""
 
 local function wantRandom()
   return noctalia.getConfig("random") == true
+end
+
+local function wantFolder()
+  return string.match(tostring(noctalia.getConfig("folder") or ""), "^%s*(.-)%s*$")
+end
+
+local function wantInterval()
+  return math.max(0, math.min(1440, tonumber(noctalia.getConfig("interval")) or 0))
 end
 
 local function wantCount()
   return math.max(1, math.min(8, tonumber(noctalia.getConfig("count")) or 3))
 end
 
--- Random pictures from the top of the wallpaper folder; drawn again when the wallpaper changes.
-local SHUFFLE = [[d=$(noctalia msg config-get wallpaper.directory | tr -d "'")
+-- Random pictures from the top of the folder ($2, else the wallpaper folder).
+local SHUFFLE = [[d=$2
+[ -n "$d" ] || d=$(noctalia msg config-get wallpaper.directory | tr -d "'")
+case "$d" in "~") d=$HOME;; "~/"*) d=$HOME/${d#"~/"};; esac
 find "$d" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.avif' \) | shuf -n "$1"]]
 
 local function shuffle()
   shuffleGen = shuffleGen + 1
   local gen = shuffleGen
   shuffledCount = wantCount()
-  noctalia.runAsync({ "sh", "-c", SHUFFLE, "sh", tostring(shuffledCount) }, function(r)
+  lastShuffle = os.time()
+  noctalia.runAsync({ "sh", "-c", SHUFFLE, "sh", tostring(shuffledCount), wantFolder() }, function(r)
     if gen ~= shuffleGen then
       return -- a newer shuffle is running
     end
+    pileSeed = gen
     local old = randoms
     randoms = {}
     local keep = {}
@@ -112,7 +127,7 @@ local function poll()
     if r.exitCode ~= 0 or path == "" or path == history[1] then
       return
     end
-    if randomMode then
+    if randomMode and wantInterval() == 0 then
       shuffle()
     end
     for i = #history, 1, -1 do
@@ -242,7 +257,7 @@ render = function()
   if #thumbs == 0 and not pending then
     pileFile = nil
   elseif #thumbs > 0 and not pending then
-    local pile = thumbDir .. "/pile-" .. thumbName(table.concat(thumbs, "|"))
+    local pile = thumbDir .. "/pile-" .. thumbName(table.concat(thumbs, "|") .. (randomMode and ("#" .. pileSeed) or ""))
     if noctalia.fileExists(pile) then
       local old = pileFile or stalePile
       if old and old ~= pile then
@@ -262,20 +277,25 @@ render = function()
   if pileFile then
     table.insert(body, ui.image({ path = pileFile, width = pileW, height = pileH, fit = "contain" }))
   elseif not pending then
-    table.insert(body, ui.label({ text = randomMode and "No wallpapers found" or "No previous wallpapers yet", fontSize = 10, color = "on_surface_variant" }))
+    table.insert(body, ui.label({ text = randomMode and (wantFolder() ~= "" and "No pictures found" or "No wallpapers found") or "No previous wallpapers yet", fontSize = 10, color = "on_surface_variant" }))
   end
   desktopWidget.render(ui.column({ gap = 0 }, body))
 end
 
 function update()
+  if randomMode and wantInterval() > 0 and os.time() - lastShuffle >= wantInterval() * 60 then
+    shuffle()
+  end
   poll()
 end
 
 function onConfigChanged()
-  local want = wantRandom()
+  local want = wantRandom() or wantFolder() ~= ""
   local was = randomMode
   randomMode = want
-  if want and (not was or shuffledCount ~= wantCount()) then
+  local changed = lastFolder ~= wantFolder()
+  lastFolder = wantFolder()
+  if want and (not was or changed or shuffledCount ~= wantCount()) then
     shuffle()
   end
   render()
@@ -284,7 +304,8 @@ end
 noctalia.setUpdateInterval(TICK_MS)
 desktopWidget.setWantsSecondTicks(false)
 load()
-randomMode = wantRandom()
+randomMode = wantRandom() or wantFolder() ~= ""
+lastFolder = wantFolder()
 if randomMode then
   shuffle()
 end
