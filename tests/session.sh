@@ -113,6 +113,16 @@ printf 'firefox: a\nToucher: b\n' > "$MB_WINDOWS"
 MB_SESSION_WORKSPACE=1 "$ms" start other --replace; sleep 0.3
 [[ $("$ms" show wide | grep -c '^firefox') == 0 ]] || fail "replace saved another session's app: $("$ms" show wide)"
 
+# login-run retries until Noctalia answers
+cat > "$tmp/bin/noctalia" <<'STUB'
+#!/usr/bin/env bash
+n=$(cat "$MB_COUNT" 2>/dev/null || echo 0); echo $((n + 1)) > "$MB_COUNT"
+(( n >= 2 ))
+STUB
+chmod +x "$tmp/bin/noctalia"
+MB_COUNT=$tmp/count MB_SESSION_LOGIN_WAIT=0 "$ms" login-run
+[[ $(cat "$tmp/count") == 3 ]] || fail "login-run attempts: $(cat "$tmp/count")"
+
 # login switch
 [[ $("$ms" login) == on ]] || fail "login default"
 "$ms" login off; [[ $("$ms" login) == off ]] || fail "login off"

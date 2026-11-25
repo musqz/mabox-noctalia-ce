@@ -368,6 +368,25 @@ def login(a):
         print("off" if "session" in skipped else "on")
 
 
+def login_run():
+    """Opens the panel at login; Noctalia and its plugins may still be loading, so it retries for about 30 s."""
+    wait = float(os.environ.get("MB_SESSION_LOGIN_WAIT", "2"))
+    for attempt in range(1, 16):
+        try:
+            done = subprocess.run(["noctalia", "msg", "panel-open", "mabox/places:sessions"], capture_output=True).returncode == 0
+        except OSError:
+            done = False
+        if done:
+            note = f"login-run: panel opened (attempt {attempt})"
+            break
+        note = f"login-run: panel not opened after {attempt} attempts"
+        time.sleep(wait)
+    try:
+        subprocess.run(["logger", "-t", "mb-session", note], check=False)
+    except OSError:
+        pass
+
+
 def main(argv):
     if not argv:
         print(__doc__)
@@ -418,7 +437,7 @@ def main(argv):
     elif c == "login":
         login(a)
     elif c == "login-run":
-        subprocess.run(["noctalia", "msg", "panel-open", "mabox/places:sessions"])
+        login_run()
     elif c == "switch" and a:
         switch(read(a[0])[0])
     else:
