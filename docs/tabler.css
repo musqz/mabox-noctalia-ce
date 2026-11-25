@@ -16,3 +16,6 @@
 .keys td:first-child { white-space: nowrap; }
 
 .nw { white-space: nowrap; }
+
+/* all tables: text starts at the top of the row */
+td { vertical-align: top; }
