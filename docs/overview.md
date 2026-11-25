@@ -77,21 +77,23 @@ Notes data: `~/.local/state/noctalia/plugins/data/mabox/notes/notes/*.md`. To sy
 
 Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autostart` and `install.sh` add the path source `mabox`. Enable each one by hand: `noctalia msg plugins enable mabox/notes`.
 
+<div class="keys">
+
 | Plugin | Entries | Open | Data / needs |
 |---|---|---|---|
-| `mabox/notes` | `main` dropdown, pinned window | `W-n`, `C-W-n` | notes in the plugin data folder |
-| `mabox/todo` | wide panel + *Todo today* desktop widget | `W-y` | todo.txt lists in `~/.todo` with `due:` dates, +group sub-groups, notes; done tasks stay struck through until moved to `done_<list>.txt` |
-| `mabox/places` | `main` dropdown, pinned window | `W-p`, `C-W-p` | `pcmanfm`, `fsearch`; bookmarks from `~/.config/gtk-3.0/bookmarks` |
-| `mabox/status` | `main` dropdown, pinned window | `W-A-s`, `C-W-s` | none; cleanup rows run in a terminal |
-| `mabox/configs` | `main` dropdown, pinned window | `C-W-c` | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
+| `mabox/notes` | `main` dropdown, pinned window | <span class="nw">`W-n`<br>`C-W-n`</span> | notes in the plugin data folder |
+| `mabox/todo` | wide panel + *Todo today* desktop widget | <span class="nw">`W-y`</span> | todo.txt lists in `~/.todo` with `due:` dates, +group sub-groups, notes; done tasks stay struck through until moved to `done_<list>.txt` |
+| `mabox/places` | `main` dropdown, pinned window | <span class="nw">`W-p`<br>`C-W-p`</span> | `pcmanfm`, `fsearch`; bookmarks from `~/.config/gtk-3.0/bookmarks` |
+| `mabox/status` | `main` dropdown, pinned window | <span class="nw">`W-A-s`<br>`C-W-s`</span> | none; cleanup rows run in a terminal |
+| `mabox/configs` | `main` dropdown, pinned window | <span class="nw">`C-W-c`</span> | Custom section adds files (saved in `~/.config/mabox-noctalia-ce/config-paths.local`) |
 | `mabox/reset` | `main` dropdown |  | `mb-reset-wl` |
 | `mabox/capture` | `main` dropdown, pinned window |  | `mb-screenshot`, `screenrec-toggle`, `mb-shots-interval`, `mb-gifmaker`, `gifski`, `wl-screenrec` |
-| `mabox/colors` | `picker` dropdown, pinned window | `W-c` | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
+| `mabox/colors` | `picker` dropdown, pinned window | <span class="nw">`W-c`</span> | `~/.config/colormenu/`, `mb-colorpick`, `grim`, `slurp`, `wtype` |
 | `mabox/tools` | `/mb` launcher, also in global search |  | opens the other Mabox plugins; pinned entries need `mb-pinned` |
-| `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | `W-k` | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/` |
-| `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Services, Fixes, Settings | `W-A-i` | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
-| `mabox/insert` | `/hist` and `/es` launcher providers | `W-A-h`, `W-A-e` | `~/.bash_history`, `espanso match list`, `wtype` |
-| `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | `W-A-w` | list of folders in the plugin data folder; `mb-wallpaper-dir` |
+| `mabox/keys` | `keys` hands over to `keys-wide` (full width), `/keys` launcher | <span class="nw">`W-k`</span> | `mb-keys`, `keys.csv`, `keys-profiles.csv`, `appkeys/` in `/usr/share/mabox-noctalia-ce/` |
+| `mabox/system` | `system` dropdown: Overview, Hardware, Logs, Report, Services, Fixes, Settings | <span class="nw">`W-A-i`</span> | `mb-sysreport`; `inxi`, `fastfetch`, `btop` optional; upload address in `…/data/mabox/system/settings` |
+| `mabox/insert` | `/hist` and `/es` launcher providers | <span class="nw">`W-A-h`<br>`W-A-e`</span> | `~/.bash_history`, `espanso match list`, `wtype` |
+| `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | <span class="nw">`W-A-w`</span> | list of folders in the plugin data folder; `mb-wallpaper-dir` |
 | `mabox/autostart` | `main` panel, root menu (Autostart), `/autostart` | | `~/.config/mabox-noctalia-ce/autostart.local` (entries as `(sleep N && cmd) &`), `autostart.skip` for the shipped defaults |
 | `mabox/info` | `info` desktop widget |  | `mb-keys`; `[desktop_widgets] enabled = true` |
 | `mabox/polaroids` | `polaroids` desktop widget |  | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
@@ -100,9 +102,11 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/equalizer` | `main` panel, root menu (Tools: Equalizer), `/mb equalizer` | | `mb-eq`, `pw-cli`, `pactl`; `~/.config/pipewire/pipewire.conf.d/eq.conf`; state in the plugin data folder |
 | `mabox/recolor` | `main` panel and `wallgen` / `wallgen-compact` panels, root menu (Tools: Recolor, Wallgen), `/mb recolor`, `/mb wallgen` | | `mb-recolor`, `magick`, `yad`; palettes in `/usr/share/mabox-noctalia-ce/palettes/` |
 | `mabox/crypto` | `main` dropdown, pinned window, root menu (Tools: Crypto), `/mb crypto` |  | `mb-crypto`, `curl`, `python3`; needs internet; state in the plugin data folder |
-| `mabox/music` | `/music` launcher, music panel | `W-m` | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
-| `mabox/agents` | `main` panel (wide, top), `/ag` launcher | `S-W-a` | `noctalia msg panel-toggle mabox/agents:main`; `mb-agent-sessions`, `python3`, `wlrctl`, a terminal; GitHub and AUR folders, terminal (gear button) and favorite folders (`yad` or `zenity` folder chooser) in `~/.config/mabox/mb-agent-sessions.conf`; starts and resumes Claude Code, Codex, Agy; session formats from mstio/mst.agent-launchers (MIT) |
-| `mabox/install` | `main` panel (wide), root menu, `/mb install` | `W-i` | app list in `lists/install.csv` (pacman repos only); Install runs `sudo pacman -S --needed` in the terminal chosen for the Agents plugin |
+| `mabox/music` | `/music` launcher, music panel | <span class="nw">`W-m`</span> | playlist CSV, `mpv`, `socat`, `yt-dlp`, `mpv-mpris` |
+| `mabox/agents` | `main` panel (wide, top), `/ag` launcher | <span class="nw">`S-W-a`</span> | `noctalia msg panel-toggle mabox/agents:main`; `mb-agent-sessions`, `python3`, `wlrctl`, a terminal; GitHub and AUR folders, terminal (gear button) and favorite folders (`yad` or `zenity` folder chooser) in `~/.config/mabox/mb-agent-sessions.conf`; starts and resumes Claude Code, Codex, Agy; session formats from mstio/mst.agent-launchers (MIT) |
+| `mabox/install` | `main` panel (wide), root menu, `/mb install` | <span class="nw">`W-i`</span> | app list in `lists/install.csv` (pacman repos only); Install runs `sudo pacman -S --needed` in the terminal chosen for the Agents plugin |
+
+</div>
 
 ```sh
 noctalia msg plugins list
