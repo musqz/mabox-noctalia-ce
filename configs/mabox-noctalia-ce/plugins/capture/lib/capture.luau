@@ -27,6 +27,16 @@ for k, v in pairs(DEFAULTS) do
   S[k] = v
 end
 
+-- Output folders; empty means the default. The scripts read the same keys from the settings file.
+local DIRS = {
+  { key = "shot_dir", label = "Screenshots", default = "~/Pictures/screenshots" },
+  { key = "rec_dir", label = "Recordings", default = "~/Videos/Recordings" },
+  { key = "iv_dir", label = "Interval screenshots", default = "~/Pictures/shot_interval" },
+  { key = "gif_dir", label = "GIF animations", default = "~/Pictures/Mabox-Animations" },
+}
+local D = {}
+local showSettings = false
+
 local PROBE = [[
 p=${XDG_RUNTIME_DIR:-/tmp}/mb-shots-interval.pid
 r=${XDG_RUNTIME_DIR:-/tmp}/mb-screenrec/pid
@@ -34,7 +44,7 @@ r=${XDG_RUNTIME_DIR:-/tmp}/mb-screenrec/pid
 { [ -f "$p" ] && kill -0 "$(cat "$p")" 2>/dev/null; } && echo iv=1 || echo iv=0
 wlr-randr 2>/dev/null | sed -n 's/^\([^ ][^ ]*\) .*/out=\1/p'
 echo n=$(mb-shots-interval -n 2>/dev/null || echo 0)
-find "$HOME/Pictures/screenshots" "$HOME/Videos/Recordings" "$HOME/Pictures/Mabox-Animations" -maxdepth 1 -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -5 | cut -d' ' -f2-
+find "$1" "$2" "$3" -maxdepth 1 -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -5 | cut -d' ' -f2-
 ]]
 
 local recording = false
@@ -79,20 +89,52 @@ local function settingsPath()
   return dir and dir .. "/settings" or nil
 end
 
+local function isDirKey(k)
+  for _, d in ipairs(DIRS) do
+    if d.key == k then
+      return true
+    end
+  end
+  return false
+end
+
 local function loadSettings()
+  D = {}
   local path = settingsPath()
   local raw = path and noctalia.readFile(path)
   for l in string.gmatch(raw or "", "[^\n]+") do
     local k, v = string.match(l, "^([%w_]+)=(.*)$")
     if k and DEFAULTS[k] and string.match(v, "^[%w-]+$") then
       S[k] = v
+    elseif k and isDirKey(k) then
+      D[k] = noctalia.string.trim(v)
     end
   end
 end
 
+-- The folder in use, with ~ expanded.
+local function dirPath(key)
+  local v = D[key]
+  if not v or v == "" then
+    for _, d in ipairs(DIRS) do
+      if d.key == key then
+        v = d.default
+      end
+    end
+  end
+  if string.sub(v, 1, 1) == "~" then
+    v = HOME .. string.sub(v, 2)
+  end
+  return v
+end
+
 local function setSetting(k, v)
   loadSettings()
-  S[k] = v
+  if isDirKey(k) then
+    D[k] = v
+  else
+    S[k] = v
+  end
   local dir = noctalia.pluginDataDir()
   if not dir then
     return
@@ -101,6 +143,11 @@ local function setSetting(k, v)
   local out = {}
   for key in pairs(DEFAULTS) do
     table.insert(out, key .. "=" .. S[key])
+  end
+  for _, d in ipairs(DIRS) do
+    if D[d.key] and D[d.key] ~= "" then
+      table.insert(out, d.key .. "=" .. D[d.key])
+    end
   end
   table.sort(out)
   noctalia.writeFile(settingsPath(), table.concat(out, "\n") .. "\n")
@@ -170,7 +217,7 @@ end
 
 local function refresh()
   lastRun = ticks
-  noctalia.runAsync({ "sh", "-c", PROBE }, function(result)
+  noctalia.runAsync({ "sh", "-c", PROBE, "sh", dirPath("shot_dir"), dirPath("rec_dir"), dirPath("gif_dir") }, function(result)
     local files = {}
     local outs = { "focus" }
     for l in string.gmatch(result.stdout or "", "[^\n]+") do
@@ -262,7 +309,7 @@ local function headingWithFolder(text, path)
   return ui.row({ gap = 6, align = "center" }, {
     ui.label({ text = string.upper(text), fontSize = 11, color = "primary", flexGrow = 1 }),
     kbtn(block .. "folder", nextRow(), 1, { text = "Folder", glyph = "folder-open", variant = "outline", controlSize = "sm", onClick = function()
-      noctalia.runAsync({ "xdg-open", path })
+      noctalia.runAsync({ "sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "sh", path })
       if not pinned then
         panel.close()
       end
@@ -291,7 +338,7 @@ end
 
 local function shotBlock()
   block = "shot-"
-  local head = headingWithFolder("Screenshot", HOME .. "/Pictures/screenshots")
+  local head = headingWithFolder("Screenshot", dirPath("shot_dir"))
   local r1, r2, r3, r4 = nextRow(), nextRow(), nextRow(), nextRow()
   return card({
     head,
@@ -316,7 +363,7 @@ end
 
 local function recBlock()
   block = "rec-"
-  local rows = { headingWithFolder(recording and "Recording" or "Record", HOME .. "/Videos/Recordings") }
+  local rows = { headingWithFolder(recording and "Recording" or "Record", dirPath("rec_dir")) }
   if recording then
     table.insert(rows, action(nextRow(), 1, "Stop recording", "player-stop", function()
       launch({ "pkill", "-INT", "-x", "wl-screenrec" }, false)
@@ -339,7 +386,7 @@ end
 local function intervalBlock()
   block = "iv-"
   local title = (intervalOn and "Interval (running)" or "Interval") .. (ivCount > 0 and ("  " .. ivCount .. " images") or "")
-  local rows = { headingWithFolder(title, HOME .. "/Pictures/shot_interval") }
+  local rows = { headingWithFolder(title, dirPath("iv_dir")) }
   local r1 = nextRow()
   table.insert(rows, ui.row({ gap = 4 }, {
     action(r1, 1, intervalOn and "Stop" or "Start", intervalOn and "player-stop" or "player-play", function()
@@ -382,6 +429,63 @@ local function intervalBlock()
   return card(rows)
 end
 
+-- Detached (setsid) so the dialog outlives the panel; the pick goes to a file read when the panel reopens.
+local BROWSE = [[s=${1:-$HOME}
+case $s in "~"*) s=$HOME${s#"~"} ;; esac
+p=$(yad --file --directory --center --width=1000 --height=650 --title="$3" --filename="$s/")
+[ -n "$p" ] && readlink -f "$p" > "$2"
+if [ -n "$4" ]; then eval "$4"; else noctalia msg panel-close; noctalia msg panel-open mabox/capture:main; fi]]
+
+local function pickFile(key)
+  local dir = noctalia.pluginDataDir()
+  return dir and (dir .. "/picked-" .. key) or nil
+end
+
+local function applyPicks()
+  for _, d in ipairs(DIRS) do
+    local f = pickFile(d.key)
+    local pick = f and noctalia.string.trim(noctalia.readFile(f) or "") or ""
+    if pick ~= "" then
+      noctalia.writeFile(f, "")
+      setSetting(d.key, pick)
+      showSettings = true
+    end
+  end
+end
+
+local function settingsBlock()
+  block = "set-"
+  local rows = { heading("Folders") }
+  table.insert(rows, ui.label({ text = "Where the files are saved. Empty: the default folder.", fontSize = 11, color = "on_surface_variant" }))
+  for _, d in ipairs(DIRS) do
+    local r = nextRow()
+    table.insert(rows, ui.label({ text = d.label, fontSize = 12 }))
+    table.insert(rows, ui.row({ gap = 6, align = "center" }, {
+      ui.input({
+        key = "dir-" .. d.key,
+        value = D[d.key] or "",
+        placeholder = d.default,
+        controlSize = "sm",
+        flexGrow = 1,
+        onChange = function(text)
+          setSetting(d.key, noctalia.string.trim(text))
+        end,
+      }),
+      kbtn("open-" .. d.key, r, 1, { glyph = "folder-open", variant = "outline", controlSize = "sm", tooltip = "Open this folder", onClick = function()
+        noctalia.runAsync({ "sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "sh", dirPath(d.key) })
+      end }),
+      kbtn("browse-" .. d.key, r, 2, { text = "Browse", variant = "outline", controlSize = "sm", onClick = function()
+        local f = pickFile(d.key)
+        if f then
+          noctalia.mkdirAll(noctalia.pluginDataDir())
+          noctalia.runAsync({ "setsid", "-f", "sh", "-c", BROWSE, "sh", dirPath(d.key), f, d.label, pinned and pinSide.reopenCmd("capture") or "" })
+        end
+      end }),
+    }))
+  end
+  return card(rows)
+end
+
 local function recentBlock()
   block = "recent-"
   local rows = { heading("Recent") }
@@ -419,7 +523,7 @@ render = function()
   kr = 1
   local title = ui.row({ gap = 6, align = "center" }, {
     logo(),
-    ui.label({ text = recording and "Capture  (recording)" or "Capture" }),
+    ui.label({ text = showSettings and "Capture settings" or (recording and "Capture  (recording)" or "Capture") }),
     ui.label({ text = hotkey(pinned and "mb-pinned capture" or "mabox/capture:main"), color = "outline_variant", flexGrow = 1 }),
   })
   local top = ui.row({ gap = 6, align = "center" }, {
@@ -427,14 +531,19 @@ render = function()
     pinned and pinSide.dockButton("capture", pinned, render) or ui.spacer({ width = 0 }),
     pinned and pinSide.panelButton("capture", "main") or ui.spacer({ width = 0 }),
     pinned and kbtn("swap", 1, 1, { glyph = "arrows-left-right", variant = "ghost", controlSize = "sm", tooltip = "Move to the other side", onClick = function() pinSide.swap("capture", pinned) end }) or ui.spacer({ width = 0 }),
-    kbtn("pin", 1, 2, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
+    kbtn("gear", 1, 2, { glyph = showSettings and "arrow-left" or "settings", variant = showSettings and "primary" or "ghost", controlSize = "sm", tooltip = showSettings and "Back to the buttons" or "Settings: output folders", onClick = function()
+      showSettings = not showSettings
+      kbd.clear()
+      render()
+    end }),
+    kbtn("pin", 1, 3, { glyph = pinned and "x" or "pin", variant = "ghost", controlSize = "sm", tooltip = pinned and "Close" or "Pin window", onClick = function()
       pinSide.close("capture", pinned)
       if not pinned then
         pinSide.toggle("capture")
       end
     end }),
   })
-  local body = ui.column({ gap = 8 }, { shotBlock(), intervalBlock(), recBlock(), recentBlock() })
+  local body = showSettings and ui.column({ gap = 8 }, { settingsBlock() }) or ui.column({ gap = 8 }, { shotBlock(), intervalBlock(), recBlock(), recentBlock() })
   if pinned then
     pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { title, top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
   else
@@ -455,7 +564,9 @@ local function open()
   kbd.clear()
   hovered = nil
   armed = false
+  showSettings = false
   loadSettings()
+  applyPicks()
   ticks = 0
   render()
   refresh()
@@ -463,6 +574,13 @@ end
 
 local function tick()
   ticks += 1
+  -- a folder picked in the dialog while the pinned window stayed loaded
+  local before = showSettings
+  loadSettings()
+  applyPicks()
+  if showSettings ~= before then
+    render()
+  end
   if armed and ticks - armedAt >= 5 then
     armed = false
     render()

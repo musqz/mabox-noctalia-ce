@@ -37,7 +37,7 @@ case $kind in image) need magick ;; *) need ffmpeg ;; esac
 
 if (($# == 0)); then
     case $kind in
-        video) dir=$HOME/Videos/Recordings; filter="Video|*.mkv *.mp4 *.webm *.mov *.avi *.gif *.m4v *.ts" ;;
+        video) dir=$(mb-capture-dir rec); filter="Video|*.mkv *.mp4 *.webm *.mov *.avi *.gif *.m4v *.ts" ;;
         audio) dir=$HOME/Music;             filter="Audio and video|*.mp3 *.flac *.ogg *.opus *.m4a *.wav *.aac *.mkv *.mp4 *.webm *.mov" ;;
         image) dir=$HOME/Pictures;          filter="Images|*.png *.jpg *.jpeg *.webp *.avif *.bmp *.tiff *.gif" ;;
     esac

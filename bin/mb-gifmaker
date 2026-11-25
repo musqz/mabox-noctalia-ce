@@ -2,7 +2,7 @@
 
 CONF_FILE="$HOME/.config/mabox/mb-gifmaker.conf"
 
-mkdir -p "$HOME/Pictures/Mabox-Animations" "${CONF_FILE%/*}"
+mkdir -p "${CONF_FILE%/*}"
 
 if [ ! -f "$CONF_FILE" ]; then
 cat << EOF > "$CONF_FILE"
@@ -37,6 +37,12 @@ source "$CONF_FILE"
 icnf=${XDG_CONFIG_HOME:-$HOME/.config}/mabox/mb-interval-shots.conf
 v=$(sed -n 's/^screenshot_dir=//p' "$icnf" 2>/dev/null | tail -n1)
 [[ -n $v ]] && screenshot_dir=${v/#\~/$HOME}
+# The Capture panel folders win.
+cap=${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/capture/settings
+v=$(sed -n 's/^iv_dir=//p' "$cap" 2>/dev/null | tail -n1) || v=
+[[ -n $v ]] && screenshot_dir=${v/#\~/$HOME}
+v=$(sed -n 's/^gif_dir=//p' "$cap" 2>/dev/null | tail -n1) || v=
+[[ -n $v ]] && output_dir=${v/#\~/$HOME}
 
 # -s N: longest side in pixels (0 = original size); overrides width and height.
 while getopts s: opt; do

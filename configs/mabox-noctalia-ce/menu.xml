@@ -205,7 +205,7 @@
       <action name="Execute" command="screenrec-toggle" />
     </item>
     <item label="Open recordings folder" icon="folder-videos">
-      <action name="Execute" command="sh -c 'mkdir -p ~/Videos/Recordings &amp;&amp; xdg-open ~/Videos/Recordings'" />
+      <action name="Execute" command="sh -c 'd=$(mb-capture-dir rec); mkdir -p &quot;$d&quot; &amp;&amp; xdg-open &quot;$d&quot;'" />
     </item>
   </menu>
   <menu id="convert-menu" label="Converter" icon="applications-multimedia">

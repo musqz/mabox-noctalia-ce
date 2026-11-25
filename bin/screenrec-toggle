@@ -22,12 +22,14 @@ fi
 [[ ${1-} == --pause || ${1-} == --stop ]] && exit 0
 
 output= fps= container=mp4 audio=none
+recdir=$HOME/Videos/Recordings
 # Defaults from the Capture panel, so the bar button records with the same choices.
 saved=${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/capture/settings
 if [[ -f $saved ]]; then
     v=$(sed -n 's/^rec_container=//p' "$saved"); [[ $v == mp4 || $v == mkv ]] && container=$v
     v=$(sed -n 's/^rec_fps=//p' "$saved"); [[ $v =~ ^[0-9]+$ ]] && fps=$v
     v=$(sed -n 's/^rec_audio=//p' "$saved"); [[ $v == none || $v == system || $v == mic ]] && audio=$v
+    v=$(sed -n 's/^rec_dir=//p' "$saved"); [[ -n $v ]] && recdir=${v/#\~/$HOME}
 fi
 while getopts o:f:c:a: opt; do
     case $opt in
@@ -70,7 +72,7 @@ case $audio in
     mic) args+=(--audio --audio-device "$(pactl get-default-source)") ;;
     *) echo "audio: none, system or mic" >&2; exit 2 ;;
 esac
-out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).$container"
+out="$recdir/$(date +%F_%H-%M-%S).$container"
 
 # Put the bar button back as it was; glyph, tooltip and click actions may be custom.
 getcfg() {

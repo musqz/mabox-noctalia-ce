@@ -20,6 +20,9 @@ load_conf() {
         v=${v//\"/}
         [[ -n $v ]] && dir=${v/#\~/$HOME}
     fi
+    # the Capture panel setting wins
+    v=$(sed -n 's/^iv_dir=//p' "${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/capture/settings" 2>/dev/null | tail -n1) || v=
+    [[ -n $v ]] && dir=${v/#\~/$HOME}
     return 0
 }
 
