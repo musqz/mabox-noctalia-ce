@@ -13,7 +13,6 @@ Mabox Noctalia CE is a labwc session for Mabox Linux with the Noctalia shell: a 
 - [Tools](tools.md): panels, desktop widgets and scripts.
 - [Custom plugins](custom-plugins.md): plugins from users, starting with Ripper.
 - [External tools](external-tools.md): jumpapp-ng, skippy-wl, fittsmon-wl and tabdock.
-- [Overview](overview.md): files, paths, plugins and services.
 - [Snapshot ISO](snapshot.md): build an ISO of your system, then USB or VM.
 
 ## About this project
@@ -27,5 +26,7 @@ CE uses neither jgmenu nor conky. Daniel is working on his own Mabox Noctalia se
 I build CE with AI help (Claude Code). I started out curious whether it could work, and it turned out to be a good way to make a lot of small tools in a short time. I read and try every change myself before it is merged, and I stay responsible for what ends up in the repo. If something looks off, open an issue.
 
 **Status:** the project has only just begun and is experimental. Things will change, and some parts may break.
+
+Commands, paths and config files are in the [technical docs](https://github.com/musqz/mabox-noctalia-ce/tree/main/docs/technical) on GitHub.
 
 Source and issues: [github.com/musqz/mabox-noctalia-ce](https://github.com/musqz/mabox-noctalia-ce). Every page has an edit link at the top right.
