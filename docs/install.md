@@ -2,7 +2,7 @@
 
 Open the panel with `W-i`, the root menu or a right-click on the launcher button.
 
-<p align="center"><a href="img/install-apps.png"><img src="img/thumb/install-apps.png" alt="Install apps panel"></a></p>
+<p align="center"><a href="img/install-apps.png"><img src="img/thumb/install-apps-big.png" alt="Install apps panel"></a></p>
 
 - Type in the filter to search by name, package or description.
 - Click *Install*. A terminal opens with `sudo pacman -S --needed`: enter your password and confirm. The panel closes; it reopens when you close the terminal.
