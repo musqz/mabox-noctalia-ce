@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Turn the camera button into a red dot while interval screenshots run; a left click on it stops them.
 
 ## 0.10.0
 - Make Luciole follow the Noctalia colours: `mb-migrate` adds its colour template when Luciole is installed.
