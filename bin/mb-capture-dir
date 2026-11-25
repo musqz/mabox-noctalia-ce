@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Print an output folder of the Capture panel: mb-capture-dir shot|rec|iv|gif. The panel setting, else the default.
+case ${1-} in
+    shot) key=shot_dir def=Pictures/screenshots ;;
+    rec) key=rec_dir def=Videos/Recordings ;;
+    iv) key=iv_dir def=Pictures/shot_interval ;;
+    gif) key=gif_dir def=Pictures/Mabox-Animations ;;
+    *) echo "usage: mb-capture-dir shot|rec|iv|gif" >&2; exit 2 ;;
+esac
+v=$(sed -n "s/^$key=//p" "${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/plugins/data/mabox/capture/settings" 2>/dev/null | tail -n1) || v=
+v=${v/#\~/$HOME}
+echo "${v:-$HOME/$def}"

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # screenshot-window with skippy-wl: every window you pick is saved as its own file.
-# mb-screenshot [--delay SECONDS] [--format png|jpg|webp|avif] <noctalia screenshot-* args>: save to ~/Pictures/screenshots, then open the image.
+# mb-screenshot [--delay SECONDS] [--format png|jpg|webp|avif] <noctalia screenshot-* args>: save to ~/Pictures/screenshots (or the folder set in the Capture panel), then open the image.
 # screenshot-fullscreen without a target uses SCREENSHOT_OUTPUT (connector, e.g. HDMI-A-1) instead of the focused monitor.
 # --view FORMAT NAME: open the file that was just saved as NAME.EXT; stdin is the png noctalia pipes.
+dir=$(mb-capture-dir shot)
 if [[ ${1-} == --view ]]; then
-    dir=$HOME/Pictures/screenshots
     ext=${2-png}
     name=${3-}
     rt=${XDG_RUNTIME_DIR:-/tmp}
@@ -39,7 +39,6 @@ done
 if [[ ${1-} == screenshot-fullscreen && $# -eq 1 && -n ${SCREENSHOT_OUTPUT-} ]]; then
     set -- screenshot-fullscreen "$SCREENSHOT_OUTPUT"
 fi
-dir=$HOME/Pictures/screenshots
 mkdir -p "$dir"
 countdown() {
     (( delay > 0 )) || return 0

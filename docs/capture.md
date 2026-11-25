@@ -34,3 +34,7 @@
 - *GIF* turns the images into an animation. *Backup* moves them to a dated folder; *Delete all* removes them (click twice).
 
 The folder icons next to the headings open the folders with your files.
+
+## Settings
+
+The gear <i class="ti">&#xEB20;</i> at the top opens the settings. Set the folder for screenshots, recordings, interval screenshots and GIF animations: type a path or press *Browse*. Empty uses the default folder. The arrow takes you back.

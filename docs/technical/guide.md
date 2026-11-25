@@ -53,6 +53,7 @@ Add a target: put a template under `~/.config/noctalia/` and a `[theme.templates
 - Pause and stop from a key: `screenrec-toggle --pause` and `screenrec-toggle --stop`.
 - Capture pinned window: `mb-pinned capture`; the side is set like for the other plugins.
 - Pinned windows: the layout-sidebar button docks one (other windows make room); press it again to float. Saved per plugin in `~/.config/mabox-noctalia-ce/pinned-dock`.
+- Output folders are set in the Capture panel settings (`shot_dir`, `rec_dir`, `iv_dir`, `gif_dir` in `~/.local/state/noctalia/plugins/data/mabox/capture/settings`). `mb-capture-dir shot|rec|iv|gif` prints the folder in use.
 
 ## Wallpaper
 
