@@ -45,8 +45,11 @@ local M = {}
 local PATTERN = "[-]-input-ipc-server=" .. SOCK
 
 local playGen = 0
+-- Repeat belongs to the running mpv: every new play clears it, and an mpv that starts while it is on gets --loop-file.
+local repeating = false
 
 function M.play(urls, shuffle, label, quiet, from)
+  repeating = false
   playGen += 1
   local gen = playGen
   noctalia.writeFile(LIST, table.concat(urls, "\n") .. "\n")
@@ -62,7 +65,7 @@ function M.play(urls, shuffle, label, quiet, from)
     end
     noctalia.runAsync("nohup mpv --no-video --force-window=no --input-ipc-server=" .. sq(SOCK)
       .. (SAFE and (" --script=" .. sq(RECENT_SCRIPT) .. " --script-opts=mbrecent-log=" .. sq(RECENT_LOG)) or "")
-      .. (shuffle and " --shuffle" or "") .. (from and from > 1 and (" --playlist-start=" .. (from - 1)) or "") .. " --playlist=" .. sq(LIST) .. " >/dev/null 2>&1 &")
+      .. (repeating and " --loop-file=inf" or "") .. (shuffle and " --shuffle" or "") .. (from and from > 1 and (" --playlist-start=" .. (from - 1)) or "") .. " --playlist=" .. sq(LIST) .. " >/dev/null 2>&1 &")
   end)
   if not quiet then
     noctalia.notify("Music", label)
@@ -88,6 +91,20 @@ end
 -- Jumps secs forward (negative: back) in the running mpv; a live stream just ignores it.
 function M.seek(secs)
   noctalia.runAsync({ "sh", "-c", "echo '{\"command\":[\"seek\"," .. secs .. ",\"relative\"]}' | socat - " .. sq(SOCK) .. " >/dev/null 2>&1" })
+end
+
+-- Repeats the current song until switched off; a new play starts a new mpv without it.
+function M.isRepeating()
+  return repeating
+end
+
+function M.resetRepeat()
+  repeating = false
+end
+
+function M.setRepeat(on)
+  repeating = on
+  noctalia.runAsync({ "sh", "-c", "echo '{\"command\":[\"set_property\",\"loop-file\",\"" .. (on and "inf" or "no") .. "\"]}' | socat - " .. sq(SOCK) .. " >/dev/null 2>&1" })
 end
 
 -- "Artist - Title" the way the bar shows it; just the title when there is no artist or the title already starts with it.
