@@ -2,7 +2,7 @@
 # Toggle a recording with wl-screenrec; file is named by date and time.
 # Run again to stop; bound to the screenrec button in the noctalia bar.
 #   screenrec-toggle [-o OUTPUT] [-f FPS] [-c mp4|mkv] [-a none|system|mic]
-# Without -o you select a region; -o auto uses SCREENSHOT_OUTPUT or the first output. -a records the default sink or microphone.
+# Without -o you select a region; -o auto uses SCREENSHOT_OUTPUT, the only monitor, or a click on one of several. -a records the default sink or microphone.
 set -euo pipefail
 
 if pkill -INT -x wl-screenrec; then
@@ -35,14 +35,20 @@ bar_state() {
     noctalia msg config-set widget.screenrec.tooltip "\"$3\"" >/dev/null || true
 }
 
+# auto: SCREENSHOT_OUTPUT, the only enabled monitor, or a click on one of several (slurp -o)
+slurp_args=()
 if [[ $output == auto ]]; then
-    output=${SCREENSHOT_OUTPUT:-$(wlr-randr | awk 'NR==1{print $1}')}
+    output=${SCREENSHOT_OUTPUT:-}
+    if [[ -z $output ]]; then
+        outs=$(wlr-randr | awk '/^[^ ]/{n=$1} /Enabled: yes/{print n}')
+        if [[ -n $outs && $(grep -c . <<< "$outs") -eq 1 ]]; then output=$outs; else slurp_args=(-o); fi
+    fi
 fi
 args=()
 if [[ -n $output ]]; then
     args+=(-o "$output")
 else
-    region=$(slurp) || exit 0
+    region=$(slurp "${slurp_args[@]}") || exit 0
     args+=(-g "$region")
 fi
 [[ -n $fps ]] && args+=(-m "$fps")
@@ -54,29 +60,6 @@ case $audio in
 esac
 out="$HOME/Videos/Recordings/$(date +%F_%H-%M-%S).$container"
 
-# A second bar button, only while recording, stops it.
-stop_button() {
-    local list
-    list=$(noctalia msg config-get bar.default.end) || return 0
-    list=$(python3 -c '
-import re, sys
-items = re.findall(r"\x27([^\x27]+)\x27", sys.stdin.read())
-if not items:
-    sys.exit(1)
-items = [i for i in items if i != "recstop"]
-if sys.argv[1] == "on" and "screenrec" in items:
-    items.insert(items.index("screenrec") + 1, "recstop")
-print("[" + ", ".join("\"%s\"" % i for i in items) + "]")' "$1" <<< "$list") || return 0
-    if [[ $1 == on ]]; then
-        noctalia msg config-set widget.recstop.type '"custom_button"' >/dev/null || true
-        noctalia msg config-set widget.recstop.glyph '"player-stop"' >/dev/null || true
-        noctalia msg config-set widget.recstop.color '"error"' >/dev/null || true
-        noctalia msg config-set widget.recstop.tooltip '"stop recording"' >/dev/null || true
-        noctalia msg config-set widget.recstop.actions.left '"exec pkill -INT -x wl-screenrec"' >/dev/null || true
-    fi
-    noctalia msg config-set bar.default.end "$list" >/dev/null || true
-}
-
 # Put the tooltip back as it was, it may be a custom one.
 tip=$(noctalia msg config-get widget.screenrec.tooltip 2>/dev/null) || tip=
 tip=${tip#\'}; tip=${tip%\'}
@@ -84,10 +67,23 @@ tip=${tip#\'}; tip=${tip%\'}
 gly=$(noctalia msg config-get widget.screenrec.glyph 2>/dev/null) || gly=
 gly=${gly#\'}; gly=${gly%\'}
 [[ $gly == circle-filled ]] && gly=
+# A click on the button stops the recording; the original click action comes back afterwards.
+stop_cmd='exec pkill -INT -x wl-screenrec'
+act=$(noctalia msg config-get widget.screenrec.actions.left 2>/dev/null) || act=
+act=${act#\'}; act=${act%\'}
+[[ -z $act || $act == "$stop_cmd" ]] && act='exec mb-screenshot screenshot-region'
 bar_state circle-filled error "stop recording"
-stop_button on
+noctalia msg config-set widget.screenrec.actions.left "\"$stop_cmd\"" >/dev/null || true
 # the bar button is the camera of configs/noctalia/config.toml: left screenshot, right Capture panel
-trap 'bar_state "${gly:-camera}" on_surface "${tip:-L:Area shot R:Panel}"; stop_button off' EXIT
+restore() {
+    local cur
+    bar_state "${gly:-camera}" on_surface "${tip:-L:Area shot R:Panel}"
+    cur=$(noctalia msg config-get widget.screenrec.actions.left 2>/dev/null) || cur=
+    cur=${cur#\'}; cur=${cur%\'}
+    [[ $cur == "$stop_cmd" ]] && { noctalia msg config-set widget.screenrec.actions.left "\"$act\"" >/dev/null || true; }
+    return 0
+}
+trap restore EXIT
 
 mkdir -p "$(dirname "$out")"
 if wl-screenrec "${args[@]}" -f "$out"; then

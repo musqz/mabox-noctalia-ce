@@ -2,7 +2,7 @@
 # Toggle interval screenshots with grim; run again to stop.
 #   mb-shots-interval [-o OUTPUT|auto | -a] [SECONDS]
 #   mb-shots-interval -s | -n | -b | -x     count the images / move them to backup/DATE / delete them
-# -o: one monitor (auto = SCREENSHOT_OUTPUT or the first output), -a: select an area once.
+# -o: one monitor (auto = SCREENSHOT_OUTPUT, the only monitor, or a click on one of several), -a: select an area once.
 # Without either option all monitors are captured into one image.
 # Config: ~/.config/mabox/mb-interval-shots.conf (interval=, screenshot_dir=).
 set -euo pipefail
@@ -59,12 +59,18 @@ while getopts o:a opt; do
     esac
 done
 shift $((OPTIND - 1))
+# auto: SCREENSHOT_OUTPUT, the only enabled monitor, or a click on one of several (slurp -o)
+slurp_args=()
 if [[ $output == auto ]]; then
-    output=${SCREENSHOT_OUTPUT:-$(wlr-randr | awk 'NR==1{print $1}')}
+    output=${SCREENSHOT_OUTPUT:-}
+    if [[ -z $output ]]; then
+        outs=$(wlr-randr | awk '/^[^ ]/{n=$1} /Enabled: yes/{print n}')
+        if [[ -n $outs && $(grep -c . <<< "$outs") -eq 1 ]]; then output=$outs; else slurp_args=(-o); fi
+    fi
 fi
 args=()
-if [[ -n $area ]]; then
-    region=$(slurp) || exit 0
+if [[ -n $area || ${#slurp_args[@]} -gt 0 ]]; then
+    region=$(slurp "${slurp_args[@]}") || exit 0
     args=(-g "$region")
 elif [[ -n $output ]]; then
     args=(-o "$output")
