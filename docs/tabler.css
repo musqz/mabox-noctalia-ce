@@ -14,3 +14,5 @@
 /* keys.md: hotkeys on one line, the action column wraps */
 .keys table { width: 100%; }
 .keys td:first-child { white-space: nowrap; }
+
+.nw { white-space: nowrap; }
