@@ -2,13 +2,13 @@
 
 Five small programs by the same author run next to the CE panels. All five are available in the Mabox repo. More information is in each git.
 
-| Tool | What it does | Key | Package | Git |
-|---|---|---|---|---|
-| jumpapp-ng | run or raise an application | `F1`, `F2`, `C-KP_1` … `C-KP_6`, `W-r` | Mabox repo | <https://github.com/musqz/jumpapp> |
-| skippy-wl | window overview and switcher | `W-Tab`, `W-S-Tab` | Mabox repo | <https://github.com/musqz/skippy-wl> |
-| fittsmon-wl | commands on screen edges and corners | `W-A-k` shows them | Mabox repo | <https://github.com/musqz/fittsmon> |
-| fittsmon-wl-gui | editor for the fittsmon-wl zones | | Mabox repo | <https://github.com/musqz/fittsmon-wl-gui> |
-| tabdock | Firefox tabs and containers in a side panel | `W-grave` finds a tab | Mabox repo | <https://github.com/musqz/tabdock> |
+| Tool | What it does | Package | Git |
+|---|---|---|---|
+| jumpapp-ng | run or raise an application | Mabox repo | <https://github.com/musqz/jumpapp> |
+| skippy-wl | window overview and switcher | Mabox repo | <https://github.com/musqz/skippy-wl> |
+| fittsmon-wl | commands on screen edges and corners | Mabox repo | <https://github.com/musqz/fittsmon> |
+| fittsmon-wl-gui | editor for the fittsmon-wl zones | Mabox repo | <https://github.com/musqz/fittsmon-wl-gui> |
+| tabdock | Firefox tabs and containers in a side panel | Mabox repo | <https://github.com/musqz/tabdock> |
 
 ## jumpapp-ng
 
