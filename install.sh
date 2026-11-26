@@ -232,7 +232,7 @@ report() {
     if ! command -v radicale >/dev/null; then echo "[todo] calendar (optional): sudo pacman -S radicale, then mb-calendar-setup"
     elif systemctl --user is-enabled radicale >/dev/null 2>&1; then echo "[done] calendar: radicale service enabled (Noctalia: Settings > Calendar > Local (vdir))"
     else echo "[todo] calendar (optional): run mb-calendar-setup, then Noctalia Settings > Calendar > Local (vdir)"; fi
-    for p in kitty pavucontrol viewnior ffmpeg colormenu beautysolar-icon-theme pyradio python-pywalfox; do
+    for p in kitty pavucontrol viewnior ffmpeg colormenu beautysolar-icon-theme pyradio python-pywalfox quickbox-qt; do
         pacman -Qq "$p" >/dev/null 2>&1 || opt+=("$p")
     done
     if (( ${#opt[@]} )); then echo "[todo] optional packages not installed: ${opt[*]}"; fi
