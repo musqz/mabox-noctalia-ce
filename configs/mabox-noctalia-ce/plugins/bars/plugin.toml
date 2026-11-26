@@ -5,7 +5,7 @@ plugin_api = 43
 author = "mabox"
 license = "MIT"
 icon = "layout-navbar"
-description = "Bar looks and profiles: change the shape of the bar, save the bars by name with a picture, switch, undo. /bars in the launcher opens it."
+description = "Bars: the shipped bars and your own, each switched on or off by itself; add, copy, rename and delete your own. /bars in the launcher opens it."
 tags = ["utility", "system"]
 
 [[panel]]
