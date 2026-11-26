@@ -91,7 +91,9 @@ Config: `~/.config/tabdock/config.toml` (side, monitor, width, icons, bookmarks,
 
 ## quickbox-qt (optional)
 
-A window to start virtual machines with quickemu. The Snapshot panel uses it: with quickbox-qt 1.4 or newer installed, the ISO list gets a *VM* button that starts the ISO in a virtual machine.
+A window to start virtual machines with quickemu. 
+
+The Snapshot panel uses it: with quickbox-qt 1.4 or newer installed, the ISO list gets a *VM* button that starts the ISO in a virtual machine.
 
 ### Installation from Mabox repo.
 
@@ -99,4 +101,4 @@ A window to start virtual machines with quickemu. The Snapshot panel uses it: wi
 sudo pacman -S quickbox-qt
 ```
 
-It is optional. More information: <https://github.com/musqz/quickbox-qt>. Without it the *VM* button is not shown; everything else in the Snapshot panel works.
+It is optional. More information: <https://github.com/musqz/quickbox-qt>. Without it the *VM* button is not shown.
