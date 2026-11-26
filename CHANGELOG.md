@@ -4,6 +4,7 @@
 - Turn the camera button into a red dot while interval screenshots run; a left click on it stops them.
 - Set the output folders of screenshots, recordings, interval screenshots and GIFs in the Capture panel settings (gear button).
 - Add a repeat button for the current song to the Music panel.
+- List quickbox-qt in the optional packages of the install report (the Snapshot VM button needs it).
 
 ## 0.10.0
 - Make Luciole follow the Noctalia colours: `mb-migrate` adds its colour template when Luciole is installed.
