@@ -1,0 +1,28 @@
+title = "Floating island"
+desc = "Solid rounded bar, shorter than the screen, round buttons"
+
+[bar]
+background_opacity = 1.0
+border_width = 1.0
+shadow = true
+contact_shadow = false
+compositor_blur = true
+concave_edge_corners = false
+radius = 16
+radius_top_left = 16
+radius_top_right = 16
+radius_bottom_left = 16
+radius_bottom_right = 16
+margin_ends = 300
+margin_edge = 8
+thickness = 45
+padding = 16
+widget_spacing = 6
+capsule = true
+capsule_group = []
+capsule_fill = "primary_container"
+capsule_border = "primary"
+capsule_border_width = 1.0
+capsule_opacity = 1.0
+capsule_thickness = 0.76
+capsule_padding = 6.0

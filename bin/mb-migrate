@@ -385,6 +385,14 @@ migrate_36() {
     return 0
 }
 
+# The root menu opens the Bars panel.
+migrate_37() {
+    local m=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/menu.xml
+    [[ -f $m ]] && ! grep -q 'mabox/bars:main' "$m" && grep -q 'panel-toggle mabox/autostart:main' "$m" || return 0
+    sed -i '/panel-toggle mabox\/autostart:main/,/<\/item>/{/<\/item>/s#$#\n    <item label="Bars" icon="preferences-desktop">\n      <action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />\n    </item>#}' "$m"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

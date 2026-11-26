@@ -1,0 +1,396 @@
+#!/usr/bin/env python3
+"""mb-bars - bar profiles: the [bar] tables of the Noctalia state file, saved by name.
+
+  mb-bars list                JSON: profiles, current bars, undo flag
+  mb-bars save NAME           save the current bars and take new pictures
+  mb-bars looks               JSON: the shipped looks
+  mb-bars look NAME           apply a look: only its keys change, on every bar and monitor override
+  mb-bars apply NAME          switch to a profile (the current bars are kept for undo)
+  mb-bars undo                go back to the bars before the last apply
+  mb-bars shots NAME          new pictures for a profile that is the current setup
+  mb-bars delete NAME
+
+Profiles: ~/.local/state/noctalia/plugins/data/mabox/bars/NAME/profile.toml, the [bar]
+and [bar.*] tables as they stand in settings.toml (per-monitor overrides included).
+"""
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import tomllib
+
+HOME = os.environ["HOME"]
+STATE = os.environ.get("XDG_STATE_HOME", HOME + "/.local/state") + "/noctalia"
+SETTINGS = STATE + "/settings.toml"
+DATA = STATE + "/plugins/data/mabox/bars"
+UNDO = "_before-apply"
+CURRENT = DATA + "/_current"
+HEADER = re.compile(r"^\s*\[([^\[\]]+)\]\s*(#.*)?$")
+CROP_W = 420
+HERE = os.path.dirname(os.path.realpath(__file__))
+LOOK_DIRS = (os.path.join(HERE, "..", "lists", "bars"), "/usr/share/mabox-noctalia-ce/bars")
+
+
+def die(msg):
+    print("mb-bars: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def split_bars(text):
+    """Return (lines outside the bar tables, bar lines, index where the first bar table began)."""
+    rest, bar, first, inbar = [], [], None, False
+    for line in text.splitlines(keepends=True):
+        m = HEADER.match(line)
+        if m:
+            name = m.group(1).strip()
+            inbar = name == "bar" or name.startswith("bar.")
+            if inbar and first is None:
+                first = len(rest)
+        (bar if inbar else rest).append(line)
+    return rest, bar, len(rest) if first is None else first
+
+
+def read_settings():
+    with open(SETTINGS) as f:
+        return f.read()
+
+
+def current_bar_text():
+    text = "".join(split_bars(read_settings())[1])
+    if not text.strip():
+        die("the bars are not in the state file yet: change a setting in Bar settings first")
+    return text
+
+
+def write_settings(text):
+    tomllib.loads(text)
+    target = os.path.realpath(SETTINGS)
+    tmp = target + ".mb-bars.tmp"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.replace(tmp, target)
+    subprocess.run(["noctalia", "msg", "config-reload"], check=False, stdout=subprocess.DEVNULL)
+
+
+def parse_bar(text):
+    bar = tomllib.loads(text).get("bar", {})
+    # Switching a bar off and on writes enabled = true; a missing key means the same.
+    for v in bar.values():
+        if isinstance(v, dict):
+            v.setdefault("enabled", True)
+    return bar
+
+
+def valid_name(name):
+    return bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _.-]{0,39}", name))
+
+
+def profile_file(name):
+    return os.path.join(DATA, name, "profile.toml")
+
+
+def write_profile(name, text):
+    os.makedirs(os.path.join(DATA, name), exist_ok=True)
+    tomllib.loads(text)
+    with open(profile_file(name), "w") as f:
+        f.write(text)
+
+
+def load_profile(name):
+    if name != UNDO and not valid_name(name):
+        die("bad name")
+    try:
+        with open(profile_file(name)) as f:
+            return f.read()
+    except OSError:
+        die("no such profile: " + name)
+
+
+def apply_text(text):
+    rest, _, at = split_bars(read_settings())
+    before = "".join(rest[:at])
+    if before and not before.endswith("\n"):
+        before += "\n"
+    write_settings(before + text.rstrip("\n") + "\n\n" + "".join(rest[at:]))
+
+
+def look_dir():
+    return next((d for d in LOOK_DIRS if os.path.isdir(d)), None)
+
+
+def load_look(name):
+    d = look_dir()
+    if not d or not re.fullmatch(r"[a-z0-9-]+", name):
+        die("no such look: " + name)
+    try:
+        with open(os.path.join(d, name + ".toml"), "rb") as f:
+            return tomllib.load(f)
+    except OSError:
+        die("no such look: " + name)
+
+
+def cmd_looks():
+    d = look_dir()
+    out = []
+    for f in sorted(os.listdir(d)) if d else []:
+        if f.endswith(".toml"):
+            name = f[:-5]
+            look = load_look(name)
+            pic = os.path.join(d, name + ".png")
+            out.append({"name": name, "title": look.get("title", name), "desc": look.get("desc", ""),
+                        "picture": os.path.realpath(pic) if os.path.isfile(pic) else ""})
+    print(json.dumps(out))
+
+
+def merge_keys(text, keys):
+    """Set keys in every bar table. A per-monitor override only gets the keys it already has."""
+    out, section, skip_to_close = [], None, False
+    lines = text.splitlines(keepends=True)
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = HEADER.match(line)
+        if m:
+            parts = m.group(1).strip().split(".")
+            section = parts if parts[0] == "bar" and (len(parts) == 2 or (len(parts) == 4 and parts[2] == "monitor")) else None
+            out.append(line)
+            if section and len(section) == 2:
+                nxt = next((l for l in lines[i + 1:] if l.strip() and not l.lstrip().startswith("#")), "")
+                indent = re.match(r"\s*", nxt if not HEADER.match(nxt) else line).group(0)
+                existing = set()
+                for l in lines[i + 1:]:
+                    if HEADER.match(l):
+                        break
+                    km = re.match(r"\s*([A-Za-z_0-9]+)\s*=", l)
+                    if km:
+                        existing.add(km.group(1))
+                for k, v in keys.items():
+                    if k not in existing:
+                        out.append(f"{indent}{k} = {json.dumps(v)}\n")
+            i += 1
+            continue
+        km = re.match(r"(\s*)([A-Za-z_0-9]+)(\s*=)", line)
+        if section and km and km.group(2) in keys:
+            out.append(f"{km.group(1)}{km.group(2)} = {json.dumps(keys[km.group(2)])}\n")
+            if re.match(r"[^=]*=\s*\[", line) and "]" not in line.split("=", 1)[1]:
+                while "]" not in lines[i]:
+                    i += 1
+            i += 1
+            continue
+        out.append(line)
+        i += 1
+    return "".join(out)
+
+
+def cmd_look(name):
+    keys = load_look(name).get("bar", {})
+    write_profile(UNDO, current_bar_text())
+    with open(os.path.join(DATA, UNDO, "name"), "w") as f:
+        f.write(running_name())
+    rest, bar, at = split_bars(read_settings())
+    apply_text(merge_keys("".join(bar), keys))
+    set_running("")
+
+
+def bar_summary(bar):
+    out = []
+    for name in bar.get("order", []):
+        b = bar.get(name, {})
+        out.append({"name": name, "position": b.get("position", "top"), "enabled": b.get("enabled", True)})
+    return out
+
+
+def shots_of(name):
+    d = os.path.join(DATA, name)
+    out = {}
+    try:
+        files = sorted(os.listdir(d))
+    except OSError:
+        return []
+    for f in files:
+        m = re.fullmatch(r"shot-(.+)-(\d)-\d+\.png", f)
+        if m:
+            out.setdefault(m.group(1), []).append(os.path.join(d, f))
+    return [{"bar": k, "files": v} for k, v in out.items()]
+
+
+def running_name():
+    try:
+        with open(CURRENT) as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def set_running(name):
+    os.makedirs(DATA, exist_ok=True)
+    with open(CURRENT, "w") as f:
+        f.write(name)
+
+
+def cmd_list():
+    now = parse_bar("".join(split_bars(read_settings())[1]))
+    profiles = []
+    try:
+        names = sorted(os.listdir(DATA), key=str.lower)
+    except OSError:
+        names = []
+    for name in names:
+        if name.startswith("_") or not os.path.isfile(profile_file(name)):
+            continue
+        try:
+            bar = parse_bar(load_profile(name))
+        except tomllib.TOMLDecodeError:
+            continue
+        profiles.append({"name": name, "same": bar == now, "bars": bar_summary(bar), "shots": shots_of(name)})
+    # The profile last saved or applied is the running one while the bars still match it; otherwise the first match.
+    same = [p["name"] for p in profiles if p["same"]]
+    last = running_name()
+    running = last if last in same else (same[0] if same else "")
+    for p in profiles:
+        p["active"] = p["name"] == running
+    print(json.dumps({"profiles": profiles, "running": running, "current": bar_summary(now), "undo": os.path.isfile(profile_file(UNDO))}))
+
+
+def cfg(path):
+    r = subprocess.run(["noctalia", "msg", "config-get", path], capture_output=True, text=True)
+    return tomllib.loads(r.stdout) if r.returncode == 0 else {}
+
+
+def outputs():
+    r = subprocess.run(["wlr-randr", "--json"], capture_output=True, text=True)
+    out = []
+    for o in json.loads(r.stdout):
+        mode = next((m for m in o["modes"] if m.get("current")), None)
+        if o["enabled"] and mode:
+            scale = o.get("scale", 1.0) or 1.0
+            out.append((o["name"], int(mode["width"] / scale), int(mode["height"] / scale), scale))
+    return out
+
+
+def effective(bar, name, output):
+    """The bar's settings on one output (defaults filled in, per-monitor override applied), or None when off there."""
+    eff = cfg("bar." + name)
+    for ov in bar.get(name, {}).get("monitor", {}).values():
+        if ov.get("match") == output:
+            eff.update(ov)
+    return eff if eff.get("enabled", True) else None
+
+
+def pick_output(bar):
+    best = None
+    for out in outputs():
+        on = {n: effective(bar, n, out[0]) for n in bar.get("order", [])}
+        on = {n: e for n, e in on.items() if e}
+        if on and (best is None or len(on) > len(best[1])):
+            best = (out, on)
+    if not best:
+        die("no enabled bar on a screen")
+    return best
+
+
+def strip_size(e):
+    return int(e.get("thickness", 34) * e.get("scale", 1.0)) + int(e.get("margin_edge", 0)) + 4
+
+
+def cmd_shots(name):
+    if not valid_name(name):
+        die("bad name")
+    (output, width, height, _), on = pick_output(parse_bar(current_bar_text()))
+    d = os.path.join(DATA, name)
+    os.makedirs(d, exist_ok=True)
+    stamp = int(time.time())
+    with tempfile.TemporaryDirectory() as tmp:
+        full = tmp + "/full.png"
+        if subprocess.run(["grim", "-s", "1", "-o", output, full]).returncode != 0:
+            die("grim failed")
+        for n, e in on.items():
+            pos = e.get("position", "top")
+            thick = strip_size(e)
+            horiz = pos in ("top", "bottom")
+            span = width if horiz else height
+            for i, start in enumerate((0, (span - CROP_W) // 2, span - CROP_W)):
+                x, y = (start, 0 if pos == "top" else height - thick) if horiz else (0 if pos == "left" else width - thick, start)
+                geo = f"{CROP_W}x{thick}+{x}+{y}" if horiz else f"{thick}x{CROP_W}+{x}+{y}"
+                subprocess.run(["magick", full, "-crop", geo, "+repage", f"{tmp}/shot-{n}-{i}-{stamp}.png"], check=True)
+        for f in os.listdir(d):
+            if f.startswith("shot-"):
+                os.remove(os.path.join(d, f))
+        for f in os.listdir(tmp):
+            if f.startswith("shot-"):
+                shutil.move(os.path.join(tmp, f), os.path.join(d, f))
+
+
+def cmd_look_picture(name, target):
+    """The right end of the first bar as it is now, for a look's picture."""
+    load_look(name)
+    (output, width, height, _), on = pick_output(parse_bar(current_bar_text()))
+    e = next(iter(on.values()))
+    if e.get("position", "top") not in ("top", "bottom"):
+        die("pictures need a horizontal bar")
+    thick = strip_size(e) - 4
+    y = 0 if e.get("position", "top") == "top" else height - thick
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run(["grim", "-s", "1", "-o", output, tmp + "/full.png"], check=True)
+        subprocess.run(["magick", tmp + "/full.png", "-crop", f"{CROP_W}x{thick}+{width - CROP_W}+{y}", "+repage", target], check=True)
+
+
+def cmd_save(name):
+    if not valid_name(name):
+        die("name: letters, digits, space, _ . - (max 40)")
+    write_profile(name, current_bar_text())
+    set_running(name)
+    try:
+        cmd_shots(name)
+    except (SystemExit, subprocess.CalledProcessError):
+        print("saved, no pictures", file=sys.stderr)
+
+
+def cmd_apply(name):
+    if not valid_name(name):
+        die("bad name")
+    text = load_profile(name)
+    write_profile(UNDO, current_bar_text())
+    with open(os.path.join(DATA, UNDO, "name"), "w") as f:
+        f.write(running_name())
+    apply_text(text)
+    set_running(name)
+
+
+def cmd_delete(name):
+    if not valid_name(name):
+        die("bad name")
+    shutil.rmtree(os.path.join(DATA, name), ignore_errors=True)
+
+
+def main(argv):
+    cmd, args = (argv[1], argv[2:]) if len(argv) > 1 else ("", [])
+    if cmd == "list":
+        cmd_list()
+    elif cmd == "looks":
+        cmd_looks()
+    elif cmd == "look-picture" and len(args) == 2:
+        cmd_look_picture(*args)
+    elif cmd == "look" and len(args) == 1:
+        cmd_look(args[0])
+    elif cmd == "undo":
+        apply_text(load_profile(UNDO))
+        try:
+            with open(os.path.join(DATA, UNDO, "name")) as f:
+                set_running(f.read().strip())
+        except OSError:
+            set_running("")
+    elif cmd in ("save", "apply", "shots", "delete") and len(args) == 1:
+        {"save": cmd_save, "apply": cmd_apply, "shots": cmd_shots, "delete": cmd_delete}[cmd](args[0])
+    else:
+        print(__doc__)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

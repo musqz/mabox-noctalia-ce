@@ -158,4 +158,9 @@ echo 35 > "$tmp/state/mabox-noctalia-ce/config-version"
 migrate
 [[ $(<"$sk") == kanshi && ! -e "$tmp/state/mabox-noctalia-ce/session-login" ]] || { echo "FAIL migrate_36: login kept on"; exit 1; }
 
+# migrate_37: the root menu gets the Bars entry once, after Autostart.
+echo 36 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(grep -c 'panel-toggle mabox/bars:main' "$conf/mabox-noctalia-ce/menu.xml") == 1 ]] || { echo "FAIL migrate_37: menu entry"; exit 1; }
+
 echo ok

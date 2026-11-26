@@ -871,6 +871,9 @@ local function entryRow(e)
   if e.name == "autostart" or e.name == "autostart.local" then
     table.insert(items, 2, ui.button({ key = "as" .. uid, glyph = "rocket", variant = "ghost", controlSize = "sm", tooltip = "Open the Autostart panel", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/autostart:main" }) end }))
   end
+  if e.name == "bar.toml" then
+    table.insert(items, 2, ui.button({ key = "bs" .. uid, glyph = "layout-navbar", variant = "ghost", controlSize = "sm", tooltip = "Open the Bars panel", onClick = function() noctalia.runAsync({ "noctalia", "msg", "panel-open", "mabox/bars:main" }) end }))
+  end
   if e.group == "Custom" then
     stop("x" .. uid, 3, removeIt)
     table.insert(items, ui.button({ key = "x" .. uid, selected = kbd.sel("x" .. uid), glyph = "trash", variant = "ghost", controlSize = "sm", tooltip = "Remove from the list", onClick = removeIt }))

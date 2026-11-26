@@ -1,0 +1,28 @@
+title = "Transparent outline"
+desc = "Transparent bar, buttons with only a border line"
+
+[bar]
+background_opacity = 0.0
+border_width = 0.0
+shadow = false
+contact_shadow = false
+compositor_blur = false
+concave_edge_corners = false
+radius = 10
+radius_top_left = 10
+radius_top_right = 10
+radius_bottom_left = 10
+radius_bottom_right = 10
+margin_ends = 100
+margin_edge = 4
+thickness = 45
+padding = 16
+widget_spacing = 6
+capsule = true
+capsule_group = []
+capsule_fill = "surface"
+capsule_border = "primary"
+capsule_border_width = 1.5
+capsule_opacity = 0.0
+capsule_thickness = 0.76
+capsule_padding = 6.0

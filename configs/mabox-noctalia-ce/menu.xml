@@ -95,6 +95,9 @@
     <item label="Autostart" icon="edit">
       <action name="Execute" command="noctalia msg panel-toggle mabox/autostart:main" />
     </item>
+    <item label="Bars" icon="preferences-desktop">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />
+    </item>
     <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />
     </item>
