@@ -10,12 +10,10 @@ _Work in progress: features, keys and docs change. Expect bugs._
 
 Needs Mabox Linux and `noctalia` 5.4 or newer (repo `[maboxlinux]`).
 
-From the Mabox repo (no git needed):
-
 ```sh
 sudo pacman -S mabox-noctalia-ce
 ```
-- Git is the latest. Use git for new features and fixes.
+- Git is the latest. Use git for latest features and fixes.
 
 From git:
 
