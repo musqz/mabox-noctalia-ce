@@ -93,4 +93,4 @@ Config: `~/.config/tabdock/config.toml` (side, monitor, width, icons, bookmarks,
 
 A window to start virtual machines with quickemu. The Snapshot panel uses it: with quickbox-qt 1.4 or newer installed, the ISO list gets a *VM* button that starts the ISO in a virtual machine.
 
-It is optional and not in the Mabox repo. Get it from the AUR: <https://github.com/musqz/quickbox-qt>. Without it the *VM* button is not shown; everything else in the Snapshot panel works.
+It is optional and available in the Mabox repo: <https://github.com/musqz/quickbox-qt>. Without it the *VM* button is not shown; everything else in the Snapshot panel works.
