@@ -88,3 +88,9 @@ A side panel that lists the tabs and containers of Firefox-based browsers. It hi
 | Keep the panel open | the pin button |
 
 Config: `~/.config/tabdock/config.toml` (side, monitor, width, icons, bookmarks, history). Set `monitor` to an output name from `wlr-randr` when the panel appears on the wrong screen. The file is read at start; reload with `pkill -HUP -f tabdock`.
+
+## quickbox-qt (optional)
+
+A window to start virtual machines with quickemu. The Snapshot panel uses it: with quickbox-qt 1.4 or newer installed, the ISO list gets a *VM* button that starts the ISO in a virtual machine.
+
+It is optional and not in the Mabox repo. Get it from the AUR: <https://github.com/musqz/quickbox-qt>. Without it the *VM* button is not shown; everything else in the Snapshot panel works.
