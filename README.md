@@ -2,9 +2,9 @@
 
 # [mabox-noctalia-ce](https://musqz.github.io/mabox-noctalia-ce/intro.html)
 
-Noctalia session on labwc for Mabox Linux Community Edition. Pick **Noctalia CE** at the login screen. It differs from the original mabox-noctalia in config, scripts and packages.
+### Noctalia session on labwc for Mabox Linux Community Edition. Available from Mabox repo.
 
-Work in progress: features, keys and docs change. Expect bugs. Take what you like, or install it as is.
+_Work in progress: features, keys and docs change. Expect bugs._
 
 ## Install
 
