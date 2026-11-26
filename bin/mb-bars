@@ -1,0 +1,471 @@
+#!/usr/bin/env python3
+"""mb-bars - the bars of the Noctalia state file: switch on and off, add, copy, rename, delete.
+
+  mb-bars list                JSON: the bars with their pictures and lengths
+  mb-bars seed                add the shipped bars (mb-*, off) that are missing
+  mb-bars shots               new pictures of the bars that are on
+  mb-bars bar-add NAME POSITION [FROM]   new bar: a copy of FROM (the first bar) on top|bottom|left|right
+  mb-bars bar-rename OLD NEW
+  mb-bars bar-delete NAME     (the last bar stays)
+  mb-bars bar-length NAME PERCENT   length of the bar as a share of its screen edge (10 to 100)
+
+The shipped bars (names starting mb-) cannot be renamed or deleted; their keys come
+from lists/bars/*.toml once, and the user tunes them afterwards. The pictures live in
+~/.local/state/noctalia/plugins/data/mabox/bars.
+"""
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import tomllib
+
+HOME = os.environ["HOME"]
+STATE = os.environ.get("XDG_STATE_HOME", HOME + "/.local/state") + "/noctalia"
+SETTINGS = STATE + "/settings.toml"
+DATA = STATE + "/plugins/data/mabox/bars"
+HEADER = re.compile(r"^\s*\[([^\[\]]+)\]\s*(#.*)?$")
+CROP_W = 420
+SHIPPED = "mb-"
+HERE = os.path.dirname(os.path.realpath(__file__))
+LOOK_DIRS = (os.path.join(HERE, "..", "lists", "bars"), "/usr/share/mabox-noctalia-ce/bars")
+
+
+def die(msg):
+    print("mb-bars: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def split_bars(text):
+    """Return (lines outside the bar tables, bar lines, index where the first bar table began)."""
+    rest, bar, first, inbar = [], [], None, False
+    for line in text.splitlines(keepends=True):
+        m = HEADER.match(line)
+        if m:
+            name = m.group(1).strip()
+            inbar = name == "bar" or name.startswith("bar.")
+            if inbar and first is None:
+                first = len(rest)
+        (bar if inbar else rest).append(line)
+    return rest, bar, len(rest) if first is None else first
+
+
+def read_settings():
+    with open(SETTINGS) as f:
+        return f.read()
+
+
+def current_bar_text():
+    text = "".join(split_bars(read_settings())[1])
+    if not text.strip():
+        die("the bars are not in the state file yet: change a setting in Bar settings first")
+    return text
+
+
+def write_settings(text):
+    try:
+        tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        die("the new settings would not be valid TOML: " + str(e))
+    target = os.path.realpath(SETTINGS)
+    tmp = target + ".mb-bars.tmp"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.replace(tmp, target)
+    subprocess.run(["noctalia", "msg", "config-reload"], check=False, stdout=subprocess.DEVNULL)
+
+
+def parse_bar(text):
+    bar = tomllib.loads(text).get("bar", {})
+    # Switching a bar off and on writes enabled = true; a missing key means the same.
+    for v in bar.values():
+        if isinstance(v, dict):
+            v.setdefault("enabled", True)
+    return bar
+
+
+def pics_dir(bar):
+    return os.path.join(DATA, "pics", bar)
+
+
+def apply_text(text):
+    rest, _, at = split_bars(read_settings())
+    before = "".join(rest[:at])
+    if before and not before.endswith("\n"):
+        before += "\n"
+    write_settings(before + text.rstrip("\n") + "\n\n" + "".join(rest[at:]))
+
+
+def look_dir():
+    return next((d for d in LOOK_DIRS if os.path.isdir(d)), None)
+
+
+def load_look(name):
+    d = look_dir()
+    if not d or not re.fullmatch(r"[a-z0-9-]+", name):
+        die("no such look: " + name)
+    try:
+        with open(os.path.join(d, name + ".toml"), "rb") as f:
+            return tomllib.load(f)
+    except OSError:
+        die("no such look: " + name)
+
+
+def merge_keys(text, keys):
+    """Set keys in every bar table. A per-monitor override only gets the keys it already has."""
+    out, section, skip_to_close = [], None, False
+    lines = text.splitlines(keepends=True)
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = HEADER.match(line)
+        if m:
+            parts = m.group(1).strip().split(".")
+            section = parts if parts[0] == "bar" and (len(parts) == 2 or (len(parts) == 4 and parts[2] == "monitor")) else None
+            out.append(line)
+            if section and len(section) == 2:
+                nxt = next((l for l in lines[i + 1:] if l.strip() and not l.lstrip().startswith("#")), "")
+                indent = re.match(r"\s*", nxt if not HEADER.match(nxt) else line).group(0)
+                existing = set()
+                for l in lines[i + 1:]:
+                    if HEADER.match(l):
+                        break
+                    km = re.match(r"\s*([A-Za-z_0-9]+)\s*=", l)
+                    if km:
+                        existing.add(km.group(1))
+                for k, v in keys.items():
+                    if k not in existing:
+                        out.append(f"{indent}{k} = {json.dumps(v)}\n")
+            i += 1
+            continue
+        km = re.match(r"(\s*)([A-Za-z_0-9]+)(\s*=)", line)
+        if section and km and km.group(2) in keys:
+            out.append(f"{km.group(1)}{km.group(2)} = {json.dumps(keys[km.group(2)])}\n")
+            if re.match(r"[^=]*=\s*\[", line) and "]" not in line.split("=", 1)[1]:
+                while "]" not in lines[i]:
+                    i += 1
+            i += 1
+            continue
+        out.append(line)
+        i += 1
+    return "".join(out)
+
+
+def bar_blocks(text):
+    """[(table name, lines)] of the bar text; the root table is "bar"."""
+    blocks = []
+    for line in text.splitlines(keepends=True):
+        m = HEADER.match(line)
+        if m or not blocks:
+            blocks.append([m.group(1).strip() if m else "bar", []])
+        blocks[-1][1].append(line)
+    return blocks
+
+
+def join_blocks(blocks):
+    return "".join("".join(lines) for _, lines in blocks)
+
+
+def set_order(blocks, order):
+    root = blocks[0]
+    if not re.search(r"order\s*=\s*\[", "".join(root[1])):
+        root[1].insert(1, "order = []\n")
+    new = "order = [ " + ", ".join(json.dumps(n) for n in order) + " ]"
+    text = re.sub(r"order\s*=\s*\[.*?\]", lambda m: new, "".join(root[1]), count=1, flags=re.S)
+    root[1] = text.splitlines(keepends=True)
+
+
+def valid_bar_name(name):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", name) or name in ("order", "monitor"):
+        die("bar name: letters, digits, _ and - (max 32)")
+    if name.startswith(SHIPPED):
+        die("names starting with " + SHIPPED + " are for the shipped bars")
+
+
+def own(blocks, name):
+    return [b for b in blocks if b[0] == "bar." + name or b[0].startswith("bar." + name + ".")]
+
+
+def edit_bars(fn):
+    text = current_bar_text()
+    blocks = bar_blocks(text)
+    bar = parse_bar(text)
+    order = list(bar.get("order") or [k for k, v in bar.items() if isinstance(v, dict)])
+    if blocks[0][0] != "bar":
+        blocks.insert(0, ["bar", ["[bar]\n"]])
+    fn(blocks, order)
+    apply_text(join_blocks(blocks))
+
+
+def clone_blocks(blocks, base, name, position, enabled):
+    """The tables of bar BASE as a new bar NAME."""
+    new = []
+    for hname, lines in own(blocks, base):
+        new_name = hname.replace("bar." + base, "bar." + name, 1)
+        lines = list(lines)
+        lines[0] = HEADER.sub(lambda m: m.group(0).replace(hname, new_name, 1), lines[0], count=1)
+        if hname == "bar." + base:
+            lines = [l for l in lines if not re.match(r"\s*(position|enabled)\s*=", l)]
+            ind = re.match(r"\s*", lines[1] if len(lines) > 1 else lines[0]).group(0)
+            lines.insert(1, f'{ind}enabled = {"true" if enabled else "false"}\n')
+            lines.insert(1, f'{ind}position = "{position}"\n')
+        new.append([new_name, lines])
+    return new
+
+
+def cmd_bar_add(name, position, src=None):
+    valid_bar_name(name)
+    if position not in ("top", "bottom", "left", "right"):
+        die("position: top, bottom, left or right")
+
+    def fn(blocks, order):
+        if name in order:
+            die("a bar named " + name + " exists")
+        base = src or (order[0] if order else None)
+        if base not in order:
+            die("no such bar: " + str(base))
+        blocks.extend(clone_blocks(blocks, base, name, position, True))
+        order.append(name)
+        set_order(blocks, order)
+
+    edit_bars(fn)
+
+
+def shipped_looks():
+    """[(bar name, look, file stem)] for the shipped bars, in file order."""
+    d = look_dir()
+    out = []
+    for f in sorted(os.listdir(d)) if d else []:
+        m = re.fullmatch(r"\d+-([a-z0-9-]+)\.toml", f)
+        if m:
+            out.append((SHIPPED + m.group(1), load_look(f[:-5]), f[:-5]))
+    return out
+
+
+def cmd_seed():
+    """Add the shipped bars that are missing: switched off, widgets of the user's first bar, keys of the look."""
+    if not "".join(split_bars(read_settings())[1]).strip():
+        for path, val in (("bar.default.enabled", "true"), ("bar.order", '["default"]')):
+            subprocess.run(["noctalia", "msg", "config-set", path, val], check=False, stdout=subprocess.DEVNULL)
+    todo = [(n, lk) for n, lk, _ in shipped_looks() if n not in parse_bar(current_bar_text()).get("order", [])]
+    if not todo:
+        return
+
+    def fn(blocks, order):
+        base = next((n for n in order if not n.startswith(SHIPPED)), order[0])
+        for name, look in todo:
+            new = clone_blocks(blocks, base, name, "top", False)
+            merged = merge_keys(join_blocks(new), look.get("bar", {}))
+            blocks.extend(bar_blocks(merged))
+            order.append(name)
+        set_order(blocks, order)
+
+    edit_bars(fn)
+
+
+_screen = None
+
+
+def edge_span(position):
+    """Pixels along the edge the bar sits on: the screen that no per-monitor override switches the bars off on."""
+    global _screen
+    if _screen is None:
+        outs = outputs()
+        if not outs:
+            die("no screen")
+        bar = parse_bar("".join(split_bars(read_settings())[1]))
+
+        def off(name):
+            return sum(1 for n in bar.get("order", []) for ov in bar.get(n, {}).get("monitor", {}).values()
+                       if ov.get("match") == name and not ov.get("enabled", True))
+
+        _screen = min(outs, key=lambda o: off(o[0]))
+    return _screen[1] if position in ("top", "bottom") else _screen[2]
+
+
+def cmd_bar_length(name, percent):
+    try:
+        pct = float(percent.rstrip("%"))
+    except ValueError:
+        die("length: a number from 10 to 100")
+    if not 10 <= pct <= 100:
+        die("length: a number from 10 to 100")
+    bar = parse_bar(current_bar_text())
+    if name not in bar.get("order", []):
+        die("no such bar: " + name)
+    margin = round(edge_span(cfg("bar." + name).get("position", "top")) * (100 - pct) / 200)
+    r = subprocess.run(["noctalia", "msg", "config-set", f"bar.{name}.margin_ends", str(margin)], capture_output=True, text=True)
+    if r.returncode != 0:
+        die("could not set the length")
+
+
+def cmd_bar_rename(old, new):
+    valid_bar_name(new)
+    if old.startswith(SHIPPED):
+        die("a shipped bar cannot be renamed")
+
+    def fn(blocks, order):
+        if old not in order:
+            die("no such bar: " + old)
+        if new in order:
+            die("a bar named " + new + " exists")
+        for b in own(blocks, old):
+            b[1][0] = b[1][0].replace("bar." + old, "bar." + new, 1)
+            b[0] = b[0].replace("bar." + old, "bar." + new, 1)
+        set_order(blocks, [new if n == old else n for n in order])
+
+    edit_bars(fn)
+    if os.path.isdir(pics_dir(old)):
+        shutil.rmtree(pics_dir(new), ignore_errors=True)
+        os.rename(pics_dir(old), pics_dir(new))
+
+
+def cmd_bar_delete(name):
+    if name.startswith(SHIPPED):
+        die("a shipped bar cannot be deleted")
+
+    def fn(blocks, order):
+        if name not in order:
+            die("no such bar: " + name)
+        if len(order) < 2:
+            die("the last bar stays")
+        keep = [b for b in blocks if b not in own(blocks, name)]
+        blocks[:] = keep
+        set_order(blocks, [n for n in order if n != name])
+        shutil.rmtree(pics_dir(name), ignore_errors=True)
+
+    edit_bars(fn)
+
+
+def bar_summary(bar):
+    out = []
+    for name in bar.get("order", []):
+        b = bar.get(name, {})
+        out.append({"name": name, "position": b.get("position", "top"), "enabled": b.get("enabled", True)})
+    return out
+
+
+def pictures(bar):
+    d = pics_dir(bar)
+    try:
+        return sorted(os.path.join(d, f) for f in os.listdir(d) if f.endswith(".png"))
+    except OSError:
+        return []
+
+
+def cmd_list():
+    bar = parse_bar("".join(split_bars(read_settings())[1]))
+    looks = {n: (lk, stem) for n, lk, stem in shipped_looks()}
+    d = look_dir()
+    bars = []
+    for b in bar_summary(bar):
+        n = b["name"]
+        look, stem = looks.get(n, (None, ""))
+        pic = os.path.realpath(os.path.join(d, stem + ".png")) if look else ""
+        eff = cfg("bar." + n)
+        try:
+            span = edge_span(eff.get("position", "top"))
+            length = max(10, min(100, round(100 - 200 * eff.get("margin_ends", 0) / span)))
+        except SystemExit:
+            length = 100
+        bars.append(dict(b, length=length, shots=pictures(n), shipped=n.startswith(SHIPPED), title=look.get("title", n) if look else n, picture=pic))
+    print(json.dumps({"bars": bars}))
+
+
+def cfg(path):
+    r = subprocess.run(["noctalia", "msg", "config-get", path], capture_output=True, text=True)
+    return tomllib.loads(r.stdout) if r.returncode == 0 else {}
+
+
+def outputs():
+    try:
+        r = subprocess.run(["wlr-randr", "--json"], capture_output=True, text=True)
+        found = json.loads(r.stdout)
+    except (OSError, ValueError):
+        return []
+    out = []
+    for o in found:
+        mode = next((m for m in o["modes"] if m.get("current")), None)
+        if o["enabled"] and mode:
+            scale = o.get("scale", 1.0) or 1.0
+            out.append((o["name"], int(mode["width"] / scale), int(mode["height"] / scale), scale))
+    return out
+
+
+def effective(bar, name, output):
+    """The bar's settings on one output (defaults filled in, per-monitor override applied), or None when off there."""
+    eff = cfg("bar." + name)
+    for ov in bar.get(name, {}).get("monitor", {}).values():
+        if ov.get("match") == output:
+            eff.update(ov)
+    return eff if eff.get("enabled", True) else None
+
+
+def pick_output(bar):
+    best = None
+    for out in outputs():
+        on = {n: effective(bar, n, out[0]) for n in bar.get("order", [])}
+        on = {n: e for n, e in on.items() if e}
+        if on and (best is None or len(on) > len(best[1])):
+            best = (out, on)
+    if not best:
+        die("no enabled bar on a screen")
+    return best
+
+
+def strip_size(e):
+    return int(e.get("thickness", 34) * e.get("scale", 1.0)) + int(e.get("margin_edge", 0)) + 4
+
+
+def cmd_shots():
+    (output, width, height, _), on = pick_output(parse_bar(current_bar_text()))
+    stamp = int(time.time())
+    with tempfile.TemporaryDirectory() as tmp:
+        full = tmp + "/full.png"
+        if subprocess.run(["grim", "-s", "1", "-o", output, full]).returncode != 0:
+            die("grim failed")
+        for n, e in on.items():
+            pos = e.get("position", "top")
+            thick = strip_size(e)
+            horiz = pos in ("top", "bottom")
+            span = width if horiz else height
+            for i, start in enumerate((0, (span - CROP_W) // 2, span - CROP_W)):
+                x, y = (start, 0 if pos == "top" else height - thick) if horiz else (0 if pos == "left" else width - thick, start)
+                geo = f"{CROP_W}x{thick}+{x}+{y}" if horiz else f"{thick}x{CROP_W}+{x}+{y}"
+                subprocess.run(["magick", full, "-crop", geo, "+repage", f"{tmp}/{n}-{i}-{stamp}.png"], check=True)
+        for n in on:
+            d = pics_dir(n)
+            os.makedirs(d, exist_ok=True)
+            for f in os.listdir(d):
+                os.remove(os.path.join(d, f))
+            for i in range(3):
+                shutil.move(f"{tmp}/{n}-{i}-{stamp}.png", f"{d}/{i}-{stamp}.png")
+
+
+def main(argv):
+    cmd, args = (argv[1], argv[2:]) if len(argv) > 1 else ("", [])
+    if cmd == "list":
+        cmd_list()
+    elif cmd == "bar-add" and len(args) in (2, 3):
+        cmd_bar_add(*args)
+    elif cmd == "bar-rename" and len(args) == 2:
+        cmd_bar_rename(*args)
+    elif cmd == "bar-delete" and len(args) == 1:
+        cmd_bar_delete(args[0])
+    elif cmd == "bar-length" and len(args) == 2:
+        cmd_bar_length(*args)
+    elif cmd == "seed":
+        cmd_seed()
+    elif cmd == "shots":
+        cmd_shots()
+    else:
+        print(__doc__)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

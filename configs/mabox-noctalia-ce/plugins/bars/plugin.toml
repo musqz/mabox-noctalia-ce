@@ -1,0 +1,26 @@
+id = "mabox/bars"
+name = "Bars"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "layout-navbar"
+description = "Bars: the shipped bars and your own, each switched on or off by itself; add, copy, rename and delete your own. /bars in the launcher opens it."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 1260
+height = "content"
+max_height = 620
+placement = "floating"
+position = "top_center"
+keyboard_focus = "on_demand"
+
+[[launcher_provider]]
+id = "finder"
+entry = "finder.luau"
+prefix = "bars"
+glyph = "layout-navbar"
+include_in_global_search = false
