@@ -8,6 +8,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 |---|---|---|
 | `mb-colorpick` + Colors bar panel | bar button: pick from screen, recent colors, palettes | `~/.config/colormenu/*.clr` |
 | System panel:<br>_overview, hardware, logs, a report built from parts, public or private view, service status and safe restarts, quick fixes_ | `W-A-i` | [guide.md](guide.md#system-info) |
+| Bars panel:<br>_each bar on or off, length, add, copy, rename and delete; five shipped bars_ | root menu *Bars*, `/bars` | [bars.md](bars.md) |
 | Keys panel:<br>_hotkey list with search, Basics and All; opens on All binds, with hotkey lists for installed applications; `/keys` in the launcher runs a bind_ | `W-k` | [keys.md](keys.md) |
 | Insert:<br>_`/hist` types a shell history line, `/es` an Espanso snippet into the previous window; panel to add and edit snippets_ | <span class="nw">`W-A-h`<br>`W-A-e`</span> | [keys.md](keys.md) |
 | Wallpaper folders:<br>_saved list, click to switch the wallpaper directory; favorites: add the wallpaper on screen, click one to apply it; fold each card; `/wp` in the launcher, root menu_ | `W-A-w` | [guide.md](guide.md#wallpaper-directory) |

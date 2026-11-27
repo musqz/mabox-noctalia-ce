@@ -70,7 +70,7 @@ A failed run shows the exit code. Press the refresh icon at the top to run it ag
 
 ## Bar
 
-The bar is noctalia's. Extra buttons:
+The bar is noctalia's. Switch bars on and off, add bars and set their length in the [Bars](bars.md) panel. Extra buttons:
 
 <p align="center"><img src="img/bar.png" alt="Right side of the bar"></p>
 

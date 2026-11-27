@@ -6,6 +6,7 @@
 
 - [Guide](guide.md)
 - [Keys](keys.md)
+- [Bars](bars.md)
 - [Install apps](install.md)
 - [Music](music.md)
 - [Places](places.md)
