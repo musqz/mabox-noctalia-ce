@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Hide the pointer after N idle seconds; any input shows it again.
+# Hide the pointer after N seconds without keyboard or mouse input; any input shows it again.
+# Playing video and Caffeine do not delay it: the input idle timer ignores idle inhibitors.
 #   mb-hide-cursor            start when enabled (autostart)
 #   mb-hide-cursor on [secs]  enable (default: the last value, else 5) and start now
 #   mb-hide-cursor off        disable and stop
-# Sends F20 once per idle period; rc.xml binds F20 to HideCursor. A repeating key
-# would keep resetting the idle timers of Noctalia (screen off, lock). F20 counts
-# as input there too: keep N below the screen-off and lock times.
+# Sends F20 once per idle period; rc.xml binds F20 to HideCursor. F20 counts as input
+# for Noctalia too: keep N below the screen-off and lock times.
 set -euo pipefail
 
 conf=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/hide-cursor
@@ -17,7 +17,7 @@ state=off secs=5
 [[ -f $conf ]] && read -r state secs < "$conf" || true
 
 stop() {
-    pkill -f '[s]wayidle .*mb-hide-cursor.* fire' || true
+    pkill -f '[m]b-hide-cursor-watch' || true
     rm -f "$flag"
 }
 
@@ -54,4 +54,34 @@ esac
 [[ $state == on ]] || exit 0
 self=$(readlink -f "$0")
 stop
-exec swayidle -w timeout "$secs" "'$self' fire" resume "'$self' resume"
+exec -a mb-hide-cursor-watch python3 -I - "$secs" "$self" <<'PY'
+import os, subprocess, sys
+from pywayland.client import Display
+from pywayland.protocol.wayland import WlSeat
+from pywayland.protocol.ext_idle_notify_v1 import ExtIdleNotifierV1
+
+secs, me = int(sys.argv[1]), sys.argv[2]
+display = Display()
+display.connect()
+found = {}
+
+
+def on_global(reg, name, iface, ver):
+    if iface == "ext_idle_notifier_v1" and ver >= 2:
+        found["notifier"] = reg.bind(name, ExtIdleNotifierV1, 2)
+    elif iface == "wl_seat" and "seat" not in found:
+        found["seat"] = reg.bind(name, WlSeat, 1)
+
+
+display.get_registry().dispatcher["global"] = on_global
+display.roundtrip()
+if "notifier" not in found or "seat" not in found:
+    print("mb-hide-cursor: the compositor has no input idle timer", file=sys.stderr)
+    os._exit(1)
+note = found["notifier"].get_input_idle_notification(secs * 1000, found["seat"])
+note.dispatcher["idled"] = lambda _n: subprocess.run([me, "fire"], check=False)
+note.dispatcher["resumed"] = lambda _n: subprocess.run([me, "resume"], check=False)
+while display.dispatch(block=True) != -1:
+    pass
+os._exit(0)  # pywayland crashes in interpreter teardown
+PY
