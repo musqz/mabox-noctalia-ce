@@ -393,6 +393,14 @@ migrate_37() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# The root menu loses the Wallpaper entry (Wallpaper folders and the slideshow stay).
+migrate_38() {
+    local m=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/menu.xml
+    [[ -f $m ]] && grep -q 'command="noctalia msg panel-toggle wallpaper"' "$m" || return 0
+    sed -i '/<item label="Wallpaper" /,/<\/item>/d' "$m"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

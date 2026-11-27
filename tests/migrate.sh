@@ -163,4 +163,11 @@ echo 36 > "$tmp/state/mabox-noctalia-ce/config-version"
 migrate; migrate
 [[ $(grep -c 'panel-toggle mabox/bars:main' "$conf/mabox-noctalia-ce/menu.xml") == 1 ]] || { echo "FAIL migrate_37: menu entry"; exit 1; }
 
+# migrate_38: the Wallpaper entry leaves the root menu once; the other wallpaper entries stay.
+m=$conf/mabox-noctalia-ce/menu.xml
+printf '<item label="Wallpaper" icon="x">\n<action name="Execute" command="noctalia msg panel-toggle wallpaper" />\n</item>\n<item label="Wallpaper folders" icon="x">\n<action name="Execute" command="folders" />\n</item>\n' > "$m"
+echo 37 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(grep -c 'panel-toggle wallpaper"' "$m") == 0 && $(grep -c 'label="Wallpaper folders"' "$m") == 1 && $(grep -c '</item>' "$m") == 1 ]] || { echo "FAIL migrate_38: menu entry"; exit 1; }
+
 echo ok
