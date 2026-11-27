@@ -401,22 +401,23 @@ migrate_38() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
-# The Bars entry sits in the config block, after Config files pinned.
+# The Bars entry is the first entry of the config block, before Config files.
 migrate_39() {
     local m=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/menu.xml
-    [[ -f $m ]] && grep -q 'mabox/bars:main' "$m" && grep -q 'label="Config files pinned"' "$m" || return 0
+    [[ -f $m ]] && grep -q 'mabox/bars:main' "$m" && grep -q 'label="Config files" ' "$m" || return 0
     python3 - "$m" <<'PY'
 import re, sys
 p = sys.argv[1]
 s = open(p).read()
 item = re.compile(r'[ \t]*<item label="Bars"[^>]*>\s*<action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />\s*</item>\n')
-pin = re.compile(r'([ \t]*<item label="Config files pinned"[^>]*>.*?</item>\n)', re.S)
+cfg = re.compile(r'[ \t]*<item label="Config files" ')
 m = item.search(s)
-pm = pin.search(s)
-if m and pm and not s[pm.end():].lstrip().startswith(m.group(0).strip()):
+cm = cfg.search(s)
+if m and cm and not s[:cm.start()].rstrip().endswith(m.group(0).strip()):
     block = m.group(0)
     s = item.sub('', s, count=1)
-    s = pin.sub(lambda x: x.group(1) + block, s, count=1)
+    cm = cfg.search(s)
+    s = s[:cm.start()] + block + s[cm.start():]
     open(p, 'w').write(s)
 PY
     labwc --reconfigure >/dev/null 2>&1 || true
