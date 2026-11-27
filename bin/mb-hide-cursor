@@ -17,7 +17,7 @@ state=off secs=5
 [[ -f $conf ]] && read -r state secs < "$conf" || true
 
 stop() {
-    pkill -f '[m]b-hide-cursor-watch' || true
+    pkill -f '^mb-hide-cursor-watch ' || true
     rm -f "$flag"
 }
 
@@ -62,7 +62,11 @@ from pywayland.protocol.ext_idle_notify_v1 import ExtIdleNotifierV1
 
 secs, me = int(sys.argv[1]), sys.argv[2]
 display = Display()
-display.connect()
+try:
+    display.connect()
+except Exception as e:
+    subprocess.run(["logger", "-t", "mb-hide-cursor", f"no Wayland display: {e}"], check=False)
+    os._exit(1)
 found = {}
 
 
@@ -73,10 +77,11 @@ def on_global(reg, name, iface, ver):
         found["seat"] = reg.bind(name, WlSeat, 1)
 
 
-display.get_registry().dispatcher["global"] = on_global
+registry = display.get_registry()
+registry.dispatcher["global"] = on_global
 display.roundtrip()
 if "notifier" not in found or "seat" not in found:
-    print("mb-hide-cursor: the compositor has no input idle timer", file=sys.stderr)
+    subprocess.run(["logger", "-t", "mb-hide-cursor", "the compositor has no input idle timer"], check=False)
     os._exit(1)
 note = found["notifier"].get_input_idle_notification(secs * 1000, found["seat"])
 note.dispatcher["idled"] = lambda _n: subprocess.run([me, "fire"], check=False)
