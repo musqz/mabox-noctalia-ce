@@ -90,7 +90,7 @@ rm -rf ~/.config/mabox-noctalia-ce
 
 <table>
 <tr>
-<td><a href="docs/desktop-bars.png"><img alt="Noctalia CE desktop with the Bars panel open and the Floating island bar running" src="docs/desktop-bars.png" width="420" /></a></td>
+<td><a href="docs/desktop-bars.png"><img alt="Noctalia CE desktop with the Bars panel open" src="docs/desktop-bars.png" width="420" /></a></td>
 </tr>
 </table>
 
