@@ -65,28 +65,28 @@
     <item label="Add/Remove software" icon="system-software-install">
       <action name="Execute" command="pamac-manager" />
     </item>
-    <item label="Snapshot" icon="media-optical">
+    <item label="Mabox Snapshot" icon="media-optical">
       <action name="Execute" command="noctalia msg panel-toggle mabox/snapshot:main" />
     </item>
     <separator />
     <item label="Wallpaper folders" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle mabox/wallpaper-dirs:dirs" />
     </item>
-    <item label="Wallpaper slideshow" icon="preferences-desktop-wallpaper">
+    <item label="Slideshow toggle" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="mb-slideshow" />
     </item>
     <item label="Look and Feel" icon="gtk-theme-config.svg">
       <action name="Execute" command="nwg-look" />
     </item>
     <separator />
+    <item label="Bars" icon="preferences-desktop">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />
+    </item>
     <item label="Config files" icon="document-properties">
       <action name="Execute" command="noctalia msg panel-toggle mabox/configs:main" />
     </item>
     <item label="Config files pinned" icon="document-properties">
       <action name="Execute" command="mb-pinned configs" />
-    </item>
-    <item label="Bars" icon="preferences-desktop">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />
     </item>
     <item label="Reset configs" icon="edit-undo">
       <action name="Execute" command="noctalia msg panel-toggle mabox/reset:main" />
