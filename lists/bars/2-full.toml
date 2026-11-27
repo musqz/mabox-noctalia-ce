@@ -26,3 +26,6 @@ capsule_border_width = 0.0
 capsule_opacity = 0.0
 capsule_thickness = 0.76
 capsule_padding = 6.0
+start = ["launcher", "wallpaper", "workspaces"]
+center = ["clock"]
+end = ["media", "audio_visualizer", "updates", "screenrec", "cpu", "network_rx", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "Calendar", "control-center", "session"]
