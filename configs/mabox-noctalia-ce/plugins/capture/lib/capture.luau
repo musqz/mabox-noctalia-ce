@@ -499,6 +499,9 @@ local function recentBlock()
       preview = path
     end
     table.insert(rows, kbtn("rc-" .. path, nextRow(), 1, { text = name, variant = "ghost", controlSize = "sm", contentAlign = "start", onHover = function(state)
+      if not pinned then
+        return
+      end
       hovered = state == "true" and path or nil
       if hovered then
         ensureThumb(path)
@@ -508,7 +511,8 @@ local function recentBlock()
       noctalia.runAsync({ "xdg-open", path })
     end }))
   end
-  if preview then
+  -- The preview only fits a pinned window; it would grow the floating panel and make it jump.
+  if preview and pinned then
     ensureThumb(preview)
     local t = thumbs[preview]
     if t and t ~= "failed" and t ~= "pending" then
