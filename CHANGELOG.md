@@ -5,6 +5,7 @@
 - Take Wallpaper out of the root menu and put Bars first in the config block: `mb-migrate` updates your menu.
 - Stop the floating Capture panel from jumping when you hover a Recent file; the preview stays in the pinned windows.
 - Keep the new name when you rename a bar in the Bars panel; names lose spaces.
+- Open Sessions from the launcher with `/sessions`; it is its own plugin now and `mb-migrate` moves the A-F1 key.
 
 ## 0.11.0
 - Turn the camera button into a red dot while interval screenshots run; a left click on it stops them.
