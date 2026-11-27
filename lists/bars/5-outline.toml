@@ -28,5 +28,5 @@ capsule_thickness = 0.8
 capsule_radius = 8
 capsule_padding = 6.0
 start = ["launcher", "wallpaper", "workspaces"]
-center = []
+center = ["clock"]
 end = ["media", "audio_visualizer", "updates", "screenrec", "cpu", "network_rx", "tray", "notifications", "clipboard", "network", "bluetooth", "volume", "Calendar", "control-center", "session"]
