@@ -177,4 +177,11 @@ migrate; migrate
 [[ $(grep -c 'mabox/bars:main' "$m") == 1 && $(grep -c '</item>' "$m") == 4 ]] || { echo "FAIL migrate_39: Bars count"; exit 1; }
 [[ $(grep 'label="' "$m" | sed -n 1p) == *'"Bars"'* && $(grep 'label="' "$m" | sed -n 2p) == *'"Config files"'* ]] || { echo "FAIL migrate_39: Bars is not before Config files"; exit 1; }
 
+# migrate_40: the Sessions key points at mabox/sessions, once.
+echo 39 > "$tmp/state/mabox-noctalia-ce/config-version"
+sed -i 's#mabox/sessions:main#mabox/places:sessions#' "$conf/mabox-noctalia-ce/rc.xml"
+migrate; migrate
+[[ $(grep -c 'mabox/sessions:main' "$conf/mabox-noctalia-ce/rc.xml") == 1 && $(grep -c 'places:sessions' "$conf/mabox-noctalia-ce/rc.xml") == 0 ]] || { echo "FAIL migrate_40: A-F1 command"; exit 1; }
+valid || { echo "FAIL migrate_40: rc.xml is no longer valid"; exit 1; }
+
 echo ok

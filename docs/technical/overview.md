@@ -96,6 +96,7 @@ Source: `configs/mabox-noctalia-ce/plugins/`. The package installs them; `autost
 | `mabox/wallpaper-dirs` | `dirs` dropdown, bar button, root menu, `/wp` launcher (`list`, `add`) | <span class="nw">`W-A-w`</span> | list of folders in the plugin data folder; `mb-wallpaper-dir` |
 | `mabox/autostart` | `main` panel, root menu (Autostart), `/autostart` | | `~/.config/mabox-noctalia-ce/autostart.local` (entries as `(sleep N && cmd) &`), `autostart.skip` for the shipped defaults |
 | `mabox/bars` | `main` panel, root menu (Bars), Configs bar.toml row, `/bars` | | `mb-bars`: `[bar]` tables of `settings.toml` (shipped bars `mb-*` seeded from `lists/bars`), pictures in the plugin data folder; `grim`, `magick` |
+| `mabox/sessions` | `main` panel, root menu (Sessions), `/sessions` | <span class="nw">`A-F1`</span> | `mb-session`: saved sets of apps per workspace |
 | `mabox/info` | `info` desktop widget |  | `mb-keys`; `[desktop_widgets] enabled = true` |
 | `mabox/polaroids` | `polaroids` desktop widget |  | `magick`; history in the plugin data folder; `[desktop_widgets] enabled = true` |
 | `mabox/snapshot` | `main` panel, root menu (Mabox noctalia ce), `/mb snapshot` | | `mabox-snapshot`; Explain runs in the panel, Build in a `foot` terminal with sudo |

@@ -340,7 +340,7 @@ def menu():
     def item(label, command):
         return f"<item label={quoteattr(label)}><action name=\"Execute\" command={quoteattr(command)}/></item>"
     out = ["<openbox_pipe_menu>",
-           item("Sessions panel", "noctalia msg panel-toggle mabox/places:sessions")]
+           item("Sessions panel", "noctalia msg panel-toggle mabox/sessions:main")]
     here = current_workspace()
     for n in names():
         mark = "● " if here and session_at(here) == n else ""
@@ -418,7 +418,7 @@ def main(argv):
     elif c == "login":
         login(a)
     elif c == "login-run":
-        subprocess.run(["noctalia", "msg", "panel-open", "mabox/places:sessions"])
+        subprocess.run(["noctalia", "msg", "panel-open", "mabox/sessions:main"])
     elif c == "switch" and a:
         switch(read(a[0])[0])
     else:

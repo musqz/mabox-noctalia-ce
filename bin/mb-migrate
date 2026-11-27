@@ -423,6 +423,14 @@ PY
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# Sessions is its own plugin (mabox/sessions), no longer a panel of Places.
+migrate_40() {
+    local f=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce/rc.xml
+    [[ -f $f ]] && grep -q 'mabox/places:sessions' "$f" || return 0
+    sed -i 's#mabox/places:sessions#mabox/sessions:main#' "$f"
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
