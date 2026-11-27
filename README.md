@@ -75,6 +75,7 @@ rm -rf ~/.config/mabox-noctalia-ce
 - [docs/keys.md](docs/keys.md): hotkeys and the Keys panel.
 - [docs/tools.md](docs/tools.md): panels, desktop widgets, music and scripts.
 - [docs/snapshot.md](docs/snapshot.md): build an ISO, then USB or VM.
+- [docs/bars.md](docs/bars.md): switch bars on and off, set their length and start from shipped bars.
 - [docs/music.md](docs/music.md): music panel, playlists and media keys.
 - [docs/technical/](docs/technical/): files, paths, commands and config files.
 
@@ -84,6 +85,12 @@ rm -rf ~/.config/mabox-noctalia-ce
 <tr>
 <td><a href="docs/desktop-2.png"><img alt="Noctalia CE desktop, second view" src="docs/desktop-2.png" width="420" /></a></td>
 <td><a href="docs/desktop-recolor.png"><img alt="Noctalia CE desktop with the Colors window, the Recolor panel and the Configs window" src="docs/desktop-recolor.png" width="420" /></a></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td><a href="docs/desktop-bars.png"><img alt="Noctalia CE desktop with the Bars panel open and the Floating island bar running" src="docs/desktop-bars.png" width="420" /></a></td>
 </tr>
 </table>
 
