@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Move Anchor Bar to a bar that is on when the Bars panel switches off the bar the panels hang on.
+- Take Wallpaper out of the root menu and put Bars first in the config block: `mb-migrate` updates your menu.
+- Stop the floating Capture panel from jumping when you hover a Recent file; the preview stays in the pinned windows.
 
 ## 0.11.0
 - Turn the camera button into a red dot while interval screenshots run; a left click on it stops them.
