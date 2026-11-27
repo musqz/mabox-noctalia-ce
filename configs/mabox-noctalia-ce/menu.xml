@@ -69,9 +69,6 @@
       <action name="Execute" command="noctalia msg panel-toggle mabox/snapshot:main" />
     </item>
     <separator />
-    <item label="Wallpaper" icon="preferences-desktop-wallpaper">
-      <action name="Execute" command="noctalia msg panel-toggle wallpaper" />
-    </item>
     <item label="Wallpaper folders" icon="preferences-desktop-wallpaper">
       <action name="Execute" command="noctalia msg panel-toggle mabox/wallpaper-dirs:dirs" />
     </item>
@@ -88,15 +85,15 @@
     <item label="Config files pinned" icon="document-properties">
       <action name="Execute" command="mb-pinned configs" />
     </item>
+    <item label="Bars" icon="preferences-desktop">
+      <action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />
+    </item>
     <item label="Reset configs" icon="edit-undo">
       <action name="Execute" command="noctalia msg panel-toggle mabox/reset:main" />
     </item>
     <separator />
     <item label="Autostart" icon="edit">
       <action name="Execute" command="noctalia msg panel-toggle mabox/autostart:main" />
-    </item>
-    <item label="Bars" icon="preferences-desktop">
-      <action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />
     </item>
     <item label="Reconfigure" icon="view-refresh">
       <action name="Reconfigure" />

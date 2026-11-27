@@ -163,4 +163,18 @@ echo 36 > "$tmp/state/mabox-noctalia-ce/config-version"
 migrate; migrate
 [[ $(grep -c 'panel-toggle mabox/bars:main' "$conf/mabox-noctalia-ce/menu.xml") == 1 ]] || { echo "FAIL migrate_37: menu entry"; exit 1; }
 
+# migrate_38: the Wallpaper entry leaves the root menu once; the other wallpaper entries stay.
+m=$conf/mabox-noctalia-ce/menu.xml
+printf '<item label="Wallpaper" icon="x">\n<action name="Execute" command="noctalia msg panel-toggle wallpaper" />\n</item>\n<item label="Wallpaper folders" icon="x">\n<action name="Execute" command="folders" />\n</item>\n' > "$m"
+echo 37 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(grep -c 'panel-toggle wallpaper"' "$m") == 0 && $(grep -c 'label="Wallpaper folders"' "$m") == 1 && $(grep -c '</item>' "$m") == 1 ]] || { echo "FAIL migrate_38: menu entry"; exit 1; }
+
+# migrate_39: Bars moves from after Autostart to after Config files pinned, once.
+printf '<item label="Config files pinned" icon="x">\n<action name="Execute" command="mb-pinned configs" />\n</item>\n<item label="Reset configs" icon="x">\n<action name="Execute" command="reset" />\n</item>\n<item label="Autostart" icon="x">\n<action name="Execute" command="noctalia msg panel-toggle mabox/autostart:main" />\n</item>\n<item label="Bars" icon="x">\n<action name="Execute" command="noctalia msg panel-toggle mabox/bars:main" />\n</item>\n' > "$m"
+echo 38 > "$tmp/state/mabox-noctalia-ce/config-version"
+migrate; migrate
+[[ $(grep -c 'mabox/bars:main' "$m") == 1 && $(grep -c '</item>' "$m") == 4 ]] || { echo "FAIL migrate_39: Bars count"; exit 1; }
+[[ $(grep -n 'label="' "$m" | sed -n 2p) == *Bars* ]] || { echo "FAIL migrate_39: Bars is not after Config files pinned"; exit 1; }
+
 echo ok
