@@ -66,6 +66,17 @@ def current_bar_text():
     return text
 
 
+def wait_loaded(text):
+    """Every write here changes the bar order (add, delete, rename, seed), so the order tells when Noctalia has loaded it. config-reload answers before Noctalia has the new tables; a config-set in that gap saves the old ones over the file."""
+    want = set(parse_bar("".join(split_bars(text)[1])).get("order", []))
+    for _ in range(60):
+        r = subprocess.run(["noctalia", "msg", "config-get", "bar.order"], capture_output=True, text=True)
+        have = set(re.findall(r"'([^']+)'", r.stdout))
+        if r.returncode != 0 or not have or have == want:
+            return
+        time.sleep(0.1)
+
+
 def write_settings(text):
     try:
         tomllib.loads(text)
@@ -77,6 +88,7 @@ def write_settings(text):
         f.write(text)
     os.replace(tmp, target)
     subprocess.run(["noctalia", "msg", "config-reload"], check=False, stdout=subprocess.DEVNULL)
+    wait_loaded(text)
 
 
 def parse_bar(text):
@@ -331,6 +343,9 @@ def cmd_bar_rename(old, new):
         set_order(blocks, [new if n == old else n for n in order])
 
     edit_bars(fn)
+    r = subprocess.run(["noctalia", "msg", "config-get", "shell.panel_anchor_bar"], capture_output=True, text=True)
+    if r.stdout.strip().strip("'\"") == old:
+        subprocess.run(["noctalia", "msg", "config-set", "shell.panel_anchor_bar", json.dumps(new)], stdout=subprocess.DEVNULL, check=False)
     if os.path.isdir(pics_dir(old)):
         shutil.rmtree(pics_dir(new), ignore_errors=True)
         os.rename(pics_dir(old), pics_dir(new))
