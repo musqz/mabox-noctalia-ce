@@ -3,7 +3,7 @@
 
   mb-bars list                JSON: the bars with their pictures and lengths
   mb-bars seed                add the shipped bars (mb-*, off) that are missing
-  mb-bars shots               new pictures of the bars that are on
+  mb-bars shots NAME          new pictures of one bar that is on
   mb-bars bar-add NAME POSITION [FROM]   new bar: a copy of FROM (the first bar) on top|bottom|left|right
   mb-bars bar-rename OLD NEW
   mb-bars bar-delete NAME     (the last bar stays)
@@ -420,8 +420,15 @@ def strip_size(e):
     return int(e.get("thickness", 34) * e.get("scale", 1.0)) + int(e.get("margin_edge", 0)) + 4
 
 
-def cmd_shots():
-    (output, width, height, _), on = pick_output(parse_bar(current_bar_text()))
+def cmd_shots(name):
+    bar = parse_bar(current_bar_text())
+    for out in outputs():
+        e = effective(bar, name, out[0]) if name in bar.get("order", []) else None
+        if e:
+            break
+    else:
+        die("the bar is not on a screen: switch it on first")
+    (output, width, height, _), on = out, {name: e}
     stamp = int(time.time())
     with tempfile.TemporaryDirectory() as tmp:
         full = tmp + "/full.png"
@@ -459,8 +466,8 @@ def main(argv):
         cmd_bar_length(*args)
     elif cmd == "seed":
         cmd_seed()
-    elif cmd == "shots":
-        cmd_shots()
+    elif cmd == "shots" and len(args) == 1:
+        cmd_shots(args[0])
     else:
         print(__doc__)
         return 2
