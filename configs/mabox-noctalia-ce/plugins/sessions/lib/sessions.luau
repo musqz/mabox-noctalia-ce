@@ -6,7 +6,6 @@ local hotkey = require("./hotkey.luau")
 local lapse = require("./lapse.luau")
 
 return function()
-local HOME = noctalia.getenv("HOME")
 local render
 local S = { ws = "", cur = nil, login = false, list = {}, apps = {}, shown = {}, ask = {}, name = "", nonce = 0, renaming = nil, renameText = "", base = false }
 
