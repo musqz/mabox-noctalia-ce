@@ -1,12 +1,14 @@
 # Changelog
 
 ## Unreleased
+
+## 0.11.0
 - Turn the camera button into a red dot while interval screenshots run; a left click on it stops them.
 - Set the output folders of screenshots, recordings, interval screenshots and GIFs in the Capture panel settings (gear button).
 - Add a repeat button for the current song to the Music panel.
 - Add a world button to the Music panel that opens the address of the playing stream or video.
 - List quickbox-qt in the optional packages of the install report (the Snapshot VM button needs it).
-- Add the Bars panel (`/bars`, root menu, Configs `bar.toml` row): switch each bar on or off, add, rename and delete bars, set the length of a bar in percent, and start from five shipped bars (Floating island, Full width, Transparent round, Transparent plain, Transparent outline).
+- Add the Bars panel (`/bars`, root menu, Configs `bar.toml` row): switch each bar on or off, add, copy, rename and delete bars, set the length of a bar in percent, and start from five shipped bars (Floating island, Full width, Transparent round, Transparent plain, Transparent outline).
 
 ## 0.10.0
 - Make Luciole follow the Noctalia colours: `mb-migrate` adds its colour template when Luciole is installed.
