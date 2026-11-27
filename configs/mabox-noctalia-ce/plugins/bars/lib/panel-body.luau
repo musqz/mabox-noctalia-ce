@@ -36,8 +36,8 @@ local function load()
   end)
 end
 
--- Runs mb-bars with args, then reads the list again. pics: new pictures follow once the bar has had time to appear.
-local function run(args, done, after, pics)
+-- Runs mb-bars with args, then reads the list again.
+local function run(args, done, after)
   if busy then return end
   busy = true
   err, note = nil, nil
@@ -45,31 +45,19 @@ local function run(args, done, after, pics)
   local cmd = { "mb-bars" }
   for _, a in ipairs(args) do table.insert(cmd, a) end
   noctalia.runAsync(cmd, function(r)
+    busy = false
     if r.exitCode ~= 0 then
       local msg = noctalia.string.trim(r.stderr or "")
       err = msg ~= "" and msg or "mb-bars failed"
-      busy = false
-      load()
-      return
+    else
+      note = done
+      if after then after() end
     end
-    note = done
-    if after then after() end
-    if not pics then
-      busy = false
-      load()
-      return
-    end
-    busy = false
     load()
-    noctalia.runAsync({ "sh", "-c", "sleep 2.5; exec mb-bars shots" }, function()
-      load()
-    end)
   end)
 end
 
--- Switching never waits for another action. Several switches in a row take one set of pictures, after the last one.
-local shotToken = 0
-
+-- Switching never waits for another action.
 local function toggleBar(b)
   err, note = nil, nil
   noctalia.runAsync({ "noctalia", "msg", "config-set", "bar." .. b.name .. ".enabled", b.enabled and "false" or "true" }, function(r)
@@ -77,15 +65,6 @@ local function toggleBar(b)
       err = "Could not switch " .. b.name
     end
     load()
-    if r.exitCode ~= 0 or b.enabled then return end
-    shotToken += 1
-    local token = shotToken
-    noctalia.runAsync({ "sh", "-c", "sleep 2.5" }, function()
-      if token ~= shotToken then return end
-      noctalia.runAsync({ "mb-bars", "shots" }, function()
-        load()
-      end)
-    end)
   end)
 end
 
@@ -99,7 +78,7 @@ local function uniqueName(base)
 end
 
 local function copyBar(b)
-  run({ "bar-add", uniqueName(b.name), b.position, b.name }, "Copied " .. b.name, nil, true)
+  run({ "bar-add", uniqueName(b.name), b.position, b.name }, "Copied " .. b.name)
 end
 
 -- Length is a share of the screen edge: 100 = the whole edge, 90 = a gap of 5% at both ends.
@@ -113,7 +92,7 @@ local function setLength(b)
   end
   lengthDraft[b.name] = nil
   rev += 1
-  run({ "bar-length", b.name, tostring(n) }, b.title .. ": length " .. n .. "%", nil, true)
+  run({ "bar-length", b.name, tostring(n) }, b.title .. ": length " .. n .. "%")
 end
 
 local function renameBar(b)
@@ -148,7 +127,7 @@ local function addBar()
   run({ "bar-add", name, addPos }, "Added " .. name, function()
     addName = ""
     addGen += 1
-  end, true)
+  end)
 end
 
 -- A small screen outline with a strip per bar that is on, at its edge.
@@ -188,7 +167,7 @@ local function pictures(b)
     table.insert(imgs, ui.image({ key = "im" .. b.name .. i, path = f, width = vertical and 60 or 330, height = vertical and 200 or 52, fit = "contain" }))
   end
   if #imgs == 0 then
-    return ui.label({ text = b.enabled and "No picture yet. Press Refresh pictures" or "No picture yet. Switch the bar on to take one", color = "on_surface_variant", fontSize = 12 })
+    return ui.label({ text = b.enabled and "No picture yet. Press the refresh button" or "No picture yet. Switch the bar on, then press the refresh button", color = "on_surface_variant", fontSize = 12 })
   end
   return ui.row({ gap = 8, align = "center" }, imgs)
 end
@@ -210,6 +189,7 @@ local function barCard(b)
       isRenaming and ui.button({ key = "rs" .. b.name, glyph = "check", text = "Save", variant = "primary", controlSize = "sm", onClick = function() renameBar(b) end }) or ui.box({ width = 0 }),
       isRenaming and ui.button({ key = "rc" .. b.name, text = "Cancel", variant = "ghost", controlSize = "sm", onClick = function() renaming = nil render() end })
         or (b.shipped and ui.box({ width = 0 }) or ui.button({ key = "re" .. b.name, glyph = "pencil", variant = "ghost", controlSize = "sm", tooltip = "Rename", onClick = function() renaming, renameText = b.name, b.name render() end })),
+      b.enabled and ui.button({ key = "rf" .. b.name, glyph = "refresh", variant = "ghost", controlSize = "sm", tooltip = "New picture of this bar", onClick = function() run({ "shots", b.name }, "Picture of " .. b.title .. " taken") end }) or ui.box({ width = 0 }),
       ui.button({ key = "st" .. b.name, glyph = "settings", variant = "ghost", controlSize = "sm", tooltip = "Noctalia's bar settings", onClick = function() noctalia.runAsync({ "noctalia", "msg", "settings-open", "bar" }) panel.close() end }),
       ui.button({ key = "cp" .. b.name, glyph = "copy", variant = "ghost", controlSize = "sm", tooltip = "Copy this bar", onClick = function() copyBar(b) end }),
       isArmed and ui.button({ key = "dc" .. b.name, text = "Cancel", variant = "ghost", controlSize = "sm", onClick = function() lapse.disarm(confirm, "rmbar") armedBar = nil render() end }) or ui.box({ width = 0 }),
@@ -234,7 +214,6 @@ function render()
     ui.row({ gap = 8, align = "center" }, {
       logo(),
       ui.label({ text = "Bars", flexGrow = 1 }),
-      ui.button({ key = "shots", glyph = "refresh", text = "Refresh pictures", variant = "ghost", controlSize = "sm", tooltip = "New pictures of the bars that are on", onClick = function() run({ "shots" }, "Pictures taken") end }),
       ui.button({ key = "set", glyph = "settings", text = "Bar settings", variant = "ghost", controlSize = "sm", tooltip = "Noctalia's own bar settings", onClick = function() noctalia.runAsync({ "noctalia", "msg", "settings-open", "bar" }) panel.close() end }),
     }),
     err and ui.label({ text = err, color = "error" }) or ui.label({ text = busy and "Working..." or note or "Switch bars on and off, as many as you like", color = note and "primary" or "on_surface_variant", fontSize = 12 }),
