@@ -36,6 +36,11 @@ local function load()
   end)
 end
 
+-- Panels that hang on a bar follow a bar that is on.
+local function anchor()
+  noctalia.runAsync({ "mb-bars", "anchor" })
+end
+
 -- Runs mb-bars with args, then reads the list again.
 local function run(args, done, after)
   if busy then return end
@@ -53,6 +58,7 @@ local function run(args, done, after)
       note = done
       if after then after() end
     end
+    anchor()
     load()
   end)
 end
@@ -64,6 +70,7 @@ local function toggleBar(b)
     if r.exitCode ~= 0 then
       err = "Could not switch " .. b.name
     end
+    anchor()
     load()
   end)
 end

@@ -18,6 +18,7 @@ The bar is the strip with the launcher, workspaces, tray and clock. The Bars pan
 - Switch on as many bars as you like, or none.
 - Bars on the same edge lie on top of each other.
 - The small screen at the top of the list shows where the bars that are on sit.
+- Panels that hang on a bar, such as the control center and the Capture panel, hang on a bar that is on. Switch that bar off and they move to the next bar that is on. The choice is *Anchor Bar* in the Noctalia settings under Panels.
 
 ## The shipped bars
 
