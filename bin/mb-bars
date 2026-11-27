@@ -7,6 +7,7 @@
   mb-bars bar-add NAME POSITION [FROM]   new bar: a copy of FROM (the first bar) on top|bottom|left|right
   mb-bars bar-rename OLD NEW
   mb-bars bar-delete NAME     (the last bar stays)
+  mb-bars anchor              panels that hang on a bar: keep Anchor Bar on a bar that is on
   mb-bars bar-length NAME PERCENT   length of the bar as a share of its screen edge (10 to 100)
 
 The shipped bars (names starting mb-) cannot be renamed or deleted; their keys come
@@ -302,6 +303,18 @@ def cmd_bar_length(name, percent):
         die("could not set the length")
 
 
+def cmd_anchor():
+    """Anchor Bar names the bar that attached panels hang on. When that bar is off or gone, move it to the first bar that is on."""
+    bar = parse_bar("".join(split_bars(read_settings())[1]))
+    on = [b["name"] for b in bar_summary(bar) if b["enabled"]]
+    r = subprocess.run(["noctalia", "msg", "config-get", "shell.panel_anchor_bar"], capture_output=True, text=True)
+    current = r.stdout.strip().strip("'\"")
+    if r.returncode != 0 or current.startswith("error") or not current:
+        return
+    if on and current not in on:
+        subprocess.run(["noctalia", "msg", "config-set", "shell.panel_anchor_bar", json.dumps(on[0])], stdout=subprocess.DEVNULL, check=False)
+
+
 def cmd_bar_rename(old, new):
     valid_bar_name(new)
     if old.startswith(SHIPPED):
@@ -464,6 +477,8 @@ def main(argv):
         cmd_bar_delete(args[0])
     elif cmd == "bar-length" and len(args) == 2:
         cmd_bar_length(*args)
+    elif cmd == "anchor":
+        cmd_anchor()
     elif cmd == "seed":
         cmd_seed()
     elif cmd == "shots" and len(args) == 1:
