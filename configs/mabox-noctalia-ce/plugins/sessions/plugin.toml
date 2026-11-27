@@ -1,0 +1,26 @@
+id = "mabox/sessions"
+name = "Sessions"
+version = "0.1.0"
+plugin_api = 43
+author = "mabox"
+license = "MIT"
+icon = "layout-grid"
+description = "Named sets of apps on their own workspace. /sessions in the launcher opens it."
+tags = ["utility", "system"]
+
+[[panel]]
+id = "main"
+entry = "panel.luau"
+width = 800
+height = "content"
+max_height = 560
+placement = "attached"
+open_near_click = true
+capture_keys = ["escape"]
+
+[[launcher_provider]]
+id = "finder"
+entry = "finder.luau"
+prefix = "sessions"
+glyph = "layout-grid"
+include_in_global_search = false
