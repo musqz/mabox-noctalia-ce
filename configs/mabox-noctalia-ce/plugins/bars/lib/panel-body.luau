@@ -102,8 +102,13 @@ local function setLength(b)
   run({ "bar-length", b.name, tostring(n) }, b.title .. ": length " .. n .. "%")
 end
 
+-- Bar names are TOML keys: spaces become "-", other characters are dropped.
+local function cleanName(text)
+  return string.sub(string.gsub(string.gsub(noctalia.string.trim(text), "%s+", "-"), "[^A-Za-z0-9_%-]", ""), 1, 32)
+end
+
 local function renameBar(b)
-  local name = noctalia.string.trim(renameText)
+  local name = cleanName(renameText)
   if name == "" or name == b.name then
     renaming = nil
     render()
@@ -125,7 +130,7 @@ local function removeBar(b)
 end
 
 local function addBar()
-  local name = noctalia.string.trim(addName)
+  local name = cleanName(addName)
   if name == "" then
     err = "Enter a name for the new bar"
     render()
@@ -202,6 +207,7 @@ local function barCard(b)
       isArmed and ui.button({ key = "dc" .. b.name, text = "Cancel", variant = "ghost", controlSize = "sm", onClick = function() lapse.disarm(confirm, "rmbar") armedBar = nil render() end }) or ui.box({ width = 0 }),
       b.shipped and ui.box({ width = 0 }) or ui.button({ key = "dl" .. b.name .. (isArmed and "a" or ""), glyph = "trash", text = isArmed and "Click again" or nil, variant = isArmed and "destructive" or "ghost", controlSize = "sm", tooltip = "Delete this bar", onClick = function() removeBar(b) end }),
     }),
+    (isRenaming and err) and ui.label({ text = err, color = "error", fontSize = 12 }) or ui.box({ height = 0 }),
     pictures(b),
   })
 end
@@ -223,7 +229,7 @@ function render()
       ui.label({ text = "Bars", flexGrow = 1 }),
       ui.button({ key = "set", glyph = "settings", text = "Bar settings", variant = "ghost", controlSize = "sm", tooltip = "Noctalia's own bar settings", onClick = function() noctalia.runAsync({ "noctalia", "msg", "settings-open", "bar" }) panel.close() end }),
     }),
-    err and ui.label({ text = err, color = "error" }) or ui.label({ text = busy and "Working..." or note or "Switch bars on and off, as many as you like", color = note and "primary" or "on_surface_variant", fontSize = 12 }),
+    (err and not renaming) and ui.label({ text = err, color = "error" }) or ui.label({ text = busy and "Working..." or note or "Switch bars on and off, as many as you like", color = note and "primary" or "on_surface_variant", fontSize = 12 }),
     ui.scroll({ key = "body", gap = 10, flexGrow = 1 }, {
       ui.column(card("add"), {
         ui.row({ gap = 12, align = "center" }, {
