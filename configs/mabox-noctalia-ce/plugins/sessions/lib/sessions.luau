@@ -208,7 +208,7 @@ function S.card()
 end
 
 render = function()
-  panel.render(ui.column({ gap = 8, padding = 10, flexGrow = 1 }, {
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 10, flexGrow = 1 }, {
     ui.row({ gap = 8, align = "center" }, {
       logo(),
       ui.label({ text = "Sessions" }),

@@ -1573,7 +1573,7 @@ render = function()
   if pinned then
     pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { title, top, reload, list }))
   else
-    panel.render(ui.column({ gap = 8, padding = 12, height = 552 }, { title, top, reload, list }))
+    panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12, height = 552 }, { title, top, reload, list }))
   end
 end
 

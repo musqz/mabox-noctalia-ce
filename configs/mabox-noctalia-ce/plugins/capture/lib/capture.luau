@@ -551,7 +551,7 @@ render = function()
   if pinned then
     pinSide.render(pinned, ui.column({ gap = 8, padding = 10, flexGrow = 1 }, { title, top, ui.scroll({ gap = 8, flexGrow = 1, key = "list", revealKey = kbd.reveal() and "k-" .. kbd.reveal() or nil }, { body }) }))
   else
-    panel.render(ui.column({ gap = 8, padding = 12 }, { title, top, body }))
+    panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12 }, { title, top, body }))
   end
 end
 

@@ -135,7 +135,7 @@ function M.render(pinned, tree)
     -- A layer has no background of its own.
     layer.render(ui.column({ fill = "surface", flexGrow = 1 }, { tree }))
   else
-    panel.render(tree)
+    panel.render(ui.column({ fill = "surface", radius = 12, flexGrow = 1 }, { tree }))
   end
 end
 

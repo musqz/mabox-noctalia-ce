@@ -176,7 +176,7 @@ render = function()
     ui.button({ text = "Cancel", variant = "ghost", onClick = function() panel.close() end }),
     ui.button({ text = "Add", variant = "primary", glyph = "plus", onClick = add }),
   }))
-  panel.render(ui.column({ gap = 8, padding = 12 }, body))
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12 }, body))
 end
 
 function onOpen()

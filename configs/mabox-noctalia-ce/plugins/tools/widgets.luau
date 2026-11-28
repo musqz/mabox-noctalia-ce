@@ -56,7 +56,7 @@ render = function()
       noctalia.runAsync({ "noctalia", "msg", "desktop-widgets-toggle-edit" })
     end,
   })
-  panel.render(ui.column({ gap = 8, padding = 12 }, body))
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12 }, body))
 end
 
 function onOpen()

@@ -60,7 +60,7 @@ local function listView()
   if #rows == 0 then
     table.insert(rows, ui.label({ text = "Nothing to update", color = "on_surface_variant" }))
   end
-  panel.render(ui.column({ gap = 8, padding = 12, height = 460 }, {
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12, height = 460 }, {
     ui.row({ gap = 6, align = "center" }, {
       ui.button({ glyph = "arrow-left", variant = "ghost", controlSize = "sm", tooltip = "Back", onClick = function() view = "main" render() end }),
       ui.label({ text = "Pending updates", fontSize = 14 }),
@@ -110,7 +110,7 @@ local function infoView()
     end
     table.insert(cards, card("info-" .. sec[1], rows))
   end
-  panel.render(ui.column({ gap = 8, padding = 12 }, cards))
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12 }, cards))
 end
 
 local function start(argv)
@@ -197,7 +197,7 @@ render = function()
       end)
     end,
   }) }))
-  panel.render(ui.column({ gap = 8, padding = 12 }, { ui.scroll({ gap = 8, flexGrow = 1, key = "main" }, items) }))
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12 }, { ui.scroll({ gap = 8, flexGrow = 1, key = "main" }, items) }))
 end
 
 return function()

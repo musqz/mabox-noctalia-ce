@@ -121,7 +121,7 @@ render = function()
     end
     body = ui.column({ fill = "surface_variant", radius = 8, padding = 8, gap = 4 }, rows)
   end
-  panel.render(ui.column({ gap = 8, padding = 12 }, { top, body }))
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 8, padding = 12 }, { top, body }))
 end
 
 function onOpen()

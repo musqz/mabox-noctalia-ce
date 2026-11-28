@@ -772,7 +772,7 @@ end
 
 render = function()
   if excl and not explain and not settings and not usb then
-    panel.render(ui.column({ key = "root-excl", gap = 8, padding = 12, height = 780 }, {
+    panel.render(ui.column({ fill = "surface", radius = 12, key = "root-excl", gap = 8, padding = 12, height = 780 }, {
       ui.row({ gap = 6, align = "center" }, {
         logo(),
         ui.label({ text = "Exclude list", flexGrow = 1 }),
@@ -795,7 +795,7 @@ render = function()
     return
   end
   if usb and not explain and not settings then
-    panel.render(ui.column({ key = "root-usb", gap = 8, padding = 12 }, {
+    panel.render(ui.column({ fill = "surface", radius = 12, key = "root-usb", gap = 8, padding = 12 }, {
       ui.row({ gap = 6, align = "center" }, {
         logo(),
         ui.label({ text = "ISOs", flexGrow = 1 }),
@@ -875,7 +875,7 @@ render = function()
     body = ui.column({ gap = 10 }, rows)
   end
   -- A scroll in a content-height panel collapses; a fixed height on the column lets it scroll. The key keeps the fixed height from sticking to the list view.
-  panel.render(ui.column({ key = explain and "root-explain" or "root", gap = 8, padding = 12, height = explain and 780 or nil }, { top, body }))
+  panel.render(ui.column({ fill = "surface", radius = 12, key = explain and "root-explain" or "root", gap = 8, padding = 12, height = explain and 780 or nil }, { top, body }))
 end
 
 function onOpen()
