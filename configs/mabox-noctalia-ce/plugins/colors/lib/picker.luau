@@ -596,7 +596,7 @@ render = function()
     return
   end
 
-  panel.render(ui.column({ gap = 10, padding = 12, height = 592 }, {
+  panel.render(ui.column({ fill = "surface", radius = 12, gap = 10, padding = 12, height = 592 }, {
     ui.row({ gap = 8, align = "center" }, {
       logo(),
       ui.label({ text = "Colors" }),
