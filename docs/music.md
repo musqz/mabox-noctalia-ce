@@ -6,7 +6,7 @@ The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-musi
 
 | Key | Tool |
 |---|---|
-| `W-m` | music panel; `/music` in the launcher does the same search |
+| `W-m` | music panel; `/music` in the launcher opens it too and searches your tracks |
 | `C-S-2` | add a track to the playlist |
 | `C-S-1` | `mpv-play-stream`: play a copied URL in mpv |
 | `XF86AudioPlay` / `Stop` / `Next` / `Prev` | `noctalia msg media toggle / stop / next / previous` |
