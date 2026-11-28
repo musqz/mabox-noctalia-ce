@@ -516,7 +516,7 @@ migrate_45() {
     local src=${MB_SHARE:-/usr/share/mabox-noctalia-ce}/gthumb/scripts.xml
     local dst=${XDG_CONFIG_HOME:-$HOME/.config}/gthumb/scripts.xml
     [[ -f $src ]] || return 0
-    python3 - "$src" "$dst" <<'PY' || true
+    python3 - "$src" "$dst" <<'PY' || echo "mb-migrate: the gThumb wallpaper script was not added" >&2
 import os, shutil, sys
 import xml.etree.ElementTree as ET
 src, dst = sys.argv[1:3]
