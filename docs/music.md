@@ -1,6 +1,6 @@
 # Music
 
-![Music panel with the station list and a radio stream playing](img/music-panel.png)
+![Music panel with the playlists, the player controls and a stream playing](img/music-player.png)
 
 The `/music` launcher plugin and `mpv-play-stream` read `~/.config/mabox/mb-music/yt_music_list.csv`.
 
