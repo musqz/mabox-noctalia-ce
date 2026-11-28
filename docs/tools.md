@@ -55,7 +55,7 @@ Panels, widgets and scripts that Noctalia CE adds. Keys: [keys.md](keys.md).
 | Wallpaper slideshow on or off | root menu → Mabox noctalia ce → Wallpaper slideshow, `W-A-a`, or `mb-slideshow [toggle\|on\|off]` | interval: `noctalia msg config-set wallpaper.automation.interval_seconds <s>` |
 | **Todo desktop widget:**<br>_open tasks that are overdue or due today; click the header to open the panel_ | `noctalia msg desktop-widgets-toggle-edit`, then add *Todo today* | number of tasks in the widget settings |
 
-<p align="center"><a href="img/widgets.png"><img src="img/thumb/widgets.png" alt="Desktop widgets panel"></a></p>
+<p align="center"><a href="img/widgets-desktop.png"><img src="img/thumb/widgets-desktop.png" alt="The desktop with the Mabox widgets panel, the Sysinfo and Info widgets and the Polaroids"></a></p>
 
 ## Music and media
 
