@@ -485,16 +485,29 @@ if n != s:
 PY
 }
 
-# gThumb is the image viewer: the screenshot key (C-Insert) opens it and the root menu gets a Thumbnails entry. Only when it is installed.
+# gThumb is the image viewer: the screenshot key (C-Insert) opens it, with xdg-open as the fallback, and the root menu gets a Thumbnails entry.
 migrate_44() {
-    command -v gthumb >/dev/null || return 0
-    local c=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce f
-    f=$c/rc.xml
-    [[ -f $f ]] && sed -i "s#bash -c 'viewnior \"\$(ls -t#bash -c 'gthumb \"\$(ls -t#" "$f"
-    f=$c/menu.xml
-    if [[ -f $f ]] && ! grep -q 'command="gthumb"' "$f" && grep -q 'command="mb-files"' "$f"; then
-        sed -i '/command="mb-files"/,/<\/item>/{/<\/item>/s#$#\n  <item label="Thumbnails" icon="org.gnome.gthumb">\n    <action name="Execute" command="gthumb" />\n  </item>#}' "$f"
-    fi
+    local c=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce
+    python3 - "$c/rc.xml" "$c/menu.xml" <<'PY'
+import re, sys
+rc, menu = sys.argv[1:3]
+try:
+    s = open(rc, encoding="utf-8").read()
+    old = """bash -c 'viewnior "$(ls -t "$(mb-capture-dir shot)"/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1)"'"""
+    new = """bash -c 'f=$(ls -t "$(mb-capture-dir shot)"/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1); gthumb "$f" 2&gt;/dev/null || xdg-open "$f"'"""
+    if old in s:
+        open(rc, "w", encoding="utf-8").write(s.replace(old, new, 1))
+except FileNotFoundError:
+    pass
+try:
+    s = open(menu, encoding="utf-8").read()
+except FileNotFoundError:
+    sys.exit(0)
+item = re.search(r'[ \t]*<item label="File Manager"[^>]*>\s*<action name="Execute" command="mb-files" />\s*</item>\n', s)
+if item and 'command="gthumb"' not in s:
+    add = '  <item label="Thumbnails" icon="org.gnome.gthumb">\n    <action name="Execute" command="gthumb" />\n  </item>\n'
+    open(menu, "w", encoding="utf-8").write(s[:item.end()] + add + s[item.end():])
+PY
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
