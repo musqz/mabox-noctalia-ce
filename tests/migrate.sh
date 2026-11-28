@@ -234,4 +234,17 @@ migrate; migrate
 valid || { echo "FAIL migrate_44: rc.xml is no longer valid"; exit 1; }
 python3 -c "import sys, xml.dom.minidom as m; m.parse(sys.argv[1])" "$conf/mabox-noctalia-ce/menu.xml" || { echo "FAIL migrate_44: menu.xml is no longer valid"; exit 1; }
 
+# migrate_45: gThumb gets the wallpaper script once; scripts the user has stay.
+g=$conf/gthumb/scripts.xml
+mb45() { MB_SHARE=$root/configs migrate; }
+echo 44 > "$tmp/state/mabox-noctalia-ce/config-version"
+rm -rf "$conf/gthumb"; mb45; mb45
+[[ $(grep -c 'mb-wallpaper-image' "$g") == 1 ]] || { echo "FAIL migrate_45: fresh copy"; exit 1; }
+printf '<?xml version="1.0" encoding="UTF-8"?>\n<scripts version="1.1">\n  <script display-name="Mine" id="x1" command="echo %%F"/>\n</scripts>\n' > "$g"
+mb45; mb45
+[[ $(grep -c 'mb-wallpaper-image' "$g") == 1 && $(grep -c 'display-name="Mine"' "$g") == 1 ]] || { echo "FAIL migrate_45: existing scripts"; exit 1; }
+python3 -c "import sys, xml.dom.minidom as m; m.parse(sys.argv[1])" "$g" || { echo "FAIL migrate_45: scripts.xml is no longer valid"; exit 1; }
+printf 'broken <' > "$g"; mb45
+[[ $(<"$g") == 'broken <' ]] || { echo "FAIL migrate_45: touched an invalid scripts.xml"; exit 1; }
+
 echo ok
