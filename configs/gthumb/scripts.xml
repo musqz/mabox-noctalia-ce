@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scripts version="1.1">
+  <script wait-command="false" shell-script="true" display-name="Set as wallpaper" id="mbwallpaper" for-each-file="false" command="mb-wallpaper-image %F"/>
+</scripts>

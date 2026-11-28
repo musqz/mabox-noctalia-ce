@@ -511,6 +511,32 @@ PY
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# gThumb: Tools > Scripts > Set as wallpaper (mb-wallpaper-image). An existing scripts.xml keeps its scripts.
+migrate_45() {
+    local src=${MB_SHARE:-/usr/share/mabox-noctalia-ce}/gthumb/scripts.xml
+    local dst=${XDG_CONFIG_HOME:-$HOME/.config}/gthumb/scripts.xml
+    [[ -f $src ]] || return 0
+    python3 - "$src" "$dst" <<'PY' || echo "mb-migrate: the gThumb wallpaper script was not added" >&2
+import os, shutil, sys
+import xml.etree.ElementTree as ET
+src, dst = sys.argv[1:3]
+if not os.path.exists(dst):
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copy(src, dst)
+    sys.exit(0)
+try:
+    tree = ET.parse(dst)
+except ET.ParseError:
+    sys.exit(0)
+root = tree.getroot()
+if any("mb-wallpaper-image" in s.get("command", "") for s in root.iter("script")):
+    sys.exit(0)
+root.append(ET.parse(src).getroot().find("script"))
+ET.indent(tree)
+tree.write(dst, encoding="UTF-8", xml_declaration=True)
+PY
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
