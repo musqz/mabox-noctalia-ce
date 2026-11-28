@@ -441,10 +441,10 @@ migrate_42() {
     local f
     for f in "${files[@]}"; do
         [[ -f $f ]] || continue
-        python3 - "$f" <<'PY'
+        python3 - "$f" <<'PY' || true
 import re, sys, tomllib
 p = sys.argv[1]
-s = open(p).read()
+s = open(p, encoding="utf-8").read()
 n = re.sub(r'^\[theme\.templates\.user\.luciole\]\n(?:(?!\[)[^\n]*\n?)*', lambda m: '' if '/usr/share/luciole/templates' in m.group(0) else m.group(0), s, flags=re.M)
 m = re.search(r'^builtin_ids\s*=\s*\[(.*?)\]', n, re.M | re.S)
 if m and '"luciole"' not in m.group(1) and "'luciole'" not in m.group(1):
@@ -453,9 +453,36 @@ if m and '"luciole"' not in m.group(1) and "'luciole'" not in m.group(1):
     n = n[:m.start(1)] + inner + add + n[m.end(1):]
 if n != s:
     tomllib.loads(n)
-    open(p, 'w').write(n)
+    open(p, 'w', encoding='utf-8').write(n)
 PY
     done
+}
+
+# The launcher floats: attached to a transparent bar it was transparent too. A placement saved in settings.toml wins over this default.
+migrate_43() {
+    local f=${files[0]}
+    [[ -f $f ]] || return 0
+    python3 - "$f" <<'PY' || true
+import re, sys, tomllib
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+try:
+    panel = tomllib.loads(s).get("shell", {}).get("panel")
+except tomllib.TOMLDecodeError:
+    sys.exit(0)
+if panel is None:
+    n = s.rstrip("\n") + '\n\n[shell.panel]\nlauncher_placement = "floating"\n'
+elif "launcher_placement" in panel:
+    sys.exit(0)
+else:
+    n = re.sub(r'^(\[shell\.panel\][ \t]*(?:#.*)?\n)', r'\1launcher_placement = "floating"\n', s, count=1, flags=re.M)
+try:
+    tomllib.loads(n)
+except tomllib.TOMLDecodeError:
+    sys.exit(0)
+if n != s:
+    open(p, "w", encoding="utf-8").write(n)
+PY
 }
 
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
