@@ -210,5 +210,8 @@ chk43() { # name, expected "floating" count, expected "attached" count
 printf '[shell.panel]\nfloating_layer = "top"\n' > "$conf/noctalia/config.toml"; migrate; migrate; chk43 "key added once" 1 0
 printf '[shell.panel]\nlauncher_placement = "attached"\n' > "$conf/noctalia/config.toml"; migrate; chk43 "own choice kept" 0 1
 printf '[theme]\nmode = "dark"\n' > "$conf/noctalia/config.toml"; migrate; migrate; chk43 "table added" 1 0
+printf '[shell.panel] # panels\nfloating_layer = "top"\n' > "$conf/noctalia/config.toml"; migrate; chk43 "commented header" 1 0
+printf '[shell.panel.sub]\nx = 1\n' > "$conf/noctalia/config.toml"; migrate; chk43 "sub-table only left alone" 0 0
+printf 'broken = [\n' > "$conf/noctalia/config.toml"; migrate || { echo "FAIL migrate_43: stops on an invalid config.toml"; exit 1; }
 
 echo ok
