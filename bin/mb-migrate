@@ -458,6 +458,27 @@ PY
     done
 }
 
+# The launcher floats: attached to a transparent bar it was transparent too. A choice saved in settings.toml stays.
+migrate_43() {
+    local f=${files[0]}
+    [[ -f $f ]] || return 0
+    python3 - "$f" <<'PY'
+import re, sys, tomllib
+p = sys.argv[1]
+s = open(p).read()
+panel = tomllib.loads(s).get("shell", {}).get("panel")
+if panel is None:
+    n = s.rstrip("\n") + '\n\n[shell.panel]\nlauncher_placement = "floating"\n'
+elif "launcher_placement" in panel:
+    sys.exit(0)
+else:
+    n = re.sub(r'^(\[shell\.panel\]\n)', r'\1launcher_placement = "floating"\n', s, count=1, flags=re.M)
+if n != s:
+    tomllib.loads(n)
+    open(p, "w").write(n)
+PY
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

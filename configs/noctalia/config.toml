@@ -239,6 +239,7 @@ screen_time_colorize_icons = true
 
 [shell.panel]
 floating_layer = "top"
+launcher_placement = "floating"
 border_color = "primary"
 border_width = 0.0
 borders = false

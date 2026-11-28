@@ -201,4 +201,14 @@ printf '[theme.templates]\nenable_builtin_templates = true\n\n%b' "$block" > "$c
 migrate
 check42 "no builtin_ids key" 0 0
 
+# migrate_43: the launcher floats, once; a placement the user set stays.
+echo 42 > "$tmp/state/mabox-noctalia-ce/config-version"
+chk43() { # name, expected "floating" count, expected "attached" count
+    [[ $(grep -c 'launcher_placement = "floating"' "$conf/noctalia/config.toml") == "$2" && $(grep -c 'launcher_placement = "attached"' "$conf/noctalia/config.toml") == "$3" ]] || { echo "FAIL migrate_43: $1"; exit 1; }
+    python3 -c "import sys, tomllib; tomllib.load(open(sys.argv[1], 'rb'))" "$conf/noctalia/config.toml" || { echo "FAIL migrate_43: $1: config.toml is no longer valid"; exit 1; }
+}
+printf '[shell.panel]\nfloating_layer = "top"\n' > "$conf/noctalia/config.toml"; migrate; migrate; chk43 "key added once" 1 0
+printf '[shell.panel]\nlauncher_placement = "attached"\n' > "$conf/noctalia/config.toml"; migrate; chk43 "own choice kept" 0 1
+printf '[theme]\nmode = "dark"\n' > "$conf/noctalia/config.toml"; migrate; migrate; chk43 "table added" 1 0
+
 echo ok
