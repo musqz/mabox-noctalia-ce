@@ -6,6 +6,7 @@
 - Open the launcher as a floating panel so it stays solid on a transparent bar; a placement saved in the Noctalia settings stays.
 - Use gThumb as the image viewer: it is in the Install panel and the ISO list, has a Thumbnails entry in the root menu and opens on `C-Insert`; `mb-migrate` updates your menu and key.
 - Add a Set as wallpaper script to gThumb (Tools, Scripts); `mb-migrate` adds it to your scripts.
+- Open the Music panel from the launcher: the first row of `/music` and `/mb music`.
 
 ## 0.11.1
 - Move Anchor Bar to a bar that is on when the Bars panel switches off the bar the panels hang on.
