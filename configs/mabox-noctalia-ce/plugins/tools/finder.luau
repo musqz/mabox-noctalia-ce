@@ -14,6 +14,7 @@ local TOOLS = {
   { id = "cava", title = "Cava", glyph = "chart-bar", cmd = { "mb-cava", "toggle" } },
   { id = "cava-settings", title = "Cava settings", glyph = "adjustments", cmd = { "noctalia", "msg", "panel-toggle", "mabox/cava:main" } },
   { id = "equalizer", title = "Equalizer", glyph = "adjustments-horizontal", cmd = { "noctalia", "msg", "panel-toggle", "mabox/equalizer:main" } },
+  { id = "music", title = "Music", glyph = "music", cmd = { "noctalia", "msg", "panel-toggle", "mabox/music:player" } },
   { id = "recolor", title = "Recolor", glyph = "color-swatch", cmd = { "noctalia", "msg", "panel-toggle", "mabox/recolor:main" } },
   { id = "wallgen", title = "Wallgen", glyph = "sparkles", cmd = { "mb-wallgen", "--panel" } },
   { id = "crypto", title = "Crypto", glyph = "currency-bitcoin", cmd = { "noctalia", "msg", "panel-toggle", "mabox/crypto:main" }, pinned = "crypto" },

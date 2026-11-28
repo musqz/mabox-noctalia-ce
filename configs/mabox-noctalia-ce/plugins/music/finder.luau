@@ -9,12 +9,20 @@ local function trackRow(t, score)
   return { id = "play:" .. t.url, title = t.title, subtitle = "Enter to play", glyph = "player-play", score = score }
 end
 
+-- The empty query starts with a row that opens the panel; Enter on a track plays it.
+local function show(text, q, rows)
+  if q == "" then
+    table.insert(rows, 1, { id = "panel", title = "Music panel", subtitle = "Open the player", glyph = "music", score = 2000 })
+  end
+  launcher.setResults(text, rows)
+end
+
 local function respond(text, q, cats)
   do
     local rows = {}
 
     if #cats == 0 then
-      launcher.setResults(text, { { id = "", title = "No tracks in " .. csv.path, glyph = "music-off" } })
+      show(text, q, { { id = "", title = "No tracks in " .. csv.path, glyph = "music-off" } })
       return
     end
 
@@ -35,7 +43,7 @@ local function respond(text, q, cats)
       for i, c in cats do
         table.insert(rows, { id = "cat:" .. c.name, title = c.name, subtitle = #c.tracks .. " tracks", glyph = "folder", score = 900 - i })
       end
-      launcher.setResults(text, rows)
+      show(text, q, rows)
       return
     end
 
@@ -75,6 +83,11 @@ end
 
 function onActivate(id)
   if id == nil or id == "" then
+    return
+  end
+  if id == "panel" then
+    -- The short sleep lets the launcher close first.
+    noctalia.runAsync({ "sh", "-c", "sleep 0.2; exec noctalia msg panel-open mabox/music:player" })
     return
   end
   local kind, arg = string.match(id, "^(%a+):(.*)$")

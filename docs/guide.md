@@ -139,7 +139,7 @@ Converter: pick a preset, then files; output lands next to the source and never 
 | `/keys` | the hotkey list; Enter runs a bind |
 | `/wp` | wallpaper folders |
 | `/hist`, `/es` | shell history, Espanso snippets |
-| `/music` | music search |
+| `/music` | the Music panel (first row), music search |
 | `/ag` | AI agent sessions |
 | `/autostart` | the Autostart panel |
 | `/bars` | the Bars panel |
