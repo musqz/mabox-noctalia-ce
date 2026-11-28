@@ -7,6 +7,7 @@
 - Keep the new name when you rename a bar in the Bars panel; names lose spaces.
 - Open Sessions from the launcher with `/sessions`; it is its own plugin now and `mb-migrate` moves the A-F1 key.
 - Hide the pointer after 5 s without keyboard or mouse input, also while a video plays or Caffeine is on; `swayidle` is no longer needed.
+- Keep a solid background on the attached panels when the bar is transparent.
 
 ## 0.11.0
 - Turn the camera button into a red dot while interval screenshots run; a left click on it stops them.
