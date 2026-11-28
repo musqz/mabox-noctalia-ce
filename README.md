@@ -1,5 +1,4 @@
-<img alt="Mabox Noctalia CE logo" src="docs/logo.png" width="128" />
-<img alt="Mabox Noctalia CE logo" src="docs/noctalia-dev.png" width="128" />
+<img alt="Mabox Noctalia CE logo" src="docs/logo.png" width="128" /><img alt="Mabox Noctalia CE logo" src="docs/noctalia-dev.png" width="128" />
 
 # [mabox-noctalia-ce](https://musqz.github.io/mabox-noctalia-ce/intro.html)
 
