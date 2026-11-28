@@ -214,4 +214,24 @@ printf '[shell.panel] # panels\nfloating_layer = "top"\n' > "$conf/noctalia/conf
 printf '[shell.panel.sub]\nx = 1\n' > "$conf/noctalia/config.toml"; migrate; chk43 "sub-table only left alone" 0 0
 printf 'broken = [\n' > "$conf/noctalia/config.toml"; migrate || { echo "FAIL migrate_43: stops on an invalid config.toml"; exit 1; }
 
+# migrate_44: the screenshot key opens gThumb (xdg-open as fallback) and the root menu gets Thumbnails after File Manager, once.
+echo 43 > "$tmp/state/mabox-noctalia-ce/config-version"
+python3 - "$root/configs/mabox-noctalia-ce/rc.xml" "$conf/mabox-noctalia-ce/rc.xml" <<'PY'
+import re, sys
+s = open(sys.argv[1]).read()
+old = """bash -c 'f=$(ls -t "$(mb-capture-dir shot)"/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1); gthumb "$f" 2&gt;/dev/null || xdg-open "$f"'"""
+assert old in s
+open(sys.argv[2], "w").write(s.replace(old, """bash -c 'viewnior "$(ls -t "$(mb-capture-dir shot)"/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1)"'"""))
+PY
+python3 - "$root/configs/mabox-noctalia-ce/menu.xml" "$conf/mabox-noctalia-ce/menu.xml" <<'PY'
+import re, sys
+s = open(sys.argv[1]).read()
+open(sys.argv[2], "w").write(re.sub(r'  <item label="Thumbnails".*?</item>\n', '', s, flags=re.S))
+PY
+migrate; migrate
+[[ $(count "viewnior") == 0 && $(count "gthumb \"\$f\"") == 1 && $(grep -c 'command="gthumb"' "$conf/mabox-noctalia-ce/menu.xml") == 1 ]] || { echo "FAIL migrate_44: entries"; exit 1; }
+[[ $(grep -A4 'label="File Manager"' "$conf/mabox-noctalia-ce/menu.xml" | grep -c 'label="Thumbnails"') == 1 ]] || { echo "FAIL migrate_44: Thumbnails is not after File Manager"; exit 1; }
+valid || { echo "FAIL migrate_44: rc.xml is no longer valid"; exit 1; }
+python3 -c "import sys, xml.dom.minidom as m; m.parse(sys.argv[1])" "$conf/mabox-noctalia-ce/menu.xml" || { echo "FAIL migrate_44: menu.xml is no longer valid"; exit 1; }
+
 echo ok

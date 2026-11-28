@@ -23,7 +23,7 @@ if [[ ${1-} == --view ]]; then
         [[ -s $out ]] && rm -f "$f" || out=
     fi
     file=${out:-$f}
-    if command -v viewnior >/dev/null; then exec viewnior "$file"; else exec xdg-open "$file"; fi
+    if command -v gthumb >/dev/null; then exec gthumb "$file"; else exec xdg-open "$file"; fi
 fi
 delay=0 fmt=png
 while [[ ${1-} == --delay || ${1-} == --format ]]; do
@@ -51,7 +51,7 @@ save() {
     rm -f "$1"
 }
 view() {
-    if command -v viewnior >/dev/null; then exec viewnior "$@"; else for f in "$@"; do xdg-open "$f"; done; exit 0; fi
+    if command -v gthumb >/dev/null; then exec gthumb "$@"; else for f in "$@"; do xdg-open "$f"; done; exit 0; fi
 }
 finish() {
     save "$1" "$2"

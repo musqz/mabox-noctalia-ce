@@ -485,6 +485,32 @@ if n != s:
 PY
 }
 
+# gThumb is the image viewer: the screenshot key (C-Insert) opens it, with xdg-open as the fallback, and the root menu gets a Thumbnails entry.
+migrate_44() {
+    local c=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce
+    python3 - "$c/rc.xml" "$c/menu.xml" <<'PY'
+import re, sys
+rc, menu = sys.argv[1:3]
+try:
+    s = open(rc, encoding="utf-8").read()
+    old = """bash -c 'viewnior "$(ls -t "$(mb-capture-dir shot)"/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1)"'"""
+    new = """bash -c 'f=$(ls -t "$(mb-capture-dir shot)"/*.{png,jpg,jpeg,webp} 2&gt;/dev/null | head -1); gthumb "$f" 2&gt;/dev/null || xdg-open "$f"'"""
+    if old in s:
+        open(rc, "w", encoding="utf-8").write(s.replace(old, new, 1))
+except FileNotFoundError:
+    pass
+try:
+    s = open(menu, encoding="utf-8").read()
+except FileNotFoundError:
+    sys.exit(0)
+item = re.search(r'[ \t]*<item label="File Manager"[^>]*>\s*<action name="Execute" command="mb-files" />\s*</item>\n', s)
+if item and 'command="gthumb"' not in s:
+    add = '  <item label="Thumbnails" icon="org.gnome.gthumb">\n    <action name="Execute" command="gthumb" />\n  </item>\n'
+    open(menu, "w", encoding="utf-8").write(s[:item.end()] + add + s[item.end():])
+PY
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

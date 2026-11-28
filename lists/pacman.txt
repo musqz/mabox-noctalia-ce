@@ -34,3 +34,4 @@ kimageformats
 wl-screenrec
 labwc-menu-generator-git
 luciole-git
+gthumb

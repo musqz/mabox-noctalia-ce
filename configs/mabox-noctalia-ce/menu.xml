@@ -47,6 +47,9 @@
   <item label="File Manager" icon="system-file-manager">
     <action name="Execute" command="mb-files" />
   </item>
+  <item label="Thumbnails" icon="org.gnome.gthumb">
+    <action name="Execute" command="gthumb" />
+  </item>
   <separator />
   <item label="Launcher" icon="applications-all">
     <action name="Execute" command="noctalia msg panel-toggle launcher" />
