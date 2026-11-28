@@ -184,4 +184,13 @@ migrate; migrate
 [[ $(grep -c 'mabox/sessions:main' "$conf/mabox-noctalia-ce/rc.xml") == 1 && $(grep -c 'places:sessions' "$conf/mabox-noctalia-ce/rc.xml") == 0 ]] || { echo "FAIL migrate_40: A-F1 command"; exit 1; }
 valid || { echo "FAIL migrate_40: rc.xml is no longer valid"; exit 1; }
 
+# migrate_42: Luciole's colour template becomes the builtin one, the old user block goes, once.
+mkdir -p "$conf/noctalia" "$tmp/bin"
+printf '#!/bin/sh\n' > "$tmp/bin/luciole"; chmod +x "$tmp/bin/luciole"
+printf '[theme.templates]\nbuiltin_ids = ["btop", "qt"]\n\n[theme.templates.user.luciole]\ninput_path = "/usr/share/luciole/templates/colors.toml"\noutput_path = "~/.config/luciole/colors.toml"\n\n[theme.templates.user.cava]\ninput_path = "x"\n' > "$conf/noctalia/config.toml"
+echo 41 > "$tmp/state/mabox-noctalia-ce/config-version"
+PATH=$tmp/bin:$PATH migrate; PATH=$tmp/bin:$PATH migrate
+[[ $(grep -c '"luciole"' "$conf/noctalia/config.toml") == 1 && $(grep -c 'user.luciole' "$conf/noctalia/config.toml") == 0 && $(grep -c 'user.cava' "$conf/noctalia/config.toml") == 1 ]] || { echo "FAIL migrate_42: luciole template"; exit 1; }
+python3 -c "import sys, tomllib; tomllib.load(open(sys.argv[1], 'rb'))" "$conf/noctalia/config.toml" || { echo "FAIL migrate_42: config.toml is no longer valid"; exit 1; }
+
 echo ok
