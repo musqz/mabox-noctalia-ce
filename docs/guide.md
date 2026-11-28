@@ -142,6 +142,8 @@ Converter: pick a preset, then files; output lands next to the source and never 
 | `/music` | music search |
 | `/ag` | AI agent sessions |
 | `/autostart` | the Autostart panel |
+| `/bars` | the Bars panel |
+| `/sessions` | the Sessions panel |
 
 <p align="center"><a href="img/launcher.png"><img src="img/thumb/launcher.png" alt="Launcher with /mb typed"></a></p>
 
