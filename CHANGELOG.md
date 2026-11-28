@@ -4,6 +4,7 @@
 - Convert SVG files to PNG, JPG, WebP and AVIF with the Converter; the right-click menu of Luciole gets a `convert` script that offers the conversions for the selected file (`mb-migrate` links it).
 - Make Luciole follow the Noctalia colours again: the builtin `luciole` template replaces the old user template (`mb-migrate` updates your config).
 - Open the launcher as a floating panel so it stays solid on a transparent bar; a placement saved in the Noctalia settings stays.
+- Use gThumb as the image viewer: it is in the Install panel and the ISO list, has a Thumbnails entry in the root menu and opens on `C-Insert`; `mb-migrate` updates your menu and key.
 
 ## 0.11.1
 - Move Anchor Bar to a bar that is on when the Bars panel switches off the bar the panels hang on.
