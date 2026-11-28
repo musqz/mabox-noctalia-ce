@@ -99,6 +99,8 @@ The RAM button is a noctalia `sysmon` widget: it shows memory use and has no cli
 
 ### Updates
 
+<p align="center"><img src="img/updates.png" alt="The update panel: Update all, Repo + AUR, Repo only, the mirror buttons and Check now"></p>
+
 - Counts repo, AUR, flatpak, snap, npm and pipx updates.
 - The tooltip shows the split, for example `5 updates (2 repo, 1 AUR, 2 flatpak)`.
 - The check runs after login, then every 6 hours, and after every package change.
