@@ -431,6 +431,33 @@ migrate_40() {
     labwc --reconfigure >/dev/null 2>&1 || true
 }
 
+# The Luciole scripts of the converter (mb-convert presets) are linked once more; scripts you already have stay.
+migrate_41() {
+    migrate_33
+}
+
+# Noctalia ships the Luciole colour template itself (builtin id "luciole"); the user block pointed at a file Luciole no longer installs.
+migrate_42() {
+    local f
+    for f in "${files[@]}"; do
+        [[ -f $f ]] || continue
+        python3 - "$f" <<'PY'
+import re, sys, tomllib
+p = sys.argv[1]
+s = open(p).read()
+n = re.sub(r'^\[theme\.templates\.user\.luciole\]\n(?:(?!\[)[^\n]*\n?)*', lambda m: '' if '/usr/share/luciole/templates' in m.group(0) else m.group(0), s, flags=re.M)
+m = re.search(r'^builtin_ids\s*=\s*\[(.*?)\]', n, re.M | re.S)
+if m and '"luciole"' not in m.group(1) and "'luciole'" not in m.group(1):
+    inner = m.group(1).rstrip()
+    add = ' "luciole"' if inner == '' or inner.endswith(',') else ', "luciole"'
+    n = n[:m.start(1)] + inner + add + n[m.end(1):]
+if n != s:
+    tomllib.loads(n)
+    open(p, 'w').write(n)
+PY
+    done
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done

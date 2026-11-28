@@ -7,6 +7,65 @@ preset=${1:-}
 [[ -n $preset ]] || { echo "usage: mb-convert <preset> [file...]" >&2; exit 2; }
 shift
 
+# "pick" (the Luciole script "convert") offers the conversions that fit the first file's extension.
+pick() { # title, then "label<TAB>preset" lines on stdin
+    local rows=() label id
+    while IFS=$'\t' read -r label id; do rows+=("$label" "$id"); done
+    yad --list --title="$1" --width=380 --height=$((${#rows[@]} * 15 + 130)) --no-headers \
+        --column=Conversion --column=Preset --hide-column=2 --print-column=2 --separator= "${rows[@]}"
+}
+kind_of() {
+    case ${1,,} in
+        *.png|*.jpg|*.jpeg|*.webp|*.avif|*.bmp|*.tif|*.tiff|*.gif|*.svg|*.svgz) echo image ;;
+        *.mp4|*.mkv|*.webm|*.mov|*.avi|*.m4v) echo video ;;
+        *.mp3|*.flac|*.ogg|*.opus|*.m4a|*.wav|*.aac) echo audio ;;
+        *) echo other ;;
+    esac
+}
+if [[ $preset == pick ]]; then
+    for f in "$@"; do
+        [[ $(kind_of "$f") == "$(kind_of "$1")" ]] || { notify-send -a Converter "Converter" "Select files of one kind: images, videos or audio"; exit 0; }
+    done
+    case $(kind_of "${1:-}") in
+        image)
+            preset=$(pick "Convert image" <<'EOL'
+PNG	png
+JPG	jpg
+WebP	webp
+AVIF	avif
+EOL
+) || exit 0 ;;
+        video)
+            preset=$(pick "Convert video" <<'EOL'
+MP4 (H.264)	mp4
+MP4 (H.265)	hevc
+WebM (VP9)	webm
+MKV (AV1)	av1
+MKV to MP4 (remux, no re-encode)	mp4-remux
+MP4 to MKV (remux, no re-encode)	mkv-remux
+GIF low (10 fps, 480 px)	gif-low
+GIF medium (15 fps, 720 px)	gif-medium
+GIF high (20 fps, 1080 px)	gif-high
+Audio only: MP3	mp3
+Audio only: Opus	opus
+Audio only: FLAC	flac
+EOL
+) || exit 0 ;;
+        audio)
+            preset=$(pick "Convert audio" <<'EOL'
+MP3	mp3
+Opus	opus
+Ogg Vorbis	ogg
+AAC (m4a)	m4a
+FLAC	flac
+WAV	wav
+EOL
+) || exit 0 ;;
+        *) notify-send -a Converter "Converter" "No conversion for this file type"; exit 0 ;;
+    esac
+fi
+[[ -n $preset ]] || exit 0
+
 EVEN='scale=trunc(iw/2)*2:trunc(ih/2)*2'
 
 kind=video ext=
@@ -39,7 +98,7 @@ if (($# == 0)); then
     case $kind in
         video) dir=$(mb-capture-dir rec); filter="Video|*.mkv *.mp4 *.webm *.mov *.avi *.gif *.m4v *.ts" ;;
         audio) dir=$HOME/Music;             filter="Audio and video|*.mp3 *.flac *.ogg *.opus *.m4a *.wav *.aac *.mkv *.mp4 *.webm *.mov" ;;
-        image) dir=$HOME/Pictures;          filter="Images|*.png *.jpg *.jpeg *.webp *.avif *.bmp *.tiff *.gif" ;;
+        image) dir=$HOME/Pictures;          filter="Images|*.png *.jpg *.jpeg *.webp *.avif *.bmp *.tiff *.gif *.svg *.svgz" ;;
     esac
     [[ -d $dir ]] || dir=$HOME
     mapfile -t files < <(yad --file --multiple --separator=$'\n' --title="Convert to $preset" \
@@ -73,7 +132,14 @@ for src in "$@"; do
 
     id=$(notify -p "Converting to $preset" "$(basename "$src")")
     if [[ $kind == image ]]; then
-        magick "$src" "$out" 2>"$err"
+        # A vector source is drawn at 4x its size (at most 4096 px) on a transparent page, white for JPG.
+        opts=() post=()
+        case ${src,,} in
+            *.svg|*.svgz)
+                opts=(-density 384 -background none); post=(-resize '4096x4096>')
+                [[ $ext == jpg ]] && { opts=(-density 384 -background white); post+=(-alpha remove -alpha off); } ;;
+        esac
+        magick "${opts[@]}" "$src" "${post[@]}" "$out" 2>"$err"
     elif [[ $ext == gif ]]; then
         { ffmpeg -nostdin -loglevel error -i "$src" -vf "fps=$fps,scale='min($width,iw)':-2:flags=lanczos" -f yuv4mpegpipe - \
             | gifski --quiet --fps "$fps" --quality "$quality" -o "$out" -; } 2>"$err"
