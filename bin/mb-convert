@@ -14,9 +14,20 @@ pick() { # title, then "label<TAB>preset" lines on stdin
     yad --list --title="$1" --width=380 --height=$((${#rows[@]} * 15 + 130)) --no-headers \
         --column=Conversion --column=Preset --hide-column=2 --print-column=2 --separator= "${rows[@]}"
 }
-if [[ $preset == pick ]]; then
+kind_of() {
     case ${1,,} in
-        *.png|*.jpg|*.jpeg|*.webp|*.avif|*.bmp|*.tif|*.tiff|*.gif|*.svg|*.svgz)
+        *.png|*.jpg|*.jpeg|*.webp|*.avif|*.bmp|*.tif|*.tiff|*.gif|*.svg|*.svgz) echo image ;;
+        *.mp4|*.mkv|*.webm|*.mov|*.avi|*.m4v) echo video ;;
+        *.mp3|*.flac|*.ogg|*.opus|*.m4a|*.wav|*.aac) echo audio ;;
+        *) echo other ;;
+    esac
+}
+if [[ $preset == pick ]]; then
+    for f in "$@"; do
+        [[ $(kind_of "$f") == "$(kind_of "$1")" ]] || { notify-send -a Converter "Converter" "Select files of one kind: images, videos or audio"; exit 0; }
+    done
+    case $(kind_of "${1:-}") in
+        image)
             preset=$(pick "Convert image" <<'EOL'
 PNG	png
 JPG	jpg
@@ -24,7 +35,7 @@ WebP	webp
 AVIF	avif
 EOL
 ) || exit 0 ;;
-        *.mp4|*.mkv|*.webm|*.mov|*.avi|*.m4v|*.ts)
+        video)
             preset=$(pick "Convert video" <<'EOL'
 MP4 (H.264)	mp4
 MP4 (H.265)	hevc
@@ -40,7 +51,7 @@ Audio only: Opus	opus
 Audio only: FLAC	flac
 EOL
 ) || exit 0 ;;
-        *.mp3|*.flac|*.ogg|*.opus|*.m4a|*.wav|*.aac)
+        audio)
             preset=$(pick "Convert audio" <<'EOL'
 MP3	mp3
 Opus	opus
