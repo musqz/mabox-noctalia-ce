@@ -485,6 +485,19 @@ if n != s:
 PY
 }
 
+# gThumb is the image viewer: the screenshot key (C-Insert) opens it and the root menu gets a Thumbnails entry. Only when it is installed.
+migrate_44() {
+    command -v gthumb >/dev/null || return 0
+    local c=${XDG_CONFIG_HOME:-$HOME/.config}/mabox-noctalia-ce f
+    f=$c/rc.xml
+    [[ -f $f ]] && sed -i "s#bash -c 'viewnior \"\$(ls -t#bash -c 'gthumb \"\$(ls -t#" "$f"
+    f=$c/menu.xml
+    if [[ -f $f ]] && ! grep -q 'command="gthumb"' "$f" && grep -q 'command="mb-files"' "$f"; then
+        sed -i '/command="mb-files"/,/<\/item>/{/<\/item>/s#$#\n  <item label="Thumbnails" icon="org.gnome.gthumb">\n    <action name="Execute" command="gthumb" />\n  </item>#}' "$f"
+    fi
+    labwc --reconfigure >/dev/null 2>&1 || true
+}
+
 applied=$(cat "$stamp" 2>/dev/null || echo 0)
 last=$(compgen -A function migrate_ | wc -l)
 for ((n = applied + 1; n <= last; n++)); do "migrate_$n"; done
