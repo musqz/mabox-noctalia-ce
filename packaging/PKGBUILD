@@ -1,6 +1,6 @@
 # Maintainer: musqz
 pkgname=mabox-noctalia-ce
-pkgver=0.11.0
+pkgver=0.11.1
 pkgrel=1
 pkgdesc='Mabox labwc + Noctalia session and default configs (CE)'
 arch=('any')
@@ -41,7 +41,7 @@ optdepends=('pastel: wallpaper colors for the Cava panel (mb-cava-theme)'
             'python-pywalfox: Firefox theme template')
 install=mabox-noctalia-ce.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('21adf883e1d80a8c5fd8a39dcef1fe12476e06e314d4dd0c2a500079b840c424')
+sha256sums=('SKIP')
 
 package() {
   local root="$srcdir/$pkgname-$pkgver"

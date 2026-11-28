@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.11.1
 - Move Anchor Bar to a bar that is on when the Bars panel switches off the bar the panels hang on.
 - Take Wallpaper out of the root menu and put Bars first in the config block: `mb-migrate` updates your menu.
 - Stop the floating Capture panel from jumping when you hover a Recent file; the preview stays in the pinned windows.
